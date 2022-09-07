@@ -55,9 +55,31 @@ linters:
     - wastedassign # finds wasted assignment statements
     - whitespace # detects leading and trailing whitespace
 
+linters-settings:
+  stylecheck:
+    checks: [ "all", "-ST1001", "-ST1003" ]
+
 issues:
   exclude-use-default: false
   exclude-rules:
     - linters:
         - goerr113
       text: "do not define dynamic errors"
+    - linters:
+        - revive
+      text: "dot-imports: should not use dot imports"
+    - linters:
+        - revive
+      text: "var-naming: don't use underscores in Go names"
+    - linters:
+        - revive
+      text: "var-naming: don't use ALL_CAPS in Go names"
+    - linters:
+        - revive
+      text: "exported: comment on exported const"
+    - linters:
+        - revive
+      text: "exported: exported const"
+    - linters:
+        - godot
+      text: "Comment should end in a period"
