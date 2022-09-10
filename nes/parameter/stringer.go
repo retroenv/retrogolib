@@ -1,30 +1,15 @@
-package addressing
+// Package parameter provides helpers to output instruction parameters as string compatible with specific assemblers.
+package parameter
 
 import (
 	"fmt"
+
+	. "github.com/retroenv/retrogolib/nes/addressing"
 )
 
-// ParamConverter is an interface for the conversion of the instruction parameters to
-// specific assembler implementation outputs.
-type ParamConverter interface {
-	Absolute(param any) string
-	AbsoluteX(param any) string
-	AbsoluteY(param any) string
-	Accumulator() string
-	Immediate(param any) string
-	Indirect(param any) string
-	IndirectX(param any) string
-	IndirectY(param any) string
-	Relative(param any) string
-	ZeroPage(param any) string
-	ZeroPageX(param any) string
-	ZeroPageY(param any) string
-}
-
-// ParamString returns the parameters as a string that is compatible to the
-// assembler presented by the converter.
+// String returns the parameters as a string that is compatible to the assembler presented by the converter.
 // nolint:cyclop
-func ParamString(converter ParamConverter, addressing Mode, param any) (string, error) {
+func String(converter Converter, addressing Mode, param any) (string, error) {
 	switch addressing {
 	case ImpliedAddressing:
 		return "", nil
