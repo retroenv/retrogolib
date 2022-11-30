@@ -3,6 +3,7 @@ package codedatalog
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/retroenv/retrogolib/nes/cartridge"
@@ -32,7 +33,7 @@ const (
 func LoadFile(cart *cartridge.Cartridge, reader io.Reader) ([]PrgFlag, error) {
 	data, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading cartridge data: %w", err)
 	}
 
 	if len(data) < len(cart.PRG) {
