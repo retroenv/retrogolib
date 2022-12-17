@@ -240,11 +240,11 @@ var Opcodes = [256]Opcode{
 	{Instruction: cpx, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xe0
 	{Instruction: sbc, Addressing: IndirectXAddressing, Timing: 6},                                 // 0xe1
 	{Instruction: unofficialNop, Addressing: ImmediateAddressing, Timing: 2},                       // 0xe2
-	{Instruction: unofficialIsb, Addressing: IndirectXAddressing, Timing: 8},                       // 0xe3
+	{Instruction: unofficialIsc, Addressing: IndirectXAddressing, Timing: 8},                       // 0xe3
 	{Instruction: cpx, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xe4
 	{Instruction: sbc, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xe5
 	{Instruction: inc, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0xe6
-	{Instruction: unofficialIsb, Addressing: ZeroPageAddressing, Timing: 5},                        // 0xe7
+	{Instruction: unofficialIsc, Addressing: ZeroPageAddressing, Timing: 5},                        // 0xe7
 	{Instruction: inx, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xe8
 	{Instruction: sbc, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xe9
 	{Instruction: nop, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xea
@@ -252,23 +252,23 @@ var Opcodes = [256]Opcode{
 	{Instruction: cpx, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xec
 	{Instruction: sbc, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xed
 	{Instruction: inc, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0xee
-	{Instruction: unofficialIsb, Addressing: AbsoluteAddressing, Timing: 6},                        // 0xef
+	{Instruction: unofficialIsc, Addressing: AbsoluteAddressing, Timing: 6},                        // 0xef
 	{Instruction: beq, Addressing: RelativeAddressing, Timing: 2},                                  // 0xf0
 	{Instruction: sbc, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0xf1
 	{}, // 0xf2
-	{Instruction: unofficialIsb, Addressing: IndirectYAddressing, Timing: 8},                       // 0xf3
+	{Instruction: unofficialIsc, Addressing: IndirectYAddressing, Timing: 8},                       // 0xf3
 	{Instruction: unofficialNop, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0xf4
 	{Instruction: sbc, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0xf5
 	{Instruction: inc, Addressing: ZeroPageXAddressing, Timing: 6},                                 // 0xf6
-	{Instruction: unofficialIsb, Addressing: ZeroPageXAddressing, Timing: 6},                       // 0xf7
+	{Instruction: unofficialIsc, Addressing: ZeroPageXAddressing, Timing: 6},                       // 0xf7
 	{Instruction: sed, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xf8
 	{Instruction: sbc, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xf9
 	{Instruction: unofficialNop, Addressing: ImpliedAddressing, Timing: 2},                         // 0xfa
-	{Instruction: unofficialIsb, Addressing: AbsoluteYAddressing, Timing: 7},                       // 0xfb
+	{Instruction: unofficialIsc, Addressing: AbsoluteYAddressing, Timing: 7},                       // 0xfb
 	{Instruction: unofficialNop, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xfc
 	{Instruction: sbc, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xfd
 	{Instruction: inc, Addressing: AbsoluteXAddressing, Timing: 7, PageCrossCycle: true},           // 0xfe
-	{Instruction: unofficialIsb, Addressing: AbsoluteXAddressing, Timing: 7},                       // 0xff
+	{Instruction: unofficialIsc, Addressing: AbsoluteXAddressing, Timing: 7},                       // 0xff
 }
 
 // ReadsMemory returns whether the instruction accesses memory reading.

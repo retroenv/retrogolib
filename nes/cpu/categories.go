@@ -61,7 +61,7 @@ var MemoryReadWriteInstructions = map[string]struct{}{
 	ror.Name:           {},
 	sbc.Name:           {},
 	unofficialDcp.Name: {},
-	unofficialIsb.Name: {},
+	unofficialIsc.Name: {},
 	unofficialRla.Name: {},
 	unofficialRra.Name: {},
 	unofficialSlo.Name: {},

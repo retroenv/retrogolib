@@ -19,8 +19,8 @@ var unofficialDcp = &Instruction{
 	},
 }
 
-var unofficialIsb = &Instruction{
-	Name:       "isb",
+var unofficialIsc = &Instruction{
+	Name:       "isc",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xe7},
