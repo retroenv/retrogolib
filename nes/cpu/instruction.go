@@ -7,6 +7,7 @@ var (
 	JmpInstruction = jmp.Name
 	JsrInstruction = jsr.Name
 	NopInstruction = nop.Name
+	SbcInstruction = sbc.Name
 )
 
 // AddressingInfo contains the opcode and timing info for an instruction addressing mode.
