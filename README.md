@@ -9,4 +9,5 @@
 
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
+    ├─ log              fast and structured logging based on slog
     ├─ nes/             NES common types and helpers
