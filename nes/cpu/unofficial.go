@@ -49,6 +49,14 @@ var unofficialLax = &Instruction{
 var unofficialNop = &Instruction{
 	Name:       "nop",
 	Unofficial: true,
+	Addressing: map[Mode]AddressingInfo{
+		ImpliedAddressing:   {Opcode: 0x1a},
+		ImmediateAddressing: {Opcode: 0x80},
+		ZeroPageAddressing:  {Opcode: 0x04},
+		ZeroPageXAddressing: {Opcode: 0x14},
+		AbsoluteAddressing:  {Opcode: 0x0c},
+		AbsoluteXAddressing: {Opcode: 0x1c},
+	},
 }
 
 var unofficialRla = &Instruction{

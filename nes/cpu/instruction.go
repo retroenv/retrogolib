@@ -4,10 +4,11 @@ import . "github.com/retroenv/retrogolib/nes/addressing"
 
 // aliases for instructions that are referenced in emulator code for special handling
 var (
-	JmpInstruction = jmp.Name
-	JsrInstruction = jsr.Name
-	NopInstruction = nop.Name
-	SbcInstruction = sbc.Name
+	JmpInstruction           = jmp.Name
+	JsrInstruction           = jsr.Name
+	NopInstruction           = nop.Name
+	SbcInstruction           = sbc.Name
+	UnofficialNopInstruction = unofficialNop.Name
 )
 
 // AddressingInfo contains the opcode and timing info for an instruction addressing mode.
@@ -549,6 +550,7 @@ var Instructions = map[string]*Instruction{
 	"cmp": cmp,
 	"cpx": cpx,
 	"cpy": cpy,
+	"dcp": unofficialDcp,
 	"dec": dec,
 	"dex": dex,
 	"dey": dey,
@@ -556,8 +558,10 @@ var Instructions = map[string]*Instruction{
 	"inc": inc,
 	"inx": inx,
 	"iny": iny,
+	"isc": unofficialIsc,
 	"jmp": jmp,
 	"jsr": jsr,
+	"lax": unofficialLax,
 	"lda": lda,
 	"ldx": ldx,
 	"ldy": ldy,
@@ -568,14 +572,19 @@ var Instructions = map[string]*Instruction{
 	"php": php,
 	"pla": pla,
 	"plp": plp,
+	"rla": unofficialRla,
 	"rol": rol,
 	"ror": ror,
+	"rra": unofficialRra,
 	"rti": rti,
 	"rts": rts,
+	"sax": unofficialSax,
 	"sbc": sbc,
 	"sec": sec,
 	"sed": sed,
 	"sei": sei,
+	"slo": unofficialSlo,
+	"sre": unofficialSre,
 	"sta": sta,
 	"stx": stx,
 	"sty": sty,
