@@ -5,7 +5,8 @@ package cpu
 
 import . "github.com/retroenv/retrogolib/nes/addressing"
 
-var unofficialDcp = &Instruction{
+// Dcp ...
+var Dcp = &Instruction{
 	Name:       "dcp",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -19,7 +20,8 @@ var unofficialDcp = &Instruction{
 	},
 }
 
-var unofficialIsc = &Instruction{
+// Isc ...
+var Isc = &Instruction{
 	Name:       "isc",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -33,7 +35,8 @@ var unofficialIsc = &Instruction{
 	},
 }
 
-var unofficialLax = &Instruction{
+// Lax ...
+var Lax = &Instruction{
 	Name:       "lax",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -46,7 +49,8 @@ var unofficialLax = &Instruction{
 	},
 }
 
-var unofficialNop = &Instruction{
+// NopUnofficial ...
+var NopUnofficial = &Instruction{
 	Name:       "nop",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -59,7 +63,8 @@ var unofficialNop = &Instruction{
 	},
 }
 
-var unofficialRla = &Instruction{
+// Rla ...
+var Rla = &Instruction{
 	Name:       "rla",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -73,7 +78,8 @@ var unofficialRla = &Instruction{
 	},
 }
 
-var unofficialRra = &Instruction{
+// Rra ...
+var Rra = &Instruction{
 	Name:       "rra",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -87,7 +93,8 @@ var unofficialRra = &Instruction{
 	},
 }
 
-var unofficialSax = &Instruction{
+// Sax ...
+var Sax = &Instruction{
 	Name:       "sax",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -98,7 +105,8 @@ var unofficialSax = &Instruction{
 	},
 }
 
-var unofficialSbc = &Instruction{
+// SbcUnofficial ...
+var SbcUnofficial = &Instruction{
 	Name:       "sbc",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -106,7 +114,8 @@ var unofficialSbc = &Instruction{
 	},
 }
 
-var unofficialSlo = &Instruction{
+// Slo ...
+var Slo = &Instruction{
 	Name:       "slo",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{
@@ -120,7 +129,8 @@ var unofficialSlo = &Instruction{
 	},
 }
 
-var unofficialSre = &Instruction{
+// Sre ...
+var Sre = &Instruction{
 	Name:       "sre",
 	Unofficial: true,
 	Addressing: map[Mode]AddressingInfo{

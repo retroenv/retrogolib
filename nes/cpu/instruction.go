@@ -2,15 +2,6 @@ package cpu
 
 import . "github.com/retroenv/retrogolib/nes/addressing"
 
-// aliases for instructions that are referenced in emulator code for special handling
-var (
-	JmpInstruction           = jmp.Name
-	JsrInstruction           = jsr.Name
-	NopInstruction           = nop.Name
-	SbcInstruction           = sbc.Name
-	UnofficialNopInstruction = unofficialNop.Name
-)
-
 // AddressingInfo contains the opcode and timing info for an instruction addressing mode.
 type AddressingInfo struct {
 	Opcode byte
@@ -41,7 +32,8 @@ func (ins Instruction) HasAddressing(flags ...Mode) bool {
 	return false
 }
 
-var adc = &Instruction{
+// Adc - Add with Carry.
+var Adc = &Instruction{
 	Name: "adc",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x69},
@@ -55,7 +47,8 @@ var adc = &Instruction{
 	},
 }
 
-var and = &Instruction{
+// And - AND with accumulator.
+var And = &Instruction{
 	Name: "and",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x29},
@@ -69,7 +62,8 @@ var and = &Instruction{
 	},
 }
 
-var asl = &Instruction{
+// Asl - Arithmetic Shift Left.
+var Asl = &Instruction{
 	Name: "asl",
 	Addressing: map[Mode]AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x0a},
@@ -80,28 +74,32 @@ var asl = &Instruction{
 	},
 }
 
-var bcc = &Instruction{
+// Bcc - Branch if Carry Clear.
+var Bcc = &Instruction{
 	Name: "bcc",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0x90},
 	},
 }
 
-var bcs = &Instruction{
+// Bcs - Branch if Carry Set.
+var Bcs = &Instruction{
 	Name: "bcs",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0xb0},
 	},
 }
 
-var beq = &Instruction{
+// Beq - Branch if Equal.
+var Beq = &Instruction{
 	Name: "beq",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0xf0},
 	},
 }
 
-var bit = &Instruction{
+// Bit - Bit Test.
+var Bit = &Instruction{
 	Name: "bit",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing: {Opcode: 0x24},
@@ -109,77 +107,88 @@ var bit = &Instruction{
 	},
 }
 
-var bmi = &Instruction{
+// Bmi - Branch if Minus.
+var Bmi = &Instruction{
 	Name: "bmi",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0x30},
 	},
 }
 
-var bne = &Instruction{
+// Bne - Branch if Not Equal.
+var Bne = &Instruction{
 	Name: "bne",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0xd0},
 	},
 }
 
-var bpl = &Instruction{
+// Bpl - Branch if Positive.
+var Bpl = &Instruction{
 	Name: "bpl",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0x10},
 	},
 }
 
-var brk = &Instruction{
+// Brk - Force Interrupt.
+var Brk = &Instruction{
 	Name: "brk",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x00},
 	},
 }
 
-var bvc = &Instruction{
+// Bvc - Branch if Overflow Clear.
+var Bvc = &Instruction{
 	Name: "bvc",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0x50},
 	},
 }
 
-var bvs = &Instruction{
+// Bvs - Branch if Overflow Set.
+var Bvs = &Instruction{
 	Name: "bvs",
 	Addressing: map[Mode]AddressingInfo{
 		RelativeAddressing: {Opcode: 0x70},
 	},
 }
 
-var clc = &Instruction{
+// Clc - Clear Carry Flag.
+var Clc = &Instruction{
 	Name: "clc",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x18},
 	},
 }
 
-var cld = &Instruction{
+// Cld - Clear Decimal Mode.
+var Cld = &Instruction{
 	Name: "cld",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xd8},
 	},
 }
 
-var cli = &Instruction{
+// Cli - Clear Interrupt Disable.
+var Cli = &Instruction{
 	Name: "cli",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x58},
 	},
 }
 
-var clv = &Instruction{
+// Clv - Clear Overflow Flag.
+var Clv = &Instruction{
 	Name: "clv",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xb8},
 	},
 }
 
-var cmp = &Instruction{
+// Cmp - Compare - compares the contents of A.
+var Cmp = &Instruction{
 	Name: "cmp",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xc9},
@@ -193,7 +202,8 @@ var cmp = &Instruction{
 	},
 }
 
-var cpx = &Instruction{
+// Cpx - Compare X Register - compares the contents of X.
+var Cpx = &Instruction{
 	Name: "cpx",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xe0},
@@ -202,7 +212,8 @@ var cpx = &Instruction{
 	},
 }
 
-var cpy = &Instruction{
+// Cpy - Compare Y Register - compares the contents of Y.
+var Cpy = &Instruction{
 	Name: "cpy",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xc0},
@@ -211,8 +222,9 @@ var cpy = &Instruction{
 	},
 }
 
-var dec = &Instruction{
-	Name: "dec",
+// Dec - Decrement memory.
+var Dec = &Instruction{
+	Name: "Dec",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xc6},
 		ZeroPageXAddressing: {Opcode: 0xd6},
@@ -221,21 +233,24 @@ var dec = &Instruction{
 	},
 }
 
-var dex = &Instruction{
+// Dex - Decrement X Register.
+var Dex = &Instruction{
 	Name: "dex",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xca},
 	},
 }
 
-var dey = &Instruction{
+// Dey - Decrement Y Register.
+var Dey = &Instruction{
 	Name: "dey",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x88},
 	},
 }
 
-var eor = &Instruction{
+// Eor - Exclusive OR - XOR.
+var Eor = &Instruction{
 	Name: "eor",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x49},
@@ -249,7 +264,8 @@ var eor = &Instruction{
 	},
 }
 
-var inc = &Instruction{
+// Inc - Increments memory.
+var Inc = &Instruction{
 	Name: "inc",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xe6},
@@ -259,21 +275,24 @@ var inc = &Instruction{
 	},
 }
 
-var inx = &Instruction{
+// Inx - Increment X Register.
+var Inx = &Instruction{
 	Name: "inx",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xe8},
 	},
 }
 
-var iny = &Instruction{
+// Iny - Increment Y Register.
+var Iny = &Instruction{
 	Name: "iny",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xc8},
 	},
 }
 
-var jmp = &Instruction{
+// Jmp - jump to address.
+var Jmp = &Instruction{
 	Name: "jmp",
 	Addressing: map[Mode]AddressingInfo{
 		AbsoluteAddressing: {Opcode: 0x4c},
@@ -281,14 +300,16 @@ var jmp = &Instruction{
 	},
 }
 
-var jsr = &Instruction{
+// Jsr - jump to subroutine.
+var Jsr = &Instruction{
 	Name: "jsr",
 	Addressing: map[Mode]AddressingInfo{
 		AbsoluteAddressing: {Opcode: 0x20},
 	},
 }
 
-var lda = &Instruction{
+// Lda - Load Accumulator - load a byte into A.
+var Lda = &Instruction{
 	Name: "lda",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa9},
@@ -302,7 +323,8 @@ var lda = &Instruction{
 	},
 }
 
-var ldx = &Instruction{
+// Ldx - Load X Register - load a byte into X.
+var Ldx = &Instruction{
 	Name: "ldx",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa2},
@@ -313,7 +335,8 @@ var ldx = &Instruction{
 	},
 }
 
-var ldy = &Instruction{
+// Ldy - Load Y Register - load a byte into Y.
+var Ldy = &Instruction{
 	Name: "ldy",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa0},
@@ -324,7 +347,8 @@ var ldy = &Instruction{
 	},
 }
 
-var lsr = &Instruction{
+// Lsr - Logical Shift Right.
+var Lsr = &Instruction{
 	Name: "lsr",
 	Addressing: map[Mode]AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x4a},
@@ -335,14 +359,16 @@ var lsr = &Instruction{
 	},
 }
 
-var nop = &Instruction{
+// Nop - No Operation.
+var Nop = &Instruction{
 	Name: "nop",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xea},
 	},
 }
 
-var ora = &Instruction{
+// Ora - OR with Accumulator.
+var Ora = &Instruction{
 	Name: "ora",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x09},
@@ -356,35 +382,40 @@ var ora = &Instruction{
 	},
 }
 
-var pha = &Instruction{
+// Pha - Push Accumulator - push A content to stack.
+var Pha = &Instruction{
 	Name: "pha",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x48},
 	},
 }
 
-var php = &Instruction{
+// Php - Push Processor Status - push status flags to stack.
+var Php = &Instruction{
 	Name: "php",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x08},
 	},
 }
 
-var pla = &Instruction{
+// Pla - Pull Accumulator - pull A content from stack.
+var Pla = &Instruction{
 	Name: "pla",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x68},
 	},
 }
 
-var plp = &Instruction{
+// Plp - Pull Processor Status - pull status flags from stack.
+var Plp = &Instruction{
 	Name: "plp",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x28},
 	},
 }
 
-var rol = &Instruction{
+// Rol - Rotate Left.
+var Rol = &Instruction{
 	Name: "rol",
 	Addressing: map[Mode]AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x2a},
@@ -395,7 +426,8 @@ var rol = &Instruction{
 	},
 }
 
-var ror = &Instruction{
+// Ror - Rotate Right.
+var Ror = &Instruction{
 	Name: "ror",
 	Addressing: map[Mode]AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x6a},
@@ -406,21 +438,24 @@ var ror = &Instruction{
 	},
 }
 
-var rti = &Instruction{
+// Rti - Return from Interrupt.
+var Rti = &Instruction{
 	Name: "rti",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x40},
 	},
 }
 
-var rts = &Instruction{
+// Rts - return from subroutine.
+var Rts = &Instruction{
 	Name: "rts",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x60},
 	},
 }
 
-var sbc = &Instruction{
+// Sbc - subtract with Carry.
+var Sbc = &Instruction{
 	Name: "sbc",
 	Addressing: map[Mode]AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xe9},
@@ -434,28 +469,32 @@ var sbc = &Instruction{
 	},
 }
 
-var sec = &Instruction{
+// Sec - Set Carry Flag.
+var Sec = &Instruction{
 	Name: "sec",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x38},
 	},
 }
 
-var sed = &Instruction{
+// Sed - Set Decimal Flag.
+var Sed = &Instruction{
 	Name: "sed",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xf8},
 	},
 }
 
-var sei = &Instruction{
+// Sei - Set Interrupt Disable.
+var Sei = &Instruction{
 	Name: "sei",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x78},
 	},
 }
 
-var sta = &Instruction{
+// Sta - Store Accumulator.
+var Sta = &Instruction{
 	Name: "sta",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x85},
@@ -468,7 +507,8 @@ var sta = &Instruction{
 	},
 }
 
-var stx = &Instruction{
+// Stx - Store X Register.
+var Stx = &Instruction{
 	Name: "stx",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x86},
@@ -477,7 +517,8 @@ var stx = &Instruction{
 	},
 }
 
-var sty = &Instruction{
+// Sty - Store Y Register.
+var Sty = &Instruction{
 	Name: "sty",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x84},
@@ -486,42 +527,48 @@ var sty = &Instruction{
 	},
 }
 
-var tax = &Instruction{
+// Tax - Transfer Accumulator to X.
+var Tax = &Instruction{
 	Name: "tax",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xaa},
 	},
 }
 
-var tay = &Instruction{
+// Tay - Transfer Accumulator to Y.
+var Tay = &Instruction{
 	Name: "tay",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xa8},
 	},
 }
 
-var tsx = &Instruction{
+// Tsx - Transfer Stack Pointer to X.
+var Tsx = &Instruction{
 	Name: "tsx",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xba},
 	},
 }
 
-var txa = &Instruction{
+// Txa - Transfer X to Accumulator.
+var Txa = &Instruction{
 	Name: "txa",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x8a},
 	},
 }
 
-var txs = &Instruction{
+// Txs - Transfer X to Stack Pointer.
+var Txs = &Instruction{
 	Name: "txs",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x9a},
 	},
 }
 
-var tya = &Instruction{
+// Tya - Transfer Y to Accumulator.
+var Tya = &Instruction{
 	Name: "tya",
 	Addressing: map[Mode]AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x98},
@@ -530,68 +577,68 @@ var tya = &Instruction{
 
 // Instructions maps instruction names to NES CPU instruction information.
 var Instructions = map[string]*Instruction{
-	"adc": adc,
-	"and": and,
-	"asl": asl,
-	"bcc": bcc,
-	"bcs": bcs,
-	"beq": beq,
-	"bit": bit,
-	"bmi": bmi,
-	"bne": bne,
-	"bpl": bpl,
-	"brk": brk,
-	"bvc": bvc,
-	"bvs": bvs,
-	"clc": clc,
-	"cld": cld,
-	"cli": cli,
-	"clv": clv,
-	"cmp": cmp,
-	"cpx": cpx,
-	"cpy": cpy,
-	"dcp": unofficialDcp,
-	"dec": dec,
-	"dex": dex,
-	"dey": dey,
-	"eor": eor,
-	"inc": inc,
-	"inx": inx,
-	"iny": iny,
-	"isc": unofficialIsc,
-	"jmp": jmp,
-	"jsr": jsr,
-	"lax": unofficialLax,
-	"lda": lda,
-	"ldx": ldx,
-	"ldy": ldy,
-	"lsr": lsr,
-	"nop": nop,
-	"ora": ora,
-	"pha": pha,
-	"php": php,
-	"pla": pla,
-	"plp": plp,
-	"rla": unofficialRla,
-	"rol": rol,
-	"ror": ror,
-	"rra": unofficialRra,
-	"rti": rti,
-	"rts": rts,
-	"sax": unofficialSax,
-	"sbc": sbc,
-	"sec": sec,
-	"sed": sed,
-	"sei": sei,
-	"slo": unofficialSlo,
-	"sre": unofficialSre,
-	"sta": sta,
-	"stx": stx,
-	"sty": sty,
-	"tax": tax,
-	"tay": tay,
-	"tsx": tsx,
-	"txa": txa,
-	"txs": txs,
-	"tya": tya,
+	"adc": Adc,
+	"and": And,
+	"asl": Asl,
+	"bcc": Bcc,
+	"bcs": Bcs,
+	"beq": Beq,
+	"bit": Bit,
+	"bmi": Bmi,
+	"bne": Bne,
+	"bpl": Bpl,
+	"brk": Brk,
+	"bvc": Bvc,
+	"bvs": Bvs,
+	"clc": Clc,
+	"cld": Cld,
+	"cli": Cli,
+	"clv": Clv,
+	"cmp": Cmp,
+	"cpx": Cpx,
+	"cpy": Cpy,
+	"dcp": Dcp,
+	"Dec": Dec,
+	"dex": Dex,
+	"dey": Dey,
+	"eor": Eor,
+	"inc": Inc,
+	"inx": Inx,
+	"iny": Iny,
+	"isc": Isc,
+	"jmp": Jmp,
+	"jsr": Jsr,
+	"lax": Lax,
+	"lda": Lda,
+	"ldx": Ldx,
+	"ldy": Ldy,
+	"lsr": Lsr,
+	"nop": Nop,
+	"ora": Ora,
+	"pha": Pha,
+	"php": Php,
+	"pla": Pla,
+	"plp": Plp,
+	"rla": Rla,
+	"rol": Rol,
+	"ror": Ror,
+	"rra": Rra,
+	"rti": Rti,
+	"rts": Rts,
+	"sax": Sax,
+	"sbc": Sbc,
+	"sec": Sec,
+	"sed": Sed,
+	"sei": Sei,
+	"slo": Slo,
+	"sre": Sre,
+	"sta": Sta,
+	"stx": Stx,
+	"sty": Sty,
+	"tax": Tax,
+	"tay": Tay,
+	"tsx": Tsx,
+	"txa": Txa,
+	"txs": Txs,
+	"tya": Tya,
 }

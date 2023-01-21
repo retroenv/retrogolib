@@ -3,67 +3,67 @@ package cpu
 
 // BranchingInstructions contains all branching instructions.
 var BranchingInstructions = map[string]struct{}{
-	bcc.Name: {},
-	bcs.Name: {},
-	beq.Name: {},
-	bmi.Name: {},
-	bne.Name: {},
-	bpl.Name: {},
-	bvc.Name: {},
-	bvs.Name: {},
-	jmp.Name: {},
-	jsr.Name: {},
+	Bcc.Name: {},
+	Bcs.Name: {},
+	Beq.Name: {},
+	Bmi.Name: {},
+	Bne.Name: {},
+	Bpl.Name: {},
+	Bvc.Name: {},
+	Bvs.Name: {},
+	Jmp.Name: {},
+	Jsr.Name: {},
 }
 
 // NotExecutingFollowingOpcodeInstructions contains all instructions that jump
 // to a different address and do not return to execute the following opcode.
 var NotExecutingFollowingOpcodeInstructions = map[string]struct{}{
-	jmp.Name: {},
-	rti.Name: {},
-	rts.Name: {},
+	Jmp.Name: {},
+	Rti.Name: {},
+	Rts.Name: {},
 }
 
 // MemoryReadInstructions contains all instructions that can read from an
 // absolute memory address.
 var MemoryReadInstructions = map[string]struct{}{
-	and.Name:           {},
-	bit.Name:           {},
-	cmp.Name:           {},
-	cpx.Name:           {},
-	cpy.Name:           {},
-	jmp.Name:           {},
-	lda.Name:           {},
-	ldx.Name:           {},
-	ldy.Name:           {},
-	unofficialLax.Name: {},
+	And.Name: {},
+	Bit.Name: {},
+	Cmp.Name: {},
+	Cpx.Name: {},
+	Cpy.Name: {},
+	Jmp.Name: {},
+	Lda.Name: {},
+	Ldx.Name: {},
+	Ldy.Name: {},
+	Lax.Name: {},
 }
 
 // MemoryWriteInstructions contains all instructions that can write to an
 // absolute memory address.
 var MemoryWriteInstructions = map[string]struct{}{
-	sta.Name:           {},
-	stx.Name:           {},
-	sty.Name:           {},
-	unofficialSax.Name: {},
+	Sta.Name: {},
+	Stx.Name: {},
+	Sty.Name: {},
+	Sax.Name: {},
 }
 
 // MemoryReadWriteInstructions contains all instructions that can read and write
 // during instruction execution an absolute memory address.
 var MemoryReadWriteInstructions = map[string]struct{}{
-	adc.Name:           {},
-	asl.Name:           {},
-	dec.Name:           {},
-	eor.Name:           {},
-	inc.Name:           {},
-	lsr.Name:           {},
-	ora.Name:           {},
-	rol.Name:           {},
-	ror.Name:           {},
-	sbc.Name:           {},
-	unofficialDcp.Name: {},
-	unofficialIsc.Name: {},
-	unofficialRla.Name: {},
-	unofficialRra.Name: {},
-	unofficialSlo.Name: {},
-	unofficialSre.Name: {},
+	Adc.Name: {},
+	Asl.Name: {},
+	Dec.Name: {},
+	Eor.Name: {},
+	Inc.Name: {},
+	Lsr.Name: {},
+	Ora.Name: {},
+	Rol.Name: {},
+	Ror.Name: {},
+	Sbc.Name: {},
+	Dcp.Name: {},
+	Isc.Name: {},
+	Rla.Name: {},
+	Rra.Name: {},
+	Slo.Name: {},
+	Sre.Name: {},
 }
