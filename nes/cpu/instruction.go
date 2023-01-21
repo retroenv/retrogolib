@@ -224,7 +224,7 @@ var Cpy = &Instruction{
 
 // Dec - Decrement memory.
 var Dec = &Instruction{
-	Name: "Dec",
+	Name: "dec",
 	Addressing: map[Mode]AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xc6},
 		ZeroPageXAddressing: {Opcode: 0xd6},
@@ -598,7 +598,7 @@ var Instructions = map[string]*Instruction{
 	"cpx": Cpx,
 	"cpy": Cpy,
 	"dcp": Dcp,
-	"Dec": Dec,
+	"dec": Dec,
 	"dex": Dex,
 	"dey": Dey,
 	"eor": Eor,
