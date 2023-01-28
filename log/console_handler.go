@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -86,11 +87,12 @@ func (h *ConsoleHandler) Handle(r slog.Record) error {
 	buf.WriteString(consoleLevelString[r.Level])
 
 	if h.opts.SlogOptions.AddSource {
-		file, line := r.SourceLine()
-		if file != "" {
-			buf.WriteString(file)
+		fs := runtime.CallersFrames([]uintptr{r.PC})
+		frame, _ := fs.Next()
+		if frame.File != "" {
+			buf.WriteString(frame.File)
 			buf.WriteRune(':')
-			buf.Write([]byte(strconv.Itoa(line)))
+			buf.Write([]byte(strconv.Itoa(frame.Line)))
 			buf.WriteRune(' ')
 		}
 	}
