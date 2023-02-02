@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 
 	"golang.org/x/exp/slog"
@@ -55,8 +56,8 @@ func newTestHandler(t TestingT) *testHandler {
 
 // Enabled reports whether the handler handles records at the given level.
 // The handler ignores records whose level is lower.
-func (t testHandler) Enabled(level slog.Level) bool {
-	return t.handler.Enabled(level)
+func (t testHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return t.handler.Enabled(ctx, level)
 }
 
 // Handle handles the Record.

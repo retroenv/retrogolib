@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"runtime"
@@ -75,8 +76,8 @@ func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandle
 
 // Enabled reports whether the handler handles records at the given level.
 // The handler ignores records whose level is lower.
-func (h *ConsoleHandler) Enabled(level slog.Level) bool {
-	return h.internalHandler.Enabled(level)
+func (h *ConsoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.internalHandler.Enabled(ctx, level)
 }
 
 // Handle handles the Record.
