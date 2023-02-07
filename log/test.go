@@ -66,7 +66,10 @@ func (t testHandler) Handle(r slog.Record) error {
 	if r.Level >= ErrorLevel {
 		t.t.FailNow()
 	}
-	return fmt.Errorf("handling record: %w", err)
+	if err != nil {
+		return fmt.Errorf("handling record: %w", err)
+	}
+	return nil
 }
 
 // WithAttrs returns a new Handler whose attributes consist of
