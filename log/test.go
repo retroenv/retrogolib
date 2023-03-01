@@ -61,8 +61,8 @@ func (t testHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 // Handle handles the Record.
-func (t testHandler) Handle(r slog.Record) error {
-	err := t.handler.Handle(r)
+func (t testHandler) Handle(ctx context.Context, r slog.Record) error {
+	err := t.handler.Handle(ctx, r)
 	if r.Level >= ErrorLevel {
 		t.t.FailNow()
 	}

@@ -81,7 +81,7 @@ func (h *ConsoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 // Handle handles the Record.
-func (h *ConsoleHandler) Handle(r slog.Record) error {
+func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	var buf bytes.Buffer
 
 	buf.WriteString(r.Time.Format(h.opts.TimeFormat))
@@ -120,7 +120,7 @@ func (h *ConsoleHandler) Handle(r slog.Record) error {
 	}
 
 	if hasEntries {
-		if err := h.internalHandler.Handle(r); err != nil {
+		if err := h.internalHandler.Handle(ctx, r); err != nil {
 			return fmt.Errorf("handling record: %w", err)
 		}
 	}

@@ -2,6 +2,7 @@
 package log
 
 import (
+	"context"
 	"io"
 	"os"
 
@@ -89,6 +90,6 @@ func (l *Logger) SetLevel(level Level) {
 
 // Fatal logs at FatalLevel.
 func (l *Logger) Fatal(msg string, args ...any) {
-	l.LogDepth(1, FatalLevel, msg, args...)
+	l.Log(context.TODO(), FatalLevel, msg, args...)
 	os.Exit(1)
 }
