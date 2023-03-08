@@ -7,6 +7,7 @@
 
 ## Project layout
 
+    ├─ app              common application/service helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
     ├─ gui              GUIs renderers
