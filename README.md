@@ -9,5 +9,7 @@
 
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
+    ├─ gui              GUIs renderers
+    ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
-    ├─ nes/             NES common types and helpers
+    ├─ nes              NES common types and helpers
