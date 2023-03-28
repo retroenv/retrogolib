@@ -8,6 +8,10 @@ import (
 
 // Log levels.
 const (
+	// TraceLevel logs are typically voluminous, and are usually disabled in
+	// production.
+	TraceLevel = slog.LevelDebug << 1
+
 	// DebugLevel logs are typically voluminous, and are usually disabled in
 	// production.
 	DebugLevel = slog.LevelDebug
@@ -24,13 +28,17 @@ const (
 	ErrorLevel = slog.LevelError
 
 	// FatalLevel logs a message, then calls os.Exit(1).
-	FatalLevel = slog.LevelError + 1
+	FatalLevel = slog.LevelError << 1
 )
 
 // Level is a logging priority. Higher levels are more important.
 type Level = slog.Level
 
-var defaultLevel = uintptr(InfoLevel)
+var (
+	defaultLevel   = uintptr(InfoLevel)
+	fatalLevelText = slog.StringValue("FATAL")
+	traceLevelText = slog.StringValue("TRACE")
+)
 
 // DefaultLevel returns the current default level for all loggers
 // newly created with New().
@@ -41,4 +49,21 @@ func DefaultLevel() Level {
 // SetDefaultLevel sets the default level for all newly created loggers.
 func SetDefaultLevel(level Level) {
 	atomic.StoreUintptr(&defaultLevel, uintptr(level))
+}
+
+// replaceLevelName sets custom defined level names for outputting.
+func replaceLevelName(_ []string, a slog.Attr) slog.Attr {
+	if a.Key != slog.LevelKey {
+		return a
+	}
+
+	level := a.Value.Any().(slog.Level)
+	switch level {
+	case TraceLevel:
+		a.Value = traceLevelText
+	case FatalLevel:
+		a.Value = fatalLevelText
+	}
+
+	return a
 }

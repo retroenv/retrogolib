@@ -42,10 +42,14 @@ func NewWithConfig(cfg Config) *Logger {
 	if handler == nil {
 		opts := ConsoleHandlerOptions{
 			SlogOptions: slog.HandlerOptions{
-				AddSource: cfg.CallerInfo,
-				Level:     level,
+				AddSource:   cfg.CallerInfo,
+				Level:       level,
+				ReplaceAttr: replaceLevelName,
 			},
-			TimeFormat: "2006-01-02 15:04:05",
+			TimeFormat: cfg.TimeFormat,
+		}
+		if opts.TimeFormat == "" {
+			opts.TimeFormat = defaultTimeFormat
 		}
 		handler = opts.NewConsoleHandler(output)
 	}
@@ -88,8 +92,32 @@ func (l *Logger) SetLevel(level Level) {
 	l.level.Set(level)
 }
 
+// Trace logs at TraceLevel.
+func (l *Logger) Trace(msg string, args ...any) {
+	l.Log(context.Background(), TraceLevel, msg, args...)
+}
+
+// TraceCtx logs at TraceLevel with the given context.
+func (l *Logger) TraceCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, TraceLevel, msg, args...)
+}
+
 // Fatal logs at FatalLevel.
 func (l *Logger) Fatal(msg string, args ...any) {
-	l.Log(context.TODO(), FatalLevel, msg, args...)
+	l.Log(context.Background(), FatalLevel, msg, args...)
+	fatalExitFunc()
+}
+
+// FatalCtx logs at FatalLevel with the given context.
+func (l *Logger) FatalCtx(ctx context.Context, msg string, args ...any) {
+	l.Log(ctx, FatalLevel, msg, args...)
+	fatalExitFunc()
+}
+
+// fatalExitFunc defines the function to call when exiting due to a fatal log error.
+// This is used in unit tests.
+var fatalExitFunc = fatalExit
+
+func fatalExit() {
 	os.Exit(1)
 }

@@ -15,11 +15,12 @@ import (
 
 // consoleLevelString translates a level to a padded string ready for printing on the console.
 var consoleLevelString = map[Level]string{
-	DebugLevel: "  DEBUG   ",
-	InfoLevel:  "  INFO    ",
-	WarnLevel:  "  WARN    ",
-	ErrorLevel: "  ERROR   ",
-	FatalLevel: "  FATAL   ",
+	TraceLevel: "TRACE   ",
+	DebugLevel: "DEBUG   ",
+	InfoLevel:  "INFO    ",
+	WarnLevel:  "WARN    ",
+	ErrorLevel: "ERROR   ",
+	FatalLevel: "FATAL   ",
 }
 
 // ConsoleHandler formats the logger output in a better human-readable way.
@@ -48,15 +49,23 @@ func NewConsoleHandler(w io.Writer) *ConsoleHandler {
 // NewConsoleHandler returns a new console handler based on the set options.
 func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandler {
 	internalOpts := opts.SlogOptions
-	if opts.TimeFormat == "" {
+	timeFormat := opts.TimeFormat
+	if timeFormat == "" {
 		opts.TimeFormat = time.RFC3339
 	}
 
 	internalOpts.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
-		if a.Key == "time" || a.Key == "level" || a.Key == "msg" {
+		if a.Key == slog.TimeKey {
+			if timeFormat == "-" && len(groups) == 0 {
+				a.Key = ""
+			}
+			return a
+		}
+
+		if a.Key == slog.LevelKey || a.Key == slog.MessageKey {
 			return slog.Attr{}
 		}
-		if opts.SlogOptions.AddSource && a.Key == "source" {
+		if opts.SlogOptions.AddSource && a.Key == slog.SourceKey {
 			return slog.Attr{}
 		}
 
@@ -84,7 +93,11 @@ func (h *ConsoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	var buf bytes.Buffer
 
-	buf.WriteString(r.Time.Format(h.opts.TimeFormat))
+	if h.opts.TimeFormat != "-" {
+		buf.WriteString(r.Time.Format(h.opts.TimeFormat))
+		buf.WriteString("  ")
+	}
+
 	buf.WriteString(consoleLevelString[r.Level])
 
 	if h.opts.SlogOptions.AddSource {
@@ -99,7 +112,6 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	}
 
 	buf.WriteString(r.Message)
-	buf.WriteRune(' ')
 
 	hasEntries := false
 	r.Attrs(func(a slog.Attr) {
@@ -107,7 +119,9 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 			hasEntries = true
 		}
 	})
-	if !hasEntries {
+	if hasEntries {
+		buf.WriteRune(' ')
+	} else {
 		buf.WriteRune('\n')
 	}
 
