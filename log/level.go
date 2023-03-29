@@ -57,7 +57,11 @@ func replaceLevelName(_ []string, a slog.Attr) slog.Attr {
 		return a
 	}
 
-	level := a.Value.Any().(slog.Level)
+	level, ok := a.Value.Any().(slog.Level)
+	if !ok {
+		return a
+	}
+
 	switch level {
 	case TraceLevel:
 		a.Value = traceLevelText

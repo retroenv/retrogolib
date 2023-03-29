@@ -40,7 +40,7 @@ func NewWithConfig(cfg Config) *Logger {
 
 	handler := cfg.Handler
 	if handler == nil {
-		opts := ConsoleHandlerOptions{
+		consoleOpts := ConsoleHandlerOptions{
 			SlogOptions: slog.HandlerOptions{
 				AddSource:   cfg.CallerInfo,
 				Level:       level,
@@ -48,10 +48,10 @@ func NewWithConfig(cfg Config) *Logger {
 			},
 			TimeFormat: cfg.TimeFormat,
 		}
-		if opts.TimeFormat == "" {
-			opts.TimeFormat = defaultTimeFormat
+		if consoleOpts.TimeFormat == "" {
+			consoleOpts.TimeFormat = defaultTimeFormat
 		}
-		handler = opts.NewConsoleHandler(output)
+		handler = consoleOpts.NewConsoleHandler(output)
 	}
 
 	l := slog.New(handler)

@@ -55,14 +55,7 @@ func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandle
 	}
 
 	internalOpts.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
-		if a.Key == slog.TimeKey {
-			if timeFormat == "-" && len(groups) == 0 {
-				a.Key = ""
-			}
-			return a
-		}
-
-		if a.Key == slog.LevelKey || a.Key == slog.MessageKey {
+		if a.Key == slog.TimeKey || a.Key == slog.LevelKey || a.Key == slog.MessageKey {
 			return slog.Attr{}
 		}
 		if opts.SlogOptions.AddSource && a.Key == slog.SourceKey {

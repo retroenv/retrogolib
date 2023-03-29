@@ -2,11 +2,22 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
 )
+
+func TestNew(t *testing.T) {
+	prev := DefaultLevel()
+	SetDefaultLevel(DebugLevel)
+	defer SetDefaultLevel(prev)
+
+	logger := New()
+
+	assert.True(t, logger.Enabled(context.TODO(), DebugLevel))
+}
 
 func TestLoggerFatal(t *testing.T) {
 	cfg := DefaultConfig()
