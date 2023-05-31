@@ -1,6 +1,8 @@
 package register
 
-import . "github.com/retroenv/retrogolib/nes/addressing"
+import (
+	. "github.com/retroenv/retrogolib/addressing"
+)
 
 // APUAddressToName maps address constants from address to name.
 var APUAddressToName = map[uint16]AccessModeConstant{

@@ -1,15 +1,18 @@
 // This file contains support for unofficial CPU instructions.
 // https://www.nesdev.org/wiki/Programming_with_unofficial_opcodes
 
-package cpu
+package m6502
 
-import . "github.com/retroenv/retrogolib/nes/addressing"
+import (
+	. "github.com/retroenv/retrogolib/addressing"
+	"github.com/retroenv/retrogolib/cpu"
+)
 
 // Dcp ...
-var Dcp = &Instruction{
+var Dcp = &cpu.Instruction{
 	Name:       "dcp",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xc7},
 		ZeroPageXAddressing: {Opcode: 0xd7},
 		AbsoluteAddressing:  {Opcode: 0xcf},
@@ -21,10 +24,10 @@ var Dcp = &Instruction{
 }
 
 // Isc ...
-var Isc = &Instruction{
+var Isc = &cpu.Instruction{
 	Name:       "isc",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xe7},
 		ZeroPageXAddressing: {Opcode: 0xf7},
 		AbsoluteAddressing:  {Opcode: 0xef},
@@ -36,10 +39,10 @@ var Isc = &Instruction{
 }
 
 // Lax ...
-var Lax = &Instruction{
+var Lax = &cpu.Instruction{
 	Name:       "lax",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xa7},
 		ZeroPageYAddressing: {Opcode: 0xb7},
 		AbsoluteAddressing:  {Opcode: 0xaf},
@@ -50,10 +53,10 @@ var Lax = &Instruction{
 }
 
 // NopUnofficial ...
-var NopUnofficial = &Instruction{
+var NopUnofficial = &cpu.Instruction{
 	Name:       "nop",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing:   {Opcode: 0x1a},
 		ImmediateAddressing: {Opcode: 0x80},
 		ZeroPageAddressing:  {Opcode: 0x04},
@@ -64,10 +67,10 @@ var NopUnofficial = &Instruction{
 }
 
 // Rla ...
-var Rla = &Instruction{
+var Rla = &cpu.Instruction{
 	Name:       "rla",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x27},
 		ZeroPageXAddressing: {Opcode: 0x37},
 		AbsoluteAddressing:  {Opcode: 0x2f},
@@ -79,10 +82,10 @@ var Rla = &Instruction{
 }
 
 // Rra ...
-var Rra = &Instruction{
+var Rra = &cpu.Instruction{
 	Name:       "rra",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x67},
 		ZeroPageXAddressing: {Opcode: 0x77},
 		AbsoluteAddressing:  {Opcode: 0x6f},
@@ -94,10 +97,10 @@ var Rra = &Instruction{
 }
 
 // Sax ...
-var Sax = &Instruction{
+var Sax = &cpu.Instruction{
 	Name:       "sax",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x87},
 		ZeroPageYAddressing: {Opcode: 0x97},
 		AbsoluteAddressing:  {Opcode: 0x8f},
@@ -106,19 +109,19 @@ var Sax = &Instruction{
 }
 
 // SbcUnofficial ...
-var SbcUnofficial = &Instruction{
+var SbcUnofficial = &cpu.Instruction{
 	Name:       "sbc",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xeb},
 	},
 }
 
 // Slo ...
-var Slo = &Instruction{
+var Slo = &cpu.Instruction{
 	Name:       "slo",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x07},
 		ZeroPageXAddressing: {Opcode: 0x17},
 		AbsoluteAddressing:  {Opcode: 0x0f},
@@ -130,10 +133,10 @@ var Slo = &Instruction{
 }
 
 // Sre ...
-var Sre = &Instruction{
+var Sre = &cpu.Instruction{
 	Name:       "sre",
 	Unofficial: true,
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x47},
 		ZeroPageXAddressing: {Opcode: 0x57},
 		AbsoluteAddressing:  {Opcode: 0x4f},

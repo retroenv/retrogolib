@@ -3,7 +3,7 @@ package parameter
 import (
 	"fmt"
 
-	"github.com/retroenv/retrogolib/nes/addressing"
+	"github.com/retroenv/retrogolib/addressing"
 )
 
 // Ca65Converter converts the opcode parameters to ca65 compatible output.

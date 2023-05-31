@@ -1,5 +1,5 @@
-// Package cpu provides CPU (Central Processing Unit) functionality.
-package cpu
+// Package m6502 provides support for the MOS Technology 6502 CPU.
+package m6502
 
 // BranchingInstructions contains all branching instructions.
 var BranchingInstructions = map[string]struct{}{

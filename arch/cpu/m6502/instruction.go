@@ -1,41 +1,14 @@
-package cpu
+package m6502
 
-import . "github.com/retroenv/retrogolib/nes/addressing"
-
-// AddressingInfo contains the opcode and timing info for an instruction addressing mode.
-type AddressingInfo struct {
-	Opcode byte
-}
-
-// Instruction contains information about a NES CPU instruction.
-type Instruction struct {
-	Name       string
-	Unofficial bool
-
-	// instruction has no parameters
-	NoParamFunc func()
-	// instruction has parameters
-	ParamFunc func(params ...any)
-
-	// maps addressing mode to cpu cycles
-	Addressing map[Mode]AddressingInfo
-}
-
-// HasAddressing returns whether the instruction has any of the passed addressing modes.
-func (ins Instruction) HasAddressing(flags ...Mode) bool {
-	for _, flag := range flags {
-		_, ok := ins.Addressing[flag]
-		if ok {
-			return ok
-		}
-	}
-	return false
-}
+import (
+	. "github.com/retroenv/retrogolib/addressing"
+	"github.com/retroenv/retrogolib/cpu"
+)
 
 // Adc - Add with Carry.
-var Adc = &Instruction{
+var Adc = &cpu.Instruction{
 	Name: "adc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x69},
 		ZeroPageAddressing:  {Opcode: 0x65},
 		ZeroPageXAddressing: {Opcode: 0x75},
@@ -48,9 +21,9 @@ var Adc = &Instruction{
 }
 
 // And - AND with accumulator.
-var And = &Instruction{
+var And = &cpu.Instruction{
 	Name: "and",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x29},
 		ZeroPageAddressing:  {Opcode: 0x25},
 		ZeroPageXAddressing: {Opcode: 0x35},
@@ -63,9 +36,9 @@ var And = &Instruction{
 }
 
 // Asl - Arithmetic Shift Left.
-var Asl = &Instruction{
+var Asl = &cpu.Instruction{
 	Name: "asl",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x0a},
 		ZeroPageAddressing:    {Opcode: 0x06},
 		ZeroPageXAddressing:   {Opcode: 0x16},
@@ -75,122 +48,122 @@ var Asl = &Instruction{
 }
 
 // Bcc - Branch if Carry Clear.
-var Bcc = &Instruction{
+var Bcc = &cpu.Instruction{
 	Name: "bcc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0x90},
 	},
 }
 
 // Bcs - Branch if Carry Set.
-var Bcs = &Instruction{
+var Bcs = &cpu.Instruction{
 	Name: "bcs",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0xb0},
 	},
 }
 
 // Beq - Branch if Equal.
-var Beq = &Instruction{
+var Beq = &cpu.Instruction{
 	Name: "beq",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0xf0},
 	},
 }
 
 // Bit - Bit Test.
-var Bit = &Instruction{
+var Bit = &cpu.Instruction{
 	Name: "bit",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing: {Opcode: 0x24},
 		AbsoluteAddressing: {Opcode: 0x2c},
 	},
 }
 
 // Bmi - Branch if Minus.
-var Bmi = &Instruction{
+var Bmi = &cpu.Instruction{
 	Name: "bmi",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0x30},
 	},
 }
 
 // Bne - Branch if Not Equal.
-var Bne = &Instruction{
+var Bne = &cpu.Instruction{
 	Name: "bne",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0xd0},
 	},
 }
 
 // Bpl - Branch if Positive.
-var Bpl = &Instruction{
+var Bpl = &cpu.Instruction{
 	Name: "bpl",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0x10},
 	},
 }
 
 // Brk - Force Interrupt.
-var Brk = &Instruction{
+var Brk = &cpu.Instruction{
 	Name: "brk",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x00},
 	},
 }
 
 // Bvc - Branch if Overflow Clear.
-var Bvc = &Instruction{
+var Bvc = &cpu.Instruction{
 	Name: "bvc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0x50},
 	},
 }
 
 // Bvs - Branch if Overflow Set.
-var Bvs = &Instruction{
+var Bvs = &cpu.Instruction{
 	Name: "bvs",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		RelativeAddressing: {Opcode: 0x70},
 	},
 }
 
 // Clc - Clear Carry Flag.
-var Clc = &Instruction{
+var Clc = &cpu.Instruction{
 	Name: "clc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x18},
 	},
 }
 
 // Cld - Clear Decimal Mode.
-var Cld = &Instruction{
+var Cld = &cpu.Instruction{
 	Name: "cld",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xd8},
 	},
 }
 
 // Cli - Clear Interrupt Disable.
-var Cli = &Instruction{
+var Cli = &cpu.Instruction{
 	Name: "cli",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x58},
 	},
 }
 
 // Clv - Clear Overflow Flag.
-var Clv = &Instruction{
+var Clv = &cpu.Instruction{
 	Name: "clv",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xb8},
 	},
 }
 
 // Cmp - Compare - compares the contents of A.
-var Cmp = &Instruction{
+var Cmp = &cpu.Instruction{
 	Name: "cmp",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xc9},
 		ZeroPageAddressing:  {Opcode: 0xc5},
 		ZeroPageXAddressing: {Opcode: 0xd5},
@@ -203,9 +176,9 @@ var Cmp = &Instruction{
 }
 
 // Cpx - Compare X Register - compares the contents of X.
-var Cpx = &Instruction{
+var Cpx = &cpu.Instruction{
 	Name: "cpx",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xe0},
 		ZeroPageAddressing:  {Opcode: 0xe4},
 		AbsoluteAddressing:  {Opcode: 0xec},
@@ -213,9 +186,9 @@ var Cpx = &Instruction{
 }
 
 // Cpy - Compare Y Register - compares the contents of Y.
-var Cpy = &Instruction{
+var Cpy = &cpu.Instruction{
 	Name: "cpy",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xc0},
 		ZeroPageAddressing:  {Opcode: 0xc4},
 		AbsoluteAddressing:  {Opcode: 0xcc},
@@ -223,9 +196,9 @@ var Cpy = &Instruction{
 }
 
 // Dec - Decrement memory.
-var Dec = &Instruction{
+var Dec = &cpu.Instruction{
 	Name: "dec",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xc6},
 		ZeroPageXAddressing: {Opcode: 0xd6},
 		AbsoluteAddressing:  {Opcode: 0xce},
@@ -234,25 +207,25 @@ var Dec = &Instruction{
 }
 
 // Dex - Decrement X Register.
-var Dex = &Instruction{
+var Dex = &cpu.Instruction{
 	Name: "dex",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xca},
 	},
 }
 
 // Dey - Decrement Y Register.
-var Dey = &Instruction{
+var Dey = &cpu.Instruction{
 	Name: "dey",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x88},
 	},
 }
 
 // Eor - Exclusive OR - XOR.
-var Eor = &Instruction{
+var Eor = &cpu.Instruction{
 	Name: "eor",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x49},
 		ZeroPageAddressing:  {Opcode: 0x45},
 		ZeroPageXAddressing: {Opcode: 0x55},
@@ -265,9 +238,9 @@ var Eor = &Instruction{
 }
 
 // Inc - Increments memory.
-var Inc = &Instruction{
+var Inc = &cpu.Instruction{
 	Name: "inc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0xe6},
 		ZeroPageXAddressing: {Opcode: 0xf6},
 		AbsoluteAddressing:  {Opcode: 0xee},
@@ -276,42 +249,42 @@ var Inc = &Instruction{
 }
 
 // Inx - Increment X Register.
-var Inx = &Instruction{
+var Inx = &cpu.Instruction{
 	Name: "inx",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xe8},
 	},
 }
 
 // Iny - Increment Y Register.
-var Iny = &Instruction{
+var Iny = &cpu.Instruction{
 	Name: "iny",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xc8},
 	},
 }
 
 // Jmp - jump to address.
-var Jmp = &Instruction{
+var Jmp = &cpu.Instruction{
 	Name: "jmp",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AbsoluteAddressing: {Opcode: 0x4c},
 		IndirectAddressing: {Opcode: 0x6c},
 	},
 }
 
 // Jsr - jump to subroutine.
-var Jsr = &Instruction{
+var Jsr = &cpu.Instruction{
 	Name: "jsr",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AbsoluteAddressing: {Opcode: 0x20},
 	},
 }
 
 // Lda - Load Accumulator - load a byte into A.
-var Lda = &Instruction{
+var Lda = &cpu.Instruction{
 	Name: "lda",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa9},
 		ZeroPageAddressing:  {Opcode: 0xa5},
 		ZeroPageXAddressing: {Opcode: 0xb5},
@@ -324,9 +297,9 @@ var Lda = &Instruction{
 }
 
 // Ldx - Load X Register - load a byte into X.
-var Ldx = &Instruction{
+var Ldx = &cpu.Instruction{
 	Name: "ldx",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa2},
 		ZeroPageAddressing:  {Opcode: 0xa6},
 		ZeroPageYAddressing: {Opcode: 0xb6},
@@ -336,9 +309,9 @@ var Ldx = &Instruction{
 }
 
 // Ldy - Load Y Register - load a byte into Y.
-var Ldy = &Instruction{
+var Ldy = &cpu.Instruction{
 	Name: "ldy",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xa0},
 		ZeroPageAddressing:  {Opcode: 0xa4},
 		ZeroPageXAddressing: {Opcode: 0xb4},
@@ -348,9 +321,9 @@ var Ldy = &Instruction{
 }
 
 // Lsr - Logical Shift Right.
-var Lsr = &Instruction{
+var Lsr = &cpu.Instruction{
 	Name: "lsr",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x4a},
 		ZeroPageAddressing:    {Opcode: 0x46},
 		ZeroPageXAddressing:   {Opcode: 0x56},
@@ -360,17 +333,17 @@ var Lsr = &Instruction{
 }
 
 // Nop - No Operation.
-var Nop = &Instruction{
+var Nop = &cpu.Instruction{
 	Name: "nop",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xea},
 	},
 }
 
 // Ora - OR with Accumulator.
-var Ora = &Instruction{
+var Ora = &cpu.Instruction{
 	Name: "ora",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0x09},
 		ZeroPageAddressing:  {Opcode: 0x05},
 		ZeroPageXAddressing: {Opcode: 0x15},
@@ -383,41 +356,41 @@ var Ora = &Instruction{
 }
 
 // Pha - Push Accumulator - push A content to stack.
-var Pha = &Instruction{
+var Pha = &cpu.Instruction{
 	Name: "pha",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x48},
 	},
 }
 
 // Php - Push Processor Status - push status flags to stack.
-var Php = &Instruction{
+var Php = &cpu.Instruction{
 	Name: "php",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x08},
 	},
 }
 
 // Pla - Pull Accumulator - pull A content from stack.
-var Pla = &Instruction{
+var Pla = &cpu.Instruction{
 	Name: "pla",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x68},
 	},
 }
 
 // Plp - Pull Processor Status - pull status flags from stack.
-var Plp = &Instruction{
+var Plp = &cpu.Instruction{
 	Name: "plp",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x28},
 	},
 }
 
 // Rol - Rotate Left.
-var Rol = &Instruction{
+var Rol = &cpu.Instruction{
 	Name: "rol",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x2a},
 		ZeroPageAddressing:    {Opcode: 0x26},
 		ZeroPageXAddressing:   {Opcode: 0x36},
@@ -427,9 +400,9 @@ var Rol = &Instruction{
 }
 
 // Ror - Rotate Right.
-var Ror = &Instruction{
+var Ror = &cpu.Instruction{
 	Name: "ror",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		AccumulatorAddressing: {Opcode: 0x6a},
 		ZeroPageAddressing:    {Opcode: 0x66},
 		ZeroPageXAddressing:   {Opcode: 0x76},
@@ -439,25 +412,25 @@ var Ror = &Instruction{
 }
 
 // Rti - Return from Interrupt.
-var Rti = &Instruction{
+var Rti = &cpu.Instruction{
 	Name: "rti",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x40},
 	},
 }
 
 // Rts - return from subroutine.
-var Rts = &Instruction{
+var Rts = &cpu.Instruction{
 	Name: "rts",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x60},
 	},
 }
 
 // Sbc - subtract with Carry.
-var Sbc = &Instruction{
+var Sbc = &cpu.Instruction{
 	Name: "sbc",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImmediateAddressing: {Opcode: 0xe9},
 		ZeroPageAddressing:  {Opcode: 0xe5},
 		ZeroPageXAddressing: {Opcode: 0xf5},
@@ -470,33 +443,33 @@ var Sbc = &Instruction{
 }
 
 // Sec - Set Carry Flag.
-var Sec = &Instruction{
+var Sec = &cpu.Instruction{
 	Name: "sec",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x38},
 	},
 }
 
 // Sed - Set Decimal Flag.
-var Sed = &Instruction{
+var Sed = &cpu.Instruction{
 	Name: "sed",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xf8},
 	},
 }
 
 // Sei - Set Interrupt Disable.
-var Sei = &Instruction{
+var Sei = &cpu.Instruction{
 	Name: "sei",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x78},
 	},
 }
 
 // Sta - Store Accumulator.
-var Sta = &Instruction{
+var Sta = &cpu.Instruction{
 	Name: "sta",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x85},
 		ZeroPageXAddressing: {Opcode: 0x95},
 		AbsoluteAddressing:  {Opcode: 0x8d},
@@ -508,9 +481,9 @@ var Sta = &Instruction{
 }
 
 // Stx - Store X Register.
-var Stx = &Instruction{
+var Stx = &cpu.Instruction{
 	Name: "stx",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x86},
 		ZeroPageYAddressing: {Opcode: 0x96},
 		AbsoluteAddressing:  {Opcode: 0x8e},
@@ -518,9 +491,9 @@ var Stx = &Instruction{
 }
 
 // Sty - Store Y Register.
-var Sty = &Instruction{
+var Sty = &cpu.Instruction{
 	Name: "sty",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ZeroPageAddressing:  {Opcode: 0x84},
 		ZeroPageXAddressing: {Opcode: 0x94},
 		AbsoluteAddressing:  {Opcode: 0x8c},
@@ -528,55 +501,55 @@ var Sty = &Instruction{
 }
 
 // Tax - Transfer Accumulator to X.
-var Tax = &Instruction{
+var Tax = &cpu.Instruction{
 	Name: "tax",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xaa},
 	},
 }
 
 // Tay - Transfer Accumulator to Y.
-var Tay = &Instruction{
+var Tay = &cpu.Instruction{
 	Name: "tay",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xa8},
 	},
 }
 
 // Tsx - Transfer Stack Pointer to X.
-var Tsx = &Instruction{
+var Tsx = &cpu.Instruction{
 	Name: "tsx",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0xba},
 	},
 }
 
 // Txa - Transfer X to Accumulator.
-var Txa = &Instruction{
+var Txa = &cpu.Instruction{
 	Name: "txa",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x8a},
 	},
 }
 
 // Txs - Transfer X to Stack Pointer.
-var Txs = &Instruction{
+var Txs = &cpu.Instruction{
 	Name: "txs",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x9a},
 	},
 }
 
 // Tya - Transfer Y to Accumulator.
-var Tya = &Instruction{
+var Tya = &cpu.Instruction{
 	Name: "tya",
-	Addressing: map[Mode]AddressingInfo{
+	Addressing: map[Mode]cpu.AddressingInfo{
 		ImpliedAddressing: {Opcode: 0x98},
 	},
 }
 
 // Instructions maps instruction names to NES CPU instruction information.
-var Instructions = map[string]*Instruction{
+var Instructions = map[string]*cpu.Instruction{
 	"adc": Adc,
 	"and": And,
 	"asl": Asl,

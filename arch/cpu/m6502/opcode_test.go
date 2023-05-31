@@ -1,4 +1,4 @@
-package cpu
+package m6502
 
 import (
 	"testing"

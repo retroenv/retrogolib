@@ -4,7 +4,7 @@ package parameter
 import (
 	"fmt"
 
-	. "github.com/retroenv/retrogolib/nes/addressing"
+	. "github.com/retroenv/retrogolib/addressing"
 )
 
 // String returns the parameters as a string that is compatible to the assembler presented by the converter.

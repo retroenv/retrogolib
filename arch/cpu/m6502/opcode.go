@@ -1,18 +1,13 @@
-package cpu
+package m6502
 
-import . "github.com/retroenv/retrogolib/nes/addressing"
-
-// Opcode is a NES CPU opcode that contains the instruction info and used addressing mode.
-type Opcode struct {
-	Instruction    *Instruction
-	Addressing     Mode
-	Timing         byte
-	PageCrossCycle bool
-}
+import (
+	. "github.com/retroenv/retrogolib/addressing"
+	"github.com/retroenv/retrogolib/cpu"
+)
 
 // Opcodes maps first opcode bytes to NES CPU instruction information.
 // https://www.masswerk.at/6502/6502_instruction_set.html
-var Opcodes = [256]Opcode{
+var Opcodes = [256]cpu.Opcode{
 	{Instruction: Brk, Addressing: ImpliedAddressing, Timing: 7},   // 0x00
 	{Instruction: Ora, Addressing: IndirectXAddressing, Timing: 6}, // 0x01
 	{}, // 0x02
@@ -269,37 +264,4 @@ var Opcodes = [256]Opcode{
 	{Instruction: Sbc, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xfd
 	{Instruction: Inc, Addressing: AbsoluteXAddressing, Timing: 7, PageCrossCycle: true},           // 0xfe
 	{Instruction: Isc, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xff
-}
-
-// ReadsMemory returns whether the instruction accesses memory reading.
-func (opcode Opcode) ReadsMemory() bool {
-	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
-		return false
-	}
-
-	_, ok := MemoryReadInstructions[opcode.Instruction.Name]
-	return ok
-}
-
-// WritesMemory returns whether the instruction accesses memory writing.
-func (opcode Opcode) WritesMemory() bool {
-	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
-		return false
-	}
-
-	_, ok := MemoryWriteInstructions[opcode.Instruction.Name]
-	return ok
-}
-
-// ReadWritesMemory returns whether the instruction accesses memory reading and writing.
-func (opcode Opcode) ReadWritesMemory() bool {
-	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
-		return false
-	}
-
-	_, ok := MemoryReadWriteInstructions[opcode.Instruction.Name]
-	return ok
 }
