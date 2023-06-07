@@ -9,14 +9,14 @@ import (
 var Adc = &cpu.Instruction{
 	Name: "adc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0x69},
-		ZeroPageAddressing:  {Opcode: 0x65},
-		ZeroPageXAddressing: {Opcode: 0x75},
-		AbsoluteAddressing:  {Opcode: 0x6d},
-		AbsoluteXAddressing: {Opcode: 0x7d},
-		AbsoluteYAddressing: {Opcode: 0x79},
-		IndirectXAddressing: {Opcode: 0x61},
-		IndirectYAddressing: {Opcode: 0x71},
+		ImmediateAddressing: {Opcode: 0x69, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0x65, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x75, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x6d, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x7d, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x79, Size: 3},
+		IndirectXAddressing: {Opcode: 0x61, Size: 2},
+		IndirectYAddressing: {Opcode: 0x71, Size: 2},
 	},
 }
 
@@ -24,14 +24,14 @@ var Adc = &cpu.Instruction{
 var And = &cpu.Instruction{
 	Name: "and",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0x29},
-		ZeroPageAddressing:  {Opcode: 0x25},
-		ZeroPageXAddressing: {Opcode: 0x35},
-		AbsoluteAddressing:  {Opcode: 0x2d},
-		AbsoluteXAddressing: {Opcode: 0x3d},
-		AbsoluteYAddressing: {Opcode: 0x39},
-		IndirectXAddressing: {Opcode: 0x21},
-		IndirectYAddressing: {Opcode: 0x31},
+		ImmediateAddressing: {Opcode: 0x29, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0x25, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x35, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x2d, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x3d, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x39, Size: 3},
+		IndirectXAddressing: {Opcode: 0x21, Size: 2},
+		IndirectYAddressing: {Opcode: 0x31, Size: 2},
 	},
 }
 
@@ -39,11 +39,11 @@ var And = &cpu.Instruction{
 var Asl = &cpu.Instruction{
 	Name: "asl",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AccumulatorAddressing: {Opcode: 0x0a},
-		ZeroPageAddressing:    {Opcode: 0x06},
-		ZeroPageXAddressing:   {Opcode: 0x16},
-		AbsoluteAddressing:    {Opcode: 0x0e},
-		AbsoluteXAddressing:   {Opcode: 0x1e},
+		AccumulatorAddressing: {Opcode: 0x0a, Size: 1},
+		ZeroPageAddressing:    {Opcode: 0x06, Size: 2},
+		ZeroPageXAddressing:   {Opcode: 0x16, Size: 2},
+		AbsoluteAddressing:    {Opcode: 0x0e, Size: 3},
+		AbsoluteXAddressing:   {Opcode: 0x1e, Size: 3},
 	},
 }
 
@@ -51,7 +51,7 @@ var Asl = &cpu.Instruction{
 var Bcc = &cpu.Instruction{
 	Name: "bcc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0x90},
+		RelativeAddressing: {Opcode: 0x90, Size: 2},
 	},
 }
 
@@ -59,7 +59,7 @@ var Bcc = &cpu.Instruction{
 var Bcs = &cpu.Instruction{
 	Name: "bcs",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0xb0},
+		RelativeAddressing: {Opcode: 0xb0, Size: 2},
 	},
 }
 
@@ -67,7 +67,7 @@ var Bcs = &cpu.Instruction{
 var Beq = &cpu.Instruction{
 	Name: "beq",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0xf0},
+		RelativeAddressing: {Opcode: 0xf0, Size: 2},
 	},
 }
 
@@ -75,8 +75,8 @@ var Beq = &cpu.Instruction{
 var Bit = &cpu.Instruction{
 	Name: "bit",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing: {Opcode: 0x24},
-		AbsoluteAddressing: {Opcode: 0x2c},
+		ZeroPageAddressing: {Opcode: 0x24, Size: 2},
+		AbsoluteAddressing: {Opcode: 0x2c, Size: 3},
 	},
 }
 
@@ -84,7 +84,7 @@ var Bit = &cpu.Instruction{
 var Bmi = &cpu.Instruction{
 	Name: "bmi",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0x30},
+		RelativeAddressing: {Opcode: 0x30, Size: 2},
 	},
 }
 
@@ -92,7 +92,7 @@ var Bmi = &cpu.Instruction{
 var Bne = &cpu.Instruction{
 	Name: "bne",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0xd0},
+		RelativeAddressing: {Opcode: 0xd0, Size: 2},
 	},
 }
 
@@ -100,7 +100,7 @@ var Bne = &cpu.Instruction{
 var Bpl = &cpu.Instruction{
 	Name: "bpl",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0x10},
+		RelativeAddressing: {Opcode: 0x10, Size: 2},
 	},
 }
 
@@ -108,7 +108,7 @@ var Bpl = &cpu.Instruction{
 var Brk = &cpu.Instruction{
 	Name: "brk",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x00},
+		ImpliedAddressing: {Opcode: 0x00, Size: 1},
 	},
 }
 
@@ -116,7 +116,7 @@ var Brk = &cpu.Instruction{
 var Bvc = &cpu.Instruction{
 	Name: "bvc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0x50},
+		RelativeAddressing: {Opcode: 0x50, Size: 2},
 	},
 }
 
@@ -124,7 +124,7 @@ var Bvc = &cpu.Instruction{
 var Bvs = &cpu.Instruction{
 	Name: "bvs",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		RelativeAddressing: {Opcode: 0x70},
+		RelativeAddressing: {Opcode: 0x70, Size: 2},
 	},
 }
 
@@ -132,7 +132,7 @@ var Bvs = &cpu.Instruction{
 var Clc = &cpu.Instruction{
 	Name: "clc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x18},
+		ImpliedAddressing: {Opcode: 0x18, Size: 1},
 	},
 }
 
@@ -140,7 +140,7 @@ var Clc = &cpu.Instruction{
 var Cld = &cpu.Instruction{
 	Name: "cld",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xd8},
+		ImpliedAddressing: {Opcode: 0xd8, Size: 1},
 	},
 }
 
@@ -148,7 +148,7 @@ var Cld = &cpu.Instruction{
 var Cli = &cpu.Instruction{
 	Name: "cli",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x58},
+		ImpliedAddressing: {Opcode: 0x58, Size: 1},
 	},
 }
 
@@ -156,7 +156,7 @@ var Cli = &cpu.Instruction{
 var Clv = &cpu.Instruction{
 	Name: "clv",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xb8},
+		ImpliedAddressing: {Opcode: 0xb8, Size: 1},
 	},
 }
 
@@ -164,14 +164,14 @@ var Clv = &cpu.Instruction{
 var Cmp = &cpu.Instruction{
 	Name: "cmp",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xc9},
-		ZeroPageAddressing:  {Opcode: 0xc5},
-		ZeroPageXAddressing: {Opcode: 0xd5},
-		AbsoluteAddressing:  {Opcode: 0xcd},
-		AbsoluteXAddressing: {Opcode: 0xdd},
-		AbsoluteYAddressing: {Opcode: 0xd9},
-		IndirectXAddressing: {Opcode: 0xc1},
-		IndirectYAddressing: {Opcode: 0xd1},
+		ImmediateAddressing: {Opcode: 0xc9, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xc5, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xd5, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xcd, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xdd, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xd9, Size: 3},
+		IndirectXAddressing: {Opcode: 0xc1, Size: 2},
+		IndirectYAddressing: {Opcode: 0xd1, Size: 2},
 	},
 }
 
@@ -179,9 +179,9 @@ var Cmp = &cpu.Instruction{
 var Cpx = &cpu.Instruction{
 	Name: "cpx",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xe0},
-		ZeroPageAddressing:  {Opcode: 0xe4},
-		AbsoluteAddressing:  {Opcode: 0xec},
+		ImmediateAddressing: {Opcode: 0xe0, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xe4, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xec, Size: 3},
 	},
 }
 
@@ -189,9 +189,9 @@ var Cpx = &cpu.Instruction{
 var Cpy = &cpu.Instruction{
 	Name: "cpy",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xc0},
-		ZeroPageAddressing:  {Opcode: 0xc4},
-		AbsoluteAddressing:  {Opcode: 0xcc},
+		ImmediateAddressing: {Opcode: 0xc0, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xc4, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xcc, Size: 3},
 	},
 }
 
@@ -199,10 +199,10 @@ var Cpy = &cpu.Instruction{
 var Dec = &cpu.Instruction{
 	Name: "dec",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing:  {Opcode: 0xc6},
-		ZeroPageXAddressing: {Opcode: 0xd6},
-		AbsoluteAddressing:  {Opcode: 0xce},
-		AbsoluteXAddressing: {Opcode: 0xde},
+		ZeroPageAddressing:  {Opcode: 0xc6, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xd6, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xce, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xde, Size: 3},
 	},
 }
 
@@ -210,7 +210,7 @@ var Dec = &cpu.Instruction{
 var Dex = &cpu.Instruction{
 	Name: "dex",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xca},
+		ImpliedAddressing: {Opcode: 0xca, Size: 1},
 	},
 }
 
@@ -218,7 +218,7 @@ var Dex = &cpu.Instruction{
 var Dey = &cpu.Instruction{
 	Name: "dey",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x88},
+		ImpliedAddressing: {Opcode: 0x88, Size: 1},
 	},
 }
 
@@ -226,14 +226,14 @@ var Dey = &cpu.Instruction{
 var Eor = &cpu.Instruction{
 	Name: "eor",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0x49},
-		ZeroPageAddressing:  {Opcode: 0x45},
-		ZeroPageXAddressing: {Opcode: 0x55},
-		AbsoluteAddressing:  {Opcode: 0x4d},
-		AbsoluteXAddressing: {Opcode: 0x5d},
-		AbsoluteYAddressing: {Opcode: 0x59},
-		IndirectXAddressing: {Opcode: 0x41},
-		IndirectYAddressing: {Opcode: 0x51},
+		ImmediateAddressing: {Opcode: 0x49, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0x45, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x55, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x4d, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x5d, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x59, Size: 3},
+		IndirectXAddressing: {Opcode: 0x41, Size: 2},
+		IndirectYAddressing: {Opcode: 0x51, Size: 2},
 	},
 }
 
@@ -241,10 +241,10 @@ var Eor = &cpu.Instruction{
 var Inc = &cpu.Instruction{
 	Name: "inc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing:  {Opcode: 0xe6},
-		ZeroPageXAddressing: {Opcode: 0xf6},
-		AbsoluteAddressing:  {Opcode: 0xee},
-		AbsoluteXAddressing: {Opcode: 0xfe},
+		ZeroPageAddressing:  {Opcode: 0xe6, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xf6, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xee, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xfe, Size: 3},
 	},
 }
 
@@ -252,7 +252,7 @@ var Inc = &cpu.Instruction{
 var Inx = &cpu.Instruction{
 	Name: "inx",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xe8},
+		ImpliedAddressing: {Opcode: 0xe8, Size: 1},
 	},
 }
 
@@ -260,7 +260,7 @@ var Inx = &cpu.Instruction{
 var Iny = &cpu.Instruction{
 	Name: "iny",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xc8},
+		ImpliedAddressing: {Opcode: 0xc8, Size: 1},
 	},
 }
 
@@ -268,7 +268,7 @@ var Iny = &cpu.Instruction{
 var Jmp = &cpu.Instruction{
 	Name: "jmp",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AbsoluteAddressing: {Opcode: 0x4c},
+		AbsoluteAddressing: {Opcode: 0x4c, Size: 3},
 		IndirectAddressing: {Opcode: 0x6c},
 	},
 }
@@ -277,7 +277,7 @@ var Jmp = &cpu.Instruction{
 var Jsr = &cpu.Instruction{
 	Name: "jsr",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AbsoluteAddressing: {Opcode: 0x20},
+		AbsoluteAddressing: {Opcode: 0x20, Size: 3},
 	},
 }
 
@@ -285,14 +285,14 @@ var Jsr = &cpu.Instruction{
 var Lda = &cpu.Instruction{
 	Name: "lda",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xa9},
-		ZeroPageAddressing:  {Opcode: 0xa5},
-		ZeroPageXAddressing: {Opcode: 0xb5},
-		AbsoluteAddressing:  {Opcode: 0xad},
-		AbsoluteXAddressing: {Opcode: 0xbd},
-		AbsoluteYAddressing: {Opcode: 0xb9},
-		IndirectXAddressing: {Opcode: 0xa1},
-		IndirectYAddressing: {Opcode: 0xb1},
+		ImmediateAddressing: {Opcode: 0xa9, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xa5, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xb5, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xad, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xbd, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xb9, Size: 3},
+		IndirectXAddressing: {Opcode: 0xa1, Size: 2},
+		IndirectYAddressing: {Opcode: 0xb1, Size: 2},
 	},
 }
 
@@ -300,11 +300,11 @@ var Lda = &cpu.Instruction{
 var Ldx = &cpu.Instruction{
 	Name: "ldx",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xa2},
-		ZeroPageAddressing:  {Opcode: 0xa6},
-		ZeroPageYAddressing: {Opcode: 0xb6},
-		AbsoluteAddressing:  {Opcode: 0xae},
-		AbsoluteYAddressing: {Opcode: 0xbe},
+		ImmediateAddressing: {Opcode: 0xa2, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xa6, Size: 2},
+		ZeroPageYAddressing: {Opcode: 0xb6, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xae, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xbe, Size: 3},
 	},
 }
 
@@ -312,11 +312,11 @@ var Ldx = &cpu.Instruction{
 var Ldy = &cpu.Instruction{
 	Name: "ldy",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xa0},
-		ZeroPageAddressing:  {Opcode: 0xa4},
-		ZeroPageXAddressing: {Opcode: 0xb4},
-		AbsoluteAddressing:  {Opcode: 0xac},
-		AbsoluteXAddressing: {Opcode: 0xbc},
+		ImmediateAddressing: {Opcode: 0xa0, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xa4, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xb4, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xac, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xbc, Size: 3},
 	},
 }
 
@@ -324,11 +324,11 @@ var Ldy = &cpu.Instruction{
 var Lsr = &cpu.Instruction{
 	Name: "lsr",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AccumulatorAddressing: {Opcode: 0x4a},
-		ZeroPageAddressing:    {Opcode: 0x46},
-		ZeroPageXAddressing:   {Opcode: 0x56},
-		AbsoluteAddressing:    {Opcode: 0x4e},
-		AbsoluteXAddressing:   {Opcode: 0x5e},
+		AccumulatorAddressing: {Opcode: 0x4a, Size: 1},
+		ZeroPageAddressing:    {Opcode: 0x46, Size: 2},
+		ZeroPageXAddressing:   {Opcode: 0x56, Size: 2},
+		AbsoluteAddressing:    {Opcode: 0x4e, Size: 3},
+		AbsoluteXAddressing:   {Opcode: 0x5e, Size: 3},
 	},
 }
 
@@ -336,7 +336,7 @@ var Lsr = &cpu.Instruction{
 var Nop = &cpu.Instruction{
 	Name: "nop",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xea},
+		ImpliedAddressing: {Opcode: 0xea, Size: 1},
 	},
 }
 
@@ -344,14 +344,14 @@ var Nop = &cpu.Instruction{
 var Ora = &cpu.Instruction{
 	Name: "ora",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0x09},
-		ZeroPageAddressing:  {Opcode: 0x05},
-		ZeroPageXAddressing: {Opcode: 0x15},
-		AbsoluteAddressing:  {Opcode: 0x0d},
-		AbsoluteXAddressing: {Opcode: 0x1d},
-		AbsoluteYAddressing: {Opcode: 0x19},
-		IndirectXAddressing: {Opcode: 0x01},
-		IndirectYAddressing: {Opcode: 0x11},
+		ImmediateAddressing: {Opcode: 0x09, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0x05, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x15, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x0d, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x1d, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x19, Size: 3},
+		IndirectXAddressing: {Opcode: 0x01, Size: 2},
+		IndirectYAddressing: {Opcode: 0x11, Size: 2},
 	},
 }
 
@@ -359,7 +359,7 @@ var Ora = &cpu.Instruction{
 var Pha = &cpu.Instruction{
 	Name: "pha",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x48},
+		ImpliedAddressing: {Opcode: 0x48, Size: 1},
 	},
 }
 
@@ -367,7 +367,7 @@ var Pha = &cpu.Instruction{
 var Php = &cpu.Instruction{
 	Name: "php",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x08},
+		ImpliedAddressing: {Opcode: 0x08, Size: 1},
 	},
 }
 
@@ -375,7 +375,7 @@ var Php = &cpu.Instruction{
 var Pla = &cpu.Instruction{
 	Name: "pla",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x68},
+		ImpliedAddressing: {Opcode: 0x68, Size: 1},
 	},
 }
 
@@ -383,7 +383,7 @@ var Pla = &cpu.Instruction{
 var Plp = &cpu.Instruction{
 	Name: "plp",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x28},
+		ImpliedAddressing: {Opcode: 0x28, Size: 1},
 	},
 }
 
@@ -391,11 +391,11 @@ var Plp = &cpu.Instruction{
 var Rol = &cpu.Instruction{
 	Name: "rol",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AccumulatorAddressing: {Opcode: 0x2a},
-		ZeroPageAddressing:    {Opcode: 0x26},
-		ZeroPageXAddressing:   {Opcode: 0x36},
-		AbsoluteAddressing:    {Opcode: 0x2e},
-		AbsoluteXAddressing:   {Opcode: 0x3e},
+		AccumulatorAddressing: {Opcode: 0x2a, Size: 1},
+		ZeroPageAddressing:    {Opcode: 0x26, Size: 2},
+		ZeroPageXAddressing:   {Opcode: 0x36, Size: 2},
+		AbsoluteAddressing:    {Opcode: 0x2e, Size: 3},
+		AbsoluteXAddressing:   {Opcode: 0x3e, Size: 3},
 	},
 }
 
@@ -403,11 +403,11 @@ var Rol = &cpu.Instruction{
 var Ror = &cpu.Instruction{
 	Name: "ror",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		AccumulatorAddressing: {Opcode: 0x6a},
-		ZeroPageAddressing:    {Opcode: 0x66},
-		ZeroPageXAddressing:   {Opcode: 0x76},
-		AbsoluteAddressing:    {Opcode: 0x6e},
-		AbsoluteXAddressing:   {Opcode: 0x7e},
+		AccumulatorAddressing: {Opcode: 0x6a, Size: 1},
+		ZeroPageAddressing:    {Opcode: 0x66, Size: 2},
+		ZeroPageXAddressing:   {Opcode: 0x76, Size: 2},
+		AbsoluteAddressing:    {Opcode: 0x6e, Size: 3},
+		AbsoluteXAddressing:   {Opcode: 0x7e, Size: 3},
 	},
 }
 
@@ -415,7 +415,7 @@ var Ror = &cpu.Instruction{
 var Rti = &cpu.Instruction{
 	Name: "rti",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x40},
+		ImpliedAddressing: {Opcode: 0x40, Size: 1},
 	},
 }
 
@@ -423,7 +423,7 @@ var Rti = &cpu.Instruction{
 var Rts = &cpu.Instruction{
 	Name: "rts",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x60},
+		ImpliedAddressing: {Opcode: 0x60, Size: 1},
 	},
 }
 
@@ -431,14 +431,14 @@ var Rts = &cpu.Instruction{
 var Sbc = &cpu.Instruction{
 	Name: "sbc",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImmediateAddressing: {Opcode: 0xe9},
-		ZeroPageAddressing:  {Opcode: 0xe5},
-		ZeroPageXAddressing: {Opcode: 0xf5},
-		AbsoluteAddressing:  {Opcode: 0xed},
-		AbsoluteXAddressing: {Opcode: 0xfd},
-		AbsoluteYAddressing: {Opcode: 0xf9},
-		IndirectXAddressing: {Opcode: 0xe1},
-		IndirectYAddressing: {Opcode: 0xf1},
+		ImmediateAddressing: {Opcode: 0xe9, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0xe5, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xf5, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xed, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xfd, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xf9, Size: 3},
+		IndirectXAddressing: {Opcode: 0xe1, Size: 2},
+		IndirectYAddressing: {Opcode: 0xf1, Size: 2},
 	},
 }
 
@@ -446,7 +446,7 @@ var Sbc = &cpu.Instruction{
 var Sec = &cpu.Instruction{
 	Name: "sec",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x38},
+		ImpliedAddressing: {Opcode: 0x38, Size: 1},
 	},
 }
 
@@ -454,7 +454,7 @@ var Sec = &cpu.Instruction{
 var Sed = &cpu.Instruction{
 	Name: "sed",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xf8},
+		ImpliedAddressing: {Opcode: 0xf8, Size: 1},
 	},
 }
 
@@ -462,7 +462,7 @@ var Sed = &cpu.Instruction{
 var Sei = &cpu.Instruction{
 	Name: "sei",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x78},
+		ImpliedAddressing: {Opcode: 0x78, Size: 1},
 	},
 }
 
@@ -470,13 +470,13 @@ var Sei = &cpu.Instruction{
 var Sta = &cpu.Instruction{
 	Name: "sta",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing:  {Opcode: 0x85},
-		ZeroPageXAddressing: {Opcode: 0x95},
-		AbsoluteAddressing:  {Opcode: 0x8d},
-		AbsoluteXAddressing: {Opcode: 0x9d},
-		AbsoluteYAddressing: {Opcode: 0x99},
-		IndirectXAddressing: {Opcode: 0x81},
-		IndirectYAddressing: {Opcode: 0x91},
+		ZeroPageAddressing:  {Opcode: 0x85, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x95, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x8d, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x9d, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x99, Size: 3},
+		IndirectXAddressing: {Opcode: 0x81, Size: 2},
+		IndirectYAddressing: {Opcode: 0x91, Size: 2},
 	},
 }
 
@@ -484,9 +484,9 @@ var Sta = &cpu.Instruction{
 var Stx = &cpu.Instruction{
 	Name: "stx",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing:  {Opcode: 0x86},
-		ZeroPageYAddressing: {Opcode: 0x96},
-		AbsoluteAddressing:  {Opcode: 0x8e},
+		ZeroPageAddressing:  {Opcode: 0x86, Size: 2},
+		ZeroPageYAddressing: {Opcode: 0x96, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x8e, Size: 3},
 	},
 }
 
@@ -494,9 +494,9 @@ var Stx = &cpu.Instruction{
 var Sty = &cpu.Instruction{
 	Name: "sty",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ZeroPageAddressing:  {Opcode: 0x84},
-		ZeroPageXAddressing: {Opcode: 0x94},
-		AbsoluteAddressing:  {Opcode: 0x8c},
+		ZeroPageAddressing:  {Opcode: 0x84, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x94, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x8c, Size: 3},
 	},
 }
 
@@ -504,7 +504,7 @@ var Sty = &cpu.Instruction{
 var Tax = &cpu.Instruction{
 	Name: "tax",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xaa},
+		ImpliedAddressing: {Opcode: 0xaa, Size: 1},
 	},
 }
 
@@ -512,7 +512,7 @@ var Tax = &cpu.Instruction{
 var Tay = &cpu.Instruction{
 	Name: "tay",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xa8},
+		ImpliedAddressing: {Opcode: 0xa8, Size: 1},
 	},
 }
 
@@ -520,7 +520,7 @@ var Tay = &cpu.Instruction{
 var Tsx = &cpu.Instruction{
 	Name: "tsx",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0xba},
+		ImpliedAddressing: {Opcode: 0xba, Size: 1},
 	},
 }
 
@@ -528,7 +528,7 @@ var Tsx = &cpu.Instruction{
 var Txa = &cpu.Instruction{
 	Name: "txa",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x8a},
+		ImpliedAddressing: {Opcode: 0x8a, Size: 1},
 	},
 }
 
@@ -536,7 +536,7 @@ var Txa = &cpu.Instruction{
 var Txs = &cpu.Instruction{
 	Name: "txs",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x9a},
+		ImpliedAddressing: {Opcode: 0x9a, Size: 1},
 	},
 }
 
@@ -544,7 +544,7 @@ var Txs = &cpu.Instruction{
 var Tya = &cpu.Instruction{
 	Name: "tya",
 	Addressing: map[Mode]cpu.AddressingInfo{
-		ImpliedAddressing: {Opcode: 0x98},
+		ImpliedAddressing: {Opcode: 0x98, Size: 1},
 	},
 }
 
