@@ -8,7 +8,7 @@ import (
 // AddressingInfo contains the opcode and timing info for an instruction addressing mode.
 type AddressingInfo struct {
 	Opcode byte
-	Size   int
+	Size   byte
 }
 
 // Instruction contains information about a NES CPU instruction.
