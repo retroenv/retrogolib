@@ -57,7 +57,7 @@ func setupSDL(dimensions Dimensions, backend Backend) (*sdl.Window, *sdl.Rendere
 
 	window, err := sdl.CreateWindow(backend.WindowTitle(), sdl.WINDOWPOS_CENTERED,
 		sdl.WINDOWPOS_CENTERED, width, height,
-		sdl.WINDOW_SHOWN)
+		sdl.WINDOW_SHOWN|sdl.WINDOW_ALLOW_HIGHDPI)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("creating SDL window: %w", err)
 	}
