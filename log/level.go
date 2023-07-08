@@ -51,8 +51,8 @@ func SetDefaultLevel(level Level) {
 	atomic.StoreUintptr(&defaultLevel, uintptr(level))
 }
 
-// replaceLevelName sets custom defined level names for outputting.
-func replaceLevelName(_ []string, a slog.Attr) slog.Attr {
+// ReplaceLevelName sets custom defined level names for outputting.
+func ReplaceLevelName(_ []string, a slog.Attr) slog.Attr {
 	if a.Key != slog.LevelKey {
 		return a
 	}

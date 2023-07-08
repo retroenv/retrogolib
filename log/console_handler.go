@@ -13,6 +13,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+var _ slog.Handler = &ConsoleHandler{}
+
 // consoleLevelString translates a level to a padded string ready for printing on the console.
 var consoleLevelString = map[Level]string{
 	TraceLevel: "TRACE   ",
@@ -35,20 +37,24 @@ type ConsoleHandler struct {
 // ConsoleHandlerOptions are options for a ConsoleHandler.
 // A zero HandlerOptions consists entirely of default values.
 type ConsoleHandlerOptions struct {
-	SlogOptions slog.HandlerOptions
+	SlogOptions *slog.HandlerOptions
 
 	TimeFormat string
 }
 
-// NewConsoleHandler returns a new console handler with default options.
-func NewConsoleHandler(w io.Writer) *ConsoleHandler {
-	opts := &ConsoleHandlerOptions{}
-	return opts.NewConsoleHandler(w)
-}
+// NewConsoleHandler returns a new console handler.
+func NewConsoleHandler(w io.Writer, opts *ConsoleHandlerOptions) *ConsoleHandler {
+	if opts == nil {
+		opts = &ConsoleHandlerOptions{
+			SlogOptions: &slog.HandlerOptions{},
+		}
+	}
 
-// NewConsoleHandler returns a new console handler based on the set options.
-func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandler {
-	internalOpts := opts.SlogOptions
+	internalOpts := slog.HandlerOptions{
+		AddSource:   opts.SlogOptions.AddSource,
+		Level:       opts.SlogOptions.Level,
+		ReplaceAttr: opts.SlogOptions.ReplaceAttr,
+	}
 	timeFormat := opts.TimeFormat
 	if timeFormat == "" {
 		opts.TimeFormat = time.RFC3339
@@ -62,9 +68,8 @@ func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandle
 			return slog.Attr{}
 		}
 
-		rep := opts.SlogOptions.ReplaceAttr
-		if rep != nil {
-			return rep(groups, a)
+		if opts.SlogOptions.ReplaceAttr != nil {
+			return opts.SlogOptions.ReplaceAttr(groups, a)
 		}
 		return a
 	}
@@ -72,7 +77,7 @@ func (opts *ConsoleHandlerOptions) NewConsoleHandler(w io.Writer) *ConsoleHandle
 	return &ConsoleHandler{
 		opts:            *opts,
 		w:               w,
-		internalHandler: internalOpts.NewJSONHandler(w),
+		internalHandler: slog.NewJSONHandler(w, &internalOpts),
 	}
 }
 
@@ -99,7 +104,7 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 		if frame.File != "" {
 			buf.WriteString(frame.File)
 			buf.WriteRune(':')
-			buf.Write([]byte(strconv.Itoa(frame.Line)))
+			buf.WriteString(strconv.Itoa(frame.Line))
 			buf.WriteRune(' ')
 		}
 	}
@@ -107,10 +112,12 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	buf.WriteString(r.Message)
 
 	hasEntries := false
-	r.Attrs(func(a slog.Attr) {
+	r.Attrs(func(a slog.Attr) bool {
 		if a.Key != "" {
 			hasEntries = true
+			return false
 		}
+		return true
 	})
 	if hasEntries {
 		buf.WriteRune(' ')

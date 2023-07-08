@@ -31,6 +31,11 @@ func NewWithConfig(cfg Config) *Logger {
 	level := &slog.LevelVar{}
 	level.Set(cfg.Level)
 
+	opts := &slog.HandlerOptions{
+		AddSource: cfg.CallerInfo,
+		Level:     level,
+	}
+
 	var output io.Writer
 	if cfg.Output == nil {
 		output = os.Stdout
@@ -40,18 +45,15 @@ func NewWithConfig(cfg Config) *Logger {
 
 	handler := cfg.Handler
 	if handler == nil {
-		consoleOpts := ConsoleHandlerOptions{
-			SlogOptions: slog.HandlerOptions{
-				AddSource:   cfg.CallerInfo,
-				Level:       level,
-				ReplaceAttr: replaceLevelName,
-			},
-			TimeFormat: cfg.TimeFormat,
+		opts.ReplaceAttr = ReplaceLevelName
+		consoleOpts := &ConsoleHandlerOptions{
+			SlogOptions: opts,
+			TimeFormat:  cfg.TimeFormat,
 		}
-		if consoleOpts.TimeFormat == "" {
-			consoleOpts.TimeFormat = defaultTimeFormat
+		if cfg.TimeFormat == "" {
+			consoleOpts.TimeFormat = DefaultTimeFormat
 		}
-		handler = consoleOpts.NewConsoleHandler(output)
+		handler = NewConsoleHandler(output, consoleOpts)
 	}
 
 	l := slog.New(handler)

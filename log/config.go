@@ -6,7 +6,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var defaultTimeFormat = "2006-01-02 15:04:05"
+// DefaultTimeFormat is a slimmer default time format used if no other time format is specified.
+const DefaultTimeFormat = "2006-01-02 15:04:05"
 
 // Config represents configuration for a logger.
 type Config struct {
@@ -31,7 +32,7 @@ type Config struct {
 func DefaultConfig() Config {
 	cfg := Config{
 		Level:      DefaultLevel(),
-		TimeFormat: defaultTimeFormat,
+		TimeFormat: DefaultTimeFormat,
 	}
 	return cfg
 }
