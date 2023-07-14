@@ -99,8 +99,8 @@ func (l *Logger) Trace(msg string, args ...any) {
 	l.Log(context.Background(), TraceLevel, msg, args...)
 }
 
-// TraceCtx logs at TraceLevel with the given context.
-func (l *Logger) TraceCtx(ctx context.Context, msg string, args ...any) {
+// TraceContext logs at TraceLevel with the given context.
+func (l *Logger) TraceContext(ctx context.Context, msg string, args ...any) {
 	l.Log(ctx, TraceLevel, msg, args...)
 }
 
@@ -110,8 +110,8 @@ func (l *Logger) Fatal(msg string, args ...any) {
 	fatalExitFunc()
 }
 
-// FatalCtx logs at FatalLevel with the given context.
-func (l *Logger) FatalCtx(ctx context.Context, msg string, args ...any) {
+// FatalContext logs at FatalLevel with the given context.
+func (l *Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 	l.Log(ctx, FatalLevel, msg, args...)
 	fatalExitFunc()
 }
