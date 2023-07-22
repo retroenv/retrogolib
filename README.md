@@ -7,10 +7,13 @@
 
 ## Project layout
 
+    ├─ addressing       general CPU addressing defines and helpers
     ├─ app              common application/service helpers
+    ├─ arch/cpu         Helpers for different CPUs
+    ├─ arch/nes         NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
+    ├─ cpu              general CPU defines and helpers
     ├─ gui              GUIs renderers
     ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
-    ├─ nes              NES common types and helpers
