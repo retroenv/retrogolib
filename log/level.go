@@ -1,9 +1,8 @@
 package log
 
 import (
+	"log/slog"
 	"sync/atomic"
-
-	"golang.org/x/exp/slog"
 )
 
 // Log levels.

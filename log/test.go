@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // TestingT is a subset of the API provided by all *testing.T and

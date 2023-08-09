@@ -2,9 +2,8 @@ package log
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
-
-	"golang.org/x/exp/slog"
 )
 
 // A Field is a marshaling operation used to add a key-value pair to a logger's

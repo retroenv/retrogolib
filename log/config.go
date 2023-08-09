@@ -2,8 +2,7 @@ package log
 
 import (
 	"io"
-
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // DefaultTimeFormat is a slimmer default time format used if no other time format is specified.
