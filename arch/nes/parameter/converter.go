@@ -2,17 +2,26 @@ package parameter
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/retroenv/retrogolib/addressing"
 )
 
+// Config contains the configuration for the parameter converter.
+type Config struct {
+	IndirectNoParentheses bool // do not output parentheses for indirect access
+}
+
 // Converter converts the opcode parameters to specific assembler compatible output.
 type Converter struct {
+	cfg Config
 }
 
 // New returns a new parameter converter.
-func New() Converter {
-	return Converter{}
+func New(cfg Config) Converter {
+	return Converter{
+		cfg: cfg,
+	}
 }
 
 // Immediate converts the parameters to the assembler implementation compatible string.
@@ -117,24 +126,48 @@ func (c Converter) Indirect(param any) string {
 
 // IndirectX converts the parameters to the assembler implementation compatible string.
 func (c Converter) IndirectX(param any) string {
+	var builder strings.Builder
+	if !c.cfg.IndirectNoParentheses {
+		builder.WriteRune('(')
+	}
+
 	switch val := param.(type) {
 	case addressing.Indirect, addressing.IndirectX:
-		return fmt.Sprintf("($%04X,X)", val)
+		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
-		return fmt.Sprintf("(%s,X)", val)
+		builder.WriteString(val)
 	default:
 		panic(fmt.Sprintf("unsupported param type %T", val))
 	}
+
+	builder.WriteString(",X")
+	if !c.cfg.IndirectNoParentheses {
+		builder.WriteRune(')')
+	}
+	s := builder.String()
+	return s
 }
 
 // IndirectY converts the parameters to the assembler implementation compatible string.
 func (c Converter) IndirectY(param any) string {
+	var builder strings.Builder
+	if !c.cfg.IndirectNoParentheses {
+		builder.WriteRune('(')
+	}
+
 	switch val := param.(type) {
 	case addressing.Indirect, addressing.IndirectY:
-		return fmt.Sprintf("($%04X),Y", val)
+		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
-		return fmt.Sprintf("(%s),Y", val)
+		builder.WriteString(val)
 	default:
 		panic(fmt.Sprintf("unsupported param type %T", val))
 	}
+
+	if !c.cfg.IndirectNoParentheses {
+		builder.WriteRune(')')
+	}
+	builder.WriteString(",Y")
+	s := builder.String()
+	return s
 }
