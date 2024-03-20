@@ -41,7 +41,7 @@ func LoadFile(cart *cartridge.Cartridge, reader io.Reader) ([]PrgFlag, error) {
 	}
 
 	prgFlags := make([]PrgFlag, len(cart.PRG))
-	for i := 0; i < len(cart.PRG); i++ {
+	for i := range len(cart.PRG) {
 		prgFlags[i] = PrgFlag(data[i])
 	}
 
