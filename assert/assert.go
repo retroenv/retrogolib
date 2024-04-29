@@ -67,7 +67,7 @@ func False(t *testing.T, value bool, errorMessage ...string) {
 
 func equal(expected, actual any) bool {
 	if expected == nil || actual == nil {
-		return expected == actual
+		return isNil(expected) == isNil(actual)
 	}
 
 	if reflect.DeepEqual(expected, actual) {
@@ -84,6 +84,19 @@ func equal(expected, actual any) bool {
 	}
 
 	return false
+}
+
+func isNil(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(value).IsNil()
+	default:
+		return false
+	}
 }
 
 func fail(t *testing.T, message string, errorMessage ...string) {
