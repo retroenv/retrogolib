@@ -2,7 +2,6 @@
 package buildinfo
 
 import (
-	"fmt"
 	"runtime"
 	"strings"
 )
@@ -13,12 +12,12 @@ func Version(version, commit, date string) string {
 	buf.WriteString(version)
 
 	if commit != "" {
-		buf.WriteString(fmt.Sprintf(" commit: %s", commit))
+		buf.WriteString(" commit: " + commit)
 	}
 	if date != "" {
-		buf.WriteString(fmt.Sprintf(" built at: %s", date))
+		buf.WriteString(" built at: " + date)
 	}
 	goVersion := runtime.Version()
-	buf.WriteString(fmt.Sprintf(" built with: %s", goVersion))
+	buf.WriteString(" built with: " + goVersion)
 	return buf.String()
 }

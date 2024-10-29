@@ -91,6 +91,7 @@ func (l *Logger) With(fields ...any) *Logger {
 }
 
 // Enabled reports whether l emits log records at the given context and level.
+// nolint: contextcheck
 func (l *Logger) Enabled(ctx context.Context, level Level) bool {
 	if ctx == nil {
 		ctx = context.Background()
@@ -171,6 +172,7 @@ func (l *Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 }
 
 // Log emits a log record with the current time and the given level and message.
+// nolint: contextcheck
 func (l *Logger) Log(ctx context.Context, level Level, msg string, args ...any) {
 	if ctx == nil {
 		ctx = context.Background()
