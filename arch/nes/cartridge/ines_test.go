@@ -49,3 +49,22 @@ func TestCartridgeSave(t *testing.T) {
 	b := buf.Bytes()
 	assert.Equal(t, rom, b)
 }
+
+func TestLoadBuffer(t *testing.T) {
+	// test a small buffer
+	buf := []byte{0x60}
+	reader := bytes.NewReader(buf)
+
+	cart, err := LoadBuffer(reader)
+	assert.NoError(t, err)
+	assert.Equal(t, 0x60, cart.PRG[0])
+
+	// test a large buffer
+	buf = make([]byte, 16384+1000)
+	buf[0] = 0x60
+	reader = bytes.NewReader(buf)
+
+	cart, err = LoadBuffer(reader)
+	assert.NoError(t, err)
+	assert.Equal(t, 0x60, cart.PRG[0])
+}

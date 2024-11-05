@@ -75,3 +75,31 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		VideoFormat: header.VideoFormat,
 	}, nil
 }
+
+// LoadBuffer loads an raw binary buffer.
+func LoadBuffer(reader io.Reader) (*Cartridge, error) {
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("reading PRG: %w", err)
+	}
+
+	size := len(b) / 16384
+	if len(b)%16384 != 0 {
+		size++
+	}
+	size *= 16384
+
+	prg := make([]byte, size)
+	copy(prg, b)
+
+	return &Cartridge{
+		PRG:         prg,
+		CHR:         make([]byte, 8192),
+		RAM:         0,
+		Trainer:     nil,
+		Mapper:      0,
+		Mirror:      MirrorVertical,
+		Battery:     0,
+		VideoFormat: 0,
+	}, nil
+}
