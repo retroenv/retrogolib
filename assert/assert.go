@@ -2,6 +2,7 @@
 package assert
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -44,6 +45,23 @@ func Error(t *testing.T, err error, expectedError string, errorMessage ...string
 	}
 
 	msg := fmt.Sprintf("Error message not equal: \nexpected: %v\nactual  : %v", expectedError, actual)
+	fail(t, msg, errorMessage...)
+}
+
+// ErrorIs asserts that a function returned an error that matches the specified error.
+func ErrorIs(t *testing.T, err, expectedError error, errorMessage ...string) {
+	t.Helper()
+	if err == nil {
+		msg := fmt.Sprintf("Error not returned: \nexpected: %v\nactual  : nil", expectedError)
+		fail(t, msg, errorMessage...)
+		return
+	}
+
+	if errors.Is(err, expectedError) {
+		return
+	}
+
+	msg := fmt.Sprintf("Error not equal: \nexpected: %v\nactual  : %v", expectedError, err)
 	fail(t, msg, errorMessage...)
 }
 
