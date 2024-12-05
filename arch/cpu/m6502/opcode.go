@@ -2,12 +2,25 @@ package m6502
 
 import (
 	. "github.com/retroenv/retrogolib/addressing"
-	"github.com/retroenv/retrogolib/cpu"
 )
 
-// Opcodes maps first opcode bytes to NES CPU instruction information.
-// https://www.masswerk.at/6502/6502_instruction_set.html
-var Opcodes = [256]cpu.Opcode{
+// Opcode is a CPU opcode that contains the instruction info and used addressing mode.
+type Opcode struct {
+	Instruction    *Instruction
+	Addressing     Mode
+	Timing         byte
+	PageCrossCycle bool
+}
+
+// OpcodeInfo contains the opcode and timing info for an instruction addressing mode.
+type OpcodeInfo struct {
+	Opcode byte
+	Size   byte
+}
+
+// Opcodes maps the first opcode byte to CPU instruction information.
+// Reference https://www.masswerk.at/6502/6502_instruction_set.html
+var Opcodes = [256]Opcode{
 	{Instruction: Brk, Addressing: ImpliedAddressing, Timing: 7},   // 0x00
 	{Instruction: Ora, Addressing: IndirectXAddressing, Timing: 6}, // 0x01
 	{}, // 0x02
@@ -264,4 +277,37 @@ var Opcodes = [256]cpu.Opcode{
 	{Instruction: Sbc, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xfd
 	{Instruction: Inc, Addressing: AbsoluteXAddressing, Timing: 7, PageCrossCycle: true},           // 0xfe
 	{Instruction: Isc, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xff
+}
+
+// ReadsMemory returns whether the instruction accesses memory reading.
+func (opcode Opcode) ReadsMemory(memoryReadInstructions map[string]struct{}) bool {
+	switch opcode.Addressing {
+	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+		return false
+	}
+
+	_, ok := memoryReadInstructions[opcode.Instruction.Name]
+	return ok
+}
+
+// WritesMemory returns whether the instruction accesses memory writing.
+func (opcode Opcode) WritesMemory(memoryWriteInstructions map[string]struct{}) bool {
+	switch opcode.Addressing {
+	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+		return false
+	}
+
+	_, ok := memoryWriteInstructions[opcode.Instruction.Name]
+	return ok
+}
+
+// ReadWritesMemory returns whether the instruction accesses memory reading and writing.
+func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions map[string]struct{}) bool {
+	switch opcode.Addressing {
+	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+		return false
+	}
+
+	_, ok := memoryReadWriteInstructions[opcode.Instruction.Name]
+	return ok
 }
