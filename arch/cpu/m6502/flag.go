@@ -14,8 +14,8 @@ type Flags struct {
 	N uint8 // negative flag
 }
 
-// GetFlags returns the current state of flags as byte.
-func (c *CPU) GetFlags() uint8 {
+// getFlags returns the current state of flags as byte.
+func (c *CPU) getFlags() uint8 {
 	var f byte
 	f |= c.Flags.C << 0
 	f |= c.Flags.Z << 1
@@ -28,6 +28,7 @@ func (c *CPU) GetFlags() uint8 {
 	return f
 }
 
+// setFlags sets the flags from the given byte.
 func (c *CPU) setFlags(flags uint8) {
 	c.Flags.C = (flags >> 0) & 1
 	c.Flags.Z = (flags >> 1) & 1
@@ -66,11 +67,13 @@ func (c *CPU) setV(set bool) {
 	}
 }
 
+// setZN - set the zero and negative flags.
 func (c *CPU) setZN(value uint8) {
 	c.setZ(value)
 	c.setN(value)
 }
 
+// compare - compare two values and set the zero and negative flags.
 func (c *CPU) compare(a, b byte) {
 	c.setZN(a - b)
 	if a >= b {

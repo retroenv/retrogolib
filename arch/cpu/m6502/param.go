@@ -24,11 +24,11 @@ var paramReader = map[Mode]paramReaderFunc{
 	IndirectYAddressing:   paramReaderIndirectY,
 }
 
-// ReadOpParams reads the opcode parameters after the first opcode byte
+// readOpParams reads the opcode parameters after the first opcode byte
 // and translates it into emulator specific types.
 // resolveIndirect specifies if indirect addresses should be resolved,
 // for Disassembler usage this is not wanted but for Emulator usage.
-func ReadOpParams(c *CPU, addressing Mode, resolveIndirect bool) ([]any, []byte, bool) {
+func readOpParams(c *CPU, addressing Mode, resolveIndirect bool) ([]any, []byte, bool) {
 	fun, ok := paramReader[addressing]
 	if !ok {
 		err := fmt.Errorf("unsupported addressing mode %00x", addressing)

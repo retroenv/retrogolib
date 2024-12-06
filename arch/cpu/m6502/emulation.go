@@ -222,7 +222,7 @@ func pha(c *CPU) {
 }
 
 func php(c *CPU) {
-	f := c.GetFlags()
+	f := c.getFlags()
 	f |= 0b0001_0000 // break is set to 1
 	c.push(f)
 }

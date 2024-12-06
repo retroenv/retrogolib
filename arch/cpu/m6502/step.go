@@ -18,6 +18,7 @@ type TraceStep struct {
 	Instruction    string
 }
 
+// Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
 	oldPC := c.PC
 	opcode, err := c.decodeNextInstruction()
@@ -32,7 +33,7 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	params, opcodes, pageCrossed := ReadOpParams(c, opcode.Addressing, true)
+	params, opcodes, pageCrossed := readOpParams(c, opcode.Addressing, true)
 	c.TraceStep.Opcode = append(c.TraceStep.Opcode, opcodes...)
 	c.TraceStep.PageCrossed = pageCrossed
 
@@ -60,6 +61,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	return opcode, nil
 }
 
+// updatePC updates the program counter based on the instruction execution.
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// update PC only if the instruction execution did not change it
 	if oldPC == c.PC {
