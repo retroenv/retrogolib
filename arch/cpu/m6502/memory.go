@@ -18,6 +18,7 @@ type Memory interface {
 	ReadAddressModes(immediate bool, params ...any) byte
 	ReadWordBug(address uint16) uint16
 	WriteAddressModes(value byte, params ...any)
+	WriteWord(address, value uint16)
 }
 
 // pop pops a byte from the stack and update the stack pointer.
