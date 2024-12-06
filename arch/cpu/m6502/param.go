@@ -70,7 +70,7 @@ func paramReaderAbsoluteX(c *CPU, _ bool) ([]any, []byte, bool) {
 	w := b2<<8 | b1
 	_, pageCrossed := offsetAddress(w, c.X)
 
-	params := []any{Absolute(w), c.X}
+	params := []any{Absolute(w), &c.X}
 	opcodes := []byte{byte(b1), byte(b2)}
 	return params, opcodes, pageCrossed
 }
@@ -81,7 +81,7 @@ func paramReaderAbsoluteY(c *CPU, _ bool) ([]any, []byte, bool) {
 	w := b2<<8 | b1
 	_, pageCrossed := offsetAddress(w, c.Y)
 
-	params := []any{Absolute(w), c.Y}
+	params := []any{Absolute(w), &c.Y}
 	opcodes := []byte{byte(b1), byte(b2)}
 	return params, opcodes, pageCrossed
 }
@@ -97,7 +97,7 @@ func paramReaderZeroPage(c *CPU, _ bool) ([]any, []byte, bool) {
 func paramReaderZeroPageX(c *CPU, _ bool) ([]any, []byte, bool) {
 	b := c.memory.Read(c.PC + 1)
 
-	params := []any{ZeroPage(b), c.X}
+	params := []any{ZeroPage(b), &c.X}
 	opcodes := []byte{b}
 	return params, opcodes, false
 }
@@ -105,7 +105,7 @@ func paramReaderZeroPageX(c *CPU, _ bool) ([]any, []byte, bool) {
 func paramReaderZeroPageY(c *CPU, _ bool) ([]any, []byte, bool) {
 	b := c.memory.Read(c.PC + 1)
 
-	params := []any{ZeroPage(b), c.Y}
+	params := []any{ZeroPage(b), &c.Y}
 	opcodes := []byte{b}
 	return params, opcodes, false
 }
@@ -143,9 +143,9 @@ func paramReaderIndirectX(c *CPU, resolveIndirect bool) ([]any, []byte, bool) {
 	var params []any
 	if resolveIndirect {
 		address = c.memory.ReadWordBug(offset)
-		params = []any{IndirectResolved(address), c.X}
+		params = []any{IndirectResolved(address), &c.X}
 	} else {
-		params = []any{Indirect(address), c.X}
+		params = []any{Indirect(address), &c.X}
 	}
 
 	opcodes := []byte{b}
@@ -161,9 +161,9 @@ func paramReaderIndirectY(c *CPU, resolveIndirect bool) ([]any, []byte, bool) {
 	if resolveIndirect {
 		address = c.memory.ReadWordBug(uint16(b))
 		address, pageCrossed = offsetAddress(address, c.Y)
-		params = []any{IndirectResolved(address), c.Y}
+		params = []any{IndirectResolved(address), &c.Y}
 	} else {
-		params = []any{Indirect(address), c.Y}
+		params = []any{Indirect(address), &c.Y}
 	}
 
 	opcodes := []byte{b}
