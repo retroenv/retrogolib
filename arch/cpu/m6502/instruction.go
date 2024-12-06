@@ -4,7 +4,7 @@ import (
 	. "github.com/retroenv/retrogolib/addressing"
 )
 
-// Instruction contains information about a NES CPU instruction.
+// Instruction contains information about a CPU instruction.
 type Instruction struct {
 	Name       string
 	Unofficial bool
