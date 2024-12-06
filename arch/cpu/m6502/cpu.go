@@ -6,9 +6,10 @@ import (
 	. "github.com/retroenv/retrogolib/addressing"
 )
 
+// Flags contains the status flags of the CPU.
 // Bit No.   7   6   5   4   3   2   1   0
 // Flag      S   V       B   D   I   Z   C
-type flags struct {
+type Flags struct {
 	C uint8 // carry flag
 	Z uint8 // zero flag
 	I uint8 // interrupt disable flag
@@ -19,6 +20,26 @@ type flags struct {
 	N uint8 // negative flag
 }
 
+// Interrupts contains the CPU interrupt info.
+type Interrupts struct {
+	NMITriggered bool
+	NMIRunning   bool
+	IrqTriggered bool
+	IrqRunning   bool
+}
+
+// State contains the current state of the CPU.
+type State struct {
+	A          uint8
+	X          uint8
+	Y          uint8
+	PC         uint16
+	SP         uint8
+	Cycles     uint64
+	Flags      Flags
+	Interrupts Interrupts
+}
+
 type CPU struct {
 	mu sync.RWMutex
 
@@ -27,11 +48,13 @@ type CPU struct {
 	Y     uint8  // y register
 	PC    uint16 // program counter
 	SP    uint8  // stack pointer
-	Flags flags
+	Flags Flags
 
-	cycles uint64
+	cycles      uint64
+	stallCycles uint16 // TODO stall cycles, use a Step() function
 
 	triggerIrq bool
+	triggerNmi bool
 
 	irqRunning bool
 	nmiRunning bool
@@ -57,12 +80,63 @@ func New(memory Memory) *CPU {
 	}
 
 	// read interrupt handler addresses
-	c.nmiAddress = memory.ReadWord(0xFFFA)
-	c.PC = memory.ReadWord(0xFFFC)
-	c.irqAddress = memory.ReadWord(0xFFFE)
+	c.nmiAddress = memory.ReadWordBug(0xFFFA)
+	c.PC = memory.ReadWordBug(0xFFFC)
+	c.irqAddress = memory.ReadWordBug(0xFFFE)
 
 	c.setFlags(initialFlags)
 	return c
+}
+
+// Cycles returns the amount of CPU cycles executed since system start.
+func (c *CPU) Cycles() uint64 {
+	return c.cycles
+}
+
+// StallCycles stalls the CPU for the given amount of cycles. This is used for DMA transfer in the PPU.
+func (c *CPU) StallCycles(cycles uint16) {
+	c.stallCycles = cycles
+}
+
+// TriggerIrq causes a interrupt request to occur on the next cycle.
+func (c *CPU) TriggerIrq() {
+	c.triggerIrq = true
+}
+
+// TriggerNMI causes a non-maskable interrupt to occur on the next cycle.
+func (c *CPU) TriggerNMI() {
+	c.triggerNmi = true
+}
+
+// State returns the current state of the CPU.
+func (c *CPU) State() State {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	state := State{
+		A:      c.A,
+		X:      c.X,
+		Y:      c.Y,
+		PC:     c.PC,
+		SP:     c.SP,
+		Cycles: c.cycles,
+		Flags: Flags{
+			C: c.Flags.C,
+			Z: c.Flags.Z,
+			I: c.Flags.I,
+			D: c.Flags.D,
+			B: c.Flags.B,
+			V: c.Flags.V,
+			N: c.Flags.N,
+		},
+		Interrupts: Interrupts{
+			NMITriggered: c.triggerNmi,
+			NMIRunning:   c.nmiRunning,
+			IrqTriggered: c.triggerIrq,
+			IrqRunning:   c.irqRunning,
+		},
+	}
+	return state
 }
 
 // execute branch jump if the branching op result is true.

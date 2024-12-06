@@ -16,7 +16,7 @@ type Memory interface {
 
 	ReadAbsolute(address any, register any) byte
 	ReadAddressModes(immediate bool, params ...any) byte
-	ReadWord(address uint16) uint16
+	ReadWordBug(address uint16) uint16
 	WriteAddressModes(value byte, params ...any)
 }
 

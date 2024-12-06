@@ -164,7 +164,7 @@ func jmp(c *CPU, params ...any) {
 	case Absolute:
 		c.PC = uint16(address)
 	case Indirect:
-		c.PC = c.memory.ReadWord(uint16(address))
+		c.PC = c.memory.ReadWordBug(uint16(address))
 
 	default:
 		panic(fmt.Sprintf("unsupported jmp mode type %T", param))
