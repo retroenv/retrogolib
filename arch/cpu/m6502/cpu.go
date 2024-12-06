@@ -42,7 +42,7 @@ type CPU struct {
 
 	TraceStep TraceStep
 
-	memory Memory
+	memory *Memory
 }
 
 const (
@@ -52,7 +52,7 @@ const (
 )
 
 // New creates a new CPU.
-func New(memory Memory) *CPU {
+func New(memory *Memory) *CPU {
 	c := &CPU{
 		SP:     InitialStack,
 		cycles: initialCycles,
@@ -60,9 +60,9 @@ func New(memory Memory) *CPU {
 	}
 
 	// read interrupt handler addresses
-	c.nmiAddress = memory.ReadWordBug(0xFFFA)
-	c.PC = memory.ReadWordBug(0xFFFC)
-	c.irqAddress = memory.ReadWordBug(0xFFFE)
+	c.nmiAddress = memory.ReadWordBug(NMIAddress)
+	c.PC = memory.ReadWordBug(ResetAddress)
+	c.irqAddress = memory.ReadWordBug(IrqAddress)
 
 	c.setFlags(initialFlags)
 	return c
@@ -119,4 +119,31 @@ func (c *CPU) branch(branchTo bool, param any) {
 
 	c.PC = uint16(addr)
 	c.cycles++
+}
+
+// pop pops a byte from the stack and update the stack pointer.
+func (c *CPU) pop() byte {
+	c.SP++
+	return c.memory.Read(uint16(StackBase + int(c.SP)))
+}
+
+// pop16 pops a word from the stack and updates the stack pointer.
+func (c *CPU) pop16() uint16 {
+	low := uint16(c.pop())
+	high := uint16(c.pop())
+	return high<<8 | low
+}
+
+// push a value to the stack and update the stack pointer.
+func (c *CPU) push(value byte) {
+	c.memory.Write(uint16(StackBase+int(c.SP)), value)
+	c.SP--
+}
+
+// push16 a word to the stack and update the stack pointer.
+func (c *CPU) push16(value uint16) {
+	high := byte(value >> 8)
+	low := byte(value)
+	c.push(high)
+	c.push(low)
 }
