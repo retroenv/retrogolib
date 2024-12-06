@@ -18,6 +18,25 @@ func (c *CPU) TriggerNMI() {
 	c.triggerNmi = true
 }
 
+// CheckInterrupts checks for triggered interrupts and executes them.
+func (c *CPU) CheckInterrupts() {
+	if c.triggerNmi {
+		c.nmi()
+	}
+	if c.triggerIrq {
+		c.irq()
+	}
+}
+
+func (c *CPU) nmi() {
+	c.mu.Lock()
+	c.triggerNmi = false
+	c.nmiRunning = true
+	c.mu.Unlock()
+
+	c.executeInterrupt(c.nmiAddress)
+}
+
 func (c *CPU) irq() {
 	c.mu.Lock()
 	c.triggerIrq = false
