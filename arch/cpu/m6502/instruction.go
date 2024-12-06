@@ -190,7 +190,7 @@ var Clv = &Instruction{
 	NoParamFunc: clv,
 }
 
-// Cmp - Compare - compares the contents of A.
+// Cmp - Compare the contents of A.
 var Cmp = &Instruction{
 	Name: "cmp",
 	Addressing: map[Mode]OpcodeInfo{
@@ -206,7 +206,7 @@ var Cmp = &Instruction{
 	ParamFunc: cmp,
 }
 
-// Cpx - Compare X Register - compares the contents of X.
+// Cpx - Compare the contents of X.
 var Cpx = &Instruction{
 	Name: "cpx",
 	Addressing: map[Mode]OpcodeInfo{
@@ -217,7 +217,7 @@ var Cpx = &Instruction{
 	ParamFunc: cpx,
 }
 
-// Cpy - Compare Y Register - compares the contents of Y.
+// Cpy - Compare the contents of Y.
 var Cpy = &Instruction{
 	Name: "cpy",
 	Addressing: map[Mode]OpcodeInfo{
