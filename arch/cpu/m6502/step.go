@@ -40,11 +40,15 @@ func (c *CPU) Step() error {
 		c.cycles++
 	}
 
-	c.TraceStep.Opcode = append(c.TraceStep.Opcode, opcodes...)
-	c.TraceStep.PageCrossed = pageCrossed
+	opcodeLen := len(opcodes) + 1
+
+	if c.opts.tracing {
+		c.TraceStep.Opcode = append(c.TraceStep.Opcode, opcodes...)
+		c.TraceStep.PageCrossed = pageCrossed
+	}
 
 	ins.ParamFunc(c, params...)
-	c.updatePC(ins, oldPC, len(c.TraceStep.Opcode))
+	c.updatePC(ins, oldPC, opcodeLen)
 	return nil
 }
 
@@ -56,13 +60,15 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 		return Opcode{}, fmt.Errorf("unsupported opcode %00x", b)
 	}
 
-	c.TraceStep = TraceStep{
-		PC:             c.PC,
-		Opcode:         []byte{b},
-		Addressing:     opcode.Addressing,
-		Timing:         opcode.Timing,
-		PageCrossCycle: opcode.PageCrossCycle,
-		PageCrossed:    false,
+	if c.opts.tracing {
+		c.TraceStep = TraceStep{
+			PC:             c.PC,
+			Opcode:         []byte{b},
+			Addressing:     opcode.Addressing,
+			Timing:         opcode.Timing,
+			PageCrossCycle: opcode.PageCrossCycle,
+			PageCrossed:    false,
+		}
 	}
 	return opcode, nil
 }
@@ -79,7 +85,7 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	} else {
 		// page crossing is measured based on the start of the instruction that follows the
 		// current instruction
-		nextAddress := oldPC + uint16(len(c.TraceStep.Opcode))
+		nextAddress := oldPC + uint16(amount-1)
 		pageCrossed := c.PC&0xff00 != nextAddress&0xff00
 		if pageCrossed {
 			c.accountBranchingPageCrossCycle(ins)
