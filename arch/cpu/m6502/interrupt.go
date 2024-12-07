@@ -18,14 +18,18 @@ func (c *CPU) TriggerNMI() {
 	c.triggerNmi = true
 }
 
-// CheckInterrupts checks for triggered interrupts and executes them.
-func (c *CPU) CheckInterrupts() {
+// CheckInterrupts checks if an interrupt is triggered and executes it.
+// It returns true if an interrupt was executed.
+func (c *CPU) CheckInterrupts() bool {
 	if c.triggerNmi {
 		c.nmi()
+		return true
 	}
 	if c.triggerIrq {
 		c.irq()
+		return true
 	}
+	return false
 }
 
 func (c *CPU) nmi() {

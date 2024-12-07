@@ -34,6 +34,12 @@ func (c *CPU) Step() error {
 	}
 
 	params, opcodes, pageCrossed := readOpParams(c, opcode.Addressing, true)
+
+	c.cycles += uint64(opcode.Timing)
+	if pageCrossed {
+		c.cycles++
+	}
+
 	c.TraceStep.Opcode = append(c.TraceStep.Opcode, opcodes...)
 	c.TraceStep.PageCrossed = pageCrossed
 

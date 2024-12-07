@@ -40,6 +40,7 @@ type CPU struct {
 	irqAddress uint16
 	nmiAddress uint16
 
+	opts      Options
 	TraceStep TraceStep
 
 	memory *Memory
@@ -52,10 +53,12 @@ const (
 )
 
 // New creates a new CPU.
-func New(memory *Memory) *CPU {
+func New(memory *Memory, options ...Option) *CPU {
+	opts := NewOptions(options...)
 	c := &CPU{
 		SP:     InitialStack,
 		cycles: initialCycles,
+		opts:   opts,
 		memory: memory,
 	}
 
