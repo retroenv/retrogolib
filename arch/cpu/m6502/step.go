@@ -19,18 +19,18 @@ type TraceStep struct {
 }
 
 // Step executes the next instruction in the CPU.
-func (c *CPU) Step() error {
+func (c *CPU) Step() (*Instruction, []any, error) {
 	oldPC := c.PC
 	opcode, err := c.decodeNextInstruction()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
 		ins.NoParamFunc(c)
 		c.updatePC(ins, oldPC, 1)
-		return nil
+		return ins, nil, nil
 	}
 
 	params, opcodes, pageCrossed := readOpParams(c, opcode.Addressing, true)
@@ -45,11 +45,12 @@ func (c *CPU) Step() error {
 	if c.opts.tracing {
 		c.TraceStep.Opcode = append(c.TraceStep.Opcode, opcodes...)
 		c.TraceStep.PageCrossed = pageCrossed
+		c.TraceStep.Unofficial = ins.Unofficial
 	}
 
 	ins.ParamFunc(c, params...)
 	c.updatePC(ins, oldPC, opcodeLen)
-	return nil
+	return ins, params, nil
 }
 
 // decodeNextInstruction decodes the current instruction at the program counter.

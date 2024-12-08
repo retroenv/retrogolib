@@ -258,7 +258,7 @@ func pha(c *CPU) {
 
 // php - Push Processor Status - push status flags to stack.
 func php(c *CPU) {
-	f := c.getFlags()
+	f := c.GetFlags()
 	f |= 0b0001_0000 // break is set to 1
 	c.push(f)
 }

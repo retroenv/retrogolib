@@ -771,7 +771,7 @@ func TestPlp(t *testing.T) {
 	cpu.memory.Write(StackBase+2, 1)
 	plp(cpu)
 
-	assert.Equal(t, 0b0010_0001, cpu.getFlags())
+	assert.Equal(t, 0b0010_0001, cpu.GetFlags())
 	assert.Equal(t, 2, cpu.SP)
 }
 

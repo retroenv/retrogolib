@@ -14,8 +14,8 @@ type Flags struct {
 	N uint8 // negative flag
 }
 
-// getFlags returns the current state of flags as byte.
-func (c *CPU) getFlags() uint8 {
+// GetFlags returns the current state of flags as byte.
+func (c *CPU) GetFlags() uint8 {
 	var f byte
 	f |= c.Flags.C << 0
 	f |= c.Flags.Z << 1
