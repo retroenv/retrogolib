@@ -15,6 +15,17 @@ type Instruction struct {
 	ParamFunc   func(c *CPU, params ...any) // emulation function to execute when the instruction has parameters
 }
 
+// HasAddressing returns whether the instruction has any of the passed addressing modes.
+func (ins Instruction) HasAddressing(flags ...Mode) bool {
+	for _, flag := range flags {
+		_, ok := ins.Addressing[flag]
+		if ok {
+			return ok
+		}
+	}
+	return false
+}
+
 // Adc - Add with Carry.
 var Adc = &Instruction{
 	Name: "adc",
