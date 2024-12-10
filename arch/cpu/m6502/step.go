@@ -33,12 +33,17 @@ func (c *CPU) Step() error {
 			c.opts.preExecutionHook(c, ins)
 		}
 
-		ins.NoParamFunc(c)
+		if err := ins.NoParamFunc(c); err != nil {
+			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
+		}
 		c.updatePC(ins, oldPC, 1)
 		return nil
 	}
 
-	params, operands, pageCrossed := readOpParams(c, opcode.Addressing)
+	params, operands, pageCrossed, err := readOpParams(c, opcode.Addressing)
+	if err != nil {
+		return fmt.Errorf("reading opcode params: %w", err)
+	}
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
 		c.TraceStep.PageCrossed = pageCrossed
@@ -53,7 +58,9 @@ func (c *CPU) Step() error {
 
 	opcodeLen := len(operands) + 1
 
-	ins.ParamFunc(c, params...)
+	if err := ins.ParamFunc(c, params...); err != nil {
+		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
+	}
 	c.updatePC(ins, oldPC, opcodeLen)
 	return nil
 }

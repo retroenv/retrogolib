@@ -52,7 +52,7 @@ func (c *CPU) irq() {
 
 func (c *CPU) executeInterrupt(funAddress uint16) {
 	c.push16(c.PC)
-	php(c)
+	_ = php(c)
 
 	if funAddress != 0 {
 		c.Flags.I = 1

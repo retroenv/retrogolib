@@ -13,14 +13,18 @@ func TestParameterAbsolute(t *testing.T) {
 	}
 	conv := New(cfg)
 	var s string
+	var err error
 
-	s = conv.Absolute(addressing.Absolute(0x1000))
+	s, err = conv.Absolute(addressing.Absolute(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000", s)
 
-	s = conv.AbsoluteX(addressing.Absolute(0x1000))
+	s, err = conv.AbsoluteX(addressing.Absolute(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000,X", s)
 
-	s = conv.AbsoluteY(addressing.Absolute(0x1000))
+	s, err = conv.AbsoluteY(addressing.Absolute(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000,Y", s)
 }
 
@@ -30,14 +34,18 @@ func TestParameterZeroPage(t *testing.T) {
 	}
 	conv := New(cfg)
 	var s string
+	var err error
 
-	s = conv.ZeroPage(addressing.ZeroPage(0x10))
+	s, err = conv.ZeroPage(addressing.ZeroPage(0x10))
+	assert.NoError(t, err)
 	assert.Equal(t, "<$10", s)
 
-	s = conv.ZeroPageX(addressing.ZeroPage(0x10))
+	s, err = conv.ZeroPageX(addressing.ZeroPage(0x10))
+	assert.NoError(t, err)
 	assert.Equal(t, "<$10,X", s)
 
-	s = conv.ZeroPageY(addressing.ZeroPage(0x10))
+	s, err = conv.ZeroPageY(addressing.ZeroPage(0x10))
+	assert.NoError(t, err)
 	assert.Equal(t, "<$10,Y", s)
 }
 
@@ -48,13 +56,17 @@ func TestParameterIndirect(t *testing.T) {
 	}
 	conv := New(cfg)
 	var s string
+	var err error
 
-	s = conv.Indirect(addressing.Indirect(0x1000))
+	s, err = conv.Indirect(addressing.Indirect(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "[$1000]", s)
 
-	s = conv.IndirectX(addressing.Indirect(0x1000))
+	s, err = conv.IndirectX(addressing.Indirect(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "[$1000,X]", s)
 
-	s = conv.IndirectY(addressing.Indirect(0x1000))
+	s, err = conv.IndirectY(addressing.Indirect(0x1000))
+	assert.NoError(t, err)
 	assert.Equal(t, "[$1000],Y", s)
 }

@@ -11,8 +11,8 @@ type Instruction struct {
 
 	Addressing map[Mode]OpcodeInfo // addressing mode mapping to opcode info
 
-	NoParamFunc func(c *CPU)                // emulation function to execute when the instruction has no parameters
-	ParamFunc   func(c *CPU, params ...any) // emulation function to execute when the instruction has parameters
+	NoParamFunc func(c *CPU) error                // emulation function to execute when the instruction has no parameters
+	ParamFunc   func(c *CPU, params ...any) error // emulation function to execute when the instruction has parameters
 }
 
 // HasAddressing returns whether the instruction has any of the passed addressing modes.

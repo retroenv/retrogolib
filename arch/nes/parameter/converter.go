@@ -38,7 +38,7 @@ func (c Converter) Accumulator() string {
 }
 
 // Absolute converts the parameters to the assembler implementation compatible string.
-func (c Converter) Absolute(param any) string {
+func (c Converter) Absolute(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
@@ -48,15 +48,14 @@ func (c Converter) Absolute(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // AbsoluteX converts the parameters to the assembler implementation compatible string.
-func (c Converter) AbsoluteX(param any) string {
+func (c Converter) AbsoluteX(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
@@ -66,16 +65,15 @@ func (c Converter) AbsoluteX(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(",X")
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // AbsoluteY converts the parameters to the assembler implementation compatible string.
-func (c Converter) AbsoluteY(param any) string {
+func (c Converter) AbsoluteY(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
@@ -85,16 +83,15 @@ func (c Converter) AbsoluteY(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(",Y")
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // ZeroPage converts the parameters to the assembler implementation compatible string.
-func (c Converter) ZeroPage(param any) string {
+func (c Converter) ZeroPage(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
@@ -104,15 +101,14 @@ func (c Converter) ZeroPage(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // ZeroPageX converts the parameters to the assembler implementation compatible string.
-func (c Converter) ZeroPageX(param any) string {
+func (c Converter) ZeroPageX(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
@@ -122,16 +118,15 @@ func (c Converter) ZeroPageX(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(",X")
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // ZeroPageY converts the parameters to the assembler implementation compatible string.
-func (c Converter) ZeroPageY(param any) string {
+func (c Converter) ZeroPageY(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
@@ -141,12 +136,11 @@ func (c Converter) ZeroPageY(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(",Y")
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // Relative converts the parameters to the assembler implementation compatible string.
@@ -158,7 +152,7 @@ func (c Converter) Relative(param any) string {
 }
 
 // Indirect converts the parameters to the assembler implementation compatible string.
-func (c Converter) Indirect(param any) string {
+func (c Converter) Indirect(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.IndirectPrefix)
 
@@ -166,17 +160,19 @@ func (c Converter) Indirect(param any) string {
 	if ok {
 		builder.WriteString(fmt.Sprintf("$%04X", address))
 	} else {
-		alias := param.(string)
+		alias, ok := param.(string)
+		if !ok {
+			return "", fmt.Errorf("unsupported param type %T", param)
+		}
 		builder.WriteString(alias)
 	}
 
 	builder.WriteString(c.cfg.IndirectSuffix)
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // IndirectX converts the parameters to the assembler implementation compatible string.
-func (c Converter) IndirectX(param any) string {
+func (c Converter) IndirectX(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.IndirectPrefix)
 
@@ -186,17 +182,16 @@ func (c Converter) IndirectX(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(",X")
 	builder.WriteString(c.cfg.IndirectSuffix)
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }
 
 // IndirectY converts the parameters to the assembler implementation compatible string.
-func (c Converter) IndirectY(param any) string {
+func (c Converter) IndirectY(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.IndirectPrefix)
 
@@ -206,11 +201,10 @@ func (c Converter) IndirectY(param any) string {
 	case string:
 		builder.WriteString(val)
 	default:
-		panic(fmt.Sprintf("unsupported param type %T", val))
+		return "", fmt.Errorf("unsupported param type %T", val)
 	}
 
 	builder.WriteString(c.cfg.IndirectSuffix)
 	builder.WriteString(",Y")
-	s := builder.String()
-	return s
+	return builder.String(), nil
 }

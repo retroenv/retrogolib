@@ -26,15 +26,14 @@ var paramReader = map[Mode]paramReaderFunc{
 
 // readOpParams reads the opcode parameters after the first opcode byte
 // and translates it into emulator specific types.
-func readOpParams(c *CPU, addressing Mode) ([]any, []byte, bool) {
+func readOpParams(c *CPU, addressing Mode) ([]any, []byte, bool, error) {
 	fun, ok := paramReader[addressing]
 	if !ok {
-		err := fmt.Errorf("unsupported addressing mode %00x", addressing)
-		panic(err)
+		return nil, nil, false, fmt.Errorf("unsupported addressing mode %00x", addressing)
 	}
 
 	params, opcodes, pageCrossed := fun(c)
-	return params, opcodes, pageCrossed
+	return params, opcodes, pageCrossed, nil
 }
 
 func paramReaderImplied(_ *CPU) ([]any, []byte, bool) {

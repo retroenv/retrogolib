@@ -24,24 +24,35 @@ func TestMemoryImmediate(t *testing.T) {
 	m := NewMemory(&testMemory{})
 
 	i := new(uint8)
-	m.WriteAddressModes(1, i)
+	assert.NoError(t, m.WriteAddressModes(1, i))
 	assert.Equal(t, 1, *i)
 
-	assert.Equal(t, 1, m.ReadAddressModes(true, i))
-	assert.Equal(t, 1, m.ReadAddressModes(true, 1))
+	val, err := m.ReadAddressModes(true, i)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
+
+	val, err = m.ReadAddressModes(true, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
 }
 
 func TestMemoryAbsoluteInt(t *testing.T) {
 	t.Parallel()
 	m := NewMemory(&testMemory{})
 
-	m.WriteAddressModes(1, 2)
+	assert.NoError(t, m.WriteAddressModes(1, 2))
 	assert.Equal(t, 1, m.Read(2))
-	assert.Equal(t, 1, m.ReadAddressModes(false, 2))
 
-	m.WriteAddressModes(1, Absolute(3))
+	val, err := m.ReadAddressModes(false, 2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
+
+	assert.NoError(t, m.WriteAddressModes(1, Absolute(3)))
 	assert.Equal(t, 1, m.Read(2))
-	assert.Equal(t, 1, m.ReadAddressModes(false, Absolute(3)))
+
+	val, err = m.ReadAddressModes(false, Absolute(3))
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
 }
 
 func TestReadWord(t *testing.T) {
