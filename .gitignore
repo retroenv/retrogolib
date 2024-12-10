@@ -14,4 +14,4 @@
 *.asm
 *.o
 *.dbg
-.testCoverage
+coverage.txt
