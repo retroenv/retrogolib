@@ -9,6 +9,10 @@ import (
 )
 
 const (
+	// InterruptVectorStartAddress can be used to reference the starting address
+	// of the interrupt vectors.
+	InterruptVectorStartAddress = 0xFFFA
+
 	IrqAddress   = 0xFFFE
 	NMIAddress   = 0xFFFA
 	ResetAddress = 0xFFFC
