@@ -1,4 +1,4 @@
-// Package sdl provides an SDL GUI renderer.
+// Package sdl provides a SDL GUI renderer.
 package sdl
 
 import (

@@ -1,4 +1,4 @@
-package sdl
+package opengl
 
 import (
 	"fmt"
@@ -84,69 +84,34 @@ var (
 )
 
 var importsGl = map[string]any{
+	"glBegin":          &glBegin,
+	"glBindTexture":    &glBindTexture,
 	"glDeleteTextures": &glDeleteTextures,
 	"glEnable":         &glEnable,
-	"glGenTextures":    &glGenTextures,
-	"glBindTexture":    &glBindTexture,
-	"glTexImage2D":     &glTexImage2D,
-	"glTexSubImage2D":  &glTexSubImage2D,
-	"glTexParameteri":  &glTexParameteri,
-	"glMatrixMode":     &glMatrixMode,
-	"glLoadIdentity":   &glLoadIdentity,
-	"glOrtho":          &glOrtho,
-	"glBegin":          &glBegin,
-	"glTexCoord2d":     &glTexCoord2d,
-	"glVertex2d":       &glVertex2d,
 	"glEnd":            &glEnd,
+	"glGenTextures":    &glGenTextures,
+	"glLoadIdentity":   &glLoadIdentity,
+	"glMatrixMode":     &glMatrixMode,
+	"glOrtho":          &glOrtho,
+	"glTexCoord2d":     &glTexCoord2d,
+	"glTexImage2D":     &glTexImage2D,
+	"glTexParameteri":  &glTexParameteri,
+	"glTexSubImage2D":  &glTexSubImage2D,
+	"glVertex2d":       &glVertex2d,
 }
 
 var importsGlfw = map[string]any{
-	"glfwWindowShouldClose":    &glfwWindowShouldClose,
+	"glfwCreateWindow":         &glfwCreateWindow,
 	"glfwInit":                 &glfwInit,
+	"glfwMakeContextCurrent":   &glfwMakeContextCurrent,
+	"glfwPollEvents":           &glfwPollEvents,
+	"glfwSetKeyCallback":       &glfwSetKeyCallback,
+	"glfwSetWindowShouldClose": &glfwSetWindowShouldClose,
+	"glfwSwapBuffers":          &glfwSwapBuffers,
+	"glfwSwapInterval":         &glfwSwapInterval,
 	"glfwTerminate":            &glfwTerminate,
 	"glfwWindowHint":           &glfwWindowHint,
-	"glfwCreateWindow":         &glfwCreateWindow,
-	"glfwSetKeyCallback":       &glfwSetKeyCallback,
-	"glfwMakeContextCurrent":   &glfwMakeContextCurrent,
-	"glfwSwapInterval":         &glfwSwapInterval,
-	"glfwSwapBuffers":          &glfwSwapBuffers,
-	"glfwPollEvents":           &glfwPollEvents,
-	"glfwSetWindowShouldClose": &glfwSetWindowShouldClose,
-}
-
-func setupLibrary() error {
-	libName, err := getOpenGLSystemLibrary()
-	if err != nil {
-		return fmt.Errorf("getting OpenGL system library: %w", err)
-	}
-
-	lib, err := purego.Dlopen(libName, purego.RTLD_NOW|purego.RTLD_GLOBAL)
-	if err != nil {
-		return fmt.Errorf("loading OpenGL system library: %w", err)
-	}
-
-	for name, ptr := range importsGl {
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return fmt.Errorf("registering OpenGL function '%s': %w", name, err)
-		}
-	}
-
-	libName, err = getGlfwSystemLibrary()
-	if err != nil {
-		return fmt.Errorf("getting GLUT system library: %w", err)
-	}
-
-	lib, err = purego.Dlopen(libName, purego.RTLD_NOW|purego.RTLD_GLOBAL)
-	if err != nil {
-		return fmt.Errorf("loading GLUT system library: %w", err)
-	}
-
-	for name, ptr := range importsGlfw {
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return fmt.Errorf("registering GLUT function '%s': %w", name, err)
-		}
-	}
-	return nil
+	"glfwWindowShouldClose":    &glfwWindowShouldClose,
 }
 
 func registerFunction(lib uintptr, name string, ptr any) (err error) {

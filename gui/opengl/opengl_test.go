@@ -1,6 +1,6 @@
 //go:build manualtest
 
-package sdl
+package opengl
 
 import (
 	"image"
