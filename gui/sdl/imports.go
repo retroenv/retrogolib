@@ -41,42 +41,19 @@ var (
 )
 
 var imports = map[string]any{
-	"SDL_Init":     &Init,
-	"SDL_GetError": &GetError,
-	"SDL_Quit":     &Quit,
-
-	"SDL_CreateWindow":  &CreateWindow,
-	"SDL_DestroyWindow": &DestroyWindow,
-
 	"SDL_CreateRenderer":  &CreateRenderer,
+	"SDL_CreateTexture":   &CreateTexture,
+	"SDL_CreateWindow":    &CreateWindow,
+	"SDL_DestroyRenderer": &DestroyRenderer,
+	"SDL_DestroyTexture":  &DestroyTexture,
+	"SDL_DestroyWindow":   &DestroyWindow,
+	"SDL_GetError":        &GetError,
+	"SDL_Init":            &Init,
+	"SDL_PollEvent":       &PollEvent,
+	"SDL_Quit":            &Quit,
 	"SDL_RenderCopy":      &RenderCopy,
 	"SDL_RenderPresent":   &RenderPresent,
-	"SDL_DestroyRenderer": &DestroyRenderer,
-
-	"SDL_CreateTexture":  &CreateTexture,
-	"SDL_UpdateTexture":  &UpdateTexture,
-	"SDL_DestroyTexture": &DestroyTexture,
-
-	"SDL_PollEvent": &PollEvent,
-}
-
-func setupLibrary() error {
-	libName, err := getSDLSystemLibrary()
-	if err != nil {
-		return fmt.Errorf("getting SDL system library: %w", err)
-	}
-
-	lib, err := purego.Dlopen(libName, purego.RTLD_NOW|purego.RTLD_GLOBAL)
-	if err != nil {
-		return fmt.Errorf("loading SDL system library: %w", err)
-	}
-
-	for name, ptr := range imports {
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return err
-		}
-	}
-	return nil
+	"SDL_UpdateTexture":   &UpdateTexture,
 }
 
 func registerFunction(lib uintptr, name string, ptr any) (err error) {

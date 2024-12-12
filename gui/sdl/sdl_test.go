@@ -46,8 +46,8 @@ func (b *backend) WindowTitle() string {
 	return "unit-test"
 }
 
-func (b *backend) KeyDown(key input.Key) {
+func (b *backend) KeyDown(_ input.Key) {
 }
 
-func (b *backend) KeyUp(key input.Key) {
+func (b *backend) KeyUp(_ input.Key) {
 }
