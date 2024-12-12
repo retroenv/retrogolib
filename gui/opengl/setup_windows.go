@@ -13,7 +13,10 @@ func setupLibrary() error {
 		return fmt.Errorf("getting OpenGL system library: %w", err)
 	}
 
-	lib := syscall.NewLazyDLL(libName).Handle()
+	lib, err := loadLibrary(libName)
+	if err != nil {
+		return fmt.Errorf("loading OpenGL library: %w", err)
+	}
 
 	for name, ptr := range importsGl {
 		if err := registerFunction(lib, name, ptr); err != nil {
@@ -26,7 +29,10 @@ func setupLibrary() error {
 		return fmt.Errorf("getting GLUT system library: %w", err)
 	}
 
-	lib := syscall.NewLazyDLL(libName).Handle()
+	lib, err = loadLibrary(libName)
+	if err != nil {
+		return fmt.Errorf("loading GLUT library: %w", err)
+	}
 
 	for name, ptr := range importsGlfw {
 		if err := registerFunction(lib, name, ptr); err != nil {
@@ -34,4 +40,15 @@ func setupLibrary() error {
 		}
 	}
 	return nil
+}
+
+func loadLibrary(libName string) (handle uintptr, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("loading library '%s': %v", libName, r)
+		}
+	}()
+
+	handle = syscall.NewLazyDLL(libName).Handle()
+	return handle, err
 }
