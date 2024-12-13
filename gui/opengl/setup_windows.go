@@ -10,7 +10,7 @@ import (
 func setupLibrary() error {
 	libName, err := getOpenGLSystemLibrary()
 	if err != nil {
-		return fmt.Errorf("getting OpenGL system library: %w", err)
+		return fmt.Errorf("getting OpenGL library: %w", err)
 	}
 
 	lib, err := loadLibrary(libName)
@@ -26,7 +26,7 @@ func setupLibrary() error {
 
 	libName, err = getGlfwSystemLibrary()
 	if err != nil {
-		return fmt.Errorf("getting GLFW system library: %w", err)
+		return fmt.Errorf("getting GLFW library: %w", err)
 	}
 
 	lib, err = loadLibrary(libName)
