@@ -37,3 +37,15 @@ func TestInterfaceNilEqual(t *testing.T) {
 	var values []int
 	Equal(t, nil, values)
 }
+
+func TestLen(t *testing.T) {
+	Len(t, []int{1, 2, 3}, 3)
+}
+
+func TestNotNil(t *testing.T) {
+	NotNil(t, "not nil")
+}
+
+func TestNil(t *testing.T) {
+	Nil(t, nil)
+}

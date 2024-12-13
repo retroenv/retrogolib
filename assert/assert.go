@@ -83,6 +83,40 @@ func False(t *testing.T, value bool, errorMessage ...string) {
 	fail(t, "Unexpected true", errorMessage...)
 }
 
+// Len asserts that the specified object has the expected length.
+func Len(t *testing.T, object any, expectedLen int, errorMessage ...string) {
+	t.Helper()
+	actualLen := reflect.ValueOf(object).Len()
+	if actualLen == expectedLen {
+		return
+	}
+
+	msg := fmt.Sprintf("Length not equal: \nexpected: %d\nactual  : %d", expectedLen, actualLen)
+	fail(t, msg, errorMessage...)
+}
+
+// NotNil asserts that the specified object is not nil.
+func NotNil(t *testing.T, object any, errorMessage ...string) {
+	t.Helper()
+	if !isNil(object) {
+		return
+	}
+
+	msg := "Expected value to be not nil"
+	fail(t, msg, errorMessage...)
+}
+
+// Nil asserts that the specified object is nil.
+func Nil(t *testing.T, object any, errorMessage ...string) {
+	t.Helper()
+	if isNil(object) {
+		return
+	}
+
+	msg := "Expected value to be nil"
+	fail(t, msg, errorMessage...)
+}
+
 func equal(expected, actual any) bool {
 	if expected == nil || actual == nil {
 		return isNil(expected) == isNil(actual)
