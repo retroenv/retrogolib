@@ -8,6 +8,9 @@ import (
 )
 
 var (
+	// glfwSetErrorCallback sets the error callback.
+	glfwSetErrorCallback func(cb uintptr)
+
 	// glfwInit initializes GLFW.
 	glfwInit func() int
 
@@ -105,6 +108,7 @@ var importsGlfw = map[string]any{
 	"glfwInit":                 &glfwInit,
 	"glfwMakeContextCurrent":   &glfwMakeContextCurrent,
 	"glfwPollEvents":           &glfwPollEvents,
+	"glfwSetErrorCallback":     &glfwSetErrorCallback,
 	"glfwSetKeyCallback":       &glfwSetKeyCallback,
 	"glfwSetWindowShouldClose": &glfwSetWindowShouldClose,
 	"glfwSwapBuffers":          &glfwSwapBuffers,

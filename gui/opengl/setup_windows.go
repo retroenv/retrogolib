@@ -26,17 +26,17 @@ func setupLibrary() error {
 
 	libName, err = getGlfwSystemLibrary()
 	if err != nil {
-		return fmt.Errorf("getting GLUT system library: %w", err)
+		return fmt.Errorf("getting GLFW system library: %w", err)
 	}
 
 	lib, err = loadLibrary(libName)
 	if err != nil {
-		return fmt.Errorf("loading GLUT library: %w", err)
+		return fmt.Errorf("loading GLFW library: %w", err)
 	}
 
 	for name, ptr := range importsGlfw {
 		if err := registerFunction(lib, name, ptr); err != nil {
-			return fmt.Errorf("registering GLUT function '%s': %w", name, err)
+			return fmt.Errorf("registering GLFW function '%s': %w", name, err)
 		}
 	}
 	return nil

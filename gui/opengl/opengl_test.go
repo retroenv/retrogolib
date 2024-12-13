@@ -15,14 +15,14 @@ func TestSetup(t *testing.T) {
 	assert.NoError(t, setupLibrary())
 }
 
-//func TestSetupGoSDL(t *testing.T) {
-//	b := &backend{}
-//	render, cleanup, err := Setup(b)
-//	assert.NoError(t, err)
-//	_, err = render()
-//	assert.NoError(t, err)
-//	cleanup()
-//}
+func TestSetupGoOpenGL(t *testing.T) {
+	b := &backend{}
+	render, cleanup, err := Setup(b)
+	assert.NoError(t, err)
+	_, err = render()
+	assert.NoError(t, err)
+	cleanup()
+}
 
 const height = 240
 const width = 256
