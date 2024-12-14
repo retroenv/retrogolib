@@ -4,6 +4,7 @@ package sdl
 
 import (
 	"fmt"
+	"sort"
 	"syscall"
 )
 
@@ -18,7 +19,14 @@ func setupLibrary() error {
 		return fmt.Errorf("loading SDL library: %w", err)
 	}
 
-	for name, ptr := range imports {
+	names := make([]string, 0, len(imports))
+	for name := range imports {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		ptr := imports[name]
 		if err := registerFunction(lib, name, ptr); err != nil {
 			return err
 		}

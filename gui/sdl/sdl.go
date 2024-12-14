@@ -8,6 +8,7 @@ import (
 	"github.com/retroenv/retrogolib/gui"
 )
 
+// Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
 	dimensions := backend.Dimensions()
 
@@ -29,6 +30,7 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	return render, cleanup, nil
 }
 
+// setupSDL initializes the SDL library and creates the window, renderer, and texture.
 func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr, uintptr, error) {
 	if err := setupLibrary(); err != nil {
 		return 0, 0, 0, fmt.Errorf("setting up SDL library: %w", err)
@@ -62,7 +64,7 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 	return window, renderer, tex, nil
 }
 
-// renderSDL
+// renderSDL renders the image to the SDL window.
 func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr, tex uintptr) (bool, error) {
 	var event event
 	for ret := PollEvent(&event); ret != 0; ret = PollEvent(&event) {
