@@ -198,7 +198,9 @@ func renderSDL(dimensions Dimensions, backend Backend, renderer *sdl.Renderer, t
 	}
 
 	image := backend.Image()
-	if err := tex.Update(nil, unsafe.Pointer(&image.Pix), dimensions.Width); err != nil {
+
+	data := unsafe.Pointer(&image.Pix[0])
+	if err := tex.Update(nil, data, dimensions.Width); err != nil {
 		return false, err
 	}
 
