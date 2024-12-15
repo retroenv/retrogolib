@@ -10,6 +10,8 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+const bytesPerPixel = 4
+
 func init() {
 	Setup = setupSDLGui
 }
@@ -200,7 +202,7 @@ func renderSDL(dimensions Dimensions, backend Backend, renderer *sdl.Renderer, t
 	image := backend.Image()
 
 	data := unsafe.Pointer(&image.Pix[0])
-	if err := tex.Update(nil, data, dimensions.Width); err != nil {
+	if err := tex.Update(nil, data, dimensions.Width*bytesPerPixel); err != nil {
 		return false, err
 	}
 

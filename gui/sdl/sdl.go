@@ -8,6 +8,8 @@ import (
 	"github.com/retroenv/retrogolib/gui"
 )
 
+const bytesPerPixel = 4
+
 // Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
 	dimensions := backend.Dimensions()
@@ -93,7 +95,7 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 	}
 
 	image := backend.Image()
-	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width); ret != 0 {
+	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width*bytesPerPixel); ret != 0 {
 		return false, fmt.Errorf("updating SDL texture: %s", GetError())
 	}
 
