@@ -70,12 +70,12 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr, tex uintptr) (bool, error) {
 	var event event
 	for ret := PollEvent(&event); ret != 0; ret = PollEvent(&event) {
-		switch event.Event {
+		switch event.Type {
 		case SDL_QUIT:
 			return false, nil
 
 		case SDL_KEYDOWN:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event.Event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event))
 			if keyEvent.Keysym.Sym == K_ESCAPE {
 				return false, nil
 			}
@@ -86,7 +86,7 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 			}
 
 		case SDL_KEYUP:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event.Event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event))
 			controllerKey, ok := keyMapping[keyEvent.Keysym.Sym]
 			if ok {
 				backend.KeyUp(controllerKey)

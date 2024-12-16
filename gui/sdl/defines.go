@@ -54,8 +54,8 @@ const (
 )
 
 type event struct {
-	Type  uint32
-	Event uintptr
+	Type uint32
+	_    [64]byte
 }
 
 type keyboardEvent struct {
