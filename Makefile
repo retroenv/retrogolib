@@ -6,19 +6,14 @@ help: ## show help, shown by default if no target is specified
 lint: ## run code linters
 	golangci-lint run
 
-build-all: ## build code with all 3 GUI mode settings
-	go build ./...
-	go build -tags noopengl,sdl ./...
-	go build -tags nogui ./...
+build: ## build code
+	CGO_ENABLED=0 go build ./...
 
 test: ## run tests
 	go test -timeout 10s -race ./...
 
-test-no-gui: ## run unit tests with gui disabled
-	go test -timeout 10s -tags nogui ./...
-
 test-coverage: ## run unit tests and create test coverage
-	go test -timeout 10s -tags nogui ./... -coverprofile coverage.txt
+	go test -timeout 10s ./... -coverprofile coverage.txt
 
 test-coverage-web: test-coverage ## run unit tests and show test coverage in browser
 	go tool cover -func coverage.txt | grep total | awk '{print "Total coverage: "$$3}'

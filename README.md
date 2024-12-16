@@ -11,6 +11,8 @@ RetroGoLib is a Golang library designed to simplify the development of tools for
 It provides a set of functionalities that can be used to create tools for various retro consoles,
 like emulators and debugging tools, all while keeping dependencies to a minimum.
 
+The GUI renderer supports SDL without the use of CGO/SDL2, which makes it easier to build and distribute.
+
 ## Current system support
 
 CPUs:
@@ -27,7 +29,6 @@ Systems:
     ├─ arch/nes         NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
-    ├─ cpu              general CPU defines and helpers
     ├─ gui              GUIs renderers
     ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
