@@ -3,6 +3,7 @@ package sdl
 
 import (
 	"fmt"
+	"runtime"
 	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
@@ -12,6 +13,8 @@ const bytesPerPixel = 4
 
 // Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
+	runtime.LockOSThread()
+
 	dimensions := backend.Dimensions()
 
 	window, renderer, tex, err := setupSDL(dimensions, backend)
@@ -68,14 +71,14 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 
 // renderSDL renders the image to the SDL window.
 func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr, tex uintptr) (bool, error) {
-	var event event
-	for ret := PollEvent(&event); ret != 0; ret = PollEvent(&event) {
-		switch event.Type {
+	var ev event
+	for ret := PollEvent(&ev); ret != 0; ret = PollEvent(&ev) {
+		switch ev.Type {
 		case SDL_QUIT:
 			return false, nil
 
 		case SDL_KEYDOWN:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&ev))
 			if keyEvent.Keysym.Sym == K_ESCAPE {
 				return false, nil
 			}
@@ -86,7 +89,7 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 			}
 
 		case SDL_KEYUP:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&ev))
 			controllerKey, ok := keyMapping[keyEvent.Keysym.Sym]
 			if ok {
 				backend.KeyUp(controllerKey)
