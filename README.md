@@ -17,6 +17,7 @@ The GUI renderer supports SDL without the use of CGO/SDL2, which makes it easier
 
 CPUs:
 - 6502
+- Chip-8
 
 Systems:
 - NES
