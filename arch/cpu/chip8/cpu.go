@@ -53,7 +53,7 @@ func (c *CPU) Step() error {
 	opcodes := Opcodes[idx]
 
 	for _, opcode := range opcodes {
-		if opcode.Mask&w == opcode.Value {
+		if opcode.Info.Mask&w == opcode.Info.Value {
 			return opcode.Instruction.Emulation(c, w)
 		}
 	}
