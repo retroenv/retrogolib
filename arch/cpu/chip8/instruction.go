@@ -1,4 +1,4 @@
-// Package chip8 provides support for the Chip-8 and Chip-48 CPU.
+// Package chip8 provides support for the virtual Chip-8 CPU.
 package chip8
 
 // Instruction contains information about a CPU instruction.
