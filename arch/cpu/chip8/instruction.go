@@ -37,19 +37,13 @@ var Cls = &Instruction{
 // Drw - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 var Drw = &Instruction{
 	Name:      "drw",
-	Emulation: nil,
+	Emulation: drw,
 }
 
-// Jp - Jump to address.
+// Jp - jumps to an address and optionally adds V0 to the address.
 var Jp = &Instruction{
 	Name:      "jp",
 	Emulation: jp,
-}
-
-// JpV0 - Jump to location nnn + V0.
-var JpV0 = &Instruction{
-	Name:      "jpv0",
-	Emulation: nil,
 }
 
 // Ld - Set Vx = kk.
@@ -73,7 +67,7 @@ var Ret = &Instruction{
 // Rnd - Set Vx = random byte AND kk.
 var Rnd = &Instruction{
 	Name:      "rnd",
-	Emulation: nil,
+	Emulation: rnd,
 }
 
 // Se - Skip next instruction if the register equals a value/register.
@@ -85,25 +79,25 @@ var Se = &Instruction{
 // Shl - Set Vx = Vx SHL 1.
 var Shl = &Instruction{
 	Name:      "shl",
-	Emulation: nil,
+	Emulation: shl,
 }
 
 // Shr - Set Vx = Vx SHR 1.
 var Shr = &Instruction{
 	Name:      "shr",
-	Emulation: nil,
+	Emulation: shr,
 }
 
 // Skp - Skip next instruction if key with the value of Vx is pressed.
 var Skp = &Instruction{
 	Name:      "skp",
-	Emulation: nil,
+	Emulation: skp,
 }
 
 // Sknp - Skip next instruction if key with the value of Vx is not pressed.
 var Sknp = &Instruction{
 	Name:      "sknp",
-	Emulation: nil,
+	Emulation: sknp,
 }
 
 // Sne - Skip next instruction if the register does not equal a value/register.
@@ -121,7 +115,7 @@ var Sub = &Instruction{
 // Subn - Set Vx = Vy - Vx, set VF = NOT borrow.
 var Subn = &Instruction{
 	Name:      "subn",
-	Emulation: nil,
+	Emulation: subn,
 }
 
 // Xor - performs a bitwise XOR operation on two registers.

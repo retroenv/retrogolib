@@ -4,7 +4,7 @@ import "fmt"
 
 // cls clears the display.
 func cls(c *CPU, _ uint16) error {
-	c.Display = [64 * 32]bool{}
+	c.Display = [displayWidth * displayHeight]bool{}
 	c.RedrawScreen = true
 	c.PC += 2
 	return nil
@@ -18,10 +18,20 @@ func ret(c *CPU, _ uint16) error {
 	return nil
 }
 
-// jp jumps to a specific address.
+// jp jumps to an address and optionally adds V0 to the address.
 func jp(c *CPU, param uint16) error {
+	mode := (param & 0xF000) >> 12
 	addr := param & 0x0FFF
-	c.PC = addr
+
+	switch mode {
+	case 0x1: // JP addr
+		c.PC = addr
+	case 0xb: // JP V0, addr
+		c.PC = addr + uint16(c.V[0])
+	default:
+		return fmt.Errorf("invalid mode for jp: %04X", mode)
+	}
+
 	return nil
 }
 
@@ -215,6 +225,96 @@ func and(c *CPU, param uint16) error {
 	reg1 := (param & 0x0F00) >> 8
 	reg2 := (param & 0x00F0) >> 4
 	c.V[reg1] &= c.V[reg2]
+	c.PC += 2
+	return nil
+}
+
+// drw displays n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+func drw(c *CPU, param uint16) error {
+	x := uint16(c.V[(param&0x0F00)>>8])
+	y := uint16(c.V[(param&0x00F0)>>4])
+	n := param & 0x000F
+
+	c.V[0xf] = 0
+	for yline := range n {
+		pixel := c.Memory[c.I+yline]
+		for xline := range uint16(8) {
+			if (pixel & (0x80 >> xline)) != 0 {
+				if c.Display[(x+xline)+(y+yline)*displayWidth] {
+					c.V[0xf] = 1
+				}
+				c.Display[(x+xline)+(y+yline)*displayWidth] = !c.Display[(x+xline)+(y+yline)*displayWidth]
+			}
+		}
+	}
+
+	c.RedrawScreen = true
+	c.PC += 2
+	return nil
+}
+
+// rnd generates a random number and performs a bitwise AND operation on it.
+func rnd(c *CPU, param uint16) error {
+	reg := (param & 0x0F00) >> 8
+	value := byte(param & 0x00FF)
+	c.V[reg] = byte(c.rnd.Int63()) & value
+	c.PC += 2
+	return nil
+}
+
+// shl shifts a register left by one.
+func shl(c *CPU, param uint16) error {
+	reg := (param & 0x0F00) >> 8
+	c.V[0xf] = c.V[reg] >> 7
+	c.V[reg] <<= 1
+	c.PC += 2
+	return nil
+}
+
+// shr shifts a register right by one.
+func shr(c *CPU, param uint16) error {
+	reg := (param & 0x0F00) >> 8
+	c.V[0xf] = c.V[reg] & 0x1
+	c.V[reg] >>= 1
+	c.PC += 2
+	return nil
+}
+
+// skp skips the next instruction if the key with the value of Vx is pressed.
+func skp(c *CPU, param uint16) error {
+	reg := (param & 0x0F00) >> 8
+	if c.Key[c.V[reg]] {
+		c.PC += 4
+	} else {
+		c.PC += 2
+	}
+	return nil
+}
+
+// sknp skips the next instruction if the key with the value of Vx is not pressed.
+func sknp(c *CPU, param uint16) error {
+	reg := (param & 0x0F00) >> 8
+	if !c.Key[c.V[reg]] {
+		c.PC += 4
+	} else {
+		c.PC += 2
+	}
+	return nil
+}
+
+// subn subtracts a register from another register
+func subn(c *CPU, param uint16) error {
+	reg1 := (param & 0x0F00) >> 8
+	reg2 := (param & 0x00F0) >> 4
+
+	if c.V[reg2] > c.V[reg1] {
+		c.V[0xf] = 1
+	} else {
+		c.V[0xf] = 0
+	}
+
+	c.V[reg1] = c.V[reg2] - c.V[reg1]
+
 	c.PC += 2
 	return nil
 }
