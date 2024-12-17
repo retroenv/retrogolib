@@ -1,6 +1,7 @@
 package chip8
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -45,9 +46,20 @@ func New() *CPU {
 	return c
 }
 
-// func (c *CPU) fetchOpcode() uint16 {
-//	return uint16(c.Memory[c.PC])<<8 | uint16(c.Memory[c.PC+1])
-// }
+// Step executes the next instruction in the CPU.
+func (c *CPU) Step() error {
+	w := uint16(c.Memory[c.PC])<<8 | uint16(c.Memory[c.PC+1])
+	idx := byte(w >> 12)
+	opcodes := Opcodes[idx]
+
+	for _, opcode := range opcodes {
+		if opcode.Mask&w == opcode.Value {
+			return opcode.Instruction.Emulation(c, w)
+		}
+	}
+
+	return fmt.Errorf("unknown opcode: %04X", w)
+}
 
 // updatePC increments the program counter to the next instruction and optionally skips the following instruction.
 func (c *CPU) updatePC(skipInstruction bool) {
