@@ -19,16 +19,15 @@ CPUs:
 - 6502
 
 Systems:
-- NES
+- NES (Nintendo Entertainment System)
 
 ## Project layout
 
-    ├─ addressing       general CPU addressing defines and helpers
     ├─ app              common application/service helpers
-    ├─ arch/cpu         Helpers for different CPUs
+    ├─ arch/cpu/m6502   6502 CPU support         
     ├─ arch/nes         NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
-    ├─ gui              GUIs renderers
+    ├─ gui              GUI support - SDL without need for CGO
     ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
