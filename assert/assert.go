@@ -25,6 +25,17 @@ func Equal(t Testing, expected, actual any, msgAndArgs ...any) {
 	fail(t, msg, msgAndArgs...)
 }
 
+// NotEqual asserts that two objects are not equal.
+func NotEqual(t Testing, expected, actual any, msgAndArgs ...any) {
+	t.Helper()
+	if !equal(expected, actual) {
+		return
+	}
+
+	msg := fmt.Sprintf("Equal: \nexpected: %v\nactual  : %v", expected, actual)
+	fail(t, msg, msgAndArgs...)
+}
+
 // NoError asserts that a function returned no error.
 func NoError(t Testing, err error, msgAndArgs ...any) {
 	t.Helper()
