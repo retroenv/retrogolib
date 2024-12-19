@@ -164,7 +164,7 @@ func TestShr(t *testing.T) {
 func TestSkp(t *testing.T) {
 	c := New()
 	c.V[0] = 0
-	c.Keys[0] = true
+	c.Key[0] = true
 	assert.NoError(t, skp(c, 0))
 
 	assert.Equal(t, uint16(0x202), c.PC)
@@ -173,7 +173,7 @@ func TestSkp(t *testing.T) {
 func TestSknp(t *testing.T) {
 	c := New()
 	c.V[0] = 0
-	c.Keys[0] = false
+	c.Key[0] = false
 	assert.NoError(t, sknp(c, 0))
 
 	assert.Equal(t, uint16(0x202), c.PC)

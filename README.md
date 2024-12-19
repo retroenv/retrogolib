@@ -25,7 +25,8 @@ Systems:
 ## Project layout
 
     ├─ app              common application/service helpers
-    ├─ arch/cpu/m6502   6502 CPU support         
+    ├─ arch/cpu/chip8   Chip-8 virtual CPU support
+    ├─ arch/cpu/m6502   6502 CPU support
     ├─ arch/nes         NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
