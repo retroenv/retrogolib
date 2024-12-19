@@ -3,8 +3,6 @@ package m6502
 import (
 	"fmt"
 	"math"
-
-	. "github.com/retroenv/retrogolib/addressing"
 )
 
 // adc - Add with Carry.

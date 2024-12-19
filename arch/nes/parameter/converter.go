@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/retroenv/retrogolib/addressing"
+	"github.com/retroenv/retrogolib/arch/cpu/m6502"
 )
 
 // Config contains the configuration for the parameter converter.
@@ -43,7 +43,7 @@ func (c Converter) Absolute(param any) (string, error) {
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute:
+	case int, m6502.Absolute:
 		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
 		builder.WriteString(val)
@@ -60,7 +60,7 @@ func (c Converter) AbsoluteX(param any) (string, error) {
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute, addressing.AbsoluteX:
+	case int, m6502.Absolute, m6502.AbsoluteX:
 		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
 		builder.WriteString(val)
@@ -78,7 +78,7 @@ func (c Converter) AbsoluteY(param any) (string, error) {
 	builder.WriteString(c.cfg.AbsolutePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute, addressing.AbsoluteY:
+	case int, m6502.Absolute, m6502.AbsoluteY:
 		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
 		builder.WriteString(val)
@@ -96,7 +96,7 @@ func (c Converter) ZeroPage(param any) (string, error) {
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute, addressing.ZeroPage:
+	case int, m6502.Absolute, m6502.ZeroPage:
 		builder.WriteString(fmt.Sprintf("$%02X", val))
 	case string:
 		builder.WriteString(val)
@@ -113,7 +113,7 @@ func (c Converter) ZeroPageX(param any) (string, error) {
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute, addressing.ZeroPage, addressing.ZeroPageX:
+	case int, m6502.Absolute, m6502.ZeroPage, m6502.ZeroPageX:
 		builder.WriteString(fmt.Sprintf("$%02X", val))
 	case string:
 		builder.WriteString(val)
@@ -131,7 +131,7 @@ func (c Converter) ZeroPageY(param any) (string, error) {
 	builder.WriteString(c.cfg.ZeroPagePrefix)
 
 	switch val := param.(type) {
-	case int, addressing.Absolute, addressing.ZeroPage, addressing.ZeroPageY:
+	case int, m6502.Absolute, m6502.ZeroPage, m6502.ZeroPageY:
 		builder.WriteString(fmt.Sprintf("$%02X", val))
 	case string:
 		builder.WriteString(val)
@@ -156,7 +156,7 @@ func (c Converter) Indirect(param any) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(c.cfg.IndirectPrefix)
 
-	address, ok := param.(addressing.Indirect)
+	address, ok := param.(m6502.Indirect)
 	if ok {
 		builder.WriteString(fmt.Sprintf("$%04X", address))
 	} else {
@@ -177,7 +177,7 @@ func (c Converter) IndirectX(param any) (string, error) {
 	builder.WriteString(c.cfg.IndirectPrefix)
 
 	switch val := param.(type) {
-	case addressing.Indirect, addressing.IndirectX:
+	case m6502.Indirect, m6502.IndirectX:
 		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
 		builder.WriteString(val)
@@ -196,7 +196,7 @@ func (c Converter) IndirectY(param any) (string, error) {
 	builder.WriteString(c.cfg.IndirectPrefix)
 
 	switch val := param.(type) {
-	case addressing.Indirect, addressing.IndirectY:
+	case m6502.Indirect, m6502.IndirectY:
 		builder.WriteString(fmt.Sprintf("$%04X", val))
 	case string:
 		builder.WriteString(val)

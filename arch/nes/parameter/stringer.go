@@ -4,38 +4,38 @@ package parameter
 import (
 	"fmt"
 
-	. "github.com/retroenv/retrogolib/addressing"
+	"github.com/retroenv/retrogolib/arch/cpu/m6502"
 )
 
 // String returns the parameters as a string that is compatible to the assembler presented by the converter.
 // nolint:cyclop
-func String(converter Converter, addressing Mode, param any) (string, error) {
+func String(converter Converter, addressing m6502.AddressingMode, param any) (string, error) {
 	switch addressing {
-	case ImpliedAddressing:
+	case m6502.ImpliedAddressing:
 		return "", nil
-	case ImmediateAddressing:
+	case m6502.ImmediateAddressing:
 		return converter.Immediate(param), nil
-	case AccumulatorAddressing:
+	case m6502.AccumulatorAddressing:
 		return converter.Accumulator(), nil
-	case AbsoluteAddressing:
+	case m6502.AbsoluteAddressing:
 		return converter.Absolute(param)
-	case AbsoluteXAddressing:
+	case m6502.AbsoluteXAddressing:
 		return converter.AbsoluteX(param)
-	case AbsoluteYAddressing:
+	case m6502.AbsoluteYAddressing:
 		return converter.AbsoluteY(param)
-	case ZeroPageAddressing:
+	case m6502.ZeroPageAddressing:
 		return converter.ZeroPage(param)
-	case ZeroPageXAddressing:
+	case m6502.ZeroPageXAddressing:
 		return converter.ZeroPageX(param)
-	case ZeroPageYAddressing:
+	case m6502.ZeroPageYAddressing:
 		return converter.ZeroPageY(param)
-	case RelativeAddressing:
+	case m6502.RelativeAddressing:
 		return converter.Relative(param), nil
-	case IndirectAddressing:
+	case m6502.IndirectAddressing:
 		return converter.Indirect(param)
-	case IndirectXAddressing:
+	case m6502.IndirectXAddressing:
 		return converter.IndirectX(param)
-	case IndirectYAddressing:
+	case m6502.IndirectYAddressing:
 		return converter.IndirectY(param)
 	default:
 		return "", fmt.Errorf("unsupported addressing mode %d", addressing)

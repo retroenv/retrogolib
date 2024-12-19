@@ -1,18 +1,14 @@
 package m6502
 
-import (
-	. "github.com/retroenv/retrogolib/addressing"
-)
-
 // MaxOpcodeSize is the maximum size of an opcode and its operands in bytes.
 const MaxOpcodeSize = 3
 
 // Opcode is a CPU opcode that contains the instruction info and used addressing mode.
 type Opcode struct {
 	Instruction    *Instruction
-	Addressing     Mode // Addressing mode
-	Timing         byte // Timing in cycles
-	PageCrossCycle bool // Crossing page boundary takes an additional cycle
+	Addressing     AddressingMode // Addressing mode
+	Timing         byte           // Timing in cycles
+	PageCrossCycle bool           // Crossing page boundary takes an additional cycle
 }
 
 // OpcodeInfo contains the opcode and timing info for an instruction addressing mode.

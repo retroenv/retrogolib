@@ -3,7 +3,6 @@ package m6502
 import (
 	"testing"
 
-	. "github.com/retroenv/retrogolib/addressing"
 	"github.com/retroenv/retrogolib/arch/nes"
 	"github.com/retroenv/retrogolib/assert"
 )

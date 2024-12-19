@@ -3,15 +3,11 @@
 
 package m6502
 
-import (
-	. "github.com/retroenv/retrogolib/addressing"
-)
-
 // Dcp ...
 var Dcp = &Instruction{
 	Name:       "dcp",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xc7},
 		ZeroPageXAddressing: {Opcode: 0xd7},
 		AbsoluteAddressing:  {Opcode: 0xcf},
@@ -27,7 +23,7 @@ var Dcp = &Instruction{
 var Isc = &Instruction{
 	Name:       "isc",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xe7},
 		ZeroPageXAddressing: {Opcode: 0xf7},
 		AbsoluteAddressing:  {Opcode: 0xef},
@@ -43,7 +39,7 @@ var Isc = &Instruction{
 var Lax = &Instruction{
 	Name:       "lax",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xa7},
 		ZeroPageYAddressing: {Opcode: 0xb7},
 		AbsoluteAddressing:  {Opcode: 0xaf},
@@ -58,7 +54,7 @@ var Lax = &Instruction{
 var NopUnofficial = &Instruction{
 	Name:       "nop",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing:   {Opcode: 0x1a},
 		ImmediateAddressing: {Opcode: 0x80},
 		ZeroPageAddressing:  {Opcode: 0x04},
@@ -73,7 +69,7 @@ var NopUnofficial = &Instruction{
 var Rla = &Instruction{
 	Name:       "rla",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x27},
 		ZeroPageXAddressing: {Opcode: 0x37},
 		AbsoluteAddressing:  {Opcode: 0x2f},
@@ -89,7 +85,7 @@ var Rla = &Instruction{
 var Rra = &Instruction{
 	Name:       "rra",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x67},
 		ZeroPageXAddressing: {Opcode: 0x77},
 		AbsoluteAddressing:  {Opcode: 0x6f},
@@ -105,7 +101,7 @@ var Rra = &Instruction{
 var Sax = &Instruction{
 	Name:       "sax",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x87},
 		ZeroPageYAddressing: {Opcode: 0x97},
 		AbsoluteAddressing:  {Opcode: 0x8f},
@@ -118,7 +114,7 @@ var Sax = &Instruction{
 var SbcUnofficial = &Instruction{
 	Name:       "sbc",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing: {Opcode: 0xeb},
 	},
 	ParamFunc: sbc,
@@ -128,7 +124,7 @@ var SbcUnofficial = &Instruction{
 var Slo = &Instruction{
 	Name:       "slo",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x07},
 		ZeroPageXAddressing: {Opcode: 0x17},
 		AbsoluteAddressing:  {Opcode: 0x0f},
@@ -144,7 +140,7 @@ var Slo = &Instruction{
 var Sre = &Instruction{
 	Name:       "sre",
 	Unofficial: true,
-	Addressing: map[Mode]OpcodeInfo{
+	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x47},
 		ZeroPageXAddressing: {Opcode: 0x57},
 		AbsoluteAddressing:  {Opcode: 0x4f},
