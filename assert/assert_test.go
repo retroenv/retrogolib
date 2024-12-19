@@ -20,6 +20,20 @@ func TestEqual(t *testing.T) {
 	}
 }
 
+func TestNotEqual(t *testing.T) {
+	tst := &errorCapture{}
+	NotEqual(tst, 1, 2)
+	if tst.failed {
+		t.Error("NotEqual failed")
+	}
+
+	tst = &errorCapture{}
+	NotEqual(tst, 1, 1)
+	if !tst.failed {
+		t.Error("NotEqual failed")
+	}
+}
+
 func TestNoError(t *testing.T) {
 	tst := &errorCapture{}
 	NoError(tst, nil)
