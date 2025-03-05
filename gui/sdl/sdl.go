@@ -3,12 +3,18 @@ package sdl
 
 import (
 	"fmt"
+	"runtime"
 	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
 )
 
+const bytesPerPixel = 4
+
+// Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
+	runtime.LockOSThread()
+
 	dimensions := backend.Dimensions()
 
 	window, renderer, tex, err := setupSDL(dimensions, backend)
@@ -29,6 +35,7 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	return render, cleanup, nil
 }
 
+// setupSDL initializes the SDL library and creates the window, renderer, and texture.
 func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr, uintptr, error) {
 	if err := setupLibrary(); err != nil {
 		return 0, 0, 0, fmt.Errorf("setting up SDL library: %w", err)
@@ -62,16 +69,16 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 	return window, renderer, tex, nil
 }
 
-// renderSDL
+// renderSDL renders the image to the SDL window.
 func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr, tex uintptr) (bool, error) {
-	var event event
-	for ret := PollEvent(&event); ret != 0; ret = PollEvent(&event) {
-		switch event.Event {
+	var ev event
+	for ret := PollEvent(&ev); ret != 0; ret = PollEvent(&ev) {
+		switch ev.Type {
 		case SDL_QUIT:
 			return false, nil
 
 		case SDL_KEYDOWN:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event.Event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&ev))
 			if keyEvent.Keysym.Sym == K_ESCAPE {
 				return false, nil
 			}
@@ -82,7 +89,7 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 			}
 
 		case SDL_KEYUP:
-			keyEvent := (*keyboardEvent)(unsafe.Pointer(&event.Event))
+			keyEvent := (*keyboardEvent)(unsafe.Pointer(&ev))
 			controllerKey, ok := keyMapping[keyEvent.Keysym.Sym]
 			if ok {
 				backend.KeyUp(controllerKey)
@@ -91,7 +98,7 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 	}
 
 	image := backend.Image()
-	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width); ret != 0 {
+	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width*bytesPerPixel); ret != 0 {
 		return false, fmt.Errorf("updating SDL texture: %s", GetError())
 	}
 

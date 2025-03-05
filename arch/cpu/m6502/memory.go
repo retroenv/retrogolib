@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-
-	. "github.com/retroenv/retrogolib/addressing"
 )
 
 const (

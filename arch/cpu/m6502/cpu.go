@@ -2,8 +2,6 @@ package m6502
 
 import (
 	"sync"
-
-	. "github.com/retroenv/retrogolib/addressing"
 )
 
 // State contains the current state of the CPU.

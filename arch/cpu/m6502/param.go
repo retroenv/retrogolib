@@ -2,13 +2,11 @@ package m6502
 
 import (
 	"fmt"
-
-	. "github.com/retroenv/retrogolib/addressing"
 )
 
 type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
 
-var paramReader = map[Mode]paramReaderFunc{
+var paramReader = map[AddressingMode]paramReaderFunc{
 	ImpliedAddressing:     paramReaderImplied,
 	ImmediateAddressing:   paramReaderImmediate,
 	AccumulatorAddressing: paramReaderAccumulator,
@@ -26,7 +24,7 @@ var paramReader = map[Mode]paramReaderFunc{
 
 // readOpParams reads the opcode parameters after the first opcode byte
 // and translates it into emulator specific types.
-func readOpParams(c *CPU, addressing Mode) ([]any, []byte, bool, error) {
+func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, bool, error) {
 	fun, ok := paramReader[addressing]
 	if !ok {
 		return nil, nil, false, fmt.Errorf("unsupported addressing mode %00x", addressing)

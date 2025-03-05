@@ -4,6 +4,7 @@ package sdl
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/ebitengine/purego"
 )
