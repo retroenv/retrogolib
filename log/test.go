@@ -11,10 +11,10 @@ import (
 // *testing.B objects.
 type TestingT interface {
 	// Logf logs the given message without failing the test.
-	Logf(string, ...interface{})
+	Logf(string, ...any)
 
 	// Errorf logs the given message and marks the test as failed.
-	Errorf(string, ...interface{})
+	Errorf(string, ...any)
 
 	// FailNow marks the test as failed and stops execution of that test.
 	FailNow()

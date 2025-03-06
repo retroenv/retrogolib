@@ -3,6 +3,7 @@ package assert
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 )
 
@@ -199,7 +200,7 @@ func (e *errorCapture) Helper() {
 }
 
 func (e *errorCapture) Error(args ...any) {
-	e.errs = append([]any{}, args...)
+	e.errs = slices.Clone(args)
 }
 
 func (e *errorCapture) FailNow() {
