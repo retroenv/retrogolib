@@ -42,29 +42,17 @@ func (c *CPU) setFlags(flags uint8) {
 
 // setZ - set the zero flag if the argument is zero.
 func (c *CPU) setZ(value uint8) {
-	if value == 0 {
-		c.Flags.Z = 1
-	} else {
-		c.Flags.Z = 0
-	}
+	setFlag(&c.Flags.Z, value == 0)
 }
 
 // setN - set the negative flag if the argument is negative (high bit is set).
 func (c *CPU) setN(value uint8) {
-	if value&0x80 != 0 {
-		c.Flags.N = 1
-	} else {
-		c.Flags.N = 0
-	}
+	setFlag(&c.Flags.N, value&0x80 != 0)
 }
 
 // setV - set the overflow flag.
 func (c *CPU) setV(set bool) {
-	if set {
-		c.Flags.V = 1
-	} else {
-		c.Flags.V = 0
-	}
+	setFlag(&c.Flags.V, set)
 }
 
 // setZN - set the zero and negative flags.
@@ -76,9 +64,14 @@ func (c *CPU) setZN(value uint8) {
 // compare - compare two values and set the zero and negative flags.
 func (c *CPU) compare(a, b byte) {
 	c.setZN(a - b)
-	if a >= b {
-		c.Flags.C = 1
+	setFlag(&c.Flags.C, a >= b)
+}
+
+// setFlag sets a flag to 1 if condition is true, 0 otherwise.
+func setFlag(flag *uint8, condition bool) {
+	if condition {
+		*flag = 1
 	} else {
-		c.Flags.C = 0
+		*flag = 0
 	}
 }
