@@ -5,24 +5,48 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/retroenv/retrogolib)](https://goreportcard.com/report/github.com/retroenv/retrogolib)
 [![codecov](https://codecov.io/gh/retroenv/retrogolib/branch/main/graph/badge.svg?token=jiBBxNmmVB)](https://app.codecov.io/gh/retroenv/retrogolib)
 
+## Installation
+
+```bash
+go get github.com/retroenv/retrogolib
+```
+
+**Requirements:**
+- Go 1.22 or later
+- No CGO dependencies
+
 ## Overview
 
 RetroGoLib is a Golang library designed to simplify the development of tools for retro consoles.
-It provides a set of functionalities that can be used to create tools for various retro consoles,
-like emulators and debugging tools, all while keeping dependencies to a minimum.
+It provides a comprehensive set of functionalities for creating emulators, debugging tools, and other
+retro console utilities, all while maintaining minimal dependencies and focusing on clean, maintainable code.
 
-The GUI renderer supports SDL without the use of CGO/SDL2, which makes it easier to build and distribute.
+### Key Design Principles
+- **Minimal Dependencies**: Only one external dependency (ebitengine/purego)
+- **CGO-Free**: SDL support without CGO for easier cross-compilation
+- **Type Safety**: Extensive use of Go generics for type-safe APIs
+- **Thread Safety**: CPU implementations with proper synchronization patterns
+- **Testing**: Comprehensive test coverage with consistent assertion patterns
 
-## Current system support
+## Supported Systems
 
-CPUs:
-- 6502
-- Chip-8
+### CPUs
+- **6502**: Full instruction set with accurate timing
+- **Chip-8**: Complete virtual machine implementation
 
-Systems:
-- NES (Nintendo Entertainment System)
+### Consoles
+- **NES (Nintendo Entertainment System)**: Cartridge formats, memory mapping
 
-## Project layout
+## Features
+
+### CPU Emulation
+- **6502 CPU**: Full instruction set with memory management, stack operations, and interrupt support
+- **Chip-8 Virtual CPU**: Complete virtual machine with display, timers, and input handling
+
+### System Support
+- **NES (Nintendo Entertainment System)**: Cartridge handling, memory mapping, and parameter conversion
+
+## Package Overview
 
     ├─ app              common application/service helpers
     ├─ arch/cpu/chip8   Chip-8 virtual CPU support
@@ -33,3 +57,12 @@ Systems:
     ├─ gui              GUI support - SDL without need for CGO
     ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
+    ├─ set              generic set data structure with comprehensive operations
+
+## API Documentation
+
+For detailed API documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com/retroenv/retrogolib).
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
