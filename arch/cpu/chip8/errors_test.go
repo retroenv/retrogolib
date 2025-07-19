@@ -1,7 +1,6 @@
 package chip8
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -18,25 +17,25 @@ func TestErrorConstants(t *testing.T) {
 		// If that didn't work, test with a manually created scenario
 		err = fmt.Errorf("%w: 0x%X", ErrRegisterOutOfBounds, 16) // Simulate the error
 	}
-	assert.True(t, errors.Is(err, ErrRegisterOutOfBounds), "Should return ErrRegisterOutOfBounds")
+	assert.ErrorIs(t, err, ErrRegisterOutOfBounds, "Should return ErrRegisterOutOfBounds")
 
 	// Test key index out of bounds by setting V[0] to invalid key index
 	cpu.V[0] = 16          // Invalid key index
 	err = skp(cpu, 0x009E) // SKP V0
-	assert.True(t, errors.Is(err, ErrKeyIndexOutOfBounds), "Should return ErrKeyIndexOutOfBounds")
+	assert.ErrorIs(t, err, ErrKeyIndexOutOfBounds, "Should return ErrKeyIndexOutOfBounds")
 
 	// Test stack underflow
 	cpu.SP = 0 // Empty stack
 	err = ret(cpu, 0)
-	assert.True(t, errors.Is(err, ErrStackUnderflow), "Should return ErrStackUnderflow")
+	assert.ErrorIs(t, err, ErrStackUnderflow, "Should return ErrStackUnderflow")
 
 	// Test stack overflow
 	cpu.SP = 16 // Full stack
 	err = call(cpu, 0x2200)
-	assert.True(t, errors.Is(err, ErrStackOverflow), "Should return ErrStackOverflow")
+	assert.ErrorIs(t, err, ErrStackOverflow, "Should return ErrStackOverflow")
 
 	// Test font index out of bounds
 	cpu.V[0] = 16          // Invalid font index
 	err = ldF(cpu, 0xF029) // LD F, V0
-	assert.True(t, errors.Is(err, ErrFontIndexOutOfBounds), "Should return ErrFontIndexOutOfBounds")
+	assert.ErrorIs(t, err, ErrFontIndexOutOfBounds, "Should return ErrFontIndexOutOfBounds")
 }

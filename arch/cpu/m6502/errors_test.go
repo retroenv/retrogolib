@@ -1,7 +1,6 @@
 package m6502
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -26,17 +25,17 @@ func TestErrorConstants(t *testing.T) {
 
 	// Test missing parameter error
 	err := jsr(cpu) // No parameters
-	assert.True(t, errors.Is(err, ErrMissingParameter), "Should return ErrMissingParameter")
+	assert.ErrorIs(t, err, ErrMissingParameter, "Should return ErrMissingParameter")
 
 	// Test invalid parameter type error
 	err = jsr(cpu, "invalid") // Wrong type
-	assert.True(t, errors.Is(err, ErrInvalidParameterType), "Should return ErrInvalidParameterType")
+	assert.ErrorIs(t, err, ErrInvalidParameterType, "Should return ErrInvalidParameterType")
 
 	// Test unsupported addressing mode from memory operations
 	_, err = memory.ReadAddressModes(true, "invalid_param")
-	assert.True(t, errors.Is(err, ErrUnsupportedAddressingMode), "Should return ErrUnsupportedAddressingMode")
+	assert.ErrorIs(t, err, ErrUnsupportedAddressingMode, "Should return ErrUnsupportedAddressingMode")
 
 	// Test invalid register type
 	_, err = memory.indirectMemoryPointer(IndirectResolved(0x1000), "invalid_register")
-	assert.True(t, errors.Is(err, ErrInvalidRegisterType), "Should return ErrInvalidRegisterType")
+	assert.ErrorIs(t, err, ErrInvalidRegisterType, "Should return ErrInvalidRegisterType")
 }

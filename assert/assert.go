@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 // Testing is an interface that includes the methods used from *testing.T.
@@ -130,8 +131,147 @@ func Nil(t Testing, object any, msgAndArgs ...any) {
 		return
 	}
 
-	msg := "Expected value to be nil"
+	msg := fmt.Sprintf("Expected value to be nil, got: %v", object)
 	fail(t, msg, msgAndArgs...)
+}
+
+// Contains asserts that the string contains the substring.
+func Contains(t Testing, s, substr string, msgAndArgs ...any) {
+	t.Helper()
+	if strings.Contains(s, substr) {
+		return
+	}
+
+	msg := fmt.Sprintf("String does not contain substring:\nstring: %s\nsubstring: %s", s, substr)
+	fail(t, msg, msgAndArgs...)
+}
+
+// NotContains asserts that the string does not contain the substring.
+func NotContains(t Testing, s, substr string, msgAndArgs ...any) {
+	t.Helper()
+	if !strings.Contains(s, substr) {
+		return
+	}
+
+	msg := fmt.Sprintf("String contains substring:\nstring: %s\nsubstring: %s", s, substr)
+	fail(t, msg, msgAndArgs...)
+}
+
+// Panics asserts that the function panics when called.
+func Panics(t Testing, fn func(), msgAndArgs ...any) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r == nil {
+			fail(t, "Function did not panic", msgAndArgs...)
+		}
+	}()
+	fn()
+}
+
+// NotPanics asserts that the function does not panic when called.
+func NotPanics(t Testing, fn func(), msgAndArgs ...any) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			msg := fmt.Sprintf("Function panicked with: %v", r)
+			fail(t, msg, msgAndArgs...)
+		}
+	}()
+	fn()
+}
+
+// Empty asserts that the object is empty.
+func Empty(t Testing, object any, msgAndArgs ...any) {
+	t.Helper()
+	if isEmpty(object) {
+		return
+	}
+
+	msg := fmt.Sprintf("Expected empty, but got: %v", object)
+	fail(t, msg, msgAndArgs...)
+}
+
+// NotEmpty asserts that the object is not empty.
+func NotEmpty(t Testing, object any, msgAndArgs ...any) {
+	t.Helper()
+	if !isEmpty(object) {
+		return
+	}
+
+	msg := "Expected not empty, but got empty"
+	fail(t, msg, msgAndArgs...)
+}
+
+// Greater asserts that the first value is greater than the second.
+func Greater(t Testing, first, second any, msgAndArgs ...any) {
+	t.Helper()
+	if isGreater(first, second) {
+		return
+	}
+
+	msg := fmt.Sprintf("Expected greater:\nfirst: %v\nsecond: %v", first, second)
+	fail(t, msg, msgAndArgs...)
+}
+
+// GreaterOrEqual asserts that the first value is greater than or equal to the second.
+func GreaterOrEqual(t Testing, first, second any, msgAndArgs ...any) {
+	t.Helper()
+	if isGreater(first, second) || equal(first, second) {
+		return
+	}
+
+	msg := fmt.Sprintf("Expected greater or equal:\nfirst: %v\nsecond: %v", first, second)
+	fail(t, msg, msgAndArgs...)
+}
+
+// Less asserts that the first value is less than the second.
+func Less(t Testing, first, second any, msgAndArgs ...any) {
+	t.Helper()
+	if isLess(first, second) {
+		return
+	}
+
+	msg := fmt.Sprintf("Expected less:\nfirst: %v\nsecond: %v", first, second)
+	fail(t, msg, msgAndArgs...)
+}
+
+// LessOrEqual asserts that the first value is less than or equal to the second.
+func LessOrEqual(t Testing, first, second any, msgAndArgs ...any) {
+	t.Helper()
+	if isLess(first, second) || equal(first, second) {
+		return
+	}
+
+	msg := fmt.Sprintf("Expected less or equal:\nfirst: %v\nsecond: %v", first, second)
+	fail(t, msg, msgAndArgs...)
+}
+
+// ErrorContains asserts that the error message contains the substring.
+func ErrorContains(t Testing, err error, substr string, msgAndArgs ...any) {
+	t.Helper()
+	if err == nil {
+		msg := fmt.Sprintf("Expected error containing: %s\nActual: nil", substr)
+		fail(t, msg, msgAndArgs...)
+		return
+	}
+
+	if strings.Contains(err.Error(), substr) {
+		return
+	}
+
+	msg := fmt.Sprintf("Error does not contain substring:\nerror: %v\nsubstring: %s", err, substr)
+	fail(t, msg, msgAndArgs...)
+}
+
+// Implements asserts that the object implements the interface.
+func Implements(t Testing, interfaceType, object any, msgAndArgs ...any) {
+	t.Helper()
+	interfacePtr := reflect.TypeOf(interfaceType).Elem()
+
+	if !reflect.TypeOf(object).Implements(interfacePtr) {
+		msg := fmt.Sprintf("%T does not implement %v", object, interfacePtr)
+		fail(t, msg, msgAndArgs...)
+	}
 }
 
 func equal(expected, actual any) bool {
@@ -163,6 +303,56 @@ func isNil(value any) bool {
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
 		return reflect.ValueOf(value).IsNil()
+	default:
+		return false
+	}
+}
+
+func isEmpty(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(value)
+	switch v.Kind() {
+	case reflect.String, reflect.Array, reflect.Slice, reflect.Map, reflect.Chan:
+		return v.Len() == 0
+	default:
+		return false
+	}
+}
+
+func isGreater(first, second any) bool {
+	fv := reflect.ValueOf(first)
+	sv := reflect.ValueOf(second)
+
+	switch fv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return fv.Int() > sv.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fv.Uint() > sv.Uint()
+	case reflect.Float32, reflect.Float64:
+		return fv.Float() > sv.Float()
+	case reflect.String:
+		return fv.String() > sv.String()
+	default:
+		return false
+	}
+}
+
+func isLess(first, second any) bool {
+	fv := reflect.ValueOf(first)
+	sv := reflect.ValueOf(second)
+
+	switch fv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return fv.Int() < sv.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fv.Uint() < sv.Uint()
+	case reflect.Float32, reflect.Float64:
+		return fv.Float() < sv.Float()
+	case reflect.String:
+		return fv.String() < sv.String()
 	default:
 		return false
 	}
