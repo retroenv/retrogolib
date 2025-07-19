@@ -70,7 +70,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
 	opcode := Opcodes[b]
 	if opcode.Instruction == nil {
-		return Opcode{}, fmt.Errorf("unsupported opcode %00x", b)
+		return Opcode{}, fmt.Errorf("%w: opcode %00x", ErrUnsupportedAddressingMode, b)
 	}
 
 	if c.opts.tracing {

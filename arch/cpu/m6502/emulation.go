@@ -251,16 +251,23 @@ func jmp(c *CPU, params ...any) error {
 	case Indirect:
 		c.PC = c.memory.ReadWordBug(uint16(address))
 	default:
-		return fmt.Errorf("unsupported jmp mode type %T", param)
+		return fmt.Errorf("%w: jmp mode type %T", ErrUnsupportedAddressingMode, param)
 	}
 	return nil
 }
 
 // jsr - jump to subroutine.
 func jsr(c *CPU, params ...any) error {
-	c.push16(c.PC + 2)
+	if len(params) == 0 {
+		return fmt.Errorf("%w: jsr missing address parameter", ErrMissingParameter)
+	}
 
-	addr := params[0].(Absolute)
+	addr, ok := params[0].(Absolute)
+	if !ok {
+		return fmt.Errorf("%w: jsr invalid address parameter type", ErrInvalidParameterType)
+	}
+
+	c.push16(c.PC + 2)
 	c.PC = uint16(addr)
 	return nil
 }
