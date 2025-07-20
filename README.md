@@ -32,25 +32,31 @@ retro console utilities, all while maintaining minimal dependencies and focusing
 
 ### CPUs
 - **6502**: Full instruction set with accurate timing
+- **Z80**: Complete Z80 CPU emulation with Game Boy support
 - **Chip-8**: Complete virtual machine implementation
 
 ### Consoles
 - **NES (Nintendo Entertainment System)**: Cartridge formats, memory mapping
+- **Game Boy (DMG)**: Complete system support with memory mapping and cartridge handling
 
 ## Features
 
 ### CPU Emulation
 - **6502 CPU**: Full instruction set with memory management, stack operations, and interrupt support
+- **Z80 CPU**: Complete Z80 instruction set with 16-bit registers, interrupts, and Game Boy compatibility
 - **Chip-8 Virtual CPU**: Complete virtual machine with display, timers, and input handling
 
 ### System Support
 - **NES (Nintendo Entertainment System)**: Cartridge handling, memory mapping, and parameter conversion
+- **Game Boy (DMG)**: Complete memory map, I/O registers, cartridge headers, and MBC support
 
 ## Package Overview
 
     ├─ app              common application/service helpers
     ├─ arch/cpu/chip8   Chip-8 virtual CPU support
     ├─ arch/cpu/m6502   6502 CPU support
+    ├─ arch/cpu/z80     Z80 CPU support with Game Boy compatibility
+    ├─ arch/gameboy     Game Boy (DMG) system support and constants
     ├─ arch/nes         NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
