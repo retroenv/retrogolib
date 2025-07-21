@@ -15,6 +15,16 @@ type Testing interface {
 	FailNow()
 }
 
+// Fail fails the test with a message and optional format arguments.
+func Fail(t Testing, message string, msgAndArgs ...any) {
+	t.Helper()
+	if len(msgAndArgs) > 0 {
+		message += "\n" + fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
+	}
+	t.Error(message)
+	t.FailNow()
+}
+
 // Equal asserts that two objects are equal.
 func Equal(t Testing, expected, actual any, msgAndArgs ...any) {
 	t.Helper()
@@ -23,7 +33,7 @@ func Equal(t Testing, expected, actual any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Not equal: \nexpected: %v\nactual  : %v", expected, actual)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // NotEqual asserts that two objects are not equal.
@@ -34,7 +44,7 @@ func NotEqual(t Testing, expected, actual any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Equal: \nexpected: %v\nactual  : %v", expected, actual)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // NoError asserts that a function returned no error.
@@ -45,7 +55,7 @@ func NoError(t Testing, err error, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Unexpected error:\n%+v", err)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Error asserts that a function returned an error.
@@ -53,7 +63,7 @@ func Error(t Testing, err error, expectedError string, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
 		msg := fmt.Sprintf("Error message not equal: \nexpected: %v\nactual  : nil", expectedError)
-		fail(t, msg, msgAndArgs...)
+		Fail(t, msg, msgAndArgs...)
 		return
 	}
 
@@ -63,7 +73,7 @@ func Error(t Testing, err error, expectedError string, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Error message not equal: \nexpected: %v\nactual  : %v", expectedError, actual)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // ErrorIs asserts that a function returned an error that matches the specified error.
@@ -71,7 +81,7 @@ func ErrorIs(t Testing, err, expectedError error, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
 		msg := fmt.Sprintf("Error not returned: \nexpected: %v\nactual  : nil", expectedError)
-		fail(t, msg, msgAndArgs...)
+		Fail(t, msg, msgAndArgs...)
 		return
 	}
 
@@ -80,7 +90,7 @@ func ErrorIs(t Testing, err, expectedError error, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Error not equal: \nexpected: %v\nactual  : %v", expectedError, err)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // True asserts that the specified value is true.
@@ -89,7 +99,7 @@ func True(t Testing, value bool, msgAndArgs ...any) {
 	if value {
 		return
 	}
-	fail(t, "Unexpected false", msgAndArgs...)
+	Fail(t, "Unexpected false", msgAndArgs...)
 }
 
 // False asserts that the specified value is false.
@@ -98,7 +108,7 @@ func False(t Testing, value bool, msgAndArgs ...any) {
 	if !value {
 		return
 	}
-	fail(t, "Unexpected true", msgAndArgs...)
+	Fail(t, "Unexpected true", msgAndArgs...)
 }
 
 // Len asserts that the specified object has the expected length.
@@ -110,7 +120,7 @@ func Len(t Testing, object any, expectedLen int, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Length not equal: \nexpected: %d\nactual  : %d", expectedLen, actualLen)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // NotNil asserts that the specified object is not nil.
@@ -121,7 +131,7 @@ func NotNil(t Testing, object any, msgAndArgs ...any) {
 	}
 
 	msg := "Expected value to be not nil"
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Nil asserts that the specified object is nil.
@@ -132,7 +142,7 @@ func Nil(t Testing, object any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected value to be nil, got: %v", object)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Contains asserts that the string contains the substring.
@@ -143,7 +153,7 @@ func Contains(t Testing, s, substr string, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("String does not contain substring:\nstring: %s\nsubstring: %s", s, substr)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // NotContains asserts that the string does not contain the substring.
@@ -154,7 +164,7 @@ func NotContains(t Testing, s, substr string, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("String contains substring:\nstring: %s\nsubstring: %s", s, substr)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Panics asserts that the function panics when called.
@@ -162,7 +172,7 @@ func Panics(t Testing, fn func(), msgAndArgs ...any) {
 	t.Helper()
 	defer func() {
 		if r := recover(); r == nil {
-			fail(t, "Function did not panic", msgAndArgs...)
+			Fail(t, "Function did not panic", msgAndArgs...)
 		}
 	}()
 	fn()
@@ -174,7 +184,7 @@ func NotPanics(t Testing, fn func(), msgAndArgs ...any) {
 	defer func() {
 		if r := recover(); r != nil {
 			msg := fmt.Sprintf("Function panicked with: %v", r)
-			fail(t, msg, msgAndArgs...)
+			Fail(t, msg, msgAndArgs...)
 		}
 	}()
 	fn()
@@ -188,7 +198,7 @@ func Empty(t Testing, object any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected empty, but got: %v", object)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // NotEmpty asserts that the object is not empty.
@@ -199,7 +209,7 @@ func NotEmpty(t Testing, object any, msgAndArgs ...any) {
 	}
 
 	msg := "Expected not empty, but got empty"
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Greater asserts that the first value is greater than the second.
@@ -210,7 +220,7 @@ func Greater(t Testing, first, second any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected greater:\nfirst: %v\nsecond: %v", first, second)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // GreaterOrEqual asserts that the first value is greater than or equal to the second.
@@ -221,7 +231,7 @@ func GreaterOrEqual(t Testing, first, second any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected greater or equal:\nfirst: %v\nsecond: %v", first, second)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Less asserts that the first value is less than the second.
@@ -232,7 +242,7 @@ func Less(t Testing, first, second any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected less:\nfirst: %v\nsecond: %v", first, second)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // LessOrEqual asserts that the first value is less than or equal to the second.
@@ -243,7 +253,7 @@ func LessOrEqual(t Testing, first, second any, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Expected less or equal:\nfirst: %v\nsecond: %v", first, second)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // ErrorContains asserts that the error message contains the substring.
@@ -251,7 +261,7 @@ func ErrorContains(t Testing, err error, substr string, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
 		msg := fmt.Sprintf("Expected error containing: %s\nActual: nil", substr)
-		fail(t, msg, msgAndArgs...)
+		Fail(t, msg, msgAndArgs...)
 		return
 	}
 
@@ -260,7 +270,7 @@ func ErrorContains(t Testing, err error, substr string, msgAndArgs ...any) {
 	}
 
 	msg := fmt.Sprintf("Error does not contain substring:\nerror: %v\nsubstring: %s", err, substr)
-	fail(t, msg, msgAndArgs...)
+	Fail(t, msg, msgAndArgs...)
 }
 
 // Implements asserts that the object implements the interface.
@@ -270,7 +280,7 @@ func Implements(t Testing, interfaceType, object any, msgAndArgs ...any) {
 
 	if !reflect.TypeOf(object).Implements(interfacePtr) {
 		msg := fmt.Sprintf("%T does not implement %v", object, interfacePtr)
-		fail(t, msg, msgAndArgs...)
+		Fail(t, msg, msgAndArgs...)
 	}
 }
 
@@ -356,13 +366,4 @@ func isLess(first, second any) bool {
 	default:
 		return false
 	}
-}
-
-func fail(t Testing, message string, msgAndArgs ...any) {
-	t.Helper()
-	if len(msgAndArgs) > 0 {
-		message += "\n" + fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
-	}
-	t.Error(message)
-	t.FailNow()
 }

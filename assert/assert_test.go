@@ -182,7 +182,7 @@ func TestNil(t *testing.T) {
 
 func TestFail(t *testing.T) {
 	tst := &errorCapture{}
-	fail(tst, "error", "msg %d", 1)
+	Fail(tst, "error", "msg %d", 1)
 	if !tst.failed {
 		t.Error("Fail failed")
 	}
