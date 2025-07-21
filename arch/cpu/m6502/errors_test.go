@@ -20,11 +20,12 @@ func (m *errorTestMemory) Write(address uint16, value uint8) {
 
 func TestErrorConstants(t *testing.T) {
 	basicMem := &errorTestMemory{}
-	memory := NewMemory(basicMem)
+	memory, err := NewMemory(basicMem)
+	assert.NoError(t, err)
 	cpu := New(memory)
 
 	// Test missing parameter error
-	err := jsr(cpu) // No parameters
+	err = jsr(cpu) // No parameters
 	assert.ErrorIs(t, err, ErrMissingParameter, "Should return ErrMissingParameter")
 
 	// Test invalid parameter type error

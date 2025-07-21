@@ -1,6 +1,7 @@
 package m6502
 
 import (
+	"errors"
 	"fmt"
 	"math"
 )
@@ -29,8 +30,11 @@ type Memory struct {
 }
 
 // NewMemory returns a new memory instance.
-func NewMemory(mem BasicMemory) *Memory {
-	return &Memory{BasicMemory: mem}
+func NewMemory(mem BasicMemory) (*Memory, error) {
+	if mem == nil {
+		return nil, errors.New("BasicMemory cannot be nil")
+	}
+	return &Memory{BasicMemory: mem}, nil
 }
 
 // ReadWord reads a word from a memory address.

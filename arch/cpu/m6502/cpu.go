@@ -1,6 +1,7 @@
 package m6502
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -113,6 +114,71 @@ func (c *CPU) State() State {
 // Memory returns the CPU memory.
 func (c *CPU) Memory() *Memory {
 	return c.memory
+}
+
+// ValidateState performs comprehensive validation of CPU state.
+// Returns an error if the CPU state is invalid or corrupted.
+func (c *CPU) ValidateState() error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	// Validate flags are 0 or 1
+	if c.Flags.C > 1 || c.Flags.Z > 1 || c.Flags.I > 1 || c.Flags.D > 1 ||
+		c.Flags.B > 1 || c.Flags.U > 1 || c.Flags.V > 1 || c.Flags.N > 1 {
+
+		return errors.New("invalid flag values: flags must be 0 or 1")
+	}
+
+	// Validate memory is not nil
+	if c.memory == nil {
+		return errors.New("CPU memory is nil")
+	}
+
+	// Validate interrupt addresses are reasonable
+	if c.nmiAddress == 0 && c.irqAddress == 0 {
+		return errors.New("both interrupt vectors are zero")
+	}
+
+	return nil
+}
+
+// Reset resets the CPU to its initial state while preserving memory.
+func (c *CPU) Reset() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Reset registers
+	c.A = 0
+	c.X = 0
+	c.Y = 0
+	c.SP = InitialStack
+
+	// Reset flags to initial state
+	c.setFlags(initialFlags)
+
+	// Reset interrupt state
+	c.triggerIrq = false
+	c.triggerNmi = false
+	c.irqRunning = false
+	c.nmiRunning = false
+
+	// Reset cycles
+	c.cycles = initialCycles
+	c.stallCycles = 0
+
+	// Reload interrupt vectors
+	if c.memory != nil {
+		c.nmiAddress = c.memory.ReadWordBug(NMIAddress)
+		c.PC = c.memory.ReadWordBug(ResetAddress)
+		c.irqAddress = c.memory.ReadWordBug(IrqAddress)
+	}
+}
+
+// GetInstructionCount returns the approximate number of instructions executed
+// based on cycle count and average cycles per instruction.
+func (c *CPU) GetInstructionCount() uint64 {
+	const averageCyclesPerInstruction = 4
+	return c.cycles / averageCyclesPerInstruction
 }
 
 // execute branch jump if the branching op result is true.

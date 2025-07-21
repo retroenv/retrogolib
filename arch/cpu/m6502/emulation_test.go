@@ -15,8 +15,10 @@ type cpuTest struct {
 
 const testIrqAddress = 0x9000
 
-func cpuTestSetup() *CPU {
-	memory := NewMemory(&testMemory{})
+func cpuTestSetup(t *testing.T) *CPU {
+	t.Helper()
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
 	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
 	memory.WriteWord(IrqAddress, testIrqAddress)
 	cpu := New(memory)
@@ -29,7 +31,7 @@ func runCPUTest(t *testing.T, tests []cpuTest) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Parallel()
-			cpu := cpuTestSetup()
+			cpu := cpuTestSetup(t)
 			test.Setup(cpu)
 			test.Check(cpu)
 		})
@@ -78,7 +80,7 @@ func TestAdc(t *testing.T) {
 
 func TestAnd(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 0x12
 	assert.NoError(t, and(cpu, 2))
@@ -88,7 +90,7 @@ func TestAnd(t *testing.T) {
 
 func TestAsl(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 0b0000_0001
 	assert.NoError(t, asl(cpu))
@@ -112,7 +114,7 @@ func TestAsl(t *testing.T) {
 
 func TestBcc(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bcc(cpu, Absolute(123)))
 	assert.Equal(t, 123, cpu.PC)
@@ -125,7 +127,7 @@ func TestBcc(t *testing.T) {
 
 func TestBcs(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bcs(cpu, Absolute(123)))
 	assert.Equal(t, nes.CodeBaseAddress, cpu.PC)
@@ -137,7 +139,7 @@ func TestBcs(t *testing.T) {
 
 func TestBeq(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, beq(cpu, Absolute(123)))
 	assert.Equal(t, nes.CodeBaseAddress, cpu.PC)
@@ -184,7 +186,7 @@ func TestBit(t *testing.T) {
 
 func TestBmi(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bmi(cpu, Absolute(123)))
 	assert.Equal(t, nes.CodeBaseAddress, cpu.PC)
@@ -196,7 +198,7 @@ func TestBmi(t *testing.T) {
 
 func TestBne(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bne(cpu, Absolute(123)))
 	assert.Equal(t, 123, cpu.PC)
@@ -209,7 +211,7 @@ func TestBne(t *testing.T) {
 
 func TestBpl(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bpl(cpu, Absolute(123)))
 	assert.Equal(t, 123, cpu.PC)
@@ -222,7 +224,7 @@ func TestBpl(t *testing.T) {
 
 func TestBrk(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, brk(cpu))
 
@@ -231,7 +233,7 @@ func TestBrk(t *testing.T) {
 
 func TestBvc(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bvc(cpu, Absolute(123)))
 	assert.Equal(t, 123, cpu.PC)
@@ -244,7 +246,7 @@ func TestBvc(t *testing.T) {
 
 func TestBvs(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, bvs(cpu, Absolute(123)))
 	assert.Equal(t, nes.CodeBaseAddress, cpu.PC)
@@ -256,7 +258,7 @@ func TestBvs(t *testing.T) {
 
 func TestClc(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Flags.C = 1
 	assert.NoError(t, clc(cpu))
@@ -266,7 +268,7 @@ func TestClc(t *testing.T) {
 
 func TestCld(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Flags.D = 1
 	assert.NoError(t, cld(cpu))
@@ -276,7 +278,7 @@ func TestCld(t *testing.T) {
 
 func TestCli(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Flags.I = 1
 	assert.NoError(t, cli(cpu))
@@ -286,7 +288,7 @@ func TestCli(t *testing.T) {
 
 func TestClv(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Flags.V = 1
 	assert.NoError(t, clv(cpu))
@@ -450,7 +452,7 @@ func TestDec(t *testing.T) {
 
 func TestDex(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.X = 2
 	assert.NoError(t, dex(cpu))
@@ -460,7 +462,7 @@ func TestDex(t *testing.T) {
 
 func TestDey(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Y = 2
 	assert.NoError(t, dey(cpu))
@@ -470,7 +472,7 @@ func TestDey(t *testing.T) {
 
 func TestEor(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	// TODO add test
 	assert.NoError(t, eor(cpu, 0))
@@ -527,7 +529,7 @@ func TestInc(t *testing.T) {
 
 func TestInx(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, inx(cpu))
 
@@ -536,7 +538,7 @@ func TestInx(t *testing.T) {
 
 func TestIny(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, iny(cpu))
 
@@ -571,7 +573,7 @@ func TestJmp(t *testing.T) {
 
 func TestJsr(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 	assert.NoError(t, jsr(cpu, Absolute(0x101)))
 
 	assert.Equal(t, InitialStack-2, cpu.SP)
@@ -582,7 +584,7 @@ func TestJsr(t *testing.T) {
 
 func TestLda(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, lda(cpu, 1))
 
@@ -715,14 +717,14 @@ func TestLsr(t *testing.T) {
 
 func TestNop(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, nop(cpu))
 }
 
 func TestOra(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	// TODO add test
 	assert.NoError(t, ora(cpu, 0))
@@ -730,7 +732,7 @@ func TestOra(t *testing.T) {
 
 func TestPha(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 1
 	assert.NoError(t, pha(cpu))
@@ -742,7 +744,7 @@ func TestPha(t *testing.T) {
 
 func TestPhp(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, php(cpu))
 
@@ -752,7 +754,7 @@ func TestPhp(t *testing.T) {
 
 func TestPla(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.SP = 1
 	cpu.memory.Write(StackBase+2, 1)
@@ -764,7 +766,7 @@ func TestPla(t *testing.T) {
 
 func TestPlp(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.SP = 1
 	cpu.memory.Write(StackBase+2, 1)
@@ -874,14 +876,14 @@ func TestRor(t *testing.T) {
 
 func TestRti(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, rti(cpu))
 }
 
 func TestRts(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.push16(0x100)
 	assert.NoError(t, rts(cpu))
@@ -929,7 +931,7 @@ func TestSbc(t *testing.T) {
 
 func TestSec(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, sec(cpu))
 
@@ -938,7 +940,7 @@ func TestSec(t *testing.T) {
 
 func TestSed(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, sed(cpu))
 
@@ -947,7 +949,7 @@ func TestSed(t *testing.T) {
 
 func TestSei(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, sei(cpu))
 
@@ -956,7 +958,7 @@ func TestSei(t *testing.T) {
 
 func TestSta(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 11
 	assert.NoError(t, sta(cpu, 0))
@@ -973,7 +975,7 @@ func TestSta(t *testing.T) {
 
 func TestStx(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.X = 11
 	assert.NoError(t, stx(cpu, 0))
@@ -990,7 +992,7 @@ func TestStx(t *testing.T) {
 
 func TestSty(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Y = 11
 	assert.NoError(t, sty(cpu, 0))
@@ -1007,7 +1009,7 @@ func TestSty(t *testing.T) {
 
 func TestTax(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 2
 	assert.NoError(t, tax(cpu))
@@ -1017,7 +1019,7 @@ func TestTax(t *testing.T) {
 
 func TestTay(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.A = 2
 	assert.NoError(t, tay(cpu))
@@ -1027,7 +1029,7 @@ func TestTay(t *testing.T) {
 
 func TestTsx(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	assert.NoError(t, tsx(cpu))
 
@@ -1037,7 +1039,7 @@ func TestTsx(t *testing.T) {
 
 func TestTxa(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.X = 2
 	assert.NoError(t, txa(cpu))
@@ -1047,7 +1049,7 @@ func TestTxa(t *testing.T) {
 
 func TestTxs(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.X = 2
 	assert.NoError(t, txs(cpu))
@@ -1057,10 +1059,135 @@ func TestTxs(t *testing.T) {
 
 func TestTya(t *testing.T) {
 	t.Parallel()
-	cpu := cpuTestSetup()
+	cpu := cpuTestSetup(t)
 
 	cpu.Y = 2
 	assert.NoError(t, tya(cpu))
 
 	assert.Equal(t, 2, cpu.A)
+}
+
+// Tests for validation functions
+
+func TestGetFlags(t *testing.T) {
+	t.Parallel()
+	cpu := cpuTestSetup(t)
+
+	// Set all flags to 1
+	cpu.Flags.C = 1
+	cpu.Flags.Z = 1
+	cpu.Flags.I = 1
+	cpu.Flags.D = 1
+	cpu.Flags.B = 1
+	cpu.Flags.U = 1
+	cpu.Flags.V = 1
+	cpu.Flags.N = 1
+
+	result := cpu.GetFlags()
+	assert.Equal(t, 0xFF, result)
+
+	// Test with mixed flags
+	cpu.Flags.C = 1
+	cpu.Flags.Z = 0
+	cpu.Flags.I = 1
+	cpu.Flags.D = 0
+	cpu.Flags.B = 1
+	cpu.Flags.U = 0
+	cpu.Flags.V = 1
+	cpu.Flags.N = 0
+
+	result = cpu.GetFlags()
+	expected := uint8(0b01010101) // C=1, Z=0, I=1, D=0, B=1, U=0, V=1, N=0
+	assert.Equal(t, expected, result)
+}
+
+func TestSetZN(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "zero value",
+			Setup: func(cpu *CPU) {
+				cpu.setZN(0x00)
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 1, cpu.Flags.Z)
+				assert.Equal(t, 0, cpu.Flags.N)
+			},
+		},
+		{
+			Name: "negative value",
+			Setup: func(cpu *CPU) {
+				cpu.setZN(0x80)
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 0, cpu.Flags.Z)
+				assert.Equal(t, 1, cpu.Flags.N)
+			},
+		},
+		{
+			Name: "positive value",
+			Setup: func(cpu *CPU) {
+				cpu.setZN(0x7F)
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 0, cpu.Flags.Z)
+				assert.Equal(t, 0, cpu.Flags.N)
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestValidateState(t *testing.T) {
+	t.Parallel()
+
+	// Test valid state
+	cpu := cpuTestSetup(t)
+	assert.NoError(t, cpu.ValidateState())
+
+	// Test invalid flag values
+	cpu = cpuTestSetup(t)
+	cpu.Flags.C = 2
+	assert.ErrorContains(t, cpu.ValidateState(), "invalid flag values")
+
+	// Test nil memory
+	cpu = cpuTestSetup(t)
+	cpu.memory = nil
+	assert.ErrorContains(t, cpu.ValidateState(), "CPU memory is nil")
+}
+
+func TestCPUReset(t *testing.T) {
+	t.Parallel()
+	cpu := cpuTestSetup(t)
+
+	// Modify CPU state
+	cpu.A = 0x42
+	cpu.X = 0x24
+	cpu.Y = 0x84
+	cpu.Flags.C = 1
+	cpu.Flags.Z = 1
+	cpu.cycles = 1000
+
+	// Reset and verify state
+	cpu.Reset()
+	assert.Equal(t, 0, cpu.A)
+	assert.Equal(t, 0, cpu.X)
+	assert.Equal(t, 0, cpu.Y)
+	assert.Equal(t, InitialStack, cpu.SP)
+	assert.Equal(t, initialCycles, cpu.cycles)
+	assert.Equal(t, initialFlags, cpu.GetFlags())
+}
+
+func TestGetInstructionCount(t *testing.T) {
+	t.Parallel()
+	cpu := cpuTestSetup(t)
+
+	// Test initial instruction count
+	count := cpu.GetInstructionCount()
+	assert.Equal(t, initialCycles/4, count)
+
+	// Add cycles and test again
+	cpu.cycles = 100
+	count = cpu.GetInstructionCount()
+	assert.Equal(t, uint64(25), count)
 }

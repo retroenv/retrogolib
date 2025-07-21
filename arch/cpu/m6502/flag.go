@@ -16,16 +16,14 @@ type Flags struct {
 
 // GetFlags returns the current state of flags as byte.
 func (c *CPU) GetFlags() uint8 {
-	var f byte
-	f |= c.Flags.C << 0
-	f |= c.Flags.Z << 1
-	f |= c.Flags.I << 2
-	f |= c.Flags.D << 3
-	f |= c.Flags.B << 4
-	f |= c.Flags.U << 5
-	f |= c.Flags.V << 6
-	f |= c.Flags.N << 7
-	return f
+	return c.Flags.C |
+		(c.Flags.Z << 1) |
+		(c.Flags.I << 2) |
+		(c.Flags.D << 3) |
+		(c.Flags.B << 4) |
+		(c.Flags.U << 5) |
+		(c.Flags.V << 6) |
+		(c.Flags.N << 7)
 }
 
 // setFlags sets the flags from the given byte.
