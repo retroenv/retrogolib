@@ -18,9 +18,9 @@ func TestContext(t *testing.T) {
 	// Test that context is not cancelled initially
 	select {
 	case <-ctx.Done():
-		t.Error("Context should not be cancelled initially")
+		assert.Fail(t, "Context should not be cancelled initially")
 	default:
-		// Expected behavior
+		// Expected behavior - context is not cancelled
 	}
 }
 
@@ -39,7 +39,7 @@ func TestContext_SIGINT(t *testing.T) {
 	case <-ctx.Done():
 		// Expected behavior
 	case <-time.After(100 * time.Millisecond):
-		t.Error("Context should be cancelled after SIGINT")
+		assert.Fail(t, "Context should be cancelled after SIGINT")
 	}
 
 	assert.Equal(t, context.Canceled, ctx.Err(), "Context should be cancelled")
@@ -60,7 +60,7 @@ func TestContext_SIGTERM(t *testing.T) {
 	case <-ctx.Done():
 		// Expected behavior
 	case <-time.After(100 * time.Millisecond):
-		t.Error("Context should be cancelled after SIGTERM")
+		assert.Fail(t, "Context should be cancelled after SIGTERM")
 	}
 
 	assert.Equal(t, context.Canceled, ctx.Err(), "Context should be cancelled")
@@ -77,14 +77,14 @@ func TestContext_MultipleContexts(t *testing.T) {
 	// We verify they work independently by checking they don't interfere with each other
 	select {
 	case <-ctx1.Done():
-		t.Error("First context should not be cancelled initially")
+		assert.Fail(t, "First context should not be cancelled initially")
 	default:
 		// Expected behavior
 	}
 
 	select {
 	case <-ctx2.Done():
-		t.Error("Second context should not be cancelled initially")
+		assert.Fail(t, "Second context should not be cancelled initially")
 	default:
 		// Expected behavior
 	}
@@ -100,7 +100,7 @@ func TestContext_Cleanup(t *testing.T) {
 		// Verify context is not cancelled
 		select {
 		case <-ctx.Done():
-			t.Errorf("Context %d should not be cancelled initially", i)
+			assert.Fail(t, "Context should not be cancelled initially", "Context iteration %d failed", i)
 		default:
 			// Expected behavior
 		}

@@ -195,25 +195,25 @@ func TestErrorConditions(t *testing.T) {
 	// Test stack underflow
 	c.SP = 0
 	err := ret(c, 0)
-	assert.True(t, err != nil, "ret should return error for stack underflow")
+	assert.ErrorContains(t, err, "stack underflow")
 	assert.ErrorIs(t, err, ErrStackUnderflow, "error should be ErrStackUnderflow")
 
 	// Test stack overflow
 	c.SP = 16
 	err = call(c, 0x200)
-	assert.True(t, err != nil, "call should return error for stack overflow")
+	assert.ErrorContains(t, err, "stack overflow")
 	assert.ErrorIs(t, err, ErrStackOverflow, "error should be ErrStackOverflow")
 
 	// Test key index out of bounds
 	c.V[0] = 16
 	err = skp(c, 0)
-	assert.True(t, err != nil, "skp should return error for key index out of bounds")
+	assert.ErrorContains(t, err, "key index out of bounds")
 	assert.ErrorIs(t, err, ErrKeyIndexOutOfBounds, "error should be ErrKeyIndexOutOfBounds")
 
 	// Test font index out of bounds
 	c.V[0] = 16
 	err = c.ldFVx(0)
-	assert.True(t, err != nil, "ldFVx should return error for font index out of bounds")
+	assert.ErrorContains(t, err, "font index out of bounds")
 	assert.ErrorIs(t, err, ErrFontIndexOutOfBounds, "error should be ErrFontIndexOutOfBounds")
 }
 
@@ -223,12 +223,91 @@ func TestMemoryBounds(t *testing.T) {
 	// Test memory out of bounds in Step
 	c.PC = 4095
 	err := c.Step()
-	assert.True(t, err != nil, "Step should return error for memory out of bounds")
+	assert.ErrorContains(t, err, "memory")
 	assert.ErrorIs(t, err, ErrMemoryOutOfBounds, "error should be ErrMemoryOutOfBounds")
 
 	// Test memory bounds in BCD operation
 	c.I = 4094
 	err = c.ldBVx(0)
-	assert.True(t, err != nil, "ldBVx should return error for memory out of bounds")
+	assert.ErrorContains(t, err, "memory")
 	assert.ErrorIs(t, err, ErrMemoryOutOfBounds, "error should be ErrMemoryOutOfBounds")
+}
+
+func TestCPUState(t *testing.T) {
+	t.Parallel()
+	c := New()
+
+	// Test initial state
+	assert.Equal(t, uint16(0x200), c.PC)
+	assert.Equal(t, uint16(0), c.I)
+	assert.Equal(t, uint8(0), c.SP)
+	assert.Equal(t, uint8(0), c.DelayTimer)
+	assert.Equal(t, uint8(0), c.SoundTimer)
+
+	// Test register initialization
+	for i := range 16 {
+		assert.Equal(t, uint8(0), c.V[i], "V[%d] should be 0", i)
+	}
+
+	// Test stack initialization
+	for i := range 16 {
+		assert.Equal(t, uint16(0), c.Stack[i], "Stack[%d] should be 0", i)
+	}
+}
+
+func TestAddOverflow(t *testing.T) {
+	t.Parallel()
+	c := New()
+
+	// Test addition with carry
+	c.V[0] = 0xFF
+	c.V[1] = 0x02
+	assert.NoError(t, add(c, 0x8010))
+	assert.Equal(t, uint8(0x01), c.V[0])
+	assert.Equal(t, uint8(0x01), c.V[0xF], "Carry flag should be set")
+
+	// Test addition without carry
+	c.V[0] = 0x10
+	c.V[1] = 0x20
+	assert.NoError(t, add(c, 0x8010))
+	assert.Equal(t, uint8(0x30), c.V[0])
+	assert.Equal(t, uint8(0x00), c.V[0xF], "Carry flag should be cleared")
+}
+
+func TestSubBorrow(t *testing.T) {
+	t.Parallel()
+	c := New()
+
+	// Test subtraction without borrow
+	c.V[0] = 0x30
+	c.V[1] = 0x10
+	assert.NoError(t, sub(c, 0x8015))
+	assert.Equal(t, uint8(0x20), c.V[0])
+	assert.Equal(t, uint8(0x01), c.V[0xF], "No borrow flag should be set")
+
+	// Test subtraction with borrow
+	c.V[0] = 0x10
+	c.V[1] = 0x30
+	assert.NoError(t, sub(c, 0x8015))
+	assert.Equal(t, uint8(0xE0), c.V[0])
+	assert.Equal(t, uint8(0x00), c.V[0xF], "Borrow flag should be cleared")
+}
+
+func TestRandomization(t *testing.T) {
+	t.Parallel()
+	c := New()
+
+	// Run random test multiple times to ensure it's actually randomizing
+	var different bool
+	firstResult := uint8(0)
+	for i := range 100 {
+		assert.NoError(t, rnd(c, 0x00FF))
+		if i == 0 {
+			firstResult = c.V[0]
+		} else if c.V[0] != firstResult {
+			different = true
+			break
+		}
+	}
+	assert.True(t, different, "RND should produce different results")
 }
