@@ -188,3 +188,47 @@ func TestSubn(t *testing.T) {
 	assert.NoError(t, subn(c, 0x0010))
 	assert.Equal(t, uint8(0x22), c.V[0])
 }
+
+func TestErrorConditions(t *testing.T) {
+	c := New()
+
+	// Test stack underflow
+	c.SP = 0
+	err := ret(c, 0)
+	assert.True(t, err != nil, "ret should return error for stack underflow")
+	assert.ErrorIs(t, err, ErrStackUnderflow, "error should be ErrStackUnderflow")
+
+	// Test stack overflow
+	c.SP = 16
+	err = call(c, 0x200)
+	assert.True(t, err != nil, "call should return error for stack overflow")
+	assert.ErrorIs(t, err, ErrStackOverflow, "error should be ErrStackOverflow")
+
+	// Test key index out of bounds
+	c.V[0] = 16
+	err = skp(c, 0)
+	assert.True(t, err != nil, "skp should return error for key index out of bounds")
+	assert.ErrorIs(t, err, ErrKeyIndexOutOfBounds, "error should be ErrKeyIndexOutOfBounds")
+
+	// Test font index out of bounds
+	c.V[0] = 16
+	err = c.ldFVx(0)
+	assert.True(t, err != nil, "ldFVx should return error for font index out of bounds")
+	assert.ErrorIs(t, err, ErrFontIndexOutOfBounds, "error should be ErrFontIndexOutOfBounds")
+}
+
+func TestMemoryBounds(t *testing.T) {
+	c := New()
+
+	// Test memory out of bounds in Step
+	c.PC = 4095
+	err := c.Step()
+	assert.True(t, err != nil, "Step should return error for memory out of bounds")
+	assert.ErrorIs(t, err, ErrMemoryOutOfBounds, "error should be ErrMemoryOutOfBounds")
+
+	// Test memory bounds in BCD operation
+	c.I = 4094
+	err = c.ldBVx(0)
+	assert.True(t, err != nil, "ldBVx should return error for memory out of bounds")
+	assert.ErrorIs(t, err, ErrMemoryOutOfBounds, "error should be ErrMemoryOutOfBounds")
+}

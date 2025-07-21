@@ -3,6 +3,7 @@ package chip8
 import (
 	"fmt"
 	"math"
+	"math/rand/v2"
 )
 
 // cls clears the display.
@@ -384,7 +385,7 @@ func rnd(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X", ErrRegisterOutOfBounds, reg)
 	}
 	value := byte(param & 0x00FF)
-	c.V[reg] = byte(c.rnd.Int63()) & value
+	c.V[reg] = byte(rand.IntN(256)) & value
 	c.PC += 2
 	return nil
 }
