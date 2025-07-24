@@ -27,6 +27,11 @@ func TestArchitecture_String(t *testing.T) {
 			arch: CHIP8,
 			want: "chip8",
 		},
+		{
+			name: "X86",
+			arch: X86,
+			want: "x86",
+		},
 	}
 
 	for _, tt := range tests {
@@ -56,6 +61,11 @@ func TestArchitecture_IsValid(t *testing.T) {
 		{
 			name: "CHIP8 is valid",
 			arch: CHIP8,
+			want: true,
+		},
+		{
+			name: "X86 is valid",
+			arch: X86,
 			want: true,
 		},
 		{
@@ -109,6 +119,12 @@ func TestFromString(t *testing.T) {
 			wantOk: true,
 		},
 		{
+			name:   "valid x86",
+			input:  "x86",
+			want:   X86,
+			wantOk: true,
+		},
+		{
 			name:   "invalid architecture",
 			input:  "invalid",
 			want:   "",
@@ -139,7 +155,7 @@ func TestFromString(t *testing.T) {
 
 func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
-	expected := []Architecture{M6502, Z80, CHIP8}
+	expected := []Architecture{CHIP8, M6502, Z80, X86}
 
 	assert.Equal(t, len(expected), len(got))
 
@@ -154,13 +170,26 @@ func TestSupportedArchitectures(t *testing.T) {
 		}
 		assert.True(t, found, "Expected architecture %s not found in supported architectures", expectedArch)
 	}
+
+	// Verify no unexpected architectures are present
+	for _, gotArch := range got {
+		found := false
+		for _, expectedArch := range expected {
+			if gotArch == expectedArch {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "Unexpected architecture %s found in supported architectures", gotArch)
+	}
 }
 
 func TestConstants(t *testing.T) {
 	// Verify the constant values are as expected
 	assert.Equal(t, "6502", string(M6502))
-	assert.Equal(t, "z80", string(Z80))
 	assert.Equal(t, "chip8", string(CHIP8))
+	assert.Equal(t, "x86", string(X86))
+	assert.Equal(t, "z80", string(Z80))
 }
 
 // Integration test to ensure all supported architectures are valid

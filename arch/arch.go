@@ -25,6 +25,13 @@ const (
 	// - Nintendo Entertainment System (NES/Famicom)
 	M6502 Architecture = "6502"
 
+	// X86 represents the Intel x86 processor family used in:
+	// - IBM PC and compatibles
+	// - MS-DOS and compatible operating systems
+	// - Early Windows systems
+	// - Embedded x86 systems
+	X86 Architecture = "x86"
+
 	// Z80 represents the Zilog Z80 processor used in:
 	// - ZX Spectrum
 	// - Amstrad CPC
@@ -39,6 +46,7 @@ const (
 var allSupportedArchitectures = []Architecture{
 	CHIP8,
 	M6502,
+	X86,
 	Z80,
 }
 
