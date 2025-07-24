@@ -301,7 +301,7 @@ func (c *CPU) ldIVx(reg uint16) error {
 	if c.I+reg >= uint16(len(c.Memory)) {
 		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
 	}
-	for i := uint16(0); i <= reg; i++ {
+	for i := range reg + 1 {
 		c.Memory[c.I+i] = c.V[i]
 	}
 	c.PC += 2
@@ -313,7 +313,7 @@ func (c *CPU) ldVxI(reg uint16) error {
 	if c.I+reg >= uint16(len(c.Memory)) {
 		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
 	}
-	for i := uint16(0); i <= reg; i++ {
+	for i := range reg + 1 {
 		c.V[i] = c.Memory[c.I+i]
 	}
 	c.PC += 2

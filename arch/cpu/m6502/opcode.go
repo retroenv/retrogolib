@@ -1,5 +1,7 @@
 package m6502
 
+import "github.com/retroenv/retrogolib/set"
+
 // MaxOpcodeSize is the maximum size of an opcode and its operands in bytes.
 const MaxOpcodeSize = 3
 
@@ -279,34 +281,31 @@ var Opcodes = [256]Opcode{
 }
 
 // ReadsMemory returns whether the instruction accesses memory reading.
-func (opcode Opcode) ReadsMemory(memoryReadInstructions map[string]struct{}) bool {
+func (opcode Opcode) ReadsMemory(memoryReadInstructions *set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
 	}
 
-	_, ok := memoryReadInstructions[opcode.Instruction.Name]
-	return ok
+	return memoryReadInstructions.Contains(opcode.Instruction.Name)
 }
 
 // WritesMemory returns whether the instruction accesses memory writing.
-func (opcode Opcode) WritesMemory(memoryWriteInstructions map[string]struct{}) bool {
+func (opcode Opcode) WritesMemory(memoryWriteInstructions *set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
 	}
 
-	_, ok := memoryWriteInstructions[opcode.Instruction.Name]
-	return ok
+	return memoryWriteInstructions.Contains(opcode.Instruction.Name)
 }
 
 // ReadWritesMemory returns whether the instruction accesses memory reading and writing.
-func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions map[string]struct{}) bool {
+func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions *set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
 	}
 
-	_, ok := memoryReadWriteInstructions[opcode.Instruction.Name]
-	return ok
+	return memoryReadWriteInstructions.Contains(opcode.Instruction.Name)
 }
