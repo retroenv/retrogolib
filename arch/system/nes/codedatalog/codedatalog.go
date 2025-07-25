@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/retroenv/retrogolib/arch/nes/cartridge"
+	"github.com/retroenv/retrogolib/arch/system/nes/cartridge"
 )
 
 // PrgFlag defines flags for the PRG ROM.
