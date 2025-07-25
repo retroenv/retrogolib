@@ -111,63 +111,87 @@ func (l *Logger) SetLevel(level Level) {
 
 // Trace logs at TraceLevel.
 func (l *Logger) Trace(msg string, args ...any) {
-	l.Log(nil, TraceLevel, msg, args...)
+	if l != nil && l.level.Level() <= TraceLevel {
+		l.Log(nil, TraceLevel, msg, args...)
+	}
 }
 
 // TraceContext logs at TraceLevel with the given context.
 func (l *Logger) TraceContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, TraceLevel, msg, args...)
+	if l != nil && l.level.Level() <= TraceLevel {
+		l.Log(ctx, TraceLevel, msg, args...)
+	}
 }
 
 // Debug logs at LevelDebug.
 func (l *Logger) Debug(msg string, args ...any) {
-	l.Log(nil, DebugLevel, msg, args...)
+	if l != nil && l.level.Level() <= DebugLevel {
+		l.Log(nil, DebugLevel, msg, args...)
+	}
 }
 
 // DebugContext logs at LevelDebug with the given context.
 func (l *Logger) DebugContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, DebugLevel, msg, args...)
+	if l != nil && l.level.Level() <= DebugLevel {
+		l.Log(ctx, DebugLevel, msg, args...)
+	}
 }
 
 // Info logs at LevelInfo.
 func (l *Logger) Info(msg string, args ...any) {
-	l.Log(nil, InfoLevel, msg, args...)
+	if l != nil && l.level.Level() <= InfoLevel {
+		l.Log(nil, InfoLevel, msg, args...)
+	}
 }
 
 // InfoContext logs at LevelInfo with the given context.
 func (l *Logger) InfoContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, InfoLevel, msg, args...)
+	if l != nil && l.level.Level() <= InfoLevel {
+		l.Log(ctx, InfoLevel, msg, args...)
+	}
 }
 
 // Warn logs at LevelWarn.
 func (l *Logger) Warn(msg string, args ...any) {
-	l.Log(nil, WarnLevel, msg, args...)
+	if l != nil && l.level.Level() <= WarnLevel {
+		l.Log(nil, WarnLevel, msg, args...)
+	}
 }
 
 // WarnContext logs at LevelWarn with the given context.
 func (l *Logger) WarnContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, WarnLevel, msg, args...)
+	if l != nil && l.level.Level() <= WarnLevel {
+		l.Log(ctx, WarnLevel, msg, args...)
+	}
 }
 
 // Error logs at LevelError.
 func (l *Logger) Error(msg string, args ...any) {
-	l.Log(nil, ErrorLevel, msg, args...)
+	if l != nil && l.level.Level() <= ErrorLevel {
+		l.Log(nil, ErrorLevel, msg, args...)
+	}
 }
 
 // ErrorContext logs at LevelError with the given context.
 func (l *Logger) ErrorContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, ErrorLevel, msg, args...)
+	if l != nil && l.level.Level() <= ErrorLevel {
+		l.Log(ctx, ErrorLevel, msg, args...)
+	}
 }
 
 // Fatal logs at FatalLevel.
 func (l *Logger) Fatal(msg string, args ...any) {
-	l.Log(nil, FatalLevel, msg, args...)
+	if l != nil {
+		l.Log(nil, FatalLevel, msg, args...)
+	}
 	fatalExitFunc()
 }
 
 // FatalContext logs at FatalLevel with the given context.
 func (l *Logger) FatalContext(ctx context.Context, msg string, args ...any) {
-	l.Log(ctx, FatalLevel, msg, args...)
+	if l != nil {
+		l.Log(ctx, FatalLevel, msg, args...)
+	}
 	fatalExitFunc()
 }
 
