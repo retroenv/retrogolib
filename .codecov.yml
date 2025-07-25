@@ -2,5 +2,17 @@ coverage:
   status:
     project:
       default:
-        target: 50%
-        threshold: 5%
+        target: 50%           # Maintain current coverage level
+        threshold: 5%         # Allow 5% decrease without failing
+
+    patch:
+      default:
+        target: 60%           # Encourage coverage for new code
+        threshold: 15%        # But be flexible
+        if_not_found: success # Don't fail if no coverage data
+        only_pulls: true      # Only check PRs
+
+  comment:
+    layout: "diff, files"     # Show useful coverage info
+    require_changes: true     # Only comment when coverage changes
+    behavior: once            # Don't spam PRs with comments
