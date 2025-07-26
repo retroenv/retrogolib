@@ -51,19 +51,13 @@ func TestNoError(t *testing.T) {
 
 func TestError(t *testing.T) {
 	tst := &errorCapture{}
-	Error(tst, errors.New("error"), "error")
+	Error(tst, errors.New("error"))
 	if tst.failed {
 		t.Error("Error failed")
 	}
 
 	tst = &errorCapture{}
-	Error(tst, nil, "error")
-	if !tst.failed {
-		t.Error("Error failed")
-	}
-
-	tst = &errorCapture{}
-	Error(tst, errors.New("error"), "other")
+	Error(tst, nil)
 	if !tst.failed {
 		t.Error("Error failed")
 	}
@@ -150,6 +144,20 @@ func TestLen(t *testing.T) {
 	if !tst.failed {
 		t.Error("Len failed")
 	}
+
+	// Test nil object
+	tst = &errorCapture{}
+	Len(tst, nil, 0)
+	if !tst.failed {
+		t.Error("Len should fail for nil")
+	}
+
+	// Test invalid type
+	tst = &errorCapture{}
+	Len(tst, 42, 1)
+	if !tst.failed {
+		t.Error("Len should fail for non-length type")
+	}
 }
 
 func TestNotNil(t *testing.T) {
@@ -177,6 +185,22 @@ func TestNil(t *testing.T) {
 	Nil(tst, 1)
 	if !tst.failed {
 		t.Error("Nil failed")
+	}
+
+	// Test nil slice
+	var nilSlice []int
+	tst = &errorCapture{}
+	Nil(tst, nilSlice)
+	if tst.failed {
+		t.Error("Nil should pass for nil slice")
+	}
+
+	// Test nil function
+	var nilFunc func()
+	tst = &errorCapture{}
+	Nil(tst, nilFunc)
+	if tst.failed {
+		t.Error("Nil should pass for nil function")
 	}
 }
 
@@ -334,6 +358,13 @@ func TestGreater(t *testing.T) {
 	Greater(tst, 1, 1)
 	if !tst.failed {
 		t.Error("Greater failed for 1 > 1")
+	}
+
+	// Test incompatible types
+	tst = &errorCapture{}
+	Greater(tst, 1, "a")
+	if !tst.failed {
+		t.Error("Greater should fail for incompatible types")
 	}
 }
 

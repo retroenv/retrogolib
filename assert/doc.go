@@ -49,7 +49,7 @@ String Assertions:
 
 Error Handling:
   - NoError: Asserts error is nil
-  - Error: Asserts error is not nil and has expected message
+  - Error: Asserts error is not nil
   - ErrorIs: Asserts error matches expected error using errors.Is
   - ErrorContains: Asserts error message contains substring
 

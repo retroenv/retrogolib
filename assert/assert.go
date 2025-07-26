@@ -26,6 +26,11 @@ func Fail(t Testing, message string, msgAndArgs ...any) {
 }
 
 // Equal asserts that two objects are equal.
+//
+// Example:
+//
+//	assert.Equal(t, 42, result)
+//	assert.Equal(t, "hello", greeting, "greeting should be hello")
 func Equal(t Testing, expected, actual any, msgAndArgs ...any) {
 	t.Helper()
 	if equal(expected, actual) {
@@ -37,6 +42,11 @@ func Equal(t Testing, expected, actual any, msgAndArgs ...any) {
 }
 
 // NotEqual asserts that two objects are not equal.
+//
+// Example:
+//
+//	assert.NotEqual(t, 0, count)
+//	assert.NotEqual(t, oldValue, newValue, "value should have changed")
 func NotEqual(t Testing, expected, actual any, msgAndArgs ...any) {
 	t.Helper()
 	if !equal(expected, actual) {
@@ -48,6 +58,12 @@ func NotEqual(t Testing, expected, actual any, msgAndArgs ...any) {
 }
 
 // NoError asserts that a function returned no error.
+//
+// Example:
+//
+//	err := processData()
+//	assert.NoError(t, err)
+//	assert.NoError(t, err, "data processing should succeed")
 func NoError(t Testing, err error, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
@@ -59,24 +75,30 @@ func NoError(t Testing, err error, msgAndArgs ...any) {
 }
 
 // Error asserts that a function returned an error.
-func Error(t Testing, err error, expectedError string, msgAndArgs ...any) {
+//
+// Example:
+//
+//	err := divide(1, 0)
+//	assert.Error(t, err)
+//	assert.Error(t, err, "division by zero should fail")
+func Error(t Testing, err error, msgAndArgs ...any) {
 	t.Helper()
-	if err == nil {
-		msg := fmt.Sprintf("Error message not equal: \nexpected: %v\nactual  : nil", expectedError)
-		Fail(t, msg, msgAndArgs...)
+	if err != nil {
 		return
 	}
 
-	actual := err.Error()
-	if actual == expectedError {
-		return
-	}
-
-	msg := fmt.Sprintf("Error message not equal: \nexpected: %v\nactual  : %v", expectedError, actual)
+	msg := "Expected an error"
 	Fail(t, msg, msgAndArgs...)
 }
 
 // ErrorIs asserts that a function returned an error that matches the specified error.
+// Uses errors.Is for comparison, which supports error wrapping.
+//
+// Example:
+//
+//	err := processFile("missing.txt")
+//	assert.ErrorIs(t, err, os.ErrNotExist)
+//	assert.ErrorIs(t, err, ErrInvalidInput, "should be input validation error")
 func ErrorIs(t Testing, err, expectedError error, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
@@ -94,6 +116,11 @@ func ErrorIs(t Testing, err, expectedError error, msgAndArgs ...any) {
 }
 
 // True asserts that the specified value is true.
+//
+// Example:
+//
+//	assert.True(t, isValid)
+//	assert.True(t, user.IsActive(), "user should be active")
 func True(t Testing, value bool, msgAndArgs ...any) {
 	t.Helper()
 	if value {
@@ -103,6 +130,11 @@ func True(t Testing, value bool, msgAndArgs ...any) {
 }
 
 // False asserts that the specified value is false.
+//
+// Example:
+//
+//	assert.False(t, isEmpty)
+//	assert.False(t, user.IsBlocked(), "user should not be blocked")
 func False(t Testing, value bool, msgAndArgs ...any) {
 	t.Helper()
 	if !value {
@@ -114,16 +146,31 @@ func False(t Testing, value bool, msgAndArgs ...any) {
 // Len asserts that the specified object has the expected length.
 func Len(t Testing, object any, expectedLen int, msgAndArgs ...any) {
 	t.Helper()
-	actualLen := reflect.ValueOf(object).Len()
-	if actualLen == expectedLen {
+	v := reflect.ValueOf(object)
+	if !v.IsValid() {
+		Fail(t, "Cannot get length of nil", msgAndArgs...)
 		return
 	}
 
-	msg := fmt.Sprintf("Length not equal: \nexpected: %d\nactual  : %d", expectedLen, actualLen)
-	Fail(t, msg, msgAndArgs...)
+	switch v.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice, reflect.String:
+		actualLen := v.Len()
+		if actualLen == expectedLen {
+			return
+		}
+		msg := fmt.Sprintf("Length not equal: \nexpected: %d\nactual  : %d", expectedLen, actualLen)
+		Fail(t, msg, msgAndArgs...)
+	default:
+		Fail(t, fmt.Sprintf("Object of type %T does not have a length", object), msgAndArgs...)
+	}
 }
 
 // NotNil asserts that the specified object is not nil.
+//
+// Example:
+//
+//	assert.NotNil(t, user)
+//	assert.NotNil(t, response, "response should not be nil")
 func NotNil(t Testing, object any, msgAndArgs ...any) {
 	t.Helper()
 	if !isNil(object) {
@@ -135,6 +182,11 @@ func NotNil(t Testing, object any, msgAndArgs ...any) {
 }
 
 // Nil asserts that the specified object is nil.
+//
+// Example:
+//
+//	assert.Nil(t, ptr)
+//	assert.Nil(t, result, "result should be nil for invalid input")
 func Nil(t Testing, object any, msgAndArgs ...any) {
 	t.Helper()
 	if isNil(object) {
@@ -257,6 +309,12 @@ func LessOrEqual(t Testing, first, second any, msgAndArgs ...any) {
 }
 
 // ErrorContains asserts that the error message contains the substring.
+//
+// Example:
+//
+//	err := authenticate("invalid-token")
+//	assert.ErrorContains(t, err, "permission denied")
+//	assert.ErrorContains(t, err, "authentication", "should be auth error")
 func ErrorContains(t Testing, err error, substr string, msgAndArgs ...any) {
 	t.Helper()
 	if err == nil {
@@ -311,7 +369,7 @@ func isNil(value any) bool {
 	}
 
 	switch reflect.TypeOf(value).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+	case reflect.Ptr, reflect.Map, reflect.Chan, reflect.Slice, reflect.Interface, reflect.Func:
 		return reflect.ValueOf(value).IsNil()
 	default:
 		return false
@@ -336,6 +394,11 @@ func isGreater(first, second any) bool {
 	fv := reflect.ValueOf(first)
 	sv := reflect.ValueOf(second)
 
+	// Type compatibility check
+	if fv.Kind() != sv.Kind() {
+		return false
+	}
+
 	switch fv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return fv.Int() > sv.Int()
@@ -353,6 +416,11 @@ func isGreater(first, second any) bool {
 func isLess(first, second any) bool {
 	fv := reflect.ValueOf(first)
 	sv := reflect.ValueOf(second)
+
+	// Type compatibility check
+	if fv.Kind() != sv.Kind() {
+		return false
+	}
 
 	switch fv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
