@@ -35,6 +35,44 @@ func Stringer(key string, val fmt.Stringer) Field {
 	return slog.Any(key, val)
 }
 
+// stringFunc implements slog.LogValuer for lazy string evaluation.
+type stringFunc struct {
+	f func() string
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (sf stringFunc) LogValue() slog.Value {
+	return slog.StringValue(sf.f())
+}
+
+// StringFunc constructs a Field with the given key and a function that returns a string.
+// The function is evaluated lazily - only when the log level is enabled and the
+// handler processes the record. This provides significant performance benefits
+// for expensive string operations when logging is disabled.
+func StringFunc(key string, f func() string) Field {
+	return slog.Any(key, stringFunc{f: f})
+}
+
+// intFunc implements slog.LogValuer for lazy int evaluation.
+type intFunc struct {
+	f func() int
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (inf intFunc) LogValue() slog.Value {
+	return slog.IntValue(inf.f())
+}
+
+// IntFunc constructs a Field with the given key and a function that returns an int.
+// The function is evaluated lazily - only when the log level is enabled and the
+// handler processes the record. This provides significant performance benefits
+// for expensive int computations when logging is disabled.
+func IntFunc(key string, f func() int) Field {
+	return slog.Any(key, intFunc{f: f})
+}
+
 // Err constructs a Field with the given key and value.
 func Err(err error) Field {
 	return slog.Any("error", err)
