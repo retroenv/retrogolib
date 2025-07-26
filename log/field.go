@@ -152,3 +152,58 @@ func Float32(key string, val float32) Field {
 func Float64(key string, val float64) Field {
 	return slog.Float64(key, val)
 }
+
+// hex implements slog.LogValuer for lazy hex formatting.
+type hex struct {
+	val any
+}
+
+// LogValue implements slog.LogValuer, ensuring the hex formatting is only performed
+// when the log record is actually processed.
+func (hf hex) LogValue() slog.Value {
+	return slog.StringValue(formatHex(hf.val))
+}
+
+// Hex constructs a Field with the given key and formats integer values in hex format.
+// The hex formatting is evaluated lazily - only when the log level is enabled and the
+// handler processes the record. This provides significant performance benefits for
+// expensive hex formatting when logging is disabled.
+//
+// Supports signed and unsigned integers of various bit widths with appropriate zero-padding.
+//
+// Examples:
+//
+//	log.Hex("addr", uint16(0x1234))  // "addr": "0x1234"
+//	log.Hex("byte", uint8(0xFF))     // "byte": "0xFF"
+//	log.Hex("opcode", 0x4C)          // "opcode": "0x4C"
+func Hex(key string, val any) Field {
+	return slog.Any(key, hex{val: val})
+}
+
+// formatHex formats integer values as hex strings with appropriate zero-padding.
+func formatHex(val any) string {
+	switch v := val.(type) {
+	case uint8:
+		return fmt.Sprintf("0x%02X", v)
+	case int8:
+		return fmt.Sprintf("0x%02X", uint8(v))
+	case uint16:
+		return fmt.Sprintf("0x%04X", v)
+	case int16:
+		return fmt.Sprintf("0x%04X", uint16(v))
+	case uint32:
+		return fmt.Sprintf("0x%08X", v)
+	case int32:
+		return fmt.Sprintf("0x%08X", uint32(v))
+	case uint64:
+		return fmt.Sprintf("0x%016X", v)
+	case int64:
+		return fmt.Sprintf("0x%016X", uint64(v))
+	case uint:
+		return fmt.Sprintf("0x%X", v)
+	case int:
+		return fmt.Sprintf("0x%X", uint(v))
+	default:
+		return fmt.Sprintf("0x%X", val)
+	}
+}
