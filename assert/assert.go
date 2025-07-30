@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -19,7 +20,11 @@ type Testing interface {
 func Fail(t Testing, message string, msgAndArgs ...any) {
 	t.Helper()
 	if len(msgAndArgs) > 0 {
-		message += "\n" + fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
+		var builder strings.Builder
+		builder.WriteString(message)
+		builder.WriteByte('\n')
+		builder.WriteString(fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...))
+		message = builder.String()
 	}
 	t.Error(message)
 	t.FailNow()
@@ -115,6 +120,28 @@ func ErrorIs(t Testing, err, expectedError error, msgAndArgs ...any) {
 	Fail(t, msg, msgAndArgs...)
 }
 
+// ErrorAs asserts that the error matches the expected error type using errors.As.
+//
+// Example:
+//
+//	var pathErr *fs.PathError
+//	assert.ErrorAs(t, err, &pathErr)
+func ErrorAs(t Testing, err error, target any, msgAndArgs ...any) {
+	t.Helper()
+	if err == nil {
+		msg := fmt.Sprintf("Error not returned: \nexpected: error that matches %T\nactual  : nil", target)
+		Fail(t, msg, msgAndArgs...)
+		return
+	}
+
+	if errors.As(err, target) {
+		return
+	}
+
+	msg := fmt.Sprintf("Error type mismatch: \nexpected: error that matches %T\nactual  : %v", target, err)
+	Fail(t, msg, msgAndArgs...)
+}
+
 // True asserts that the specified value is true.
 //
 // Example:
@@ -144,6 +171,11 @@ func False(t Testing, value bool, msgAndArgs ...any) {
 }
 
 // Len asserts that the specified object has the expected length.
+//
+// Example:
+//
+//	assert.Len(t, items, 5)
+//	assert.Len(t, "hello", 5, "string should have 5 characters")
 func Len(t Testing, object any, expectedLen int, msgAndArgs ...any) {
 	t.Helper()
 	v := reflect.ValueOf(object)
@@ -158,7 +190,7 @@ func Len(t Testing, object any, expectedLen int, msgAndArgs ...any) {
 		if actualLen == expectedLen {
 			return
 		}
-		msg := fmt.Sprintf("Length not equal: \nexpected: %d\nactual  : %d", expectedLen, actualLen)
+		msg := "Length not equal: \nexpected: " + strconv.Itoa(expectedLen) + "\nactual  : " + strconv.Itoa(actualLen)
 		Fail(t, msg, msgAndArgs...)
 	default:
 		Fail(t, fmt.Sprintf("Object of type %T does not have a length", object), msgAndArgs...)
@@ -342,15 +374,27 @@ func Implements(t Testing, interfaceType, object any, msgAndArgs ...any) {
 	}
 }
 
+// equal checks if two values are equal, handling type conversions and nil values efficiently.
 func equal(expected, actual any) bool {
+	// Handle nil cases efficiently
 	if expected == nil || actual == nil {
 		return isNil(expected) == isNil(actual)
 	}
 
+	// Fast path for exact equality (but only for comparable types)
+	// Check if types are comparable first to avoid panic
+	if reflect.TypeOf(expected).Comparable() && reflect.TypeOf(actual).Comparable() {
+		if expected == actual {
+			return true
+		}
+	}
+
+	// Use DeepEqual for comprehensive comparison (handles slices, maps, etc.)
 	if reflect.DeepEqual(expected, actual) {
 		return true
 	}
 
+	// Try type conversion as fallback
 	actualType := reflect.TypeOf(actual)
 	if actualType == nil {
 		return false
@@ -390,7 +434,29 @@ func isEmpty(value any) bool {
 	}
 }
 
+// isGreater checks if first value is greater than second, with optimized type checking.
 func isGreater(first, second any) bool {
+	// Fast path for common numeric types
+	switch f := first.(type) {
+	case int:
+		if s, ok := second.(int); ok {
+			return f > s
+		}
+	case int64:
+		if s, ok := second.(int64); ok {
+			return f > s
+		}
+	case float64:
+		if s, ok := second.(float64); ok {
+			return f > s
+		}
+	case string:
+		if s, ok := second.(string); ok {
+			return f > s
+		}
+	}
+
+	// Fallback to reflection for other types
 	fv := reflect.ValueOf(first)
 	sv := reflect.ValueOf(second)
 
@@ -413,7 +479,29 @@ func isGreater(first, second any) bool {
 	}
 }
 
+// isLess checks if first value is less than second, with optimized type checking.
 func isLess(first, second any) bool {
+	// Fast path for common numeric types
+	switch f := first.(type) {
+	case int:
+		if s, ok := second.(int); ok {
+			return f < s
+		}
+	case int64:
+		if s, ok := second.(int64); ok {
+			return f < s
+		}
+	case float64:
+		if s, ok := second.(float64); ok {
+			return f < s
+		}
+	case string:
+		if s, ok := second.(string); ok {
+			return f < s
+		}
+	}
+
+	// Fallback to reflection for other types
 	fv := reflect.ValueOf(first)
 	sv := reflect.ValueOf(second)
 

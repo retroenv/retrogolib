@@ -497,3 +497,63 @@ func (e *errorCapture) Error(args ...any) {
 func (e *errorCapture) FailNow() {
 	e.failed = true
 }
+
+// Additional edge case tests
+func TestEqual_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		expected any
+		actual   any
+		wantFail bool
+	}{
+		{"nil vs nil", nil, nil, false},
+		{"nil vs zero int", nil, 0, true},
+		{"zero vs zero", 0, 0, false},
+		{"empty string vs empty string", "", "", false},
+		{"slice comparison", []int{1, 2}, []int{1, 2}, false},
+		{"different slice", []int{1, 2}, []int{2, 1}, true},
+		{"type conversion", 42, int64(42), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tst := &errorCapture{}
+			Equal(tst, tt.expected, tt.actual)
+			if tst.failed != tt.wantFail {
+				t.Errorf("Equal() failed = %v, wantFail = %v", tst.failed, tt.wantFail)
+			}
+		})
+	}
+}
+
+func TestErrorAs_EdgeCases(t *testing.T) {
+	tst := &errorCapture{}
+	var pathErr *AssertTestError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &pathErr)
+	if tst.failed {
+		t.Error("ErrorAs should pass for matching error type")
+	}
+
+	tst = &errorCapture{}
+	var wrongType *AssertTestSecondError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &wrongType)
+	if !tst.failed {
+		t.Error("ErrorAs should fail for non-matching error type")
+	}
+}
+
+type AssertTestError struct {
+	msg string
+}
+
+func (e *AssertTestError) Error() string {
+	return e.msg
+}
+
+type AssertTestSecondError struct {
+	msg string
+}
+
+func (e *AssertTestSecondError) Error() string {
+	return e.msg
+}

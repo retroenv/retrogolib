@@ -70,35 +70,45 @@ The package uses a Testing interface that matches *testing.T, allowing for easy 
 		FailNow()
 	}
 
+# Performance Characteristics
+
+The assert package is optimized for performance in test scenarios:
+
+  - Fast-path optimizations for common types (int, string, float64)
+  - Efficient string building for error messages
+  - Minimal memory allocations in hot paths
+  - Type assertion optimizations before falling back to reflection
+
 # Examples
 
 	// Equality checks
 	assert.Equal(t, expected, actual, "values should be equal")
 	assert.NotEqual(t, 1, 2, "values should be different")
 
-	// Comparisons
+	// Comparisons (optimized for common types)
 	assert.Greater(t, 10, 5, "10 should be greater than 5")
 	assert.LessOrEqual(t, score, maxScore, "score should not exceed maximum")
 
-	// Error handling
+	// Error handling with modern patterns
 	assert.NoError(t, err, "operation should not fail")
 	assert.ErrorIs(t, err, ErrNotFound, "should return not found error")
+	assert.ErrorAs(t, err, &pathErr, "should be path error type")
 	assert.ErrorContains(t, err, "permission denied", "should be permission error")
 
-	// Collections
+	// Collections with length validation
 	assert.Len(t, items, 5, "should have 5 items")
 	assert.Empty(t, errors, "no errors should occur")
 	assert.NotEmpty(t, results, "results should not be empty")
 
-	// Panic handling
+	// Panic handling with function execution
 	assert.Panics(t, func() { divide(1, 0) }, "division by zero should panic")
 	assert.NotPanics(t, func() { process(data) }, "processing should not panic")
 
-	// String checks
+	// String content validation
 	assert.Contains(t, output, "success", "output should indicate success")
 	assert.NotContains(t, err.Error(), "panic", "error should not mention panic")
 
-	// Type checks
+	// Interface implementation checking
 	assert.Implements(t, (*io.Writer)(nil), &MyWriter{}, "should implement io.Writer")
 */
 package assert
