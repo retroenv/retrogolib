@@ -79,7 +79,7 @@ func TestArchitecture_IsValid(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "case sensitive - uppercase Z80 is invalid",
+			name: "uppercase Z80 is invalid (IsValid is case-sensitive)",
 			arch: Architecture("Z80"),
 			want: false,
 		},
@@ -100,48 +100,14 @@ func TestFromString(t *testing.T) {
 		want   Architecture
 		wantOk bool
 	}{
-		{
-			name:   "valid 6502",
-			input:  "6502",
-			want:   M6502,
-			wantOk: true,
-		},
-		{
-			name:   "valid z80",
-			input:  "z80",
-			want:   Z80,
-			wantOk: true,
-		},
-		{
-			name:   "valid chip8",
-			input:  "chip8",
-			want:   CHIP8,
-			wantOk: true,
-		},
-		{
-			name:   "valid x86",
-			input:  "x86",
-			want:   X86,
-			wantOk: true,
-		},
-		{
-			name:   "invalid architecture",
-			input:  "invalid",
-			want:   "",
-			wantOk: false,
-		},
-		{
-			name:   "empty string",
-			input:  "",
-			want:   "",
-			wantOk: false,
-		},
-		{
-			name:   "case sensitive - uppercase",
-			input:  "Z80",
-			want:   "",
-			wantOk: false,
-		},
+		{"valid 6502", "6502", M6502, true},
+		{"valid z80", "z80", Z80, true},
+		{"valid chip8", "chip8", CHIP8, true},
+		{"valid x86", "x86", X86, true},
+		{"invalid architecture", "invalid", "", false},
+		{"empty string", "", "", false},
+		{"uppercase Z80 now valid (case-insensitive)", "Z80", Z80, true},
+		{"mixed case CHIP8 now valid (case-insensitive)", "CHIP8", CHIP8, true},
 	}
 
 	for _, tt := range tests {

@@ -2,6 +2,8 @@
 package arch
 
 import (
+	"strings"
+
 	"github.com/retroenv/retrogolib/set"
 )
 
@@ -65,8 +67,9 @@ func (a Architecture) IsValid() bool {
 
 // FromString creates an Architecture from a string.
 // Returns the architecture and true if valid, or empty Architecture and false if invalid.
+// The comparison is case-insensitive.
 func FromString(s string) (Architecture, bool) {
-	arch := Architecture(s)
+	arch := Architecture(strings.ToLower(s))
 	if arch.IsValid() {
 		return arch, true
 	}
