@@ -54,6 +54,7 @@ retro console utilities, all while maintaining minimal dependencies and focusing
     ├─ arch/system/nes  NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
+    ├─ config           configuration management
     ├─ gui              GUI support - SDL without need for CGO
     ├─ input            hardware controller/keyboard helpers
     ├─ log              fast and structured logging based on slog
