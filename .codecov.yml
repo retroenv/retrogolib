@@ -12,7 +12,7 @@ coverage:
         if_not_found: success # Don't fail if no coverage data
         only_pulls: true      # Only check PRs
 
-  comment:
-    layout: "diff, files"     # Show useful coverage info
-    require_changes: true     # Only comment when coverage changes
-    behavior: once            # Don't spam PRs with comments
+comment:
+  layout: "diff, files"     # Show useful coverage info
+  require_changes: true     # Only comment when coverage changes
+  behavior: once            # Don't spam PRs with comments
