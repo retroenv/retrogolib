@@ -281,7 +281,7 @@ var Opcodes = [256]Opcode{
 }
 
 // ReadsMemory returns whether the instruction accesses memory reading.
-func (opcode Opcode) ReadsMemory(memoryReadInstructions *set.Set[string]) bool {
+func (opcode Opcode) ReadsMemory(memoryReadInstructions set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
@@ -291,7 +291,7 @@ func (opcode Opcode) ReadsMemory(memoryReadInstructions *set.Set[string]) bool {
 }
 
 // WritesMemory returns whether the instruction accesses memory writing.
-func (opcode Opcode) WritesMemory(memoryWriteInstructions *set.Set[string]) bool {
+func (opcode Opcode) WritesMemory(memoryWriteInstructions set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
@@ -301,7 +301,7 @@ func (opcode Opcode) WritesMemory(memoryWriteInstructions *set.Set[string]) bool
 }
 
 // ReadWritesMemory returns whether the instruction accesses memory reading and writing.
-func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions *set.Set[string]) bool {
+func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions set.Set[string]) bool {
 	switch opcode.Addressing {
 	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
