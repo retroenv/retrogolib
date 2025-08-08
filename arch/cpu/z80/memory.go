@@ -25,8 +25,13 @@ func (m *Memory) Read(address uint16) uint8 {
 	return m.data[address]
 }
 
-// Write writes a byte to memory at the given address.
+// Write writes a byte to memory at the given address with bounds checking.
 func (m *Memory) Write(address uint16, value uint8) {
+	// Basic bounds checking for safety
+	if int(address) >= len(m.data) {
+		return // Ignore out-of-bounds writes
+	}
+
 	// For basic Z80 emulation, allow writes to all memory areas
 	// In a full Game Boy emulator, banking logic would be more complex
 	m.data[address] = value
@@ -70,9 +75,14 @@ func (m *Memory) WriteWord(address uint16, value uint16) {
 	m.Write(address+1, uint8(value>>8))
 }
 
-// LoadROM loads ROM data into memory starting at address 0.
+// LoadROM loads ROM data into memory starting at address 0 with bounds checking.
 func (m *Memory) LoadROM(data []byte) {
-	copy(m.data[:], data)
+	if len(data) > len(m.data) {
+		// Only copy what fits in memory
+		copy(m.data[:], data[:len(m.data)])
+		return
+	}
+	copy(m.data[:len(data)], data)
 }
 
 // GetROMBank returns the current ROM bank number.

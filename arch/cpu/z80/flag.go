@@ -52,7 +52,7 @@ func (c *CPU) setS(value uint8) {
 
 // setP - set the parity flag based on the parity of the argument.
 func (c *CPU) setP(value uint8) {
-	// Count number of 1 bits
+	// Count number of 1 bits using modern Go pattern
 	count := 0
 	for i := range 8 {
 		if value&(1<<i) != 0 {

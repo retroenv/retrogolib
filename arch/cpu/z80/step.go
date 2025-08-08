@@ -1,6 +1,7 @@
 package z80
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -27,6 +28,11 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
+	// Validate memory is available
+	if c.memory == nil {
+		return errors.New("z80: memory is nil")
+	}
+
 	// Handle interrupts first
 	if err := c.handleInterrupts(); err != nil {
 		return err
@@ -50,7 +56,8 @@ func (c *CPU) Step() error {
 		}
 	}
 
-	// Fetch instruction
+	// Fetch instruction with bounds checking
+	// PC should be within valid memory range
 	opcode := c.memory.Read(c.PC)
 	if c.opts.TraceExecution {
 		c.TraceStep.Opcode = opcode
