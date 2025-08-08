@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
+type paramReaderFunc func(c *CPU) ([]any, []byte)
 
 var paramReader = map[AddressingMode]paramReaderFunc{
 	ImpliedAddressing:          paramReaderImplied,
@@ -20,21 +20,21 @@ var paramReader = map[AddressingMode]paramReaderFunc{
 
 // readOpParams reads the opcode parameters after the first opcode byte
 // and translates it into emulator specific types.
-func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, bool, error) {
+func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, error) {
 	fun, ok := paramReader[addressing]
 	if !ok {
-		return nil, nil, false, fmt.Errorf("%w: mode %02x", ErrUnsupportedAddressingMode, addressing)
+		return nil, nil, fmt.Errorf("%w: mode %02x", ErrUnsupportedAddressingMode, addressing)
 	}
 
-	params, opcodes, pageCrossed := fun(c)
-	return params, opcodes, pageCrossed, nil
+	params, opcodes := fun(c)
+	return params, opcodes, nil
 }
 
-func paramReaderImplied(_ *CPU) ([]any, []byte, bool) {
-	return nil, nil, false
+func paramReaderImplied(_ *CPU) ([]any, []byte) {
+	return nil, nil
 }
 
-func paramReaderRegister(c *CPU) ([]any, []byte, bool) {
+func paramReaderRegister(c *CPU) ([]any, []byte) {
 	// Register addressing is encoded in the opcode itself
 	// The specific register is determined by the opcode bits
 	opcode := c.memory.Read(c.PC)
@@ -45,10 +45,10 @@ func paramReaderRegister(c *CPU) ([]any, []byte, bool) {
 	dstReg := (opcode >> 3) & 0x07
 
 	params := []any{Register8(srcReg), Register8(dstReg)}
-	return params, nil, false
+	return params, nil
 }
 
-func paramReaderImmediate(c *CPU) ([]any, []byte, bool) {
+func paramReaderImmediate(c *CPU) ([]any, []byte) {
 	// Check if this is a DD-prefixed instruction
 	prefixByte := c.memory.Read(c.PC)
 	if prefixByte == 0xDD {
@@ -58,7 +58,7 @@ func paramReaderImmediate(c *CPU) ([]any, []byte, bool) {
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
 		opcodes := []byte{b1, b2}
-		return params, opcodes, false
+		return params, opcodes
 	}
 
 	opcode := c.memory.Read(c.PC)
@@ -71,27 +71,27 @@ func paramReaderImmediate(c *CPU) ([]any, []byte, bool) {
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
 		opcodes := []byte{b1, b2}
-		return params, opcodes, false
+		return params, opcodes
 	} else {
 		// 8-bit immediate (2-byte instruction: opcode + immediate)
 		b := c.memory.Read(c.PC + 1)
 		params := []any{Immediate8(b)}
 		opcodes := []byte{b}
-		return params, opcodes, false
+		return params, opcodes
 	}
 }
 
-func paramReaderExtended(c *CPU) ([]any, []byte, bool) {
+func paramReaderExtended(c *CPU) ([]any, []byte) {
 	b1 := c.memory.Read(c.PC + 1) // Low byte
 	b2 := c.memory.Read(c.PC + 2) // High byte
 
 	address := uint16(b2)<<8 | uint16(b1)
 	params := []any{Extended(address)}
 	opcodes := []byte{b1, b2}
-	return params, opcodes, false
+	return params, opcodes
 }
 
-func paramReaderRegisterIndirect(c *CPU) ([]any, []byte, bool) {
+func paramReaderRegisterIndirect(c *CPU) ([]any, []byte) {
 	// Register indirect addressing - the register pair is encoded in the opcode
 	opcode := c.memory.Read(c.PC)
 
@@ -109,10 +109,10 @@ func paramReaderRegisterIndirect(c *CPU) ([]any, []byte, bool) {
 	}
 
 	params := []any{RegisterIndirect(regPair)}
-	return params, nil, false
+	return params, nil
 }
 
-func paramReaderIndexed(c *CPU) ([]any, []byte, bool) {
+func paramReaderIndexed(c *CPU) ([]any, []byte) {
 	// Indexed addressing (IX+d) or (IY+d)
 	prefix := c.memory.Read(c.PC - 1) // Previous byte should be DD (IX) or FD (IY)
 	displacement := int8(c.memory.Read(c.PC + 1))
@@ -134,18 +134,18 @@ func paramReaderIndexed(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{indexed}
 	opcodes := []byte{byte(displacement)}
-	return params, opcodes, false
+	return params, opcodes
 }
 
-func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
+func paramReaderRelative(c *CPU) ([]any, []byte) {
 	offset := int8(c.memory.Read(c.PC + 1))
 
 	params := []any{Relative(offset)}
 	opcodes := []byte{byte(offset)}
-	return params, opcodes, false
+	return params, opcodes
 }
 
-func paramReaderBit(c *CPU) ([]any, []byte, bool) {
+func paramReaderBit(c *CPU) ([]any, []byte) {
 	// Bit addressing - bit number is encoded in the opcode
 	opcode := c.memory.Read(c.PC)
 
@@ -153,10 +153,10 @@ func paramReaderBit(c *CPU) ([]any, []byte, bool) {
 	targetReg := opcode & 0x07     // Bits 0-2 contain target register
 
 	params := []any{Bit(bitNum), Register8(targetReg)}
-	return params, nil, false
+	return params, nil
 }
 
-func paramReaderPort(c *CPU) ([]any, []byte, bool) {
+func paramReaderPort(c *CPU) ([]any, []byte) {
 	// Port addressing can be immediate (n) or register indirect (C)
 	opcode := c.memory.Read(c.PC)
 
@@ -164,12 +164,12 @@ func paramReaderPort(c *CPU) ([]any, []byte, bool) {
 		portAddr := c.memory.Read(c.PC + 1)
 		params := []any{Port(portAddr)}
 		opcodes := []byte{portAddr}
-		return params, opcodes, false
+		return params, opcodes
 	}
 
 	// Port (C) - use C register as port address
 	params := []any{Port(c.C)}
-	return params, nil, false
+	return params, nil
 }
 
 // RegisterEncoding maps register numbers to register names for debugging

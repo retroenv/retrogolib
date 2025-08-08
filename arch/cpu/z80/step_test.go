@@ -297,7 +297,6 @@ func TestStepWithTracing(t *testing.T) {
 	assert.Equal(t, uint16(0x0100), cpu.TraceStep.PC, "Trace should record PC")
 	assert.Equal(t, len(cpu.TraceStep.OpcodeOperands), 1, "Trace should record opcode operands")
 	assert.Equal(t, uint8(0x00), cpu.TraceStep.OpcodeOperands[0], "Trace should record opcode")
-	assert.False(t, cpu.TraceStep.PageCrossed, "NOP should not cross page")
 
 	// Verify CPU state after execution
 	assert.Equal(t, uint8(0x42), cpu.A, "A register should be unchanged")

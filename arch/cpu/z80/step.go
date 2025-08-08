@@ -10,8 +10,7 @@ type TraceStep struct {
 	OpcodeOperands []byte // instruction opcode and operand bytes
 	Opcode         Opcode
 
-	CustomData  string // custom data field that can be used in the pre execution hook
-	PageCrossed bool
+	CustomData string // custom data field that can be used in the pre execution hook
 }
 
 // Step executes the next instruction in the CPU.
@@ -43,9 +42,6 @@ func (c *CPU) Step() error {
 
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
-		if c.opts.tracing {
-			c.TraceStep.PageCrossed = false
-		}
 		if c.opts.preExecutionHook != nil {
 			c.opts.preExecutionHook(c, opcodeByte)
 		}
@@ -57,20 +53,16 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	params, operands, pageCrossed, err := readOpParams(c, opcode.Addressing)
+	params, operands, err := readOpParams(c, opcode.Addressing)
 	if err != nil {
 		return fmt.Errorf("reading opcode params: %w", err)
 	}
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
-		c.TraceStep.PageCrossed = pageCrossed
 	}
 	if c.opts.preExecutionHook != nil {
 		c.opts.preExecutionHook(c, opcodeByte, params...)
 	}
-
-	// Z80 doesn't have page crossing cycles like 6502
-	_ = pageCrossed
 
 	opcodeLen := int(opcode.Size)
 
@@ -133,7 +125,6 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// For relative branches, we might need to account for branch timing
-	// (Z80 doesn't have the same page crossing penalty as 6502)
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
