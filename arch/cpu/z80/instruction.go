@@ -509,6 +509,189 @@ var LdSp = &Instruction{
 	ParamFunc: ldSp,
 }
 
+// CB-prefixed instructions (bit operations)
+var (
+	CBRlc = &Instruction{Name: "rlc", ParamFunc: cbRlc}
+	CBRrc = &Instruction{Name: "rrc", ParamFunc: cbRrc}
+	CBRl  = &Instruction{Name: "rl", ParamFunc: cbRl}
+	CBRr  = &Instruction{Name: "rr", ParamFunc: cbRr}
+	CBSla = &Instruction{Name: "sla", ParamFunc: cbSla}
+	CBSra = &Instruction{Name: "sra", ParamFunc: cbSra}
+	CBSll = &Instruction{Name: "sll", ParamFunc: cbSll} // undocumented
+	CBSrl = &Instruction{Name: "srl", ParamFunc: cbSrl}
+	CBBit = &Instruction{Name: "bit", ParamFunc: cbBit}
+	CBRes = &Instruction{Name: "res", ParamFunc: cbRes}
+	CBSet = &Instruction{Name: "set", ParamFunc: cbSet}
+)
+
+// ED-prefixed instructions (extended operations)
+var (
+	EdNeg  = &Instruction{Name: "neg", NoParamFunc: edNeg}
+	EdIm0  = &Instruction{Name: "im", ParamFunc: edIm0}
+	EdIm1  = &Instruction{Name: "im", ParamFunc: edIm1}
+	EdIm2  = &Instruction{Name: "im", ParamFunc: edIm2}
+	EdRetn = &Instruction{Name: "retn", NoParamFunc: edRetn}
+	EdReti = &Instruction{Name: "reti", NoParamFunc: edReti}
+	EdRrd  = &Instruction{Name: "rrd", NoParamFunc: edRrd}
+	EdRld  = &Instruction{Name: "rld", NoParamFunc: edRld}
+
+	// ED arithmetic instructions
+	EdAdcHlBc = &Instruction{Name: "adc", ParamFunc: edAdcHlBc}
+	EdAdcHlDe = &Instruction{Name: "adc", ParamFunc: edAdcHlDe}
+	EdAdcHlHl = &Instruction{Name: "adc", ParamFunc: edAdcHlHl}
+	EdAdcHlSp = &Instruction{Name: "adc", ParamFunc: edAdcHlSp}
+	EdSbcHlBc = &Instruction{Name: "sbc", ParamFunc: edSbcHlBc}
+	EdSbcHlDe = &Instruction{Name: "sbc", ParamFunc: edSbcHlDe}
+	EdSbcHlHl = &Instruction{Name: "sbc", ParamFunc: edSbcHlHl}
+	EdSbcHlSp = &Instruction{Name: "sbc", ParamFunc: edSbcHlSp}
+
+	// ED load instructions
+	EdLdIA = &Instruction{Name: "ld", NoParamFunc: edLdIA}
+	EdLdRA = &Instruction{Name: "ld", NoParamFunc: edLdRA}
+	EdLdAI = &Instruction{Name: "ld", NoParamFunc: edLdAI}
+	EdLdAR = &Instruction{Name: "ld", NoParamFunc: edLdAR}
+
+	EdLdNnBc = &Instruction{Name: "ld", ParamFunc: edLdNnBc}
+	EdLdNnDe = &Instruction{Name: "ld", ParamFunc: edLdNnDe}
+	EdLdNnHl = &Instruction{Name: "ld", ParamFunc: edLdNnHl}
+	EdLdNnSp = &Instruction{Name: "ld", ParamFunc: edLdNnSp}
+	EdLdBcNn = &Instruction{Name: "ld", ParamFunc: edLdBcNn}
+	EdLdDeNn = &Instruction{Name: "ld", ParamFunc: edLdDeNn}
+	EdLdHlNn = &Instruction{Name: "ld", ParamFunc: edLdHlNn}
+	EdLdSpNn = &Instruction{Name: "ld", ParamFunc: edLdSpNn}
+
+	// ED block instructions
+	EdLdi  = &Instruction{Name: "ldi", NoParamFunc: edLdi}
+	EdLdd  = &Instruction{Name: "ldd", NoParamFunc: edLdd}
+	EdLdir = &Instruction{Name: "ldir", NoParamFunc: edLdir}
+	EdLddr = &Instruction{Name: "lddr", NoParamFunc: edLddr}
+	EdCpi  = &Instruction{Name: "cpi", NoParamFunc: edCpi}
+	EdCpd  = &Instruction{Name: "cpd", NoParamFunc: edCpd}
+	EdCpir = &Instruction{Name: "cpir", NoParamFunc: edCpir}
+	EdCpdr = &Instruction{Name: "cpdr", NoParamFunc: edCpdr}
+
+	// ED I/O instructions
+	EdIni  = &Instruction{Name: "ini", NoParamFunc: edIni}
+	EdInd  = &Instruction{Name: "ind", NoParamFunc: edInd}
+	EdInir = &Instruction{Name: "inir", NoParamFunc: edInir}
+	EdIndr = &Instruction{Name: "indr", NoParamFunc: edIndr}
+	EdOuti = &Instruction{Name: "outi", NoParamFunc: edOuti}
+	EdOutd = &Instruction{Name: "outd", NoParamFunc: edOutd}
+	EdOtir = &Instruction{Name: "otir", NoParamFunc: edOtir}
+	EdOtdr = &Instruction{Name: "otdr", NoParamFunc: edOtdr}
+
+	EdInBC = &Instruction{Name: "in", ParamFunc: edInBC}
+	EdInCC = &Instruction{Name: "in", ParamFunc: edInCC}
+	EdInDC = &Instruction{Name: "in", ParamFunc: edInDC}
+	EdInEC = &Instruction{Name: "in", ParamFunc: edInEC}
+	EdInHC = &Instruction{Name: "in", ParamFunc: edInHC}
+	EdInLC = &Instruction{Name: "in", ParamFunc: edInLC}
+	EdInAC = &Instruction{Name: "in", ParamFunc: edInAC}
+
+	EdOutCB = &Instruction{Name: "out", ParamFunc: edOutCB}
+	EdOutCC = &Instruction{Name: "out", ParamFunc: edOutCC}
+	EdOutCD = &Instruction{Name: "out", ParamFunc: edOutCD}
+	EdOutCE = &Instruction{Name: "out", ParamFunc: edOutCE}
+	EdOutCH = &Instruction{Name: "out", ParamFunc: edOutCH}
+	EdOutCL = &Instruction{Name: "out", ParamFunc: edOutCL}
+	EdOutCA = &Instruction{Name: "out", ParamFunc: edOutCA}
+)
+
+// DD-prefixed instructions (IX operations)
+var (
+	DdIncIX  = &Instruction{Name: "inc", NoParamFunc: ddIncIX}
+	DdDecIX  = &Instruction{Name: "dec", NoParamFunc: ddDecIX}
+	DdLdIXnn = &Instruction{Name: "ld", ParamFunc: ddLdIXnn}
+	DdLdNnIX = &Instruction{Name: "ld", ParamFunc: ddLdNnIX}
+	DdLdIXNn = &Instruction{Name: "ld", ParamFunc: ddLdIXNn}
+
+	DdAddIXBc = &Instruction{Name: "add", ParamFunc: ddAddIXBc}
+	DdAddIXDe = &Instruction{Name: "add", ParamFunc: ddAddIXDe}
+	DdAddIXIX = &Instruction{Name: "add", ParamFunc: ddAddIXIX}
+	DdAddIXSp = &Instruction{Name: "add", ParamFunc: ddAddIXSp}
+
+	DdLdBIXd = &Instruction{Name: "ld", ParamFunc: ddLdBIXd}
+	DdLdCIXd = &Instruction{Name: "ld", ParamFunc: ddLdCIXd}
+	DdLdDIXd = &Instruction{Name: "ld", ParamFunc: ddLdDIXd}
+	DdLdEIXd = &Instruction{Name: "ld", ParamFunc: ddLdEIXd}
+	DdLdHIXd = &Instruction{Name: "ld", ParamFunc: ddLdHIXd}
+	DdLdLIXd = &Instruction{Name: "ld", ParamFunc: ddLdLIXd}
+	DdLdAIXd = &Instruction{Name: "ld", ParamFunc: ddLdAIXd}
+
+	DdLdIXdB = &Instruction{Name: "ld", ParamFunc: ddLdIXdB}
+	DdLdIXdC = &Instruction{Name: "ld", ParamFunc: ddLdIXdC}
+	DdLdIXdD = &Instruction{Name: "ld", ParamFunc: ddLdIXdD}
+	DdLdIXdE = &Instruction{Name: "ld", ParamFunc: ddLdIXdE}
+	DdLdIXdH = &Instruction{Name: "ld", ParamFunc: ddLdIXdH}
+	DdLdIXdL = &Instruction{Name: "ld", ParamFunc: ddLdIXdL}
+	DdLdIXdA = &Instruction{Name: "ld", ParamFunc: ddLdIXdA}
+	DdLdIXdN = &Instruction{Name: "ld", ParamFunc: ddLdIXdN}
+
+	DdIncIXd = &Instruction{Name: "inc", ParamFunc: ddIncIXd}
+	DdDecIXd = &Instruction{Name: "dec", ParamFunc: ddDecIXd}
+
+	DdAddAIXd = &Instruction{Name: "add", ParamFunc: ddAddAIXd}
+	DdAdcAIXd = &Instruction{Name: "adc", ParamFunc: ddAdcAIXd}
+	DdSubAIXd = &Instruction{Name: "sub", ParamFunc: ddSubAIXd}
+	DdSbcAIXd = &Instruction{Name: "sbc", ParamFunc: ddSbcAIXd}
+	DdAndAIXd = &Instruction{Name: "and", ParamFunc: ddAndAIXd}
+	DdXorAIXd = &Instruction{Name: "xor", ParamFunc: ddXorAIXd}
+	DdOrAIXd  = &Instruction{Name: "or", ParamFunc: ddOrAIXd}
+	DdCpAIXd  = &Instruction{Name: "cp", ParamFunc: ddCpAIXd}
+
+	DdJpIX    = &Instruction{Name: "jp", NoParamFunc: ddJpIX}
+	DdExSpIX  = &Instruction{Name: "ex", NoParamFunc: ddExSpIX}
+	DdPushIX  = &Instruction{Name: "push", NoParamFunc: ddPushIX}
+	DdPopIX   = &Instruction{Name: "pop", NoParamFunc: ddPopIX}
+	DdcbShift = &Instruction{Name: "ddcb-shift", ParamFunc: ddcbShift}
+	DdcbBit   = &Instruction{Name: "bit", ParamFunc: ddcbBit}
+	DdcbRes   = &Instruction{Name: "res", ParamFunc: ddcbRes}
+	DdcbSet   = &Instruction{Name: "set", ParamFunc: ddcbSet}
+)
+
+// FD-prefixed instructions (IY operations)
+var (
+	FdIncIY  = &Instruction{Name: "inc", NoParamFunc: fdIncIY}
+	FdDecIY  = &Instruction{Name: "dec", NoParamFunc: fdDecIY}
+	FdLdIYnn = &Instruction{Name: "ld", ParamFunc: fdLdIYnn}
+	FdLdNnIY = &Instruction{Name: "ld", ParamFunc: fdLdNnIY}
+	FdLdIYNn = &Instruction{Name: "ld", ParamFunc: fdLdIYNn}
+
+	FdAddIYBc = &Instruction{Name: "add", ParamFunc: fdAddIYBc}
+	FdAddIYDe = &Instruction{Name: "add", ParamFunc: fdAddIYDe}
+	FdAddIYIY = &Instruction{Name: "add", ParamFunc: fdAddIYIY}
+	FdAddIYSp = &Instruction{Name: "add", ParamFunc: fdAddIYSp}
+
+	FdLdBIYd = &Instruction{Name: "ld", ParamFunc: fdLdBIYd}
+	FdLdCIYd = &Instruction{Name: "ld", ParamFunc: fdLdCIYd}
+	FdLdDIYd = &Instruction{Name: "ld", ParamFunc: fdLdDIYd}
+	FdLdEIYd = &Instruction{Name: "ld", ParamFunc: fdLdEIYd}
+	FdLdHIYd = &Instruction{Name: "ld", ParamFunc: fdLdHIYd}
+	FdLdLIYd = &Instruction{Name: "ld", ParamFunc: fdLdLIYd}
+	FdLdAIYd = &Instruction{Name: "ld", ParamFunc: fdLdAIYd}
+
+	FdLdIYdB = &Instruction{Name: "ld", ParamFunc: fdLdIYdB}
+	FdLdIYdC = &Instruction{Name: "ld", ParamFunc: fdLdIYdC}
+	FdLdIYdD = &Instruction{Name: "ld", ParamFunc: fdLdIYdD}
+	FdLdIYdE = &Instruction{Name: "ld", ParamFunc: fdLdIYdE}
+	FdLdIYdH = &Instruction{Name: "ld", ParamFunc: fdLdIYdH}
+	FdLdIYdL = &Instruction{Name: "ld", ParamFunc: fdLdIYdL}
+	FdLdIYdA = &Instruction{Name: "ld", ParamFunc: fdLdIYdA}
+	FdLdIYdN = &Instruction{Name: "ld", ParamFunc: fdLdIYdN}
+
+	FdIncIYd = &Instruction{Name: "inc", ParamFunc: fdIncIYd}
+	FdDecIYd = &Instruction{Name: "dec", ParamFunc: fdDecIYd}
+
+	FdJpIY    = &Instruction{Name: "jp", NoParamFunc: fdJpIY}
+	FdExSpIY  = &Instruction{Name: "ex", NoParamFunc: fdExSpIY}
+	FdPushIY  = &Instruction{Name: "push", NoParamFunc: fdPushIY}
+	FdPopIY   = &Instruction{Name: "pop", NoParamFunc: fdPopIY}
+	FdcbShift = &Instruction{Name: "fdcb-shift", ParamFunc: fdcbShift}
+	FdcbBit   = &Instruction{Name: "bit", ParamFunc: fdcbBit}
+	FdcbRes   = &Instruction{Name: "res", ParamFunc: fdcbRes}
+	FdcbSet   = &Instruction{Name: "set", ParamFunc: fdcbSet}
+)
+
 // Instructions maps instruction names to their information struct.
 var Instructions = map[string]*Instruction{
 	"nop":  Nop,

@@ -175,69 +175,56 @@ func (c *CPU) decodeCBInstructionType(opcodeByte uint8) (*Instruction, byte) {
 // decodeCBRotateShift handles CB rotate/shift instructions (0x00-0x3F).
 func (c *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
 	var instruction *Instruction
-	timing := byte(8)
 
 	switch {
 	case opcodeByte <= 0x07: // RLC r
-		instruction = &Instruction{Name: "rlc", ParamFunc: cbRlc}
+		instruction = CBRlc
 	case opcodeByte <= 0x0F: // RRC r
-		instruction = &Instruction{Name: "rrc", ParamFunc: cbRrc}
+		instruction = CBRrc
 	case opcodeByte <= 0x17: // RL r
-		instruction = &Instruction{Name: "rl", ParamFunc: cbRl}
+		instruction = CBRl
 	case opcodeByte <= 0x1F: // RR r
-		instruction = &Instruction{Name: "rr", ParamFunc: cbRr}
+		instruction = CBRr
 	case opcodeByte <= 0x27: // SLA r
-		instruction = &Instruction{Name: "sla", ParamFunc: cbSla}
+		instruction = CBSla
 	case opcodeByte <= 0x2F: // SRA r
-		instruction = &Instruction{Name: "sra", ParamFunc: cbSra}
+		instruction = CBSra
 	case opcodeByte <= 0x37: // SLL r (undocumented)
-		instruction = &Instruction{Name: "sll", ParamFunc: cbSll}
+		instruction = CBSll
 	default: // SRL r (0x38-0x3F)
-		instruction = &Instruction{Name: "srl", ParamFunc: cbSrl}
+		instruction = CBSrl
 	}
 
-	// Special timing for (HL) operations
-	if reg == 6 {
-		timing = 15
-	}
-
+	// Use helper function for timing calculation
+	timing := GetCBTiming(opcodeByte, reg)
 	return instruction, timing
 }
 
 // decodeCBBit handles CB BIT instructions (0x40-0x7F).
 func (c *CPU) decodeCBBit(reg uint8) (*Instruction, byte) {
-	instruction := &Instruction{Name: "bit", ParamFunc: cbBit}
 	timing := byte(8)
-
 	if reg == 6 { // BIT n,(HL)
 		timing = 12
 	}
-
-	return instruction, timing
+	return CBBit, timing
 }
 
 // decodeCBRes handles CB RES instructions (0x80-0xBF).
 func (c *CPU) decodeCBRes(reg uint8) (*Instruction, byte) {
-	instruction := &Instruction{Name: "res", ParamFunc: cbRes}
 	timing := byte(8)
-
 	if reg == 6 { // RES n,(HL)
 		timing = 15
 	}
-
-	return instruction, timing
+	return CBRes, timing
 }
 
 // decodeCBSet handles CB SET instructions (0xC0-0xFF).
 func (c *CPU) decodeCBSet(reg uint8) (*Instruction, byte) {
-	instruction := &Instruction{Name: "set", ParamFunc: cbSet}
 	timing := byte(8)
-
 	if reg == 6 { // SET n,(HL)
 		timing = 15
 	}
-
-	return instruction, timing
+	return CBSet, timing
 }
 
 // decodeEDInstruction decodes ED-prefixed instructions (extended operations).
@@ -290,7 +277,7 @@ func (c *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, fmt.Errorf("unimplemented ED instruction: ED %02X", opcodeByte)
+	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedEDInstruction, opcodeByte)
 }
 
 // decodeEDBasicInstructions handles basic ED instructions (NEG, IM, RETN, RETI, RRD, RLD).
@@ -298,27 +285,27 @@ func (c *CPU) decodeEDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// NEG - Negate Accumulator
 	case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6C, 0x74, 0x7C:
-		return &Instruction{Name: "neg", NoParamFunc: edNeg}, 8, 2
+		return EdNeg, 8, 2
 
 	// IM - Set Interrupt Mode
 	case 0x46, 0x66: // IM 0
-		return &Instruction{Name: "im", ParamFunc: edIm0}, 8, 2
+		return EdIm0, 8, 2
 	case 0x56, 0x76: // IM 1
-		return &Instruction{Name: "im", ParamFunc: edIm1}, 8, 2
+		return EdIm1, 8, 2
 	case 0x5E, 0x7E: // IM 2
-		return &Instruction{Name: "im", ParamFunc: edIm2}, 8, 2
+		return EdIm2, 8, 2
 
 	// RETN/RETI
 	case 0x45, 0x55, 0x65, 0x75: // RETN (multiple opcodes)
-		return &Instruction{Name: "retn", NoParamFunc: edRetn}, 14, 2
+		return EdRetn, 14, 2
 	case 0x4D: // RETI
-		return &Instruction{Name: "reti", NoParamFunc: edReti}, 14, 2
+		return EdReti, 14, 2
 
 	// RRD/RLD
 	case 0x67: // RRD
-		return &Instruction{Name: "rrd", NoParamFunc: edRrd}, 18, 2
+		return EdRrd, 18, 2
 	case 0x6F: // RLD
-		return &Instruction{Name: "rld", NoParamFunc: edRld}, 18, 2
+		return EdRld, 18, 2
 	}
 
 	return nil, 0, 0
@@ -329,23 +316,23 @@ func (c *CPU) decodeEDArithmeticInstructions(opcodeByte uint8) (*Instruction, by
 	switch opcodeByte {
 	// ADC HL,rr
 	case 0x4A: // ADC HL,BC
-		return &Instruction{Name: "adc", ParamFunc: edAdcHlBc}, 15, 2
+		return EdAdcHlBc, 15, 2
 	case 0x5A: // ADC HL,DE
-		return &Instruction{Name: "adc", ParamFunc: edAdcHlDe}, 15, 2
+		return EdAdcHlDe, 15, 2
 	case 0x6A: // ADC HL,HL
-		return &Instruction{Name: "adc", ParamFunc: edAdcHlHl}, 15, 2
+		return EdAdcHlHl, 15, 2
 	case 0x7A: // ADC HL,SP
-		return &Instruction{Name: "adc", ParamFunc: edAdcHlSp}, 15, 2
+		return EdAdcHlSp, 15, 2
 
 	// SBC HL,rr
 	case 0x42: // SBC HL,BC
-		return &Instruction{Name: "sbc", ParamFunc: edSbcHlBc}, 15, 2
+		return EdSbcHlBc, 15, 2
 	case 0x52: // SBC HL,DE
-		return &Instruction{Name: "sbc", ParamFunc: edSbcHlDe}, 15, 2
+		return EdSbcHlDe, 15, 2
 	case 0x62: // SBC HL,HL
-		return &Instruction{Name: "sbc", ParamFunc: edSbcHlHl}, 15, 2
+		return EdSbcHlHl, 15, 2
 	case 0x72: // SBC HL,SP
-		return &Instruction{Name: "sbc", ParamFunc: edSbcHlSp}, 15, 2
+		return EdSbcHlSp, 15, 2
 	}
 
 	return nil, 0, 0
@@ -356,35 +343,35 @@ func (c *CPU) decodeEDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 	switch opcodeByte {
 	// LD I,A / LD R,A
 	case 0x47: // LD I,A
-		return &Instruction{Name: "ld", NoParamFunc: edLdIA}, 9, 2
+		return EdLdIA, 9, 2
 	case 0x4F: // LD R,A
-		return &Instruction{Name: "ld", NoParamFunc: edLdRA}, 9, 2
+		return EdLdRA, 9, 2
 
 	// LD A,I / LD A,R
 	case 0x57: // LD A,I
-		return &Instruction{Name: "ld", NoParamFunc: edLdAI}, 9, 2
+		return EdLdAI, 9, 2
 	case 0x5F: // LD A,R
-		return &Instruction{Name: "ld", NoParamFunc: edLdAR}, 9, 2
+		return EdLdAR, 9, 2
 
 	// LD (nn),rr
 	case 0x43: // LD (nn),BC
-		return &Instruction{Name: "ld", ParamFunc: edLdNnBc}, 20, 4
+		return EdLdNnBc, 20, 4
 	case 0x53: // LD (nn),DE
-		return &Instruction{Name: "ld", ParamFunc: edLdNnDe}, 20, 4
+		return EdLdNnDe, 20, 4
 	case 0x63: // LD (nn),HL
-		return &Instruction{Name: "ld", ParamFunc: edLdNnHl}, 20, 4
+		return EdLdNnHl, 20, 4
 	case 0x73: // LD (nn),SP
-		return &Instruction{Name: "ld", ParamFunc: edLdNnSp}, 20, 4
+		return EdLdNnSp, 20, 4
 
 	// LD rr,(nn)
 	case 0x4B: // LD BC,(nn)
-		return &Instruction{Name: "ld", ParamFunc: edLdBcNn}, 20, 4
+		return EdLdBcNn, 20, 4
 	case 0x5B: // LD DE,(nn)
-		return &Instruction{Name: "ld", ParamFunc: edLdDeNn}, 20, 4
+		return EdLdDeNn, 20, 4
 	case 0x6B: // LD HL,(nn)
-		return &Instruction{Name: "ld", ParamFunc: edLdHlNn}, 20, 4
+		return EdLdHlNn, 20, 4
 	case 0x7B: // LD SP,(nn)
-		return &Instruction{Name: "ld", ParamFunc: edLdSpNn}, 20, 4
+		return EdLdSpNn, 20, 4
 	}
 
 	return nil, 0, 0
@@ -395,23 +382,23 @@ func (c *CPU) decodeEDBlockInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// Block transfer instructions
 	case 0xA0: // LDI
-		return &Instruction{Name: "ldi", NoParamFunc: edLdi}, 16, 2
+		return EdLdi, 16, 2
 	case 0xA8: // LDD
-		return &Instruction{Name: "ldd", NoParamFunc: edLdd}, 16, 2
+		return EdLdd, 16, 2
 	case 0xB0: // LDIR
-		return &Instruction{Name: "ldir", NoParamFunc: edLdir}, 21, 2
+		return EdLdir, 21, 2
 	case 0xB8: // LDDR
-		return &Instruction{Name: "lddr", NoParamFunc: edLddr}, 21, 2
+		return EdLddr, 21, 2
 
 	// Block search instructions
 	case 0xA1: // CPI
-		return &Instruction{Name: "cpi", NoParamFunc: edCpi}, 16, 2
+		return EdCpi, 16, 2
 	case 0xA9: // CPD
-		return &Instruction{Name: "cpd", NoParamFunc: edCpd}, 16, 2
+		return EdCpd, 16, 2
 	case 0xB1: // CPIR
-		return &Instruction{Name: "cpir", NoParamFunc: edCpir}, 21, 2
+		return EdCpir, 21, 2
 	case 0xB9: // CPDR
-		return &Instruction{Name: "cpdr", NoParamFunc: edCpdr}, 21, 2
+		return EdCpdr, 21, 2
 	}
 
 	return nil, 0, 0
@@ -441,21 +428,21 @@ func (c *CPU) decodeEDIOInstructions(opcodeByte uint8) (*Instruction, byte, byte
 func (c *CPU) decodeEDBlockIO(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0xA2: // INI
-		return &Instruction{Name: "ini", NoParamFunc: edIni}, 16, 2
+		return EdIni, 16, 2
 	case 0xAA: // IND
-		return &Instruction{Name: "ind", NoParamFunc: edInd}, 16, 2
+		return EdInd, 16, 2
 	case 0xB2: // INIR
-		return &Instruction{Name: "inir", NoParamFunc: edInir}, 21, 2
+		return EdInir, 21, 2
 	case 0xBA: // INDR
-		return &Instruction{Name: "indr", NoParamFunc: edIndr}, 21, 2
+		return EdIndr, 21, 2
 	case 0xA3: // OUTI
-		return &Instruction{Name: "outi", NoParamFunc: edOuti}, 16, 2
+		return EdOuti, 16, 2
 	case 0xAB: // OUTD
-		return &Instruction{Name: "outd", NoParamFunc: edOutd}, 16, 2
+		return EdOutd, 16, 2
 	case 0xB3: // OTIR
-		return &Instruction{Name: "otir", NoParamFunc: edOtir}, 21, 2
+		return EdOtir, 21, 2
 	case 0xBB: // OTDR
-		return &Instruction{Name: "otdr", NoParamFunc: edOtdr}, 21, 2
+		return EdOtdr, 21, 2
 	}
 
 	return nil, 0, 0
@@ -465,19 +452,19 @@ func (c *CPU) decodeEDBlockIO(opcodeByte uint8) (*Instruction, byte, byte) {
 func (c *CPU) decodeEDInputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x40: // IN B,(C)
-		return &Instruction{Name: "in", ParamFunc: edInBC}, 12, 2
+		return EdInBC, 12, 2
 	case 0x48: // IN C,(C)
-		return &Instruction{Name: "in", ParamFunc: edInCC}, 12, 2
+		return EdInCC, 12, 2
 	case 0x50: // IN D,(C)
-		return &Instruction{Name: "in", ParamFunc: edInDC}, 12, 2
+		return EdInDC, 12, 2
 	case 0x58: // IN E,(C)
-		return &Instruction{Name: "in", ParamFunc: edInEC}, 12, 2
+		return EdInEC, 12, 2
 	case 0x60: // IN H,(C)
-		return &Instruction{Name: "in", ParamFunc: edInHC}, 12, 2
+		return EdInHC, 12, 2
 	case 0x68: // IN L,(C)
-		return &Instruction{Name: "in", ParamFunc: edInLC}, 12, 2
+		return EdInLC, 12, 2
 	case 0x78: // IN A,(C)
-		return &Instruction{Name: "in", ParamFunc: edInAC}, 12, 2
+		return EdInAC, 12, 2
 	}
 
 	return nil, 0, 0
@@ -487,19 +474,19 @@ func (c *CPU) decodeEDInputInstructions(opcodeByte uint8) (*Instruction, byte, b
 func (c *CPU) decodeEDOutputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x41: // OUT (C),B
-		return &Instruction{Name: "out", ParamFunc: edOutCB}, 12, 2
+		return EdOutCB, 12, 2
 	case 0x49: // OUT (C),C
-		return &Instruction{Name: "out", ParamFunc: edOutCC}, 12, 2
+		return EdOutCC, 12, 2
 	case 0x51: // OUT (C),D
-		return &Instruction{Name: "out", ParamFunc: edOutCD}, 12, 2
+		return EdOutCD, 12, 2
 	case 0x59: // OUT (C),E
-		return &Instruction{Name: "out", ParamFunc: edOutCE}, 12, 2
+		return EdOutCE, 12, 2
 	case 0x61: // OUT (C),H
-		return &Instruction{Name: "out", ParamFunc: edOutCH}, 12, 2
+		return EdOutCH, 12, 2
 	case 0x69: // OUT (C),L
-		return &Instruction{Name: "out", ParamFunc: edOutCL}, 12, 2
+		return EdOutCL, 12, 2
 	case 0x79: // OUT (C),A
-		return &Instruction{Name: "out", ParamFunc: edOutCA}, 12, 2
+		return EdOutCA, 12, 2
 	}
 
 	return nil, 0, 0
@@ -556,7 +543,7 @@ func (c *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, fmt.Errorf("unimplemented DD instruction: DD %02X", opcodeByte)
+	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedDDInstruction, opcodeByte)
 }
 
 // decodeDDBasicInstructions handles basic DD instructions (INC/DEC IX, ADD IX,rr).
@@ -564,25 +551,25 @@ func (c *CPU) decodeDDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// INC IX / DEC IX
 	case 0x23:
-		return &Instruction{Name: "inc", NoParamFunc: ddIncIX}, 10, 2
+		return DdIncIX, 10, 2
 	case 0x2B:
-		return &Instruction{Name: "dec", NoParamFunc: ddDecIX}, 10, 2
+		return DdDecIX, 10, 2
 
 	// ADD IX,rr
 	case 0x09: // ADD IX,BC
-		return &Instruction{Name: "add", ParamFunc: ddAddIXBc}, 15, 2
+		return DdAddIXBc, 15, 2
 	case 0x19: // ADD IX,DE
-		return &Instruction{Name: "add", ParamFunc: ddAddIXDe}, 15, 2
+		return DdAddIXDe, 15, 2
 	case 0x29: // ADD IX,IX
-		return &Instruction{Name: "add", ParamFunc: ddAddIXIX}, 15, 2
+		return DdAddIXIX, 15, 2
 	case 0x39: // ADD IX,SP
-		return &Instruction{Name: "add", ParamFunc: ddAddIXSp}, 15, 2
+		return DdAddIXSp, 15, 2
 
 	// INC/DEC (IX+d)
 	case 0x34: // INC (IX+d)
-		return &Instruction{Name: "inc", ParamFunc: ddIncIXd}, 23, 3
+		return DdIncIXd, 23, 3
 	case 0x35: // DEC (IX+d)
-		return &Instruction{Name: "dec", ParamFunc: ddDecIXd}, 23, 3
+		return DdDecIXd, 23, 3
 	}
 
 	return nil, 0, 0
@@ -593,17 +580,17 @@ func (c *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 	switch opcodeByte {
 	// LD IX,nn
 	case 0x21:
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXnn}, 14, 4
+		return DdLdIXnn, 14, 4
 
 	// LD (nn),IX / LD IX,(nn)
 	case 0x22:
-		return &Instruction{Name: "ld", ParamFunc: ddLdNnIX}, 20, 4
+		return DdLdNnIX, 20, 4
 	case 0x2A:
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXNn}, 20, 4
+		return DdLdIXNn, 20, 4
 
 	// LD (IX+d),n
 	case 0x36:
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdN}, 19, 4
+		return DdLdIXdN, 19, 4
 	}
 
 	// LD r,(IX+d) - Load register from (IX+d)
@@ -623,19 +610,19 @@ func (c *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 func (c *CPU) decodeDDLoadFromIX(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x46: // LD B,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdBIXd}, 19, 3
+		return DdLdBIXd, 19, 3
 	case 0x4E: // LD C,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdCIXd}, 19, 3
+		return DdLdCIXd, 19, 3
 	case 0x56: // LD D,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdDIXd}, 19, 3
+		return DdLdDIXd, 19, 3
 	case 0x5E: // LD E,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdEIXd}, 19, 3
+		return DdLdEIXd, 19, 3
 	case 0x66: // LD H,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdHIXd}, 19, 3
+		return DdLdHIXd, 19, 3
 	case 0x6E: // LD L,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdLIXd}, 19, 3
+		return DdLdLIXd, 19, 3
 	case 0x7E: // LD A,(IX+d)
-		return &Instruction{Name: "ld", ParamFunc: ddLdAIXd}, 19, 3
+		return DdLdAIXd, 19, 3
 	}
 
 	return nil, 0, 0
@@ -645,19 +632,19 @@ func (c *CPU) decodeDDLoadFromIX(opcodeByte uint8) (*Instruction, byte, byte) {
 func (c *CPU) decodeDDLoadToIX(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x70: // LD (IX+d),B
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdB}, 19, 3
+		return DdLdIXdB, 19, 3
 	case 0x71: // LD (IX+d),C
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdC}, 19, 3
+		return DdLdIXdC, 19, 3
 	case 0x72: // LD (IX+d),D
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdD}, 19, 3
+		return DdLdIXdD, 19, 3
 	case 0x73: // LD (IX+d),E
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdE}, 19, 3
+		return DdLdIXdE, 19, 3
 	case 0x74: // LD (IX+d),H
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdH}, 19, 3
+		return DdLdIXdH, 19, 3
 	case 0x75: // LD (IX+d),L
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdL}, 19, 3
+		return DdLdIXdL, 19, 3
 	case 0x77: // LD (IX+d),A
-		return &Instruction{Name: "ld", ParamFunc: ddLdIXdA}, 19, 3
+		return DdLdIXdA, 19, 3
 	}
 
 	return nil, 0, 0
@@ -667,21 +654,21 @@ func (c *CPU) decodeDDLoadToIX(opcodeByte uint8) (*Instruction, byte, byte) {
 func (c *CPU) decodeDDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x86: // ADD A,(IX+d)
-		return &Instruction{Name: "add", ParamFunc: ddAddAIXd}, 19, 3
+		return DdAddAIXd, 19, 3
 	case 0x8E: // ADC A,(IX+d)
-		return &Instruction{Name: "adc", ParamFunc: ddAdcAIXd}, 19, 3
+		return DdAdcAIXd, 19, 3
 	case 0x96: // SUB (IX+d)
-		return &Instruction{Name: "sub", ParamFunc: ddSubAIXd}, 19, 3
+		return DdSubAIXd, 19, 3
 	case 0x9E: // SBC A,(IX+d)
-		return &Instruction{Name: "sbc", ParamFunc: ddSbcAIXd}, 19, 3
+		return DdSbcAIXd, 19, 3
 	case 0xA6: // AND (IX+d)
-		return &Instruction{Name: "and", ParamFunc: ddAndAIXd}, 19, 3
+		return DdAndAIXd, 19, 3
 	case 0xAE: // XOR (IX+d)
-		return &Instruction{Name: "xor", ParamFunc: ddXorAIXd}, 19, 3
+		return DdXorAIXd, 19, 3
 	case 0xB6: // OR (IX+d)
-		return &Instruction{Name: "or", ParamFunc: ddOrAIXd}, 19, 3
+		return DdOrAIXd, 19, 3
 	case 0xBE: // CP (IX+d)
-		return &Instruction{Name: "cp", ParamFunc: ddCpAIXd}, 19, 3
+		return DdCpAIXd, 19, 3
 	}
 
 	return nil, 0, 0
@@ -692,17 +679,17 @@ func (c *CPU) decodeDDStackInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// JP (IX)
 	case 0xE9:
-		return &Instruction{Name: "jp", NoParamFunc: ddJpIX}, 8, 2
+		return DdJpIX, 8, 2
 
 	// EX (SP),IX
 	case 0xE3:
-		return &Instruction{Name: "ex", NoParamFunc: ddExSpIX}, 23, 2
+		return DdExSpIX, 23, 2
 
 	// PUSH IX / POP IX
 	case 0xE5:
-		return &Instruction{Name: "push", NoParamFunc: ddPushIX}, 15, 2
+		return DdPushIX, 15, 2
 	case 0xE1:
-		return &Instruction{Name: "pop", NoParamFunc: ddPopIX}, 14, 2
+		return DdPopIX, 14, 2
 	}
 
 	return nil, 0, 0
@@ -718,13 +705,13 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 
 	switch {
 	case opcodeByte <= 0x3F: // Rotate/shift operations
-		instruction = &Instruction{Name: "ddcb-shift", ParamFunc: ddcbShift}
+		instruction = DdcbShift
 	case opcodeByte <= 0x7F: // BIT operations
-		instruction = &Instruction{Name: "bit", ParamFunc: ddcbBit}
+		instruction = DdcbBit
 	case opcodeByte <= 0xBF: // RES operations
-		instruction = &Instruction{Name: "res", ParamFunc: ddcbRes}
+		instruction = DdcbRes
 	default: // SET operations (0xC0-0xFF)
-		instruction = &Instruction{Name: "set", ParamFunc: ddcbSet}
+		instruction = DdcbSet
 	}
 
 	opcode := Opcode{
@@ -792,7 +779,7 @@ func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, fmt.Errorf("unimplemented FD instruction: FD %02X", opcodeByte)
+	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedFDInstruction, opcodeByte)
 }
 
 // decodeFDBasicInstructions handles basic FD instructions (INC/DEC IY, ADD IY,rr).
@@ -800,25 +787,25 @@ func (c *CPU) decodeFDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// INC IY / DEC IY
 	case 0x23:
-		return &Instruction{Name: "inc", NoParamFunc: fdIncIY}, 10, 2
+		return FdIncIY, 10, 2
 	case 0x2B:
-		return &Instruction{Name: "dec", NoParamFunc: fdDecIY}, 10, 2
+		return FdDecIY, 10, 2
 
 	// ADD IY,rr
 	case 0x09: // ADD IY,BC
-		return &Instruction{Name: "add", ParamFunc: fdAddIYBc}, 15, 2
+		return FdAddIYBc, 15, 2
 	case 0x19: // ADD IY,DE
-		return &Instruction{Name: "add", ParamFunc: fdAddIYDe}, 15, 2
+		return FdAddIYDe, 15, 2
 	case 0x29: // ADD IY,IY
-		return &Instruction{Name: "add", ParamFunc: fdAddIYIY}, 15, 2
+		return FdAddIYIY, 15, 2
 	case 0x39: // ADD IY,SP
-		return &Instruction{Name: "add", ParamFunc: fdAddIYSp}, 15, 2
+		return FdAddIYSp, 15, 2
 
 	// INC/DEC (IY+d)
 	case 0x34: // INC (IY+d)
-		return &Instruction{Name: "inc", ParamFunc: fdIncIYd}, 23, 3
+		return FdIncIYd, 23, 3
 	case 0x35: // DEC (IY+d)
-		return &Instruction{Name: "dec", ParamFunc: fdDecIYd}, 23, 3
+		return FdDecIYd, 23, 3
 	}
 
 	return nil, 0, 0
@@ -829,17 +816,17 @@ func (c *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 	switch opcodeByte {
 	// LD IY,nn
 	case 0x21:
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYnn}, 14, 4
+		return FdLdIYnn, 14, 4
 
 	// LD (nn),IY / LD IY,(nn)
 	case 0x22:
-		return &Instruction{Name: "ld", ParamFunc: fdLdNnIY}, 20, 4
+		return FdLdNnIY, 20, 4
 	case 0x2A:
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYNn}, 20, 4
+		return FdLdIYNn, 20, 4
 
 	// LD (IY+d),n
 	case 0x36:
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdN}, 19, 4
+		return FdLdIYdN, 19, 4
 	}
 
 	// LD r,(IY+d) - Load register from (IY+d)
@@ -859,19 +846,19 @@ func (c *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 func (c *CPU) decodeFDLoadFromIY(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x46: // LD B,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdBIYd}, 19, 3
+		return FdLdBIYd, 19, 3
 	case 0x4E: // LD C,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdCIYd}, 19, 3
+		return FdLdCIYd, 19, 3
 	case 0x56: // LD D,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdDIYd}, 19, 3
+		return FdLdDIYd, 19, 3
 	case 0x5E: // LD E,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdEIYd}, 19, 3
+		return FdLdEIYd, 19, 3
 	case 0x66: // LD H,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdHIYd}, 19, 3
+		return FdLdHIYd, 19, 3
 	case 0x6E: // LD L,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdLIYd}, 19, 3
+		return FdLdLIYd, 19, 3
 	case 0x7E: // LD A,(IY+d)
-		return &Instruction{Name: "ld", ParamFunc: fdLdAIYd}, 19, 3
+		return FdLdAIYd, 19, 3
 	}
 
 	return nil, 0, 0
@@ -881,19 +868,19 @@ func (c *CPU) decodeFDLoadFromIY(opcodeByte uint8) (*Instruction, byte, byte) {
 func (c *CPU) decodeFDLoadToIY(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x70: // LD (IY+d),B
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdB}, 19, 3
+		return FdLdIYdB, 19, 3
 	case 0x71: // LD (IY+d),C
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdC}, 19, 3
+		return FdLdIYdC, 19, 3
 	case 0x72: // LD (IY+d),D
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdD}, 19, 3
+		return FdLdIYdD, 19, 3
 	case 0x73: // LD (IY+d),E
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdE}, 19, 3
+		return FdLdIYdE, 19, 3
 	case 0x74: // LD (IY+d),H
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdH}, 19, 3
+		return FdLdIYdH, 19, 3
 	case 0x75: // LD (IY+d),L
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdL}, 19, 3
+		return FdLdIYdL, 19, 3
 	case 0x77: // LD (IY+d),A
-		return &Instruction{Name: "ld", ParamFunc: fdLdIYdA}, 19, 3
+		return FdLdIYdA, 19, 3
 	}
 
 	return nil, 0, 0
@@ -904,17 +891,17 @@ func (c *CPU) decodeFDStackInstructions(opcodeByte uint8) (*Instruction, byte, b
 	switch opcodeByte {
 	// JP (IY)
 	case 0xE9:
-		return &Instruction{Name: "jp", NoParamFunc: fdJpIY}, 8, 2
+		return FdJpIY, 8, 2
 
 	// EX (SP),IY
 	case 0xE3:
-		return &Instruction{Name: "ex", NoParamFunc: fdExSpIY}, 23, 2
+		return FdExSpIY, 23, 2
 
 	// PUSH IY / POP IY
 	case 0xE5:
-		return &Instruction{Name: "push", NoParamFunc: fdPushIY}, 15, 2
+		return FdPushIY, 15, 2
 	case 0xE1:
-		return &Instruction{Name: "pop", NoParamFunc: fdPopIY}, 14, 2
+		return FdPopIY, 14, 2
 	}
 
 	return nil, 0, 0
@@ -930,13 +917,13 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 
 	switch {
 	case opcodeByte <= 0x3F: // Rotate/shift operations
-		instruction = &Instruction{Name: "fdcb-shift", ParamFunc: fdcbShift}
+		instruction = FdcbShift
 	case opcodeByte <= 0x7F: // BIT operations
-		instruction = &Instruction{Name: "bit", ParamFunc: fdcbBit}
+		instruction = FdcbBit
 	case opcodeByte <= 0xBF: // RES operations
-		instruction = &Instruction{Name: "res", ParamFunc: fdcbRes}
+		instruction = FdcbRes
 	default: // SET operations (0xC0-0xFF)
-		instruction = &Instruction{Name: "set", ParamFunc: fdcbSet}
+		instruction = FdcbSet
 	}
 
 	opcode := Opcode{
