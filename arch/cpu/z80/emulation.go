@@ -160,10 +160,36 @@ func (c *CPU) rlc(value uint8) uint8 {
 	return result
 }
 
+// rrc rotates value right circular and sets all flags.
+func (c *CPU) rrc(value uint8) uint8 {
+	carry := value & 0x01
+	result := (value >> 1) | (carry << 7)
+
+	c.setSZP(result)
+	c.setC(carry != 0)
+	c.setH(false)
+	c.setN(false)
+
+	return result
+}
+
 // rl rotates value left through carry and sets all flags.
 func (c *CPU) rl(value uint8) uint8 {
 	newCarry := (value & 0x80) >> 7
 	result := (value << 1) | c.Flags.C
+
+	c.setSZP(result)
+	c.setC(newCarry != 0)
+	c.setH(false)
+	c.setN(false)
+
+	return result
+}
+
+// rr rotates value right through carry and sets all flags.
+func (c *CPU) rr(value uint8) uint8 {
+	newCarry := value & 0x01
+	result := (value >> 1) | (c.Flags.C << 7)
 
 	c.setSZP(result)
 	c.setC(newCarry != 0)
@@ -190,6 +216,19 @@ func (c *CPU) sla(value uint8) uint8 {
 func (c *CPU) sra(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (value & 0x80) // Keep sign bit
+
+	c.setSZP(result)
+	c.setC(carry != 0)
+	c.setH(false)
+	c.setN(false)
+
+	return result
+}
+
+// sll shifts value left logical (undocumented) and sets all flags.
+func (c *CPU) sll(value uint8) uint8 {
+	carry := (value & 0x80) >> 7
+	result := (value << 1) | 0x01 // Set bit 0
 
 	c.setSZP(result)
 	c.setC(carry != 0)
@@ -1214,29 +1253,473 @@ func ldSp(c *CPU, params ...any) error {
 	return nil
 }
 
-// rlcB rotates B register left circular (CB 00).
-func rlcB(c *CPU) error {
-	c.B = c.rlc(c.B)
+// CB prefix instruction implementations
+
+// cbRlc implements CB 00-07: RLC r.
+func cbRlc(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // RLC (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.rlc(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.rlc(value)
+		c.SetRegisterValue(reg, result)
+	}
 	return nil
 }
 
-// negA negates accumulator (ED 44).
-func negA(c *CPU) error {
+// cbRrc implements CB 08-0F: RRC r.
+func cbRrc(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // RRC (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.rrc(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.rrc(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbRl implements CB 10-17: RL r.
+func cbRl(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // RL (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.rl(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.rl(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbRr implements CB 18-1F: RR r.
+func cbRr(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // RR (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.rr(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.rr(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbSla implements CB 20-27: SLA r.
+func cbSla(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // SLA (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.sla(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.sla(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbSra implements CB 28-2F: SRA r.
+func cbSra(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // SRA (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.sra(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.sra(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbSll implements CB 30-37: SLL r (undocumented shift left logical).
+func cbSll(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // SLL (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.sll(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.sll(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbSrl implements CB 38-3F: SRL r.
+func cbSrl(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // SRL (HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.srl(value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.srl(value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbBit implements CB 40-7F: BIT n,r.
+func cbBit(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	bit := (opcodeByte >> 3) & 0x07
+	reg := opcodeByte & 0x07
+
+	var value uint8
+	if reg == 6 { // BIT n,(HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value = c.memory.Read(addr)
+	} else {
+		value = c.GetRegisterValue(reg)
+	}
+
+	c.bit(bit, value)
+	return nil
+}
+
+// cbRes implements CB 80-BF: RES n,r.
+func cbRes(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	bit := (opcodeByte >> 3) & 0x07
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // RES n,(HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.res(bit, value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.res(bit, value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// cbSet implements CB C0-FF: SET n,r.
+func cbSet(c *CPU, params ...any) error {
+	opcodeByte := c.memory.Read(c.PC + 1)
+	bit := (opcodeByte >> 3) & 0x07
+	reg := opcodeByte & 0x07
+
+	if reg == 6 { // SET n,(HL)
+		addr := uint16(c.H)<<8 | uint16(c.L)
+		value := c.memory.Read(addr)
+		result := c.setBit(bit, value)
+		c.memory.Write(addr, result)
+	} else {
+		value := c.GetRegisterValue(reg)
+		result := c.setBit(bit, value)
+		c.SetRegisterValue(reg, result)
+	}
+	return nil
+}
+
+// ED prefix instruction implementations
+
+// edNeg implements ED 44: NEG.
+func edNeg(c *CPU) error {
 	c.A = c.neg(c.A)
 	return nil
 }
 
-// ldIXnn loads 16-bit immediate into IX register (DD 21).
-func ldIXnn(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
-	}
-
-	imm, ok := params[0].(Immediate16)
-	if !ok {
-		return ErrInvalidParameterType
-	}
-
-	c.IX = uint16(imm)
+// Interrupt mode instructions
+func edIm0(c *CPU, params ...any) error {
+	c.im = 0
 	return nil
 }
+
+func edIm1(c *CPU, params ...any) error {
+	c.im = 1
+	return nil
+}
+
+func edIm2(c *CPU, params ...any) error {
+	c.im = 2
+	return nil
+}
+
+// I/R register loads
+func edLdIA(c *CPU) error {
+	c.I = c.A
+	return nil
+}
+
+func edLdRA(c *CPU) error {
+	c.R = c.A
+	return nil
+}
+
+func edLdAI(c *CPU) error {
+	c.A = c.I
+	c.setSZ(c.A)
+	c.setH(false)
+	c.setN(false)
+	c.setPOverflow(c.iff2)
+	return nil
+}
+
+func edLdAR(c *CPU) error {
+	c.A = c.R
+	c.setSZ(c.A)
+	c.setH(false)
+	c.setN(false)
+	c.setPOverflow(c.iff2)
+	return nil
+}
+
+// 16-bit ADC/SBC HL helper methods
+func (c *CPU) adcHL(value uint16) {
+	hl := uint16(c.H)<<8 | uint16(c.L)
+	carry := uint32(c.Flags.C)
+	result := uint32(hl) + uint32(value) + carry
+
+	c.H = uint8(result >> 8)
+	c.L = uint8(result)
+
+	c.setSZ(uint8(result >> 8))
+	c.setC(result > 0xFFFF)
+	c.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
+	c.setPOverflow(((hl ^ value ^ 0x8000) & (uint16(result) ^ hl) & 0x8000) != 0)
+	c.setN(false)
+}
+
+func (c *CPU) sbcHL(value uint16) {
+	hl := uint16(c.H)<<8 | uint16(c.L)
+	carry := uint32(c.Flags.C)
+	result := uint32(hl) - uint32(value) - carry
+
+	c.H = uint8(result >> 8)
+	c.L = uint8(result)
+
+	c.setSZ(uint8(result >> 8))
+	c.setC(result > 0xFFFF)
+	c.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
+	c.setPOverflow(((hl ^ value) & (hl ^ uint16(result)) & 0x8000) != 0)
+	c.setN(true)
+}
+
+// Simplified ED instruction implementations (stub implementations)
+func edLdNnBc(c *CPU, params ...any) error  { return nil }
+func edLdNnDe(c *CPU, params ...any) error  { return nil }
+func edLdNnHl(c *CPU, params ...any) error  { return nil }
+func edLdNnSp(c *CPU, params ...any) error  { return nil }
+func edLdBcNn(c *CPU, params ...any) error  { return nil }
+func edLdDeNn(c *CPU, params ...any) error  { return nil }
+func edLdHlNn(c *CPU, params ...any) error  { return nil }
+func edLdSpNn(c *CPU, params ...any) error  { return nil }
+func edAdcHlBc(c *CPU, params ...any) error { c.adcHL(uint16(c.B)<<8 | uint16(c.C)); return nil }
+func edAdcHlDe(c *CPU, params ...any) error { c.adcHL(uint16(c.D)<<8 | uint16(c.E)); return nil }
+func edAdcHlHl(c *CPU, params ...any) error { c.adcHL(uint16(c.H)<<8 | uint16(c.L)); return nil }
+func edAdcHlSp(c *CPU, params ...any) error { c.adcHL(c.SP); return nil }
+func edSbcHlBc(c *CPU, params ...any) error { c.sbcHL(uint16(c.B)<<8 | uint16(c.C)); return nil }
+func edSbcHlDe(c *CPU, params ...any) error { c.sbcHL(uint16(c.D)<<8 | uint16(c.E)); return nil }
+func edSbcHlHl(c *CPU, params ...any) error { c.sbcHL(uint16(c.H)<<8 | uint16(c.L)); return nil }
+func edSbcHlSp(c *CPU, params ...any) error { c.sbcHL(c.SP); return nil }
+
+// Block and I/O operations (stub implementations for now)
+func edLdi(c *CPU) error  { return nil }
+func edLdd(c *CPU) error  { return nil }
+func edLdir(c *CPU) error { return nil }
+func edLddr(c *CPU) error { return nil }
+func edCpi(c *CPU) error  { return nil }
+func edCpd(c *CPU) error  { return nil }
+func edCpir(c *CPU) error { return nil }
+func edCpdr(c *CPU) error { return nil }
+func edIni(c *CPU) error  { return nil }
+func edInd(c *CPU) error  { return nil }
+func edInir(c *CPU) error { return nil }
+func edIndr(c *CPU) error { return nil }
+func edOuti(c *CPU) error { return nil }
+func edOutd(c *CPU) error { return nil }
+func edOtir(c *CPU) error { return nil }
+func edOtdr(c *CPU) error { return nil }
+
+// I/O operations (stub implementations)
+func edInBC(c *CPU, params ...any) error  { return nil }
+func edInCC(c *CPU, params ...any) error  { return nil }
+func edInDC(c *CPU, params ...any) error  { return nil }
+func edInEC(c *CPU, params ...any) error  { return nil }
+func edInHC(c *CPU, params ...any) error  { return nil }
+func edInLC(c *CPU, params ...any) error  { return nil }
+func edInAC(c *CPU, params ...any) error  { return nil }
+func edOutCB(c *CPU, params ...any) error { return nil }
+func edOutCC(c *CPU, params ...any) error { return nil }
+func edOutCD(c *CPU, params ...any) error { return nil }
+func edOutCE(c *CPU, params ...any) error { return nil }
+func edOutCH(c *CPU, params ...any) error { return nil }
+func edOutCL(c *CPU, params ...any) error { return nil }
+func edOutCA(c *CPU, params ...any) error { return nil }
+
+// Return and rotate operations
+func edRetn(c *CPU) error {
+	c.iff1 = c.iff2
+	c.PC = c.pop16()
+	return nil
+}
+
+func edReti(c *CPU) error {
+	c.iff1 = c.iff2
+	c.PC = c.pop16()
+	return nil
+}
+
+func edRrd(c *CPU) error { return nil } // Stub
+func edRld(c *CPU) error { return nil } // Stub
+
+// DD prefix instruction implementations (IX operations)
+
+// ddLdIXnn implements DD 21: LD IX,nn.
+func ddLdIXnn(c *CPU, params ...any) error {
+	// Read 16-bit immediate value from memory at PC+2 and PC+3
+	low := c.memory.Read(c.PC + 2)
+	high := c.memory.Read(c.PC + 3)
+	c.IX = uint16(high)<<8 | uint16(low)
+	return nil
+}
+
+// IX register operations
+func ddIncIX(c *CPU) error { c.IX++; return nil }
+func ddDecIX(c *CPU) error { c.IX--; return nil }
+
+func ddAddIXBc(c *CPU, params ...any) error { c.IX += uint16(c.B)<<8 | uint16(c.C); return nil }
+func ddAddIXDe(c *CPU, params ...any) error { c.IX += uint16(c.D)<<8 | uint16(c.E); return nil }
+func ddAddIXIX(c *CPU, params ...any) error { c.IX += c.IX; return nil }
+func ddAddIXSp(c *CPU, params ...any) error { c.IX += c.SP; return nil }
+
+func ddLdNnIX(c *CPU, params ...any) error { return nil } // Stub
+func ddLdIXNn(c *CPU, params ...any) error { return nil } // Stub
+
+// IX indexed operations (stubs for now)
+func ddLdBIXd(c *CPU, params ...any) error { return nil }
+func ddLdCIXd(c *CPU, params ...any) error { return nil }
+func ddLdDIXd(c *CPU, params ...any) error { return nil }
+func ddLdEIXd(c *CPU, params ...any) error { return nil }
+func ddLdHIXd(c *CPU, params ...any) error { return nil }
+func ddLdLIXd(c *CPU, params ...any) error { return nil }
+func ddLdAIXd(c *CPU, params ...any) error { return nil }
+func ddLdIXdB(c *CPU, params ...any) error { return nil }
+func ddLdIXdC(c *CPU, params ...any) error { return nil }
+func ddLdIXdD(c *CPU, params ...any) error { return nil }
+func ddLdIXdE(c *CPU, params ...any) error { return nil }
+func ddLdIXdH(c *CPU, params ...any) error { return nil }
+func ddLdIXdL(c *CPU, params ...any) error { return nil }
+func ddLdIXdA(c *CPU, params ...any) error { return nil }
+func ddLdIXdN(c *CPU, params ...any) error { return nil }
+func ddIncIXd(c *CPU, params ...any) error { return nil }
+func ddDecIXd(c *CPU, params ...any) error { return nil }
+
+// IX arithmetic operations (stubs)
+func ddAddAIXd(c *CPU, params ...any) error { return nil }
+func ddAdcAIXd(c *CPU, params ...any) error { return nil }
+func ddSubAIXd(c *CPU, params ...any) error { return nil }
+func ddSbcAIXd(c *CPU, params ...any) error { return nil }
+func ddAndAIXd(c *CPU, params ...any) error { return nil }
+func ddXorAIXd(c *CPU, params ...any) error { return nil }
+func ddOrAIXd(c *CPU, params ...any) error  { return nil }
+func ddCpAIXd(c *CPU, params ...any) error  { return nil }
+
+// IX stack and jump operations
+func ddJpIX(c *CPU) error   { c.PC = c.IX; return nil }
+func ddExSpIX(c *CPU) error { return nil } // Stub
+func ddPushIX(c *CPU) error { c.push16(c.IX); return nil }
+func ddPopIX(c *CPU) error  { c.IX = c.pop16(); return nil }
+
+// DDCB operations (stubs)
+func ddcbShift(c *CPU, params ...any) error { return nil }
+func ddcbBit(c *CPU, params ...any) error   { return nil }
+func ddcbRes(c *CPU, params ...any) error   { return nil }
+func ddcbSet(c *CPU, params ...any) error   { return nil }
+
+// FD prefix instruction implementations (IY operations)
+
+func fdLdIYnn(c *CPU, params ...any) error {
+	// Read 16-bit immediate value from memory at PC+2 and PC+3
+	low := c.memory.Read(c.PC + 2)
+	high := c.memory.Read(c.PC + 3)
+	c.IY = uint16(high)<<8 | uint16(low)
+	return nil
+}
+
+// IY register operations
+func fdIncIY(c *CPU) error { c.IY++; return nil }
+func fdDecIY(c *CPU) error { c.IY--; return nil }
+
+func fdAddIYBc(c *CPU, params ...any) error { c.IY += uint16(c.B)<<8 | uint16(c.C); return nil }
+func fdAddIYDe(c *CPU, params ...any) error { c.IY += uint16(c.D)<<8 | uint16(c.E); return nil }
+func fdAddIYIY(c *CPU, params ...any) error { c.IY += c.IY; return nil }
+func fdAddIYSp(c *CPU, params ...any) error { c.IY += c.SP; return nil }
+
+func fdLdNnIY(c *CPU, params ...any) error { return nil } // Stub
+func fdLdIYNn(c *CPU, params ...any) error { return nil } // Stub
+
+// IY indexed operations (stubs - similar to IX but using IY)
+func fdLdBIYd(c *CPU, params ...any) error { return nil }
+func fdLdCIYd(c *CPU, params ...any) error { return nil }
+func fdLdDIYd(c *CPU, params ...any) error { return nil }
+func fdLdEIYd(c *CPU, params ...any) error { return nil }
+func fdLdHIYd(c *CPU, params ...any) error { return nil }
+func fdLdLIYd(c *CPU, params ...any) error { return nil }
+func fdLdAIYd(c *CPU, params ...any) error { return nil }
+func fdLdIYdB(c *CPU, params ...any) error { return nil }
+func fdLdIYdC(c *CPU, params ...any) error { return nil }
+func fdLdIYdD(c *CPU, params ...any) error { return nil }
+func fdLdIYdE(c *CPU, params ...any) error { return nil }
+func fdLdIYdH(c *CPU, params ...any) error { return nil }
+func fdLdIYdL(c *CPU, params ...any) error { return nil }
+func fdLdIYdA(c *CPU, params ...any) error { return nil }
+func fdLdIYdN(c *CPU, params ...any) error { return nil }
+func fdIncIYd(c *CPU, params ...any) error { return nil }
+func fdDecIYd(c *CPU, params ...any) error { return nil }
+
+// IY stack and jump operations
+func fdJpIY(c *CPU) error   { c.PC = c.IY; return nil }
+func fdExSpIY(c *CPU) error { return nil } // Stub
+func fdPushIY(c *CPU) error { c.push16(c.IY); return nil }
+func fdPopIY(c *CPU) error  { c.IY = c.pop16(); return nil }
+
+// FDCB operations (stubs)
+func fdcbShift(c *CPU, params ...any) error { return nil }
+func fdcbBit(c *CPU, params ...any) error   { return nil }
+func fdcbRes(c *CPU, params ...any) error   { return nil }
+func fdcbSet(c *CPU, params ...any) error   { return nil }
