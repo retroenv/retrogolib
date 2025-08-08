@@ -1,0 +1,205 @@
+package z80
+
+import (
+	"fmt"
+)
+
+type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
+
+var paramReader = map[AddressingMode]paramReaderFunc{
+	ImpliedAddressing:          paramReaderImplied,
+	RegisterAddressing:         paramReaderRegister,
+	ImmediateAddressing:        paramReaderImmediate,
+	ExtendedAddressing:         paramReaderExtended,
+	RegisterIndirectAddressing: paramReaderRegisterIndirect,
+	IndexedAddressing:          paramReaderIndexed,
+	RelativeAddressing:         paramReaderRelative,
+	BitAddressing:              paramReaderBit,
+	PortAddressing:             paramReaderPort,
+}
+
+// readOpParams reads the opcode parameters after the first opcode byte
+// and translates it into emulator specific types.
+func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, bool, error) {
+	fun, ok := paramReader[addressing]
+	if !ok {
+		return nil, nil, false, fmt.Errorf("%w: mode %02x", ErrUnsupportedAddressingMode, addressing)
+	}
+
+	params, opcodes, pageCrossed := fun(c)
+	return params, opcodes, pageCrossed, nil
+}
+
+func paramReaderImplied(_ *CPU) ([]any, []byte, bool) {
+	return nil, nil, false
+}
+
+func paramReaderRegister(c *CPU) ([]any, []byte, bool) {
+	// Register addressing is encoded in the opcode itself
+	// The specific register is determined by the opcode bits
+	opcode := c.memory.Read(c.PC)
+
+	// Extract register from opcode (varies by instruction)
+	// For most instructions, bits 0-2 specify source, bits 3-5 specify destination
+	srcReg := opcode & 0x07
+	dstReg := (opcode >> 3) & 0x07
+
+	params := []any{Register8(srcReg), Register8(dstReg)}
+	return params, nil, false
+}
+
+func paramReaderImmediate(c *CPU) ([]any, []byte, bool) {
+	b := c.memory.Read(c.PC + 1)
+	params := []any{Immediate8(b)}
+	opcodes := []byte{b}
+	return params, opcodes, false
+}
+
+func paramReaderExtended(c *CPU) ([]any, []byte, bool) {
+	b1 := c.memory.Read(c.PC + 1) // Low byte
+	b2 := c.memory.Read(c.PC + 2) // High byte
+
+	address := uint16(b2)<<8 | uint16(b1)
+	params := []any{Extended(address)}
+	opcodes := []byte{b1, b2}
+	return params, opcodes, false
+}
+
+func paramReaderRegisterIndirect(c *CPU) ([]any, []byte, bool) {
+	// Register indirect addressing - the register pair is encoded in the opcode
+	opcode := c.memory.Read(c.PC)
+
+	// Determine register pair from opcode
+	var regPair uint16
+	switch (opcode >> 4) & 0x03 {
+	case 0: // BC
+		regPair = uint16(c.B)<<8 | uint16(c.C)
+	case 1: // DE
+		regPair = uint16(c.D)<<8 | uint16(c.E)
+	case 2: // HL
+		regPair = uint16(c.H)<<8 | uint16(c.L)
+	case 3: // SP
+		regPair = c.SP
+	}
+
+	params := []any{RegisterIndirect(regPair)}
+	return params, nil, false
+}
+
+func paramReaderIndexed(c *CPU) ([]any, []byte, bool) {
+	// Indexed addressing (IX+d) or (IY+d)
+	prefix := c.memory.Read(c.PC - 1) // Previous byte should be DD (IX) or FD (IY)
+	displacement := int8(c.memory.Read(c.PC + 1))
+
+	var baseReg uint16
+	switch prefix {
+	case 0xDD:
+		baseReg = c.IX
+	case 0xFD:
+		baseReg = c.IY
+	default:
+		baseReg = uint16(c.H)<<8 | uint16(c.L) // Default to HL
+	}
+
+	indexed := Indexed{
+		Base:   baseReg,
+		Offset: displacement,
+	}
+
+	params := []any{indexed}
+	opcodes := []byte{byte(displacement)}
+	return params, opcodes, false
+}
+
+func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
+	offset := int8(c.memory.Read(c.PC + 1))
+
+	params := []any{Relative(offset)}
+	opcodes := []byte{byte(offset)}
+	return params, opcodes, false
+}
+
+func paramReaderBit(c *CPU) ([]any, []byte, bool) {
+	// Bit addressing - bit number is encoded in the opcode
+	opcode := c.memory.Read(c.PC)
+
+	bitNum := (opcode >> 3) & 0x07 // Bits 3-5 contain bit number
+	targetReg := opcode & 0x07     // Bits 0-2 contain target register
+
+	params := []any{Bit(bitNum), Register8(targetReg)}
+	return params, nil, false
+}
+
+func paramReaderPort(c *CPU) ([]any, []byte, bool) {
+	// Port addressing can be immediate (n) or register indirect (C)
+	opcode := c.memory.Read(c.PC)
+
+	if opcode == 0xDB || opcode == 0xD3 { // IN A,(n) or OUT (n),A
+		portAddr := c.memory.Read(c.PC + 1)
+		params := []any{Port(portAddr)}
+		opcodes := []byte{portAddr}
+		return params, opcodes, false
+	}
+
+	// Port (C) - use C register as port address
+	params := []any{Port(c.C)}
+	return params, nil, false
+}
+
+// RegisterEncoding maps register numbers to register names for debugging
+var RegisterEncoding = map[uint8]string{
+	0: "B",
+	1: "C",
+	2: "D",
+	3: "E",
+	4: "H",
+	5: "L",
+	6: "(HL)",
+	7: "A",
+}
+
+// GetRegisterValue returns the value of a register by its encoding number
+func (c *CPU) GetRegisterValue(reg uint8) uint8 {
+	switch reg {
+	case 0:
+		return c.B
+	case 1:
+		return c.C
+	case 2:
+		return c.D
+	case 3:
+		return c.E
+	case 4:
+		return c.H
+	case 5:
+		return c.L
+	case 6:
+		return c.memory.Read(uint16(c.H)<<8 | uint16(c.L))
+	case 7:
+		return c.A
+	default:
+		return 0
+	}
+}
+
+// SetRegisterValue sets the value of a register by its encoding number
+func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
+	switch reg {
+	case 0:
+		c.B = value
+	case 1:
+		c.C = value
+	case 2:
+		c.D = value
+	case 3:
+		c.E = value
+	case 4:
+		c.H = value
+	case 5:
+		c.L = value
+	case 6:
+		c.memory.Write(uint16(c.H)<<8|uint16(c.L), value)
+	case 7:
+		c.A = value
+	}
+}

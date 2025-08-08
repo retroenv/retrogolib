@@ -277,3 +277,238 @@ func (c *CPU) sbc(a, b uint8) uint8 {
 
 	return result
 }
+
+// nop performs no operation.
+func nop(c *CPU) error {
+	return nil
+}
+
+// halt halts the CPU execution.
+func halt(c *CPU) error {
+	c.halted = true
+	return nil
+}
+
+// ldImm8 loads an 8-bit immediate value into a register.
+func ldImm8(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	imm, ok := params[0].(Immediate8)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	// For now, load into A register (this would need opcode analysis for other registers)
+	c.A = uint8(imm)
+	return nil
+}
+
+// ldReg8 loads between 8-bit registers.
+func ldReg8(c *CPU, params ...any) error {
+	if len(params) < 2 {
+		return ErrMissingParameter
+	}
+
+	dst, ok1 := params[0].(Register8)
+	src, ok2 := params[1].(Register8)
+
+	if !ok1 || !ok2 {
+		return ErrInvalidParameterType
+	}
+
+	value := c.GetRegisterValue(uint8(src))
+	c.SetRegisterValue(uint8(dst), value)
+	return nil
+}
+
+// incReg8 increments an 8-bit register.
+func incReg8(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	reg, ok := params[0].(Register8)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	value := c.GetRegisterValue(uint8(reg))
+	result := c.inc8(value)
+	c.SetRegisterValue(uint8(reg), result)
+	return nil
+}
+
+// decReg8 decrements an 8-bit register.
+func decReg8(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	reg, ok := params[0].(Register8)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	value := c.GetRegisterValue(uint8(reg))
+	result := c.dec8(value)
+	c.SetRegisterValue(uint8(reg), result)
+	return nil
+}
+
+// addA adds a value to the accumulator.
+func addA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.add8(c.A, value)
+	return nil
+}
+
+// subA subtracts a value from the accumulator.
+func subA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.sub8(c.A, value)
+	return nil
+}
+
+// andA performs logical AND with the accumulator.
+func andA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.and8(c.A, value)
+	return nil
+}
+
+// orA performs logical OR with the accumulator.
+func orA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.or8(c.A, value)
+	return nil
+}
+
+// xorA performs logical XOR with the accumulator.
+func xorA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.xor8(c.A, value)
+	return nil
+}
+
+// cpA compares a value with the accumulator.
+func cpA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.cp(c.A, value)
+	return nil
+}
+
+// jpAbs performs absolute jump.
+func jpAbs(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	addr, ok := params[0].(Extended)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	c.PC = uint16(addr)
+	return nil
+}
+
+// jrRel performs relative jump.
+func jrRel(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	offset, ok := params[0].(Relative)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	c.PC = uint16(int32(c.PC) + int32(offset))
+	return nil
+}
