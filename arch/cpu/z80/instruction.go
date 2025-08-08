@@ -682,6 +682,16 @@ var (
 	FdIncIYd = &Instruction{Name: "inc", ParamFunc: fdIncIYd}
 	FdDecIYd = &Instruction{Name: "dec", ParamFunc: fdDecIYd}
 
+	// FD arithmetic instructions
+	FdAddAIYd = &Instruction{Name: "add", ParamFunc: fdAddAIYd}
+	FdAdcAIYd = &Instruction{Name: "adc", ParamFunc: fdAdcAIYd}
+	FdSubAIYd = &Instruction{Name: "sub", ParamFunc: fdSubAIYd}
+	FdSbcAIYd = &Instruction{Name: "sbc", ParamFunc: fdSbcAIYd}
+	FdAndAIYd = &Instruction{Name: "and", ParamFunc: fdAndAIYd}
+	FdXorAIYd = &Instruction{Name: "xor", ParamFunc: fdXorAIYd}
+	FdOrAIYd  = &Instruction{Name: "or", ParamFunc: fdOrAIYd}
+	FdCpAIYd  = &Instruction{Name: "cp", ParamFunc: fdCpAIYd}
+
 	FdJpIY    = &Instruction{Name: "jp", NoParamFunc: fdJpIY}
 	FdExSpIY  = &Instruction{Name: "ex", NoParamFunc: fdExSpIY}
 	FdPushIY  = &Instruction{Name: "push", NoParamFunc: fdPushIY}

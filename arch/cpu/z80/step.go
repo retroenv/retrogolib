@@ -775,6 +775,10 @@ func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
+	if instruction, timing, size := c.decodeFDArithmeticInstructions(opcodeByte); instruction != nil {
+		return instruction, timing, size, nil
+	}
+
 	if instruction, timing, size := c.decodeFDStackInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
@@ -881,6 +885,30 @@ func (c *CPU) decodeFDLoadToIY(opcodeByte uint8) (*Instruction, byte, byte) {
 		return FdLdIYdL, 19, 3
 	case 0x77: // LD (IY+d),A
 		return FdLdIYdA, 19, 3
+	}
+
+	return nil, 0, 0
+}
+
+// decodeFDArithmeticInstructions handles FD arithmetic instructions with (IY+d).
+func (c *CPU) decodeFDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+	switch opcodeByte {
+	case 0x86: // ADD A,(IY+d)
+		return FdAddAIYd, 19, 3
+	case 0x8E: // ADC A,(IY+d)
+		return FdAdcAIYd, 19, 3
+	case 0x96: // SUB (IY+d)
+		return FdSubAIYd, 19, 3
+	case 0x9E: // SBC A,(IY+d)
+		return FdSbcAIYd, 19, 3
+	case 0xA6: // AND (IY+d)
+		return FdAndAIYd, 19, 3
+	case 0xAE: // XOR (IY+d)
+		return FdXorAIYd, 19, 3
+	case 0xB6: // OR (IY+d)
+		return FdOrAIYd, 19, 3
+	case 0xBE: // CP (IY+d)
+		return FdCpAIYd, 19, 3
 	}
 
 	return nil, 0, 0

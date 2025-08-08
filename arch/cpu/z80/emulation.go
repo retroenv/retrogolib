@@ -1,6 +1,62 @@
 package z80
 
-import "fmt"
+import (
+	"fmt"
+	"math/bits"
+)
+
+// bool2int converts a boolean to 1 or 0.
+func bool2int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// calculateParity calculates the parity of a byte (true if even parity).
+func calculateParity(value uint8) bool {
+	count := bits.OnesCount8(value)
+	return count%2 == 0
+}
+
+// performShiftRotateOperation performs shift/rotate operations based on opcode.
+func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
+	switch {
+	case opcode <= 0x07: // RLC
+		carry := (value & 0x80) != 0
+		return (value << 1) | uint8(bool2int(carry)), carry
+	case opcode <= 0x0F: // RRC
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (uint8(bool2int(carry)) << 7), carry
+	case opcode <= 0x17: // RL
+		carry := (value & 0x80) != 0
+		return (value << 1) | oldCarry, carry
+	case opcode <= 0x1F: // RR
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (oldCarry << 7), carry
+	case opcode <= 0x27: // SLA
+		carry := (value & 0x80) != 0
+		return value << 1, carry
+	case opcode <= 0x2F: // SRA
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (value & 0x80), carry
+	case opcode <= 0x37: // SLL
+		carry := (value & 0x80) != 0
+		return (value << 1) | 0x01, carry
+	default: // SRL
+		carry := (value & 0x01) != 0
+		return value >> 1, carry
+	}
+}
+
+// setShiftRotateFlags sets flags for shift/rotate operations.
+func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
+	c.setSZ(result)
+	c.setPOverflow(calculateParity(result))
+	c.setH(false)
+	c.setN(false)
+	c.setC(carry)
+}
 
 // inc8 increments an 8-bit value and sets flags appropriately.
 func (c *CPU) inc8(value uint8) uint8 {
@@ -1539,15 +1595,72 @@ func (c *CPU) sbcHL(value uint16) {
 	c.setN(true)
 }
 
-// Simplified ED instruction implementations (stub implementations)
-func edLdNnBc(c *CPU, params ...any) error  { return nil }
-func edLdNnDe(c *CPU, params ...any) error  { return nil }
-func edLdNnHl(c *CPU, params ...any) error  { return nil }
-func edLdNnSp(c *CPU, params ...any) error  { return nil }
-func edLdBcNn(c *CPU, params ...any) error  { return nil }
-func edLdDeNn(c *CPU, params ...any) error  { return nil }
-func edLdHlNn(c *CPU, params ...any) error  { return nil }
-func edLdSpNn(c *CPU, params ...any) error  { return nil }
+// ED instruction implementations for 16-bit memory operations
+
+// edLdNnBc implements ED 43: LD (nn),BC.
+func edLdNnBc(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, c.C)
+	c.memory.Write(addr+1, c.B)
+	return nil
+}
+
+// edLdNnDe implements ED 53: LD (nn),DE.
+func edLdNnDe(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, c.E)
+	c.memory.Write(addr+1, c.D)
+	return nil
+}
+
+// edLdNnHl implements ED 63: LD (nn),HL.
+func edLdNnHl(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, c.L)
+	c.memory.Write(addr+1, c.H)
+	return nil
+}
+
+// edLdNnSp implements ED 73: LD (nn),SP.
+func edLdNnSp(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, uint8(c.SP))
+	c.memory.Write(addr+1, uint8(c.SP>>8))
+	return nil
+}
+
+// edLdBcNn implements ED 4B: LD BC,(nn).
+func edLdBcNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.C = c.memory.Read(addr)
+	c.B = c.memory.Read(addr + 1)
+	return nil
+}
+
+// edLdDeNn implements ED 5B: LD DE,(nn).
+func edLdDeNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.E = c.memory.Read(addr)
+	c.D = c.memory.Read(addr + 1)
+	return nil
+}
+
+// edLdHlNn implements ED 6B: LD HL,(nn).
+func edLdHlNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.L = c.memory.Read(addr)
+	c.H = c.memory.Read(addr + 1)
+	return nil
+}
+
+// edLdSpNn implements ED 7B: LD SP,(nn).
+func edLdSpNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	low := c.memory.Read(addr)
+	high := c.memory.Read(addr + 1)
+	c.SP = uint16(high)<<8 | uint16(low)
+	return nil
+}
 func edAdcHlBc(c *CPU, params ...any) error { c.adcHL(uint16(c.B)<<8 | uint16(c.C)); return nil }
 func edAdcHlDe(c *CPU, params ...any) error { c.adcHL(uint16(c.D)<<8 | uint16(c.E)); return nil }
 func edAdcHlHl(c *CPU, params ...any) error { c.adcHL(uint16(c.H)<<8 | uint16(c.L)); return nil }
@@ -1557,39 +1670,337 @@ func edSbcHlDe(c *CPU, params ...any) error { c.sbcHL(uint16(c.D)<<8 | uint16(c.
 func edSbcHlHl(c *CPU, params ...any) error { c.sbcHL(uint16(c.H)<<8 | uint16(c.L)); return nil }
 func edSbcHlSp(c *CPU, params ...any) error { c.sbcHL(c.SP); return nil }
 
-// Block and I/O operations (stub implementations for now)
-func edLdi(c *CPU) error  { return nil }
-func edLdd(c *CPU) error  { return nil }
-func edLdir(c *CPU) error { return nil }
-func edLddr(c *CPU) error { return nil }
-func edCpi(c *CPU) error  { return nil }
-func edCpd(c *CPU) error  { return nil }
-func edCpir(c *CPU) error { return nil }
-func edCpdr(c *CPU) error { return nil }
-func edIni(c *CPU) error  { return nil }
-func edInd(c *CPU) error  { return nil }
-func edInir(c *CPU) error { return nil }
-func edIndr(c *CPU) error { return nil }
-func edOuti(c *CPU) error { return nil }
-func edOutd(c *CPU) error { return nil }
-func edOtir(c *CPU) error { return nil }
-func edOtdr(c *CPU) error { return nil }
+// ED block transfer and search operations
 
-// I/O operations (stub implementations)
-func edInBC(c *CPU, params ...any) error  { return nil }
-func edInCC(c *CPU, params ...any) error  { return nil }
-func edInDC(c *CPU, params ...any) error  { return nil }
-func edInEC(c *CPU, params ...any) error  { return nil }
-func edInHC(c *CPU, params ...any) error  { return nil }
-func edInLC(c *CPU, params ...any) error  { return nil }
-func edInAC(c *CPU, params ...any) error  { return nil }
-func edOutCB(c *CPU, params ...any) error { return nil }
-func edOutCC(c *CPU, params ...any) error { return nil }
-func edOutCD(c *CPU, params ...any) error { return nil }
-func edOutCE(c *CPU, params ...any) error { return nil }
-func edOutCH(c *CPU, params ...any) error { return nil }
-func edOutCL(c *CPU, params ...any) error { return nil }
-func edOutCA(c *CPU, params ...any) error { return nil }
+// edLdi implements ED A0: LDI (HL),(DE), INC HL, INC DE, DEC BC.
+func edLdi(c *CPU) error {
+	hl := c.HL()
+	de := c.DE()
+	bc := c.BC()
+
+	c.memory.Write(de, c.memory.Read(hl))
+	c.setHL(hl + 1)
+	c.setDE(de + 1)
+	c.setBC(bc - 1)
+
+	c.setH(false)
+	c.setN(false)
+	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	return nil
+}
+
+// edLdd implements ED A8: LDD (HL),(DE), DEC HL, DEC DE, DEC BC.
+func edLdd(c *CPU) error {
+	hl := c.HL()
+	de := c.DE()
+	bc := c.BC()
+
+	c.memory.Write(de, c.memory.Read(hl))
+	c.setHL(hl - 1)
+	c.setDE(de - 1)
+	c.setBC(bc - 1)
+
+	c.setH(false)
+	c.setN(false)
+	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	return nil
+}
+
+// edLdir implements ED B0: LDIR - Repeat LDI until BC=0.
+func edLdir(c *CPU) error {
+	for c.BC() != 0 {
+		if err := edLdi(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// edLddr implements ED B8: LDDR - Repeat LDD until BC=0.
+func edLddr(c *CPU) error {
+	for c.BC() != 0 {
+		if err := edLdd(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// edCpi implements ED A1: CPI - Compare A with (HL), INC HL, DEC BC.
+func edCpi(c *CPU) error {
+	hl := c.HL()
+	bc := c.BC()
+	memValue := c.memory.Read(hl)
+
+	result := c.A - memValue
+	c.setHL(hl + 1)
+	c.setBC(bc - 1)
+
+	c.setSZ(result)
+	c.setH((c.A & 0x0F) < (memValue & 0x0F))
+	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	c.setN(true)
+	return nil
+}
+
+// edCpd implements ED A9: CPD - Compare A with (HL), DEC HL, DEC BC.
+func edCpd(c *CPU) error {
+	hl := c.HL()
+	bc := c.BC()
+	memValue := c.memory.Read(hl)
+
+	result := c.A - memValue
+	c.setHL(hl - 1)
+	c.setBC(bc - 1)
+
+	c.setSZ(result)
+	c.setH((c.A & 0x0F) < (memValue & 0x0F))
+	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	c.setN(true)
+	return nil
+}
+
+// edCpir implements ED B1: CPIR - Repeat CPI until BC=0 or match found.
+func edCpir(c *CPU) error {
+	for c.BC() != 0 {
+		if err := edCpi(c); err != nil {
+			return err
+		}
+		if c.Flags.Z != 0 {
+			break // Match found
+		}
+	}
+	return nil
+}
+
+// edCpdr implements ED B9: CPDR - Repeat CPD until BC=0 or match found.
+func edCpdr(c *CPU) error {
+	for c.BC() != 0 {
+		if err := edCpd(c); err != nil {
+			return err
+		}
+		if c.Flags.Z != 0 {
+			break // Match found
+		}
+	}
+	return nil
+}
+
+// ED I/O block operations
+
+// edIni implements ED A2: INI - IN (HL),(C), INC HL, DEC B.
+func edIni(c *CPU) error {
+	hl := c.HL()
+	port := c.C
+	value := c.readPort(port)
+
+	c.memory.Write(hl, value)
+	c.setHL(hl + 1)
+	c.B--
+
+	c.setZ(c.B)
+	c.setN(true)
+	return nil
+}
+
+// edInd implements ED AA: IND - IN (HL),(C), DEC HL, DEC B.
+func edInd(c *CPU) error {
+	hl := c.HL()
+	port := c.C
+	value := c.readPort(port)
+
+	c.memory.Write(hl, value)
+	c.setHL(hl - 1)
+	c.B--
+
+	c.setZ(c.B)
+	c.setN(true)
+	return nil
+}
+
+// edInir implements ED B2: INIR - Repeat INI until B=0.
+func edInir(c *CPU) error {
+	for c.B != 0 {
+		if err := edIni(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// edIndr implements ED BA: INDR - Repeat IND until B=0.
+func edIndr(c *CPU) error {
+	for c.B != 0 {
+		if err := edInd(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// edOuti implements ED A3: OUTI - OUT (C),(HL), INC HL, DEC B.
+func edOuti(c *CPU) error {
+	hl := c.HL()
+	port := c.C
+	value := c.memory.Read(hl)
+
+	c.writePort(port, value)
+	c.setHL(hl + 1)
+	c.B--
+
+	c.setZ(c.B)
+	c.setN(true)
+	return nil
+}
+
+// edOutd implements ED AB: OUTD - OUT (C),(HL), DEC HL, DEC B.
+func edOutd(c *CPU) error {
+	hl := c.HL()
+	port := c.C
+	value := c.memory.Read(hl)
+
+	c.writePort(port, value)
+	c.setHL(hl - 1)
+	c.B--
+
+	c.setZ(c.B)
+	c.setN(true)
+	return nil
+}
+
+// edOtir implements ED B3: OTIR - Repeat OUTI until B=0.
+func edOtir(c *CPU) error {
+	for c.B != 0 {
+		if err := edOuti(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// edOtdr implements ED BB: OTDR - Repeat OUTD until B=0.
+func edOtdr(c *CPU) error {
+	for c.B != 0 {
+		if err := edOutd(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ED I/O operations with C register
+
+// edInBC implements ED 40: IN B,(C).
+func edInBC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.B = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInCC implements ED 48: IN C,(C).
+func edInCC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.C = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInDC implements ED 50: IN D,(C).
+func edInDC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.D = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInEC implements ED 58: IN E,(C).
+func edInEC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.E = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInHC implements ED 60: IN H,(C).
+func edInHC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.H = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInLC implements ED 68: IN L,(C).
+func edInLC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.L = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edInAC implements ED 78: IN A,(C).
+func edInAC(c *CPU, params ...any) error {
+	value := c.readPort(c.C)
+	c.A = value
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edOutCB implements ED 41: OUT (C),B.
+func edOutCB(c *CPU, params ...any) error {
+	c.writePort(c.C, c.B)
+	return nil
+}
+
+// edOutCC implements ED 49: OUT (C),C.
+func edOutCC(c *CPU, params ...any) error {
+	c.writePort(c.C, c.C)
+	return nil
+}
+
+// edOutCD implements ED 51: OUT (C),D.
+func edOutCD(c *CPU, params ...any) error {
+	c.writePort(c.C, c.D)
+	return nil
+}
+
+// edOutCE implements ED 59: OUT (C),E.
+func edOutCE(c *CPU, params ...any) error {
+	c.writePort(c.C, c.E)
+	return nil
+}
+
+// edOutCH implements ED 61: OUT (C),H.
+func edOutCH(c *CPU, params ...any) error {
+	c.writePort(c.C, c.H)
+	return nil
+}
+
+// edOutCL implements ED 69: OUT (C),L.
+func edOutCL(c *CPU, params ...any) error {
+	c.writePort(c.C, c.L)
+	return nil
+}
+
+// edOutCA implements ED 79: OUT (C),A.
+func edOutCA(c *CPU, params ...any) error {
+	c.writePort(c.C, c.A)
+	return nil
+}
 
 // Return and rotate operations
 func edRetn(c *CPU) error {
@@ -1604,8 +2015,42 @@ func edReti(c *CPU) error {
 	return nil
 }
 
-func edRrd(c *CPU) error { return nil } // Stub
-func edRld(c *CPU) error { return nil } // Stub
+// edRrd implements ED 67: RRD - Rotate Right Decimal.
+// The contents of A and (HL) are rotated right 4 bits.
+func edRrd(c *CPU) error {
+	hl := c.HL()
+	memValue := c.memory.Read(hl)
+
+	// Rotate A and (HL) right 4 bits
+	lowNibbleA := c.A & 0x0F
+
+	c.A = (c.A & 0xF0) | (memValue & 0x0F)
+	c.memory.Write(hl, (lowNibbleA<<4)|(memValue>>4))
+
+	c.setSZP(c.A)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edRld implements ED 6F: RLD - Rotate Left Decimal.
+// The contents of A and (HL) are rotated left 4 bits.
+func edRld(c *CPU) error {
+	hl := c.HL()
+	memValue := c.memory.Read(hl)
+
+	// Rotate A and (HL) left 4 bits
+	lowNibbleA := c.A & 0x0F
+	highNibbleMem := memValue >> 4
+
+	c.A = (c.A & 0xF0) | highNibbleMem
+	c.memory.Write(hl, ((memValue&0x0F)<<4)|lowNibbleA)
+
+	c.setSZP(c.A)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
 
 // DD prefix instruction implementations (IX operations)
 
@@ -1627,49 +2072,385 @@ func ddAddIXDe(c *CPU, params ...any) error { c.IX += uint16(c.D)<<8 | uint16(c.
 func ddAddIXIX(c *CPU, params ...any) error { c.IX += c.IX; return nil }
 func ddAddIXSp(c *CPU, params ...any) error { c.IX += c.SP; return nil }
 
-func ddLdNnIX(c *CPU, params ...any) error { return nil } // Stub
-func ddLdIXNn(c *CPU, params ...any) error { return nil } // Stub
+// ddLdNnIX implements DD 22: LD (nn),IX.
+func ddLdNnIX(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, uint8(c.IX))
+	c.memory.Write(addr+1, uint8(c.IX>>8))
+	return nil
+}
 
-// IX indexed operations (stubs for now)
-func ddLdBIXd(c *CPU, params ...any) error { return nil }
-func ddLdCIXd(c *CPU, params ...any) error { return nil }
-func ddLdDIXd(c *CPU, params ...any) error { return nil }
-func ddLdEIXd(c *CPU, params ...any) error { return nil }
-func ddLdHIXd(c *CPU, params ...any) error { return nil }
-func ddLdLIXd(c *CPU, params ...any) error { return nil }
-func ddLdAIXd(c *CPU, params ...any) error { return nil }
-func ddLdIXdB(c *CPU, params ...any) error { return nil }
-func ddLdIXdC(c *CPU, params ...any) error { return nil }
-func ddLdIXdD(c *CPU, params ...any) error { return nil }
-func ddLdIXdE(c *CPU, params ...any) error { return nil }
-func ddLdIXdH(c *CPU, params ...any) error { return nil }
-func ddLdIXdL(c *CPU, params ...any) error { return nil }
-func ddLdIXdA(c *CPU, params ...any) error { return nil }
-func ddLdIXdN(c *CPU, params ...any) error { return nil }
-func ddIncIXd(c *CPU, params ...any) error { return nil }
-func ddDecIXd(c *CPU, params ...any) error { return nil }
+// ddLdIXNn implements DD 2A: LD IX,(nn).
+func ddLdIXNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	low := c.memory.Read(addr)
+	high := c.memory.Read(addr + 1)
+	c.IX = uint16(high)<<8 | uint16(low)
+	return nil
+}
 
-// IX arithmetic operations (stubs)
-func ddAddAIXd(c *CPU, params ...any) error { return nil }
-func ddAdcAIXd(c *CPU, params ...any) error { return nil }
-func ddSubAIXd(c *CPU, params ...any) error { return nil }
-func ddSbcAIXd(c *CPU, params ...any) error { return nil }
-func ddAndAIXd(c *CPU, params ...any) error { return nil }
-func ddXorAIXd(c *CPU, params ...any) error { return nil }
-func ddOrAIXd(c *CPU, params ...any) error  { return nil }
-func ddCpAIXd(c *CPU, params ...any) error  { return nil }
+// IX indexed load operations - Load register from (IX+d)
+
+// ddLdBIXd implements DD 46: LD B,(IX+d).
+func ddLdBIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.B = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdCIXd implements DD 4E: LD C,(IX+d).
+func ddLdCIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.C = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdDIXd implements DD 56: LD D,(IX+d).
+func ddLdDIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.D = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdEIXd implements DD 5E: LD E,(IX+d).
+func ddLdEIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.E = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdHIXd implements DD 66: LD H,(IX+d).
+func ddLdHIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.H = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdLIXd implements DD 6E: LD L,(IX+d).
+func ddLdLIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.L = c.memory.Read(addr)
+	return nil
+}
+
+// ddLdAIXd implements DD 7E: LD A,(IX+d).
+func ddLdAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.A = c.memory.Read(addr)
+	return nil
+}
+
+// IX indexed store operations - Store register to (IX+d)
+
+// ddLdIXdB implements DD 70: LD (IX+d),B.
+func ddLdIXdB(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.B)
+	return nil
+}
+
+// ddLdIXdC implements DD 71: LD (IX+d),C.
+func ddLdIXdC(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.C)
+	return nil
+}
+
+// ddLdIXdD implements DD 72: LD (IX+d),D.
+func ddLdIXdD(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.D)
+	return nil
+}
+
+// ddLdIXdE implements DD 73: LD (IX+d),E.
+func ddLdIXdE(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.E)
+	return nil
+}
+
+// ddLdIXdH implements DD 74: LD (IX+d),H.
+func ddLdIXdH(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.H)
+	return nil
+}
+
+// ddLdIXdL implements DD 75: LD (IX+d),L.
+func ddLdIXdL(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.L)
+	return nil
+}
+
+// ddLdIXdA implements DD 77: LD (IX+d),A.
+func ddLdIXdA(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, c.A)
+	return nil
+}
+
+// ddLdIXdN implements DD 36: LD (IX+d),n.
+func ddLdIXdN(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	value := params[1].(uint8)
+	addr := uint16(int32(c.IX) + int32(displacement))
+	c.memory.Write(addr, value)
+	return nil
+}
+
+// ddIncIXd implements DD 34: INC (IX+d).
+func ddIncIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := value + 1
+	c.memory.Write(addr, result)
+
+	c.setSZ(result)
+	c.setH((value & 0x0F) == 0x0F)
+	c.setPOverflow(value == 0x7F)
+	c.setN(false)
+	return nil
+}
+
+// ddDecIXd implements DD 35: DEC (IX+d).
+func ddDecIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := value - 1
+	c.memory.Write(addr, result)
+
+	c.setSZ(result)
+	c.setH((value & 0x0F) == 0)
+	c.setPOverflow(value == 0x80)
+	c.setN(true)
+	return nil
+}
+
+// IX arithmetic operations with accumulator
+
+// ddAddAIXd implements DD 86: ADD A,(IX+d).
+func ddAddAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := uint16(c.A) + uint16(value)
+
+	c.setC(result > 0xFF)
+	c.setH((c.A&0x0F)+(value&0x0F) > 0x0F)
+	c.setPOverflow(((c.A ^ value ^ 0x80) & (value ^ uint8(result)) & 0x80) != 0)
+	c.setN(false)
+	c.A = uint8(result)
+	c.setSZ(c.A)
+	return nil
+}
+
+// ddAdcAIXd implements DD 8E: ADC A,(IX+d).
+func ddAdcAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	carry := uint16(0)
+	if c.Flags.C != 0 {
+		carry = 1
+	}
+	result := uint16(c.A) + uint16(value) + carry
+
+	c.setC(result > 0xFF)
+	c.setH((c.A&0x0F)+(value&0x0F)+uint8(carry) > 0x0F)
+	c.setPOverflow(((c.A ^ value ^ 0x80) & (value ^ uint8(result)) & 0x80) != 0)
+	c.setN(false)
+	c.A = uint8(result)
+	c.setSZ(c.A)
+	return nil
+}
+
+// ddSubAIXd implements DD 96: SUB (IX+d).
+func ddSubAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := c.A - value
+
+	c.setC(c.A < value)
+	c.setH((c.A & 0x0F) < (value & 0x0F))
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	c.A = result
+	c.setSZ(c.A)
+	return nil
+}
+
+// ddSbcAIXd implements DD 9E: SBC A,(IX+d).
+func ddSbcAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	carry := uint8(0)
+	if c.Flags.C != 0 {
+		carry = 1
+	}
+	result := c.A - value - carry
+
+	c.setC(uint16(c.A) < uint16(value)+uint16(carry))
+	c.setH((c.A & 0x0F) < (value&0x0F)+carry)
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	c.A = result
+	c.setSZ(c.A)
+	return nil
+}
+
+// ddAndAIXd implements DD A6: AND (IX+d).
+func ddAndAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A &= value
+
+	c.setSZP(c.A)
+	c.setH(true)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// ddXorAIXd implements DD AE: XOR (IX+d).
+func ddXorAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A ^= value
+
+	c.setSZP(c.A)
+	c.setH(false)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// ddOrAIXd implements DD B6: OR (IX+d).
+func ddOrAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A |= value
+
+	c.setSZP(c.A)
+	c.setH(false)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// ddCpAIXd implements DD BE: CP (IX+d).
+func ddCpAIXd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := c.A - value
+
+	c.setSZ(result)
+	c.setC(c.A < value)
+	c.setH((c.A & 0x0F) < (value & 0x0F))
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	return nil
+}
 
 // IX stack and jump operations
-func ddJpIX(c *CPU) error   { c.PC = c.IX; return nil }
-func ddExSpIX(c *CPU) error { return nil } // Stub
+func ddJpIX(c *CPU) error { c.PC = c.IX; return nil }
+
+// ddExSpIX implements DD E3: EX (SP),IX.
+func ddExSpIX(c *CPU) error {
+	// Exchange IX with the word at the top of the stack
+	low := c.memory.Read(c.SP)
+	high := c.memory.Read(c.SP + 1)
+
+	c.memory.Write(c.SP, uint8(c.IX))
+	c.memory.Write(c.SP+1, uint8(c.IX>>8))
+
+	c.IX = uint16(high)<<8 | uint16(low)
+	return nil
+}
 func ddPushIX(c *CPU) error { c.push16(c.IX); return nil }
 func ddPopIX(c *CPU) error  { c.IX = c.pop16(); return nil }
 
-// DDCB operations (stubs)
-func ddcbShift(c *CPU, params ...any) error { return nil }
-func ddcbBit(c *CPU, params ...any) error   { return nil }
-func ddcbRes(c *CPU, params ...any) error   { return nil }
-func ddcbSet(c *CPU, params ...any) error   { return nil }
+// DDCB operations - bit operations on (IX+d)
+
+func ddcbShift(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	result, carry := performShiftRotateOperation(value, opcode, c.Flags.C)
+	c.memory.Write(addr, result)
+	setShiftRotateFlags(c, result, carry)
+
+	return nil
+}
+
+func ddcbBit(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value & (1 << bit)
+
+	c.setZ(result) // setZ will set the flag to 1 if result is 0
+	c.setH(true)
+	c.setN(false)
+	if bit == 7 {
+		c.setS(result)
+	} else {
+		c.setS(0)
+	}
+	return nil
+}
+
+func ddcbRes(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value & ^(1 << bit)
+	c.memory.Write(addr, result)
+	return nil
+}
+
+func ddcbSet(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IX) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value | (1 << bit)
+	c.memory.Write(addr, result)
+	return nil
+}
 
 // FD prefix instruction implementations (IY operations)
 
@@ -1690,36 +2471,385 @@ func fdAddIYDe(c *CPU, params ...any) error { c.IY += uint16(c.D)<<8 | uint16(c.
 func fdAddIYIY(c *CPU, params ...any) error { c.IY += c.IY; return nil }
 func fdAddIYSp(c *CPU, params ...any) error { c.IY += c.SP; return nil }
 
-func fdLdNnIY(c *CPU, params ...any) error { return nil } // Stub
-func fdLdIYNn(c *CPU, params ...any) error { return nil } // Stub
+// fdLdNnIY implements FD 22: LD (nn),IY.
+func fdLdNnIY(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	c.memory.Write(addr, uint8(c.IY))
+	c.memory.Write(addr+1, uint8(c.IY>>8))
+	return nil
+}
 
-// IY indexed operations (stubs - similar to IX but using IY)
-func fdLdBIYd(c *CPU, params ...any) error { return nil }
-func fdLdCIYd(c *CPU, params ...any) error { return nil }
-func fdLdDIYd(c *CPU, params ...any) error { return nil }
-func fdLdEIYd(c *CPU, params ...any) error { return nil }
-func fdLdHIYd(c *CPU, params ...any) error { return nil }
-func fdLdLIYd(c *CPU, params ...any) error { return nil }
-func fdLdAIYd(c *CPU, params ...any) error { return nil }
-func fdLdIYdB(c *CPU, params ...any) error { return nil }
-func fdLdIYdC(c *CPU, params ...any) error { return nil }
-func fdLdIYdD(c *CPU, params ...any) error { return nil }
-func fdLdIYdE(c *CPU, params ...any) error { return nil }
-func fdLdIYdH(c *CPU, params ...any) error { return nil }
-func fdLdIYdL(c *CPU, params ...any) error { return nil }
-func fdLdIYdA(c *CPU, params ...any) error { return nil }
-func fdLdIYdN(c *CPU, params ...any) error { return nil }
-func fdIncIYd(c *CPU, params ...any) error { return nil }
-func fdDecIYd(c *CPU, params ...any) error { return nil }
+// fdLdIYNn implements FD 2A: LD IY,(nn).
+func fdLdIYNn(c *CPU, params ...any) error {
+	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+	low := c.memory.Read(addr)
+	high := c.memory.Read(addr + 1)
+	c.IY = uint16(high)<<8 | uint16(low)
+	return nil
+}
+
+// IY indexed load operations - Load register from (IY+d)
+
+// fdLdBIYd implements FD 46: LD B,(IY+d).
+func fdLdBIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.B = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdCIYd implements FD 4E: LD C,(IY+d).
+func fdLdCIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.C = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdDIYd implements FD 56: LD D,(IY+d).
+func fdLdDIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.D = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdEIYd implements FD 5E: LD E,(IY+d).
+func fdLdEIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.E = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdHIYd implements FD 66: LD H,(IY+d).
+func fdLdHIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.H = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdLIYd implements FD 6E: LD L,(IY+d).
+func fdLdLIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.L = c.memory.Read(addr)
+	return nil
+}
+
+// fdLdAIYd implements FD 7E: LD A,(IY+d).
+func fdLdAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.A = c.memory.Read(addr)
+	return nil
+}
+
+// IY indexed store operations - Store register to (IY+d)
+
+// fdLdIYdB implements FD 70: LD (IY+d),B.
+func fdLdIYdB(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.B)
+	return nil
+}
+
+// fdLdIYdC implements FD 71: LD (IY+d),C.
+func fdLdIYdC(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.C)
+	return nil
+}
+
+// fdLdIYdD implements FD 72: LD (IY+d),D.
+func fdLdIYdD(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.D)
+	return nil
+}
+
+// fdLdIYdE implements FD 73: LD (IY+d),E.
+func fdLdIYdE(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.E)
+	return nil
+}
+
+// fdLdIYdH implements FD 74: LD (IY+d),H.
+func fdLdIYdH(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.H)
+	return nil
+}
+
+// fdLdIYdL implements FD 75: LD (IY+d),L.
+func fdLdIYdL(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.L)
+	return nil
+}
+
+// fdLdIYdA implements FD 77: LD (IY+d),A.
+func fdLdIYdA(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, c.A)
+	return nil
+}
+
+// fdLdIYdN implements FD 36: LD (IY+d),n.
+func fdLdIYdN(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	value := params[1].(uint8)
+	addr := uint16(int32(c.IY) + int32(displacement))
+	c.memory.Write(addr, value)
+	return nil
+}
+
+// fdIncIYd implements FD 34: INC (IY+d).
+func fdIncIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := value + 1
+
+	c.memory.Write(addr, result)
+	c.setSZ(result)
+	c.setPOverflow((value & 0x7F) == 0x7F)
+	c.setH((value & 0x0F) == 0x0F)
+	c.setN(false)
+	return nil
+}
+
+// fdDecIYd implements FD 35: DEC (IY+d).
+func fdDecIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := value - 1
+
+	c.memory.Write(addr, result)
+	c.setSZ(result)
+	c.setPOverflow((value & 0x80) == 0x80)
+	c.setH((value & 0x0F) == 0x00)
+	c.setN(true)
+	return nil
+}
+
+// IY arithmetic operations
+
+// fdAddAIYd implements FD 86: ADD A,(IY+d).
+func fdAddAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := c.A + value
+
+	c.setSZ(result)
+	c.setC(uint16(c.A)+uint16(value) > 0xFF)
+	c.setH((c.A&0x0F)+(value&0x0F) > 0x0F)
+	c.setPOverflow(((c.A ^ value ^ 0x80) & (result ^ c.A) & 0x80) != 0)
+	c.setN(false)
+	c.A = result
+	return nil
+}
+
+// fdAdcAIYd implements FD 8E: ADC A,(IY+d).
+func fdAdcAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	carry := uint8(0)
+	if c.Flags.C != 0 {
+		carry = 1
+	}
+	result := c.A + value + carry
+
+	c.setSZ(result)
+	c.setC(uint16(c.A)+uint16(value)+uint16(carry) > 0xFF)
+	c.setH((c.A&0x0F)+(value&0x0F)+carry > 0x0F)
+	c.setPOverflow(((c.A ^ value ^ 0x80) & (result ^ c.A) & 0x80) != 0)
+	c.setN(false)
+	c.A = result
+	return nil
+}
+
+// fdSubAIYd implements FD 96: SUB (IY+d).
+func fdSubAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := c.A - value
+
+	c.setSZ(result)
+	c.setC(c.A < value)
+	c.setH((c.A & 0x0F) < (value & 0x0F))
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	c.A = result
+	return nil
+}
+
+// fdSbcAIYd implements FD 9E: SBC A,(IY+d).
+func fdSbcAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	carry := uint8(0)
+	if c.Flags.C != 0 {
+		carry = 1
+	}
+	result := c.A - value - carry
+
+	c.setSZ(result)
+	c.setC(uint16(c.A) < uint16(value)+uint16(carry))
+	c.setH((c.A & 0x0F) < (value&0x0F)+carry)
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	c.A = result
+	return nil
+}
+
+// fdAndAIYd implements FD A6: AND (IY+d).
+func fdAndAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A &= value
+
+	c.setSZ(c.A)
+	c.setPOverflow(calculateParity(c.A))
+	c.setH(true)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// fdXorAIYd implements FD AE: XOR (IY+d).
+func fdXorAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A ^= value
+
+	c.setSZ(c.A)
+	c.setPOverflow(calculateParity(c.A))
+	c.setH(false)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// fdOrAIYd implements FD B6: OR (IY+d).
+func fdOrAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	c.A |= value
+
+	c.setSZ(c.A)
+	c.setPOverflow(calculateParity(c.A))
+	c.setH(false)
+	c.setN(false)
+	c.setC(false)
+	return nil
+}
+
+// fdCpAIYd implements FD BE: CP (IY+d).
+func fdCpAIYd(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+	result := c.A - value
+
+	c.setSZ(result)
+	c.setC(c.A < value)
+	c.setH((c.A & 0x0F) < (value & 0x0F))
+	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
+	c.setN(true)
+	return nil
+}
 
 // IY stack and jump operations
-func fdJpIY(c *CPU) error   { c.PC = c.IY; return nil }
-func fdExSpIY(c *CPU) error { return nil } // Stub
+func fdJpIY(c *CPU) error { c.PC = c.IY; return nil }
+
+// fdExSpIY implements FD E3: EX (SP),IY.
+func fdExSpIY(c *CPU) error {
+	// Exchange IY with the word at the top of the stack
+	low := c.memory.Read(c.SP)
+	high := c.memory.Read(c.SP + 1)
+
+	c.memory.Write(c.SP, uint8(c.IY))
+	c.memory.Write(c.SP+1, uint8(c.IY>>8))
+
+	c.IY = uint16(high)<<8 | uint16(low)
+	return nil
+}
 func fdPushIY(c *CPU) error { c.push16(c.IY); return nil }
 func fdPopIY(c *CPU) error  { c.IY = c.pop16(); return nil }
 
-// FDCB operations (stubs)
-func fdcbShift(c *CPU, params ...any) error { return nil }
-func fdcbBit(c *CPU, params ...any) error   { return nil }
-func fdcbRes(c *CPU, params ...any) error   { return nil }
-func fdcbSet(c *CPU, params ...any) error   { return nil }
+// FDCB operations - bit operations on (IY+d)
+
+func fdcbShift(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	result, carry := performShiftRotateOperation(value, opcode, c.Flags.C)
+	c.memory.Write(addr, result)
+	setShiftRotateFlags(c, result, carry)
+
+	return nil
+}
+
+func fdcbBit(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value & (1 << bit)
+
+	c.setZ(result) // setZ will set the flag to 1 if result is 0
+	c.setH(true)
+	c.setN(false)
+	if bit == 7 {
+		c.setS(result)
+	} else {
+		c.setS(0)
+	}
+	return nil
+}
+
+func fdcbRes(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value & ^(1 << bit)
+	c.memory.Write(addr, result)
+	return nil
+}
+
+func fdcbSet(c *CPU, params ...any) error {
+	displacement := int8(params[0].(uint8))
+	opcode := params[1].(uint8)
+	addr := uint16(int32(c.IY) + int32(displacement))
+	value := c.memory.Read(addr)
+
+	bit := (opcode >> 3) & 0x07
+	result := value | (1 << bit)
+	c.memory.Write(addr, result)
+	return nil
+}
