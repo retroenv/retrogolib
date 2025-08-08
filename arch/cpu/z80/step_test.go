@@ -281,7 +281,7 @@ func TestStepExtendedInstructions(t *testing.T) {
 
 func TestStepWithTracing(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithTraceExecution())
+	cpu := New(memory, WithTracing())
 
 	// Set up instruction
 	memory.Write(0x0100, 0x00) // NOP

@@ -1,36 +1,44 @@
 package z80
 
-// Options contains configuration for the CPU emulator.
-type Options struct {
-	// DisableUnofficialOpcodes disables support for undocumented Z80 instructions.
-	DisableUnofficialOpcodes bool
+type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 
-	// TraceExecution enables instruction tracing for debugging.
-	TraceExecution bool
+// Options contains options for the CPU.
+type Options struct {
+	tracing                  bool
+	disableUnofficialOpcodes bool
+	preExecutionHook         preExecutionHook
 }
 
-// Option is a function that modifies CPU options.
+// Option defines a CPU parameter.
 type Option func(*Options)
 
-// NewOptions creates a new Options struct with the given options applied.
-func NewOptions(options ...Option) Options {
+// NewOptions creates a new options instance from the passed options.
+func NewOptions(optionList ...Option) Options {
 	opts := Options{}
-	for _, option := range options {
+	for _, option := range optionList {
 		option(&opts)
 	}
 	return opts
 }
 
-// WithUnofficialOpcodesDisabled disables support for undocumented Z80 instructions.
-func WithUnofficialOpcodesDisabled() Option {
-	return func(opts *Options) {
-		opts.DisableUnofficialOpcodes = true
+// WithTracing enables tracing for the program.
+func WithTracing() func(*Options) {
+	return func(options *Options) {
+		options.tracing = true
 	}
 }
 
-// WithTraceExecution enables instruction tracing for debugging.
-func WithTraceExecution() Option {
-	return func(opts *Options) {
-		opts.TraceExecution = true
+// WithUnofficialOpcodesDisabled disables support for undocumented Z80 instructions.
+func WithUnofficialOpcodesDisabled() func(*Options) {
+	return func(options *Options) {
+		options.disableUnofficialOpcodes = true
+	}
+}
+
+// WithPreExecutionHook sets a hook that is called before each instruction is executed.
+// It can be used to read a memory value before the instruction overwrites it.
+func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
+	return func(options *Options) {
+		options.preExecutionHook = hook
 	}
 }

@@ -1,5 +1,7 @@
 package z80
 
+import "math/bits"
+
 // Flags contains the status flags of the CPU.
 // Bit No.   7   6   5   4   3   2   1   0
 // Flag      S   Z   Y   H   X   P   N   C
@@ -16,16 +18,14 @@ type Flags struct {
 
 // GetFlags returns the current state of flags as byte.
 func (c *CPU) GetFlags() uint8 {
-	var f byte
-	f |= c.Flags.C << 0
-	f |= c.Flags.N << 1
-	f |= c.Flags.P << 2
-	f |= c.Flags.X << 3
-	f |= c.Flags.H << 4
-	f |= c.Flags.Y << 5
-	f |= c.Flags.Z << 6
-	f |= c.Flags.S << 7
-	return f
+	return c.Flags.C |
+		c.Flags.N<<1 |
+		c.Flags.P<<2 |
+		c.Flags.X<<3 |
+		c.Flags.H<<4 |
+		c.Flags.Y<<5 |
+		c.Flags.Z<<6 |
+		c.Flags.S<<7
 }
 
 // setFlags sets the flags from the given byte.
@@ -52,13 +52,7 @@ func (c *CPU) setS(value uint8) {
 
 // setP - set the parity flag based on the parity of the argument.
 func (c *CPU) setP(value uint8) {
-	// Count number of 1 bits using modern Go pattern
-	count := 0
-	for i := range 8 {
-		if value&(1<<i) != 0 {
-			count++
-		}
-	}
+	count := bits.OnesCount8(value)
 	setFlag(&c.Flags.P, count%2 == 0) // even parity
 }
 

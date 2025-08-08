@@ -39,7 +39,7 @@ func (c *CPU) Step() error {
 	}
 
 	// Save trace information if tracing is enabled
-	if c.opts.TraceExecution {
+	if c.opts.tracing {
 		c.TraceStep = TraceStep{
 			PC:    c.PC,
 			A:     c.A,
@@ -59,12 +59,17 @@ func (c *CPU) Step() error {
 	// Fetch instruction with bounds checking
 	// PC should be within valid memory range
 	opcode := c.memory.Read(c.PC)
-	if c.opts.TraceExecution {
+	if c.opts.tracing {
 		c.TraceStep.Opcode = opcode
 	}
 
 	// Increment refresh register
 	c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
+
+	// Call pre-execution hook if set
+	if c.opts.preExecutionHook != nil {
+		c.opts.preExecutionHook(c, opcode)
+	}
 
 	// Execute instruction
 	cycles, err := c.executeInstruction(opcode)
@@ -73,7 +78,7 @@ func (c *CPU) Step() error {
 	}
 
 	c.cycles += uint64(cycles)
-	if c.opts.TraceExecution {
+	if c.opts.tracing {
 		c.TraceStep.CyclesTaken = cycles
 	}
 
