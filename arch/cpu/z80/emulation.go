@@ -512,3 +512,320 @@ func jrRel(c *CPU, params ...any) error {
 	c.PC = uint16(int32(c.PC) + int32(offset))
 	return nil
 }
+
+// Additional Z80 emulation functions
+
+// ldReg16 loads a 16-bit immediate value into a register pair.
+func ldReg16(c *CPU, params ...any) error {
+	// Implementation placeholder - would need opcode analysis for specific register pair
+	return nil
+}
+
+// ldIndirect loads between register pairs and memory locations.
+func ldIndirect(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific addressing mode handling
+	return nil
+}
+
+// incReg16 increments a 16-bit register pair.
+func incReg16(c *CPU, params ...any) error {
+	// Implementation placeholder - would need opcode analysis for specific register pair
+	return nil
+}
+
+// decReg16 decrements a 16-bit register pair.
+func decReg16(c *CPU, params ...any) error {
+	// Implementation placeholder - would need opcode analysis for specific register pair
+	return nil
+}
+
+// rlca performs rotate left circular accumulator.
+func rlca(c *CPU) error {
+	c.A = c.rlca(c.A)
+	return nil
+}
+
+// rrca performs rotate right circular accumulator.
+func rrca(c *CPU) error {
+	c.A = c.rrca(c.A)
+	return nil
+}
+
+// rla performs rotate left accumulator through carry.
+func rla(c *CPU) error {
+	c.A = c.rl(c.A)
+	return nil
+}
+
+// rra performs rotate right accumulator through carry.
+func rra(c *CPU) error {
+	newCarry := c.A & 0x01
+	c.A = (c.A >> 1) | (c.Flags.C << 7)
+	c.setC(newCarry != 0)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// exAf exchanges AF with AF'.
+func exAf(c *CPU) error {
+	// Exchange AF with shadow AF'
+	tempA := c.A
+	tempF := c.Flags
+	c.A = c.A_
+	c.Flags = c.Flags_
+	c.A_ = tempA
+	c.Flags_ = tempF
+	return nil
+}
+
+// addHl adds a 16-bit register pair to HL.
+func addHl(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific register pair identification
+	return nil
+}
+
+// djnz decrements B and jumps if not zero.
+func djnz(c *CPU, params ...any) error {
+	c.B--
+	if c.B != 0 {
+		if len(params) < 1 {
+			return ErrMissingParameter
+		}
+		offset, ok := params[0].(Relative)
+		if !ok {
+			return ErrInvalidParameterType
+		}
+		c.PC = uint16(int32(c.PC) + int32(offset))
+	}
+	return nil
+}
+
+// jrCond performs conditional relative jump.
+func jrCond(c *CPU, params ...any) error {
+	// Implementation placeholder - would need condition checking
+	return nil
+}
+
+// ldExtended loads using extended addressing.
+func ldExtended(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific addressing mode handling
+	return nil
+}
+
+// daa performs decimal adjust accumulator.
+func daa(c *CPU) error {
+	// Implementation placeholder - complex BCD adjustment logic
+	return nil
+}
+
+// cpl complements the accumulator.
+func cpl(c *CPU) error {
+	c.A = ^c.A
+	c.setH(true)
+	c.setN(true)
+	return nil
+}
+
+// incIndirect increments memory location pointed to by register pair.
+func incIndirect(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific addressing
+	return nil
+}
+
+// decIndirect decrements memory location pointed to by register pair.
+func decIndirect(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific addressing
+	return nil
+}
+
+// ldIndirectImm loads immediate value to indirect memory location.
+func ldIndirectImm(c *CPU, params ...any) error {
+	// Implementation placeholder - would need specific addressing
+	return nil
+}
+
+// scf sets the carry flag.
+func scf(c *CPU) error {
+	c.setC(true)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// ccf complements the carry flag.
+func ccf(c *CPU) error {
+	c.setC(c.Flags.C == 0) // Complement carry flag
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// adcA adds with carry to accumulator.
+func adcA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.adc(c.A, value)
+	return nil
+}
+
+// sbcA subtracts with carry from accumulator.
+func sbcA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+	switch param := params[0].(type) {
+	case Register8:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.sbc(c.A, value)
+	return nil
+}
+
+// retCond performs conditional return.
+func retCond(c *CPU) error {
+	// Implementation placeholder - would need condition checking
+	return nil
+}
+
+// popReg16 pops 16-bit register from stack.
+func popReg16(c *CPU, params ...any) error {
+	// Implementation placeholder - would need stack operations
+	return nil
+}
+
+// jpCond performs conditional jump.
+func jpCond(c *CPU, params ...any) error {
+	// Implementation placeholder - would need condition checking
+	return nil
+}
+
+// callCond performs conditional call.
+func callCond(c *CPU, params ...any) error {
+	// Implementation placeholder - would need condition checking and stack operations
+	return nil
+}
+
+// pushReg16 pushes 16-bit register to stack.
+func pushReg16(c *CPU, params ...any) error {
+	// Implementation placeholder - would need stack operations
+	return nil
+}
+
+// rst performs restart (call to fixed address).
+func rst(c *CPU, params ...any) error {
+	// Implementation placeholder - would need stack operations and address calculation
+	return nil
+}
+
+// ret returns from subroutine.
+func ret(c *CPU) error {
+	// Implementation placeholder - would need stack operations
+	return nil
+}
+
+// call calls a subroutine.
+func call(c *CPU, params ...any) error {
+	// Implementation placeholder - would need stack operations
+	return nil
+}
+
+// outPort outputs to port.
+func outPort(c *CPU, params ...any) error {
+	// Implementation placeholder - would need port I/O
+	return nil
+}
+
+// inPort inputs from port.
+func inPort(c *CPU, params ...any) error {
+	// Implementation placeholder - would need port I/O
+	return nil
+}
+
+// exx exchanges register pairs.
+func exx(c *CPU) error {
+	// Exchange BC, DE, HL with BC', DE', HL'
+	tempB := c.B
+	tempC := c.C
+	tempD := c.D
+	tempE := c.E
+	tempH := c.H
+	tempL := c.L
+
+	c.B = c.B_
+	c.C = c.C_
+	c.D = c.D_
+	c.E = c.E_
+	c.H = c.H_
+	c.L = c.L_
+
+	c.B_ = tempB
+	c.C_ = tempC
+	c.D_ = tempD
+	c.E_ = tempE
+	c.H_ = tempH
+	c.L_ = tempL
+	return nil
+}
+
+// exSp exchanges top of stack with register pair.
+func exSp(c *CPU, params ...any) error {
+	// Implementation placeholder - would need stack operations
+	return nil
+}
+
+// jpIndirect performs indirect jump.
+func jpIndirect(c *CPU, params ...any) error {
+	// Implementation placeholder - would need indirect addressing
+	return nil
+}
+
+// exDeHl exchanges DE with HL.
+func exDeHl(c *CPU) error {
+	tempD := c.D
+	tempE := c.E
+	c.D = c.H
+	c.E = c.L
+	c.H = tempD
+	c.L = tempE
+	return nil
+}
+
+// di disables interrupts.
+func di(c *CPU) error {
+	c.iff1 = false
+	c.iff2 = false
+	return nil
+}
+
+// ei enables interrupts.
+func ei(c *CPU) error {
+	c.iff1 = true
+	c.iff2 = true
+	return nil
+}
+
+// ldSp loads SP from HL.
+func ldSp(c *CPU, params ...any) error {
+	c.SP = uint16(c.H)<<8 | uint16(c.L)
+	return nil
+}
