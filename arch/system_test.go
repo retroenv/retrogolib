@@ -64,8 +64,18 @@ func TestSystem_IsValid(t *testing.T) {
 			want:   true,
 		},
 		{
+			name:   "Generic is valid",
+			system: Generic,
+			want:   true,
+		},
+		{
 			name:   "NES is valid",
 			system: NES,
+			want:   true,
+		},
+		{
+			name:   "ZXSpectrum is valid",
+			system: ZXSpectrum,
 			want:   true,
 		},
 		{
@@ -103,7 +113,9 @@ func TestSystemFromString(t *testing.T) {
 		{"valid chip8", "chip8", CHIP8System, true},
 		{"valid dos", "dos", DOS, true},
 		{"valid gameboy", "gameboy", GameBoy, true},
+		{"valid generic", "generic", Generic, true},
 		{"valid nes", "nes", NES, true},
+		{"valid zx-spectrum", "zx-spectrum", ZXSpectrum, true},
 		{"invalid system", "invalid", "", false},
 		{"empty string", "", "", false},
 		{"uppercase DOS now valid (case-insensitive)", "DOS", DOS, true},
@@ -122,7 +134,7 @@ func TestSystemFromString(t *testing.T) {
 
 func TestSupportedSystems(t *testing.T) {
 	got := SupportedSystems()
-	expected := []System{CHIP8System, DOS, GameBoy, NES}
+	expected := []System{CHIP8System, DOS, GameBoy, Generic, NES, ZXSpectrum}
 
 	assert.Equal(t, len(expected), len(got))
 
@@ -156,7 +168,9 @@ func TestSystemConstants(t *testing.T) {
 	assert.Equal(t, "chip8", string(CHIP8System))
 	assert.Equal(t, "dos", string(DOS))
 	assert.Equal(t, "gameboy", string(GameBoy))
+	assert.Equal(t, "generic", string(Generic))
 	assert.Equal(t, "nes", string(NES))
+	assert.Equal(t, "zx-spectrum", string(ZXSpectrum))
 }
 
 // Integration test to ensure all supported systems are valid

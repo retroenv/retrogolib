@@ -114,17 +114,33 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 
 // updatePC updates the program counter based on the instruction execution.
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
+	// Check if this is a jump instruction that always changes PC
+	if ins != nil && isJumpInstruction(ins) {
+		// Jump instructions handle PC themselves, don't modify it
+		return
+	}
+
 	// Update PC only if the instruction execution did not change it
 	if oldPC == c.PC {
-		if ins.Name == JpAbs.Name || ins.Name == JpCond.Name {
-			return // endless loop detected
-		}
-
+		// PC unchanged, advance by instruction size
 		c.PC += uint16(amount)
 		return
 	}
 
-	// For relative branches, we might need to account for branch timing
+	// PC was changed by the instruction (e.g., conditional jump taken), don't modify it further
+}
+
+// isJumpInstruction checks if an instruction is an unconditional jump/branch instruction that always modifies PC.
+// Conditional jumps (like DJNZ, conditional JR/JP) are not included since they may or may not change PC.
+func isJumpInstruction(ins *Instruction) bool {
+	if ins == nil {
+		return false
+	}
+	// Check for specific unconditional jump instructions by comparing pointers
+	// This is the most precise approach since conditional and unconditional variants have same names
+	return ins == JpAbs || ins == JrRel || ins == Call || ins == Ret || ins == EdReti || ins == EdRetn ||
+		ins == Rst || ins == JpIndirect ||
+		ins == DdJpIX || ins == FdJpIY
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).

@@ -3,20 +3,28 @@ package z80
 import (
 	"testing"
 
+	"github.com/retroenv/retrogolib/arch"
 	"github.com/retroenv/retrogolib/assert"
 )
 
 func TestNew(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
 
-	assert.Equal(t, uint16(0x0100), cpu.PC, "PC should be initialized to 0x0100")
-	assert.Equal(t, uint16(InitialStack), cpu.SP, "SP should be initialized correctly")
+	// Test default initialization
+	cpu := New(memory)
+	assert.Equal(t, uint16(0x0000), cpu.PC, "PC should be initialized to 0x0000 for generic system")
+	assert.Equal(t, uint16(0xFFFF), cpu.SP, "SP should be initialized to 0xFFFF for generic system")
 	assert.Equal(t, uint64(0), cpu.cycles, "Cycles should start at 0")
 	assert.False(t, cpu.halted, "CPU should not be halted initially")
 	assert.False(t, cpu.iff1, "IFF1 should be false initially")
 	assert.False(t, cpu.iff2, "IFF2 should be false initially")
 	assert.Equal(t, uint8(0), cpu.im, "Interrupt mode should be 0 initially")
+
+	// Test Game Boy system initialization
+	gameboyMemory := NewMemory()
+	gameboyCPU := New(gameboyMemory, WithSystemType(arch.GameBoy))
+	assert.Equal(t, uint16(0x0100), gameboyCPU.PC, "PC should be initialized to 0x0100 for Game Boy")
+	assert.Equal(t, uint16(0xFFFE), gameboyCPU.SP, "SP should be initialized to 0xFFFE for Game Boy")
 }
 
 func TestRegisterPairs(t *testing.T) {

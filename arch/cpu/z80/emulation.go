@@ -121,7 +121,7 @@ func (c *CPU) add16(a, b uint16) uint16 {
 
 	// Set flags (only C, H, and N for 16-bit operations)
 	c.setC(result32 > 0xFFFF)              // Carry if result > 65535
-	c.setH((a&0x0FFF)+(b&0x0FFF) > 0x0FFF) // Half carry on bit 11
+	c.setH((a&0x07FF)+(b&0x07FF) > 0x07FF) // Half carry on bit 11 (not bit 12)
 	c.setN(false)                          // Clear N flag for addition
 
 	return result
@@ -627,7 +627,8 @@ func jrRel(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	c.PC = uint16(int32(c.PC) + int32(offset))
+	// Calculate target address: PC after this 2-byte instruction + offset
+	c.PC = uint16(int32(c.PC) + 2 + int32(offset))
 	return nil
 }
 
@@ -799,6 +800,8 @@ func jrCond(c *CPU, params ...any) error {
 	if shouldJump {
 		// Calculate target address: PC after this 2-byte instruction + offset
 		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
+		// Add extra cycles for taken branch (JR taken = 12 cycles, not taken = 7 cycles)
+		c.cycles += 5
 	}
 	return nil
 }
@@ -877,7 +880,8 @@ func daa(c *CPU) error {
 	// Set flags
 	c.setS(c.A)
 	c.setZ(c.A)
-	c.setP(c.A) // Parity flag
+	c.setP(c.A)  // Parity flag
+	c.setXY(c.A) // Set undocumented X and Y flags
 	c.setC(carrySet)
 	c.setH(false) // H is always reset after DAA
 	// N flag remains unchanged
@@ -1041,6 +1045,8 @@ func (c *CPU) checkCondition(opcode uint8) bool {
 func retCond(c *CPU) error {
 	if c.checkCondition(c.currentOpcode) {
 		c.PC = c.pop16()
+		// Add extra cycles for taken return (RET taken = 11 cycles, not taken = 5 cycles)
+		c.cycles += 6
 	}
 	return nil
 }
@@ -1093,6 +1099,8 @@ func callCond(c *CPU, params ...any) error {
 	if c.checkCondition(c.currentOpcode) {
 		c.push16(c.PC)
 		c.PC = uint16(address)
+		// Add extra cycles for taken call (CALL taken = 17 cycles, not taken = 10 cycles)
+		c.cycles += 7
 	}
 	return nil
 }

@@ -3,12 +3,13 @@ package z80
 import (
 	"testing"
 
+	"github.com/retroenv/retrogolib/arch"
 	"github.com/retroenv/retrogolib/assert"
 )
 
 func TestStepNOP(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy)) // Game Boy starts at 0x0100
 
 	// Set up NOP instruction at PC
 	memory.Write(0x0100, 0x00) // NOP
@@ -24,7 +25,7 @@ func TestStepNOP(t *testing.T) {
 
 func TestStepHalt(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy)) // Game Boy starts at 0x0100
 
 	// Set up HALT instruction at PC
 	memory.Write(0x0100, 0x76) // HALT
@@ -44,7 +45,7 @@ func TestStepHalt(t *testing.T) {
 
 func TestStepLoadInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test LD BC,nn (0x01)
 	memory.Write(0x0100, 0x01) // LD BC,nn
@@ -68,7 +69,7 @@ func TestStepLoadInstructions(t *testing.T) {
 
 func TestStepIncrementDecrement(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test INC BC (0x03)
 	cpu.setBC(0x1234)
@@ -100,7 +101,7 @@ func TestStepIncrementDecrement(t *testing.T) {
 
 func TestStepMemoryOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test LD (BC),A (0x02)
 	cpu.A = 0x42
@@ -122,7 +123,7 @@ func TestStepMemoryOperations(t *testing.T) {
 
 func TestStepRotateInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test RLCA (0x07)
 	cpu.A = 0x81
@@ -145,7 +146,7 @@ func TestStepRotateInstructions(t *testing.T) {
 
 func TestStepJumpInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test JP nn (0xC3)
 	memory.Write(0x0100, 0xC3) // JP nn
@@ -180,7 +181,7 @@ func TestStepJumpInstructions(t *testing.T) {
 
 func TestStepInterruptInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test DI (0xF3)
 	cpu.iff1 = true
@@ -203,7 +204,7 @@ func TestStepInterruptInstructions(t *testing.T) {
 
 func TestStepDJNZ(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test DJNZ with branch taken
 	cpu.B = 0x02
@@ -229,7 +230,7 @@ func TestStepDJNZ(t *testing.T) {
 
 func TestStepAdd16(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test ADD HL,BC (0x09)
 	cpu.setHL(0x1000)
@@ -244,7 +245,7 @@ func TestStepAdd16(t *testing.T) {
 
 func TestStepExtendedInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test CB prefix instruction (CB 00 - RLC B)
 	cpu.B = 0x81
@@ -281,7 +282,7 @@ func TestStepExtendedInstructions(t *testing.T) {
 
 func TestStepWithTracing(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithTracing())
+	cpu := New(memory, WithSystemType(arch.GameBoy), WithTracing())
 
 	// Set up instruction
 	memory.Write(0x0100, 0x00) // NOP
@@ -306,7 +307,7 @@ func TestStepWithTracing(t *testing.T) {
 
 func TestStepErrorHandling(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// Test unimplemented opcode (ED prefix with invalid instruction)
 	memory.Write(0x0100, 0xED) // ED prefix
@@ -319,7 +320,7 @@ func TestStepErrorHandling(t *testing.T) {
 
 func TestRefreshRegister(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu := New(memory, WithSystemType(arch.GameBoy))
 
 	// R register should increment on each instruction
 	initialR := cpu.R
@@ -330,4 +331,44 @@ func TestRefreshRegister(t *testing.T) {
 
 	expectedR := (initialR & 0x80) | ((initialR + 1) & 0x7F)
 	assert.Equal(t, expectedR, cpu.R, "R register should increment correctly")
+}
+
+func TestEndlessLoopDetection(t *testing.T) {
+	memory := NewMemory()
+	cpu := New(memory, WithSystemType(arch.GameBoy))
+
+	// Create an endless loop: JR -2 (0x18 0xFE)
+	// This instruction jumps back to itself, creating an infinite loop
+	memory.Write(0x0100, 0x18) // JR relative
+	memory.Write(0x0101, 0xFE) // -2 (0xFE as signed int8 = -2, jumps to 0x0100 + 2 + (-2) = 0x0100)
+
+	initialCycles := cpu.cycles
+	initialPC := cpu.PC
+
+	// Execute the jump instruction once
+	err := cpu.Step()
+	assert.NoError(t, err, "Step should not return error for JR")
+
+	// Verify that PC jumped back to the same address (endless loop)
+	assert.Equal(t, initialPC, cpu.PC, "PC should jump back to itself (endless loop)")
+	assert.Greater(t, cpu.cycles, initialCycles, "Cycles should have advanced")
+
+	// Execute the same instruction again to confirm it's truly an endless loop
+	secondCycles := cpu.cycles
+	err = cpu.Step()
+	assert.NoError(t, err, "Step should not return error for second iteration")
+	assert.Equal(t, initialPC, cpu.PC, "PC should still be at the same address")
+	assert.Greater(t, cpu.cycles, secondCycles, "Cycles should have advanced again")
+
+	// Test another endless loop pattern: JP 0x0200 to itself
+	cpu.PC = 0x0200
+	memory.Write(0x0200, 0xC3) // JP absolute
+	memory.Write(0x0201, 0x00) // Low byte of address (0x0200)
+	memory.Write(0x0202, 0x02) // High byte of address
+
+	thirdCycles := cpu.cycles
+	err = cpu.Step()
+	assert.NoError(t, err, "Step should not return error for JP")
+	assert.Equal(t, uint16(0x0200), cpu.PC, "PC should jump to same address (endless loop)")
+	assert.Greater(t, cpu.cycles, thirdCycles, "Cycles should have advanced for JP")
 }

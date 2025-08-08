@@ -701,20 +701,3 @@ var (
 	FdcbRes   = &Instruction{Name: "res", ParamFunc: fdcbRes}
 	FdcbSet   = &Instruction{Name: "set", ParamFunc: fdcbSet}
 )
-
-// Instructions maps instruction names to their information struct.
-var Instructions = map[string]*Instruction{
-	"nop":  Nop,
-	"halt": Halt,
-	"ld":   LdImm8, // Primary LD instruction (others can be added later)
-	"inc":  IncReg8,
-	"dec":  DecReg8,
-	"add":  AddA,
-	"sub":  SubA,
-	"and":  AndA,
-	"or":   OrA,
-	"xor":  XorA,
-	"cp":   CpA,
-	"jp":   JpAbs,
-	"jr":   JrRel,
-}

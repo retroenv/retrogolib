@@ -2,6 +2,8 @@ package z80
 
 import (
 	"sync"
+
+	"github.com/retroenv/retrogolib/arch"
 )
 
 // State contains the current state of the CPU.
@@ -106,14 +108,22 @@ type Interrupts struct {
 
 const (
 	initialCycles = 0
-	InitialStack  = 0xFFFE
 )
 
 // New creates a new Z80 CPU.
 func New(memory *Memory, options ...Option) *CPU {
 	opts := NewOptions(options...)
+
+	// Set default values for generic system if no system type specified
+	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
+		opts.systemType = arch.Generic
+		opts.initialPC = 0x0000
+		opts.initialSP = 0xFFFF
+	}
+
 	c := &CPU{
-		SP:     InitialStack,
+		PC:     opts.initialPC,
+		SP:     opts.initialSP,
 		cycles: initialCycles,
 		opts:   opts,
 		memory: memory,
@@ -121,9 +131,6 @@ func New(memory *Memory, options ...Option) *CPU {
 		iff2:   false,
 		im:     0, // interrupt mode 0 by default
 	}
-
-	// Initialize PC to reset vector (Game Boy starts at 0x0100)
-	c.PC = 0x0100
 
 	return c
 }

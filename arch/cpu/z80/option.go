@@ -1,5 +1,7 @@
 package z80
 
+import "github.com/retroenv/retrogolib/arch"
+
 type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 
 // IOHandler defines the interface for handling I/O port operations.
@@ -12,8 +14,14 @@ type IOHandler interface {
 type Options struct {
 	tracing                  bool
 	disableUnofficialOpcodes bool
-	preExecutionHook         preExecutionHook
-	ioHandler                IOHandler
+	enableMemoryContention   bool
+
+	preExecutionHook preExecutionHook
+	ioHandler        IOHandler
+	systemType       arch.System
+
+	initialPC uint16
+	initialSP uint16
 }
 
 // Option defines a CPU parameter.
@@ -54,5 +62,45 @@ func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
 func WithIOHandler(handler IOHandler) func(*Options) {
 	return func(options *Options) {
 		options.ioHandler = handler
+	}
+}
+
+// WithSystemType sets the target system type for emulation.
+func WithSystemType(systemType arch.System) func(*Options) {
+	return func(options *Options) {
+		options.systemType = systemType
+		// Set system-specific defaults
+		switch systemType {
+		case arch.GameBoy:
+			options.initialPC = 0x0100
+			options.initialSP = 0xFFFE
+		case arch.ZXSpectrum:
+			options.initialPC = 0x0000
+			options.initialSP = 0xFFFF
+		default: // Generic or other systems
+			options.initialPC = 0x0000
+			options.initialSP = 0xFFFF
+		}
+	}
+}
+
+// WithInitialPC sets the initial program counter value.
+func WithInitialPC(pc uint16) func(*Options) {
+	return func(options *Options) {
+		options.initialPC = pc
+	}
+}
+
+// WithInitialSP sets the initial stack pointer value.
+func WithInitialSP(sp uint16) func(*Options) {
+	return func(options *Options) {
+		options.initialSP = sp
+	}
+}
+
+// WithMemoryContention enables memory contention modeling.
+func WithMemoryContention() func(*Options) {
+	return func(options *Options) {
+		options.enableMemoryContention = true
 	}
 }

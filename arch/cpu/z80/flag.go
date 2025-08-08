@@ -81,12 +81,20 @@ func (c *CPU) setSZP(value uint8) {
 	c.setS(value)
 	c.setZ(value)
 	c.setP(value)
+	c.setXY(value) // Set undocumented X and Y flags
+}
+
+// setXY - set the undocumented X and Y flags from bits 3 and 5.
+func (c *CPU) setXY(value uint8) {
+	c.Flags.X = (value >> 3) & 1 // bit 3
+	c.Flags.Y = (value >> 5) & 1 // bit 5
 }
 
 // setSZ - set the sign and zero flags.
 func (c *CPU) setSZ(value uint8) {
 	c.setS(value)
 	c.setZ(value)
+	c.setXY(value) // Set undocumented X and Y flags
 }
 
 // setFlag sets a flag to 1 if condition is true, 0 otherwise.
