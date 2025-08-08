@@ -5,160 +5,160 @@ import "github.com/retroenv/retrogolib/set"
 
 // BranchingInstructions contains all branching and jumping instructions.
 var BranchingInstructions = set.NewFromSlice([]string{
-	"jp",   // Jump absolute
-	"jr",   // Jump relative
-	"call", // Call subroutine
-	"ret",  // Return from subroutine
-	"djnz", // Decrement B and jump if not zero
-	"rst",  // Restart (call to fixed address)
+	JpAbs.Name, // Jump absolute
+	JrRel.Name, // Jump relative
+	Call.Name,  // Call subroutine
+	Ret.Name,   // Return from subroutine
+	Djnz.Name,  // Decrement B and jump if not zero
+	Rst.Name,   // Restart (call to fixed address)
 })
 
 // ConditionalBranchingInstructions contains conditional branching instructions.
 var ConditionalBranchingInstructions = set.NewFromSlice([]string{
-	"jr",   // JR cc,e (conditional relative jumps)
-	"jp",   // JP cc,nn (conditional absolute jumps)
-	"call", // CALL cc,nn (conditional calls)
-	"ret",  // RET cc (conditional returns)
-	"djnz", // DJNZ (conditional on B != 0)
+	JrRel.Name, // JR cc,e (conditional relative jumps)
+	JpAbs.Name, // JP cc,nn (conditional absolute jumps)
+	Call.Name,  // CALL cc,nn (conditional calls)
+	Ret.Name,   // RET cc (conditional returns)
+	Djnz.Name,  // DJNZ (conditional on B != 0)
 })
 
 // NotExecutingFollowingOpcodeInstructions contains all instructions that jump
 // to a different address and do not return to execute the following opcode.
 var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
-	"jp",   // Jump absolute (unconditional)
-	"ret",  // Return from subroutine
-	"reti", // Return from interrupt
-	"retn", // Return from non-maskable interrupt
-	"halt", // Halt execution
+	JpAbs.Name,  // Jump absolute (unconditional)
+	Ret.Name,    // Return from subroutine
+	EdReti.Name, // Return from interrupt
+	EdRetn.Name, // Return from non-maskable interrupt
+	Halt.Name,   // Halt execution
 })
 
 // MemoryReadInstructions contains all instructions that can read from memory.
 var MemoryReadInstructions = set.NewFromSlice([]string{
-	"ld",  // Load operations from memory
-	"add", // Add from memory
-	"adc", // Add with carry from memory
-	"sub", // Subtract from memory
-	"sbc", // Subtract with carry from memory
-	"and", // AND from memory
-	"or",  // OR from memory
-	"xor", // XOR from memory
-	"cp",  // Compare with memory
-	"inc", // Increment memory location
-	"dec", // Decrement memory location
-	"bit", // Test bit in memory
-	"res", // Reset bit in memory
-	"set", // Set bit in memory
-	"rl",  // Rotate left memory
-	"rr",  // Rotate right memory
-	"rlc", // Rotate left circular memory
-	"rrc", // Rotate right circular memory
-	"sla", // Shift left arithmetic memory
-	"sra", // Shift right arithmetic memory
-	"srl", // Shift right logical memory
+	LdImm8.Name,  // Load operations from memory
+	AddA.Name,    // Add from memory
+	AdcA.Name,    // Add with carry from memory
+	SubA.Name,    // Subtract from memory
+	SbcA.Name,    // Subtract with carry from memory
+	AndA.Name,    // AND from memory
+	OrA.Name,     // OR from memory
+	XorA.Name,    // XOR from memory
+	CpA.Name,     // Compare with memory
+	IncReg8.Name, // Increment memory location
+	DecReg8.Name, // Decrement memory location
+	CBBit.Name,   // Test bit in memory
+	CBRes.Name,   // Reset bit in memory
+	CBSet.Name,   // Set bit in memory
+	CBRl.Name,    // Rotate left memory
+	CBRr.Name,    // Rotate right memory
+	CBRlc.Name,   // Rotate left circular memory
+	CBRrc.Name,   // Rotate right circular memory
+	CBSla.Name,   // Shift left arithmetic memory
+	CBSra.Name,   // Shift right arithmetic memory
+	CBSrl.Name,   // Shift right logical memory
 })
 
 // MemoryWriteInstructions contains all instructions that can write to memory.
 var MemoryWriteInstructions = set.NewFromSlice([]string{
-	"ld",   // Load operations to memory
-	"push", // Push to stack
-	"inc",  // Increment memory location
-	"dec",  // Decrement memory location
-	"res",  // Reset bit in memory
-	"set",  // Set bit in memory
-	"rl",   // Rotate left memory
-	"rr",   // Rotate right memory
-	"rlc",  // Rotate left circular memory
-	"rrc",  // Rotate right circular memory
-	"sla",  // Shift left arithmetic memory
-	"sra",  // Shift right arithmetic memory
-	"srl",  // Shift right logical memory
+	LdImm8.Name,    // Load operations to memory
+	PushReg16.Name, // Push to stack
+	IncReg8.Name,   // Increment memory location
+	DecReg8.Name,   // Decrement memory location
+	CBRes.Name,     // Reset bit in memory
+	CBSet.Name,     // Set bit in memory
+	CBRl.Name,      // Rotate left memory
+	CBRr.Name,      // Rotate right memory
+	CBRlc.Name,     // Rotate left circular memory
+	CBRrc.Name,     // Rotate right circular memory
+	CBSla.Name,     // Shift left arithmetic memory
+	CBSra.Name,     // Shift right arithmetic memory
+	CBSrl.Name,     // Shift right logical memory
 })
 
 // MemoryReadWriteInstructions contains all instructions that both read and write
 // to the same memory location during execution.
 var MemoryReadWriteInstructions = set.NewFromSlice([]string{
-	"inc", // Increment memory (read-modify-write)
-	"dec", // Decrement memory (read-modify-write)
-	"res", // Reset bit in memory (read-modify-write)
-	"set", // Set bit in memory (read-modify-write)
-	"rl",  // Rotate left memory (read-modify-write)
-	"rr",  // Rotate right memory (read-modify-write)
-	"rlc", // Rotate left circular memory (read-modify-write)
-	"rrc", // Rotate right circular memory (read-modify-write)
-	"sla", // Shift left arithmetic memory (read-modify-write)
-	"sra", // Shift right arithmetic memory (read-modify-write)
-	"srl", // Shift right logical memory (read-modify-write)
+	IncReg8.Name, // Increment memory (read-modify-write)
+	DecReg8.Name, // Decrement memory (read-modify-write)
+	CBRes.Name,   // Reset bit in memory (read-modify-write)
+	CBSet.Name,   // Set bit in memory (read-modify-write)
+	CBRl.Name,    // Rotate left memory (read-modify-write)
+	CBRr.Name,    // Rotate right memory (read-modify-write)
+	CBRlc.Name,   // Rotate left circular memory (read-modify-write)
+	CBRrc.Name,   // Rotate right circular memory (read-modify-write)
+	CBSla.Name,   // Shift left arithmetic memory (read-modify-write)
+	CBSra.Name,   // Shift right arithmetic memory (read-modify-write)
+	CBSrl.Name,   // Shift right logical memory (read-modify-write)
 })
 
 // IOInstructions contains all input/output instructions.
 var IOInstructions = set.NewFromSlice([]string{
-	"in",   // Input from port
-	"out",  // Output to port
-	"ini",  // Input and increment
-	"ind",  // Input and decrement
-	"outi", // Output and increment
-	"outd", // Output and decrement
-	"inir", // Input, increment, and repeat
-	"indr", // Input, decrement, and repeat
-	"otir", // Output, increment, and repeat
-	"otdr", // Output, decrement, and repeat
+	InPort.Name,  // Input from port
+	OutPort.Name, // Output to port
+	EdIni.Name,   // Input and increment
+	EdInd.Name,   // Input and decrement
+	EdOuti.Name,  // Output and increment
+	EdOutd.Name,  // Output and decrement
+	EdInir.Name,  // Input, increment, and repeat
+	EdIndr.Name,  // Input, decrement, and repeat
+	EdOtir.Name,  // Output, increment, and repeat
+	EdOtdr.Name,  // Output, decrement, and repeat
 })
 
 // StackInstructions contains all stack manipulation instructions.
 var StackInstructions = set.NewFromSlice([]string{
-	"push", // Push register pair to stack
-	"pop",  // Pop register pair from stack
-	"call", // Call subroutine (uses stack)
-	"ret",  // Return from subroutine (uses stack)
-	"reti", // Return from interrupt (uses stack)
-	"retn", // Return from NMI (uses stack)
-	"rst",  // Restart (uses stack)
+	PushReg16.Name, // Push register pair to stack
+	PopReg16.Name,  // Pop register pair from stack
+	Call.Name,      // Call subroutine (uses stack)
+	Ret.Name,       // Return from subroutine (uses stack)
+	EdReti.Name,    // Return from interrupt (uses stack)
+	EdRetn.Name,    // Return from NMI (uses stack)
+	Rst.Name,       // Restart (uses stack)
 })
 
 // ArithmeticInstructions contains all arithmetic instructions.
 var ArithmeticInstructions = set.NewFromSlice([]string{
-	"add", // Add
-	"adc", // Add with carry
-	"sub", // Subtract
-	"sbc", // Subtract with carry
-	"inc", // Increment
-	"dec", // Decrement
-	"neg", // Negate (2's complement)
-	"daa", // Decimal adjust accumulator
-	"cpl", // Complement accumulator
+	AddA.Name,    // Add
+	AdcA.Name,    // Add with carry
+	SubA.Name,    // Subtract
+	SbcA.Name,    // Subtract with carry
+	IncReg8.Name, // Increment
+	DecReg8.Name, // Decrement
+	EdNeg.Name,   // Negate (2's complement)
+	Daa.Name,     // Decimal adjust accumulator
+	Cpl.Name,     // Complement accumulator
 })
 
 // LogicalInstructions contains all logical instructions.
 var LogicalInstructions = set.NewFromSlice([]string{
-	"and", // Logical AND
-	"or",  // Logical OR
-	"xor", // Logical XOR
-	"cp",  // Compare (logical subtraction)
-	"bit", // Test bit
-	"res", // Reset bit
-	"set", // Set bit
+	AndA.Name,  // Logical AND
+	OrA.Name,   // Logical OR
+	XorA.Name,  // Logical XOR
+	CpA.Name,   // Compare (logical subtraction)
+	CBBit.Name, // Test bit
+	CBRes.Name, // Reset bit
+	CBSet.Name, // Set bit
 })
 
 // RotateShiftInstructions contains all rotate and shift instructions.
 var RotateShiftInstructions = set.NewFromSlice([]string{
-	"rlca", // Rotate left circular accumulator
-	"rrca", // Rotate right circular accumulator
-	"rla",  // Rotate left accumulator through carry
-	"rra",  // Rotate right accumulator through carry
-	"rlc",  // Rotate left circular
-	"rrc",  // Rotate right circular
-	"rl",   // Rotate left through carry
-	"rr",   // Rotate right through carry
-	"sla",  // Shift left arithmetic
-	"sra",  // Shift right arithmetic
-	"srl",  // Shift right logical
+	Rlca.Name,  // Rotate left circular accumulator
+	Rrca.Name,  // Rotate right circular accumulator
+	Rla.Name,   // Rotate left accumulator through carry
+	Rra.Name,   // Rotate right accumulator through carry
+	CBRlc.Name, // Rotate left circular
+	CBRrc.Name, // Rotate right circular
+	CBRl.Name,  // Rotate left through carry
+	CBRr.Name,  // Rotate right through carry
+	CBSla.Name, // Shift left arithmetic
+	CBSra.Name, // Shift right arithmetic
+	CBSrl.Name, // Shift right logical
 })
 
 // FlagInstructions contains instructions that primarily affect flags.
 var FlagInstructions = set.NewFromSlice([]string{
-	"scf", // Set carry flag
-	"ccf", // Complement carry flag
-	"di",  // Disable interrupts
-	"ei",  // Enable interrupts
-	"im",  // Set interrupt mode
+	Scf.Name,   // Set carry flag
+	Ccf.Name,   // Complement carry flag
+	Di.Name,    // Disable interrupts
+	Ei.Name,    // Enable interrupts
+	EdIm0.Name, // Set interrupt mode
 })

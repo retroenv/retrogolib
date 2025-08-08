@@ -56,7 +56,7 @@ var OUTF = &Instruction{
 
 // NopUndoc1 represents undocumented single-byte NOPs using DD prefix alone.
 var NopUndoc1 = &Instruction{
-	Name:       "nop",
+	Name:       Nop.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xDD, Size: 1, Cycles: 4}, // DD alone (partial IX prefix)
@@ -66,7 +66,7 @@ var NopUndoc1 = &Instruction{
 
 // NopUndoc2 represents undocumented single-byte NOPs using FD prefix alone.
 var NopUndoc2 = &Instruction{
-	Name:       "nop",
+	Name:       Nop.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xFD, Size: 1, Cycles: 4}, // FD alone (partial IY prefix)
@@ -85,9 +85,9 @@ var NopUndoc2 = &Instruction{
 
 // UnofficialInstructions maps undocumented instruction names to their definitions
 var UnofficialInstructions = map[string]*Instruction{
-	"sll":  SLL,
-	"inf":  INF,
-	"outf": OUTF,
+	SLL.Name:  SLL,
+	INF.Name:  INF,
+	OUTF.Name: OUTF,
 }
 
 // IsUnofficialInstruction returns true if the instruction name corresponds to

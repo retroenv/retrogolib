@@ -517,7 +517,7 @@ var (
 	CBRr  = &Instruction{Name: "rr", ParamFunc: cbRr}
 	CBSla = &Instruction{Name: "sla", ParamFunc: cbSla}
 	CBSra = &Instruction{Name: "sra", ParamFunc: cbSra}
-	CBSll = &Instruction{Name: "sll", ParamFunc: cbSll} // undocumented
+	CBSll = &Instruction{Name: SLL.Name, ParamFunc: cbSll} // undocumented
 	CBSrl = &Instruction{Name: "srl", ParamFunc: cbSrl}
 	CBBit = &Instruction{Name: "bit", ParamFunc: cbBit}
 	CBRes = &Instruction{Name: "res", ParamFunc: cbRes}

@@ -17,24 +17,6 @@ const (
 	PortAddressing                            // (n), (C)
 )
 
-// AccessMode defines an address access mode.
-type AccessMode int
-
-// Address accessing modes.
-const (
-	NoAccess        AccessMode = 0
-	ReadAccess      AccessMode = 1
-	WriteAccess     AccessMode = 2
-	ReadWriteAccess AccessMode = 3
-)
-
-// AccessModeConstant is used to specify for every memory address what access mode applies to it.
-// A memory address like a port has different meaning depending on the type of access.
-type AccessModeConstant struct {
-	Constant string
-	Mode     AccessMode
-}
-
 // Register types for Z80 addressing
 type (
 	// Register8 represents an 8-bit register (A, B, C, D, E, H, L)
