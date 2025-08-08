@@ -5,8 +5,8 @@ import (
 	"math/bits"
 )
 
-// bool2int converts a boolean to 1 or 0.
-func bool2int(b bool) int {
+// boolToUint8 converts a boolean to 1 or 0 as uint8.
+func boolToUint8(b bool) uint8 {
 	if b {
 		return 1
 	}
@@ -24,10 +24,10 @@ func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
 	switch {
 	case opcode <= 0x07: // RLC
 		carry := (value & 0x80) != 0
-		return (value << 1) | uint8(bool2int(carry)), carry
+		return (value << 1) | boolToUint8(carry), carry
 	case opcode <= 0x0F: // RRC
 		carry := (value & 0x01) != 0
-		return (value >> 1) | (uint8(bool2int(carry)) << 7), carry
+		return (value >> 1) | (boolToUint8(carry) << 7), carry
 	case opcode <= 0x17: // RL
 		carry := (value & 0x80) != 0
 		return (value << 1) | oldCarry, carry
@@ -62,7 +62,6 @@ func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
 func (c *CPU) inc8(value uint8) uint8 {
 	result := value + 1
 
-	// Set flags efficiently
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x0F) // Half carry if lower nibble was 0xF
 	c.setPOverflow(value == 0x7F)  // Overflow if incrementing 0x7F
@@ -75,7 +74,6 @@ func (c *CPU) inc8(value uint8) uint8 {
 func (c *CPU) dec8(value uint8) uint8 {
 	result := value - 1
 
-	// Set flags efficiently
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x00) // Half carry if lower nibble was 0x0
 	c.setPOverflow(value == 0x80)  // Overflow if decrementing 0x80
@@ -741,9 +739,9 @@ func exAf(c *CPU) error {
 	tempA := c.A
 	tempF := c.Flags
 	c.A = c.A_
-	c.Flags = c.Flags_
+	c.Flags = c.AltFlags
 	c.A_ = tempA
-	c.Flags_ = tempF
+	c.AltFlags = tempF
 	return nil
 }
 

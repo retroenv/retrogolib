@@ -8,7 +8,8 @@ import (
 
 func TestInc8(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test normal increment
 	result := cpu.inc8(0x10)
@@ -33,7 +34,8 @@ func TestInc8(t *testing.T) {
 
 func TestDec8(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test normal decrement
 	result := cpu.dec8(0x10)
@@ -60,7 +62,8 @@ func TestDec8(t *testing.T) {
 
 func TestAdd8(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test normal addition
 	result := cpu.add8(0x10, 0x20)
@@ -89,7 +92,8 @@ func TestAdd8(t *testing.T) {
 
 func TestSub8(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test normal subtraction
 	result := cpu.sub8(0x30, 0x10)
@@ -110,7 +114,8 @@ func TestSub8(t *testing.T) {
 
 func TestLogicalOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test AND
 	result := cpu.and8(0xF0, 0x0F)
@@ -145,7 +150,8 @@ func TestLogicalOperations(t *testing.T) {
 
 func TestCompare(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test equal values
 	cpu.cp(0x42, 0x42)
@@ -166,7 +172,8 @@ func TestCompare(t *testing.T) {
 
 func TestRotateOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test RLCA (rotate left circular, accumulator)
 	result := cpu.rlca(0x81)
@@ -195,7 +202,8 @@ func TestRotateOperations(t *testing.T) {
 
 func TestShiftOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test SLA (shift left arithmetic)
 	result := cpu.sla(0x81)
@@ -215,7 +223,8 @@ func TestShiftOperations(t *testing.T) {
 
 func TestBitOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test BIT instruction
 	cpu.bit(7, 0x80)
@@ -243,7 +252,8 @@ func TestBitOperations(t *testing.T) {
 
 func TestNegation(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test NEG with positive number
 	result := cpu.neg(0x01)
@@ -266,7 +276,8 @@ func TestNegation(t *testing.T) {
 
 func TestArithmeticWithCarry(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test ADC (add with carry)
 	cpu.Flags.C = 1

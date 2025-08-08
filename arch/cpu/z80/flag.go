@@ -3,8 +3,18 @@ package z80
 import "math/bits"
 
 // Flags contains the status flags of the CPU.
+// Standard Z80 flag register layout:
 // Bit No.   7   6   5   4   3   2   1   0
 // Flag      S   Z   Y   H   X   P   N   C
+//
+// S (Sign): Set if result is negative (bit 7 set)
+// Z (Zero): Set if result is zero
+// Y (Bit 5): Copy of bit 5 of result (undocumented)
+// H (Half Carry): Set if carry from bit 3 to bit 4
+// X (Bit 3): Copy of bit 3 of result (undocumented)
+// P (Parity/Overflow): Parity for logical ops, overflow for arithmetic
+// N (Add/Subtract): Set for subtract operations, cleared for add
+// C (Carry): Set if carry out of bit 7
 type Flags struct {
 	C uint8 // carry flag
 	N uint8 // add/subtract flag (used for BCD operations)

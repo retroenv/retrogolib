@@ -9,7 +9,8 @@ import (
 
 func TestStepNOP(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy)) // Game Boy starts at 0x0100
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err) // Game Boy starts at 0x0100
 
 	// Set up NOP instruction at PC
 	memory.Write(0x0100, 0x00) // NOP
@@ -17,7 +18,7 @@ func TestStepNOP(t *testing.T) {
 	initialCycles := cpu.cycles
 	initialPC := cpu.PC
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error for NOP")
 	assert.Equal(t, initialPC+1, cpu.PC, "PC should increment by 1 for NOP")
 	assert.Equal(t, initialCycles+4, cpu.cycles, "Cycles should increment by 4 for NOP")
@@ -25,14 +26,15 @@ func TestStepNOP(t *testing.T) {
 
 func TestStepHalt(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy)) // Game Boy starts at 0x0100
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err) // Game Boy starts at 0x0100
 
 	// Set up HALT instruction at PC
 	memory.Write(0x0100, 0x76) // HALT
 
 	assert.False(t, cpu.halted, "CPU should not be halted initially")
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error for HALT")
 	assert.True(t, cpu.halted, "CPU should be halted after HALT instruction")
 
@@ -45,14 +47,15 @@ func TestStepHalt(t *testing.T) {
 
 func TestStepLoadInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test LD BC,nn (0x01)
 	memory.Write(0x0100, 0x01) // LD BC,nn
 	memory.Write(0x0101, 0x34) // Low byte
 	memory.Write(0x0102, 0x12) // High byte
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint16(0x1234), cpu.BC(), "BC should be loaded with 0x1234")
 	assert.Equal(t, uint16(0x0103), cpu.PC, "PC should advance by 3")
@@ -69,13 +72,14 @@ func TestStepLoadInstructions(t *testing.T) {
 
 func TestStepIncrementDecrement(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test INC BC (0x03)
 	cpu.setBC(0x1234)
 	memory.Write(0x0100, 0x03) // INC BC
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint16(0x1235), cpu.BC(), "BC should be incremented")
 	assert.Equal(t, uint16(0x0101), cpu.PC, "PC should advance by 1")
@@ -101,14 +105,15 @@ func TestStepIncrementDecrement(t *testing.T) {
 
 func TestStepMemoryOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test LD (BC),A (0x02)
 	cpu.A = 0x42
 	cpu.setBC(0x2000)
 	memory.Write(0x0100, 0x02) // LD (BC),A
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint8(0x42), memory.Read(0x2000), "Memory at BC should contain A")
 
@@ -123,13 +128,14 @@ func TestStepMemoryOperations(t *testing.T) {
 
 func TestStepRotateInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test RLCA (0x07)
 	cpu.A = 0x81
 	memory.Write(0x0100, 0x07) // RLCA
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint8(0x03), cpu.A, "A should be rotated left")
 	assert.Equal(t, uint8(1), cpu.Flags.C, "Carry should be set from bit 7")
@@ -146,14 +152,15 @@ func TestStepRotateInstructions(t *testing.T) {
 
 func TestStepJumpInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test JP nn (0xC3)
 	memory.Write(0x0100, 0xC3) // JP nn
 	memory.Write(0x0101, 0x00) // Low byte
 	memory.Write(0x0102, 0x20) // High byte
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint16(0x2000), cpu.PC, "PC should jump to 0x2000")
 
@@ -181,14 +188,15 @@ func TestStepJumpInstructions(t *testing.T) {
 
 func TestStepInterruptInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test DI (0xF3)
 	cpu.iff1 = true
 	cpu.iff2 = true
 	memory.Write(0x0100, 0xF3) // DI
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.False(t, cpu.iff1, "IFF1 should be disabled")
 	assert.False(t, cpu.iff2, "IFF2 should be disabled")
@@ -204,14 +212,15 @@ func TestStepInterruptInstructions(t *testing.T) {
 
 func TestStepDJNZ(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test DJNZ with branch taken
 	cpu.B = 0x02
 	memory.Write(0x0100, 0x10) // DJNZ
 	memory.Write(0x0101, 0x05) // Offset +5
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint8(0x01), cpu.B, "B should be decremented")
 	assert.Equal(t, uint16(0x0107), cpu.PC, "PC should branch (0x0102 + 5)")
@@ -230,14 +239,15 @@ func TestStepDJNZ(t *testing.T) {
 
 func TestStepAdd16(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test ADD HL,BC (0x09)
 	cpu.setHL(0x1000)
 	cpu.setBC(0x0234)
 	memory.Write(0x0100, 0x09) // ADD HL,BC
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint16(0x1234), cpu.HL(), "HL should be HL + BC")
 	assert.Equal(t, uint8(0), cpu.Flags.N, "N flag should be clear for addition")
@@ -245,14 +255,15 @@ func TestStepAdd16(t *testing.T) {
 
 func TestStepExtendedInstructions(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test CB prefix instruction (CB 00 - RLC B)
 	cpu.B = 0x81
 	memory.Write(0x0100, 0xCB) // CB prefix
 	memory.Write(0x0101, 0x00) // RLC B
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 	assert.Equal(t, uint8(0x03), cpu.B, "B should be rotated left")
 	assert.Equal(t, uint8(1), cpu.Flags.C, "Carry should be set")
@@ -282,7 +293,8 @@ func TestStepExtendedInstructions(t *testing.T) {
 
 func TestStepWithTracing(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy), WithTracing())
+	cpu, err := New(memory, WithSystemType(arch.GameBoy), WithTracing())
+	assert.NoError(t, err)
 
 	// Set up instruction
 	memory.Write(0x0100, 0x00) // NOP
@@ -291,7 +303,7 @@ func TestStepWithTracing(t *testing.T) {
 	cpu.A = 0x42
 	cpu.setFlags(0xFF)
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 
 	// Check trace information
@@ -307,26 +319,28 @@ func TestStepWithTracing(t *testing.T) {
 
 func TestStepErrorHandling(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Test unimplemented opcode (ED prefix with invalid instruction)
 	memory.Write(0x0100, 0xED) // ED prefix
 	memory.Write(0x0101, 0xFF) // Invalid ED instruction
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NotNil(t, err, "Step should return error for unimplemented opcode")
 	assert.Contains(t, err.Error(), "unimplemented", "Error should mention unimplemented instruction")
 }
 
 func TestRefreshRegister(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// R register should increment on each instruction
 	initialR := cpu.R
 	memory.Write(0x0100, 0x00) // NOP
 
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
 
 	expectedR := (initialR & 0x80) | ((initialR + 1) & 0x7F)
@@ -335,7 +349,8 @@ func TestRefreshRegister(t *testing.T) {
 
 func TestEndlessLoopDetection(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory, WithSystemType(arch.GameBoy))
+	cpu, err := New(memory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 
 	// Create an endless loop: JR -2 (0x18 0xFE)
 	// This instruction jumps back to itself, creating an infinite loop
@@ -346,7 +361,7 @@ func TestEndlessLoopDetection(t *testing.T) {
 	initialPC := cpu.PC
 
 	// Execute the jump instruction once
-	err := cpu.Step()
+	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error for JR")
 
 	// Verify that PC jumped back to the same address (endless loop)

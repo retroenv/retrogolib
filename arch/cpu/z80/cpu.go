@@ -1,12 +1,14 @@
 package z80
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/retroenv/retrogolib/arch"
 )
 
 // State contains the current state of the CPU.
+// Used for save/load functionality and debugging.
 type State struct {
 	// Main registers
 	A uint8
@@ -38,12 +40,14 @@ type State struct {
 
 	Cycles     uint64
 	Flags      Flags
-	Flags_     Flags // alternate flags
+	AltFlags   Flags // alternate flags
 	Interrupts Interrupts
 
 	Halted bool
 }
 
+// CPU represents a Z80 microprocessor with full instruction set emulation.
+// Thread-safe through mutex locks for concurrent access.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -75,8 +79,8 @@ type CPU struct {
 	I  uint8  // interrupt vector
 	R  uint8  // refresh register
 
-	Flags  Flags
-	Flags_ Flags // alternate flags
+	Flags    Flags
+	AltFlags Flags // alternate flags
 
 	cycles uint64
 	halted bool
@@ -98,6 +102,7 @@ type CPU struct {
 }
 
 // Interrupts holds the current interrupt state.
+// Used for interrupt management and state serialization.
 type Interrupts struct {
 	IFF1         bool
 	IFF2         bool
@@ -106,12 +111,22 @@ type Interrupts struct {
 	IrqTriggered bool
 }
 
+// CPU initialization constants
 const (
 	initialCycles = 0
 )
 
+// CPU creation errors
+var (
+	ErrNilMemory = errors.New("memory cannot be nil")
+)
+
 // New creates a new Z80 CPU.
-func New(memory *Memory, options ...Option) *CPU {
+func New(memory *Memory, options ...Option) (*CPU, error) {
+	if memory == nil {
+		return nil, ErrNilMemory
+	}
+
 	opts := NewOptions(options...)
 
 	// Set default values for generic system if no system type specified
@@ -132,7 +147,7 @@ func New(memory *Memory, options ...Option) *CPU {
 		im:     0, // interrupt mode 0 by default
 	}
 
-	return c
+	return c, nil
 }
 
 // Cycles returns the amount of CPU cycles executed since system start.
@@ -160,48 +175,30 @@ func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	state := State{
-		A:      c.A,
-		B:      c.B,
-		C:      c.C,
-		D:      c.D,
-		E:      c.E,
-		H:      c.H,
-		L:      c.L,
-		A_:     c.A_,
-		B_:     c.B_,
-		C_:     c.C_,
-		D_:     c.D_,
-		E_:     c.E_,
-		H_:     c.H_,
-		L_:     c.L_,
-		IX:     c.IX,
-		IY:     c.IY,
-		SP:     c.SP,
-		PC:     c.PC,
-		I:      c.I,
-		R:      c.R,
-		Cycles: c.cycles,
-		Flags: Flags{
-			C: c.Flags.C,
-			N: c.Flags.N,
-			P: c.Flags.P,
-			X: c.Flags.X,
-			H: c.Flags.H,
-			Y: c.Flags.Y,
-			Z: c.Flags.Z,
-			S: c.Flags.S,
-		},
-		Flags_: Flags{
-			C: c.Flags_.C,
-			N: c.Flags_.N,
-			P: c.Flags_.P,
-			X: c.Flags_.X,
-			H: c.Flags_.H,
-			Y: c.Flags_.Y,
-			Z: c.Flags_.Z,
-			S: c.Flags_.S,
-		},
+	return State{
+		A:        c.A,
+		B:        c.B,
+		C:        c.C,
+		D:        c.D,
+		E:        c.E,
+		H:        c.H,
+		L:        c.L,
+		A_:       c.A_,
+		B_:       c.B_,
+		C_:       c.C_,
+		D_:       c.D_,
+		E_:       c.E_,
+		H_:       c.H_,
+		L_:       c.L_,
+		IX:       c.IX,
+		IY:       c.IY,
+		SP:       c.SP,
+		PC:       c.PC,
+		I:        c.I,
+		R:        c.R,
+		Cycles:   c.cycles,
+		Flags:    c.Flags,
+		AltFlags: c.AltFlags,
 		Interrupts: Interrupts{
 			IFF1:         c.iff1,
 			IFF2:         c.iff2,
@@ -211,7 +208,6 @@ func (c *CPU) State() State {
 		},
 		Halted: c.halted,
 	}
-	return state
 }
 
 // Memory returns the CPU memory.
@@ -272,13 +268,13 @@ func (c *CPU) exchange() {
 	c.E, c.E_ = c.E_, c.E
 	c.H, c.H_ = c.H_, c.H
 	c.L, c.L_ = c.L_, c.L
-	c.Flags, c.Flags_ = c.Flags_, c.Flags
+	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 
 // exchangeAF exchanges only the AF and AF' registers.
 func (c *CPU) exchangeAF() {
 	c.A, c.A_ = c.A_, c.A
-	c.Flags, c.Flags_ = c.Flags_, c.Flags
+	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 
 // pop pops a byte from the stack and updates the stack pointer.

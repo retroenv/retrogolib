@@ -11,7 +11,8 @@ func TestNew(t *testing.T) {
 	memory := NewMemory()
 
 	// Test default initialization
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 	assert.Equal(t, uint16(0x0000), cpu.PC, "PC should be initialized to 0x0000 for generic system")
 	assert.Equal(t, uint16(0xFFFF), cpu.SP, "SP should be initialized to 0xFFFF for generic system")
 	assert.Equal(t, uint64(0), cpu.cycles, "Cycles should start at 0")
@@ -22,14 +23,21 @@ func TestNew(t *testing.T) {
 
 	// Test Game Boy system initialization
 	gameboyMemory := NewMemory()
-	gameboyCPU := New(gameboyMemory, WithSystemType(arch.GameBoy))
+	gameboyCPU, err := New(gameboyMemory, WithSystemType(arch.GameBoy))
+	assert.NoError(t, err)
 	assert.Equal(t, uint16(0x0100), gameboyCPU.PC, "PC should be initialized to 0x0100 for Game Boy")
 	assert.Equal(t, uint16(0xFFFE), gameboyCPU.SP, "SP should be initialized to 0xFFFE for Game Boy")
+
+	// Test error case
+	cpu, err = New(nil)
+	assert.Nil(t, cpu)
+	assert.ErrorIs(t, err, ErrNilMemory)
 }
 
 func TestRegisterPairs(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test BC register pair
 	cpu.B = 0x12
@@ -70,7 +78,8 @@ func TestRegisterPairs(t *testing.T) {
 
 func TestStackOperations(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test push and pop byte
 	originalSP := cpu.SP
@@ -93,7 +102,8 @@ func TestStackOperations(t *testing.T) {
 
 func TestExchange(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Set main registers
 	cpu.A = 0x11
@@ -113,8 +123,8 @@ func TestExchange(t *testing.T) {
 	cpu.E_ = 0xEE
 	cpu.H_ = 0xFF
 	cpu.L_ = 0x00
-	cpu.Flags_.C = 1
-	cpu.Flags_.Z = 1
+	cpu.AltFlags.C = 1
+	cpu.AltFlags.Z = 1
 
 	// Test exchange
 	cpu.exchange()
@@ -139,7 +149,8 @@ func TestExchange(t *testing.T) {
 
 func TestExchangeAF(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Set main AF
 	cpu.A = 0x12
@@ -147,9 +158,9 @@ func TestExchangeAF(t *testing.T) {
 
 	// Set alternate AF
 	cpu.A_ = 0x56
-	cpu.Flags_.C = 1
-	cpu.Flags_.Z = 1
-	cpu.Flags_.S = 1
+	cpu.AltFlags.C = 1
+	cpu.AltFlags.Z = 1
+	cpu.AltFlags.S = 1
 
 	// Test AF exchange
 	cpu.exchangeAF()
@@ -166,7 +177,8 @@ func TestExchangeAF(t *testing.T) {
 
 func TestHaltedState(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	assert.False(t, cpu.Halted(), "CPU should not be halted initially")
 
@@ -179,7 +191,8 @@ func TestHaltedState(t *testing.T) {
 
 func TestState(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Set some register values
 	cpu.A = 0x12
@@ -207,7 +220,8 @@ func TestState(t *testing.T) {
 
 func TestInterrupts(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test interrupt enable/disable
 	assert.False(t, cpu.iff1, "IFF1 should be false initially")
@@ -223,7 +237,8 @@ func TestInterrupts(t *testing.T) {
 
 func TestMemoryAccess(t *testing.T) {
 	memory := NewMemory()
-	cpu := New(memory)
+	cpu, err := New(memory)
+	assert.NoError(t, err)
 
 	// Test that CPU has access to memory
 	assert.Equal(t, memory, cpu.Memory(), "CPU should return the same memory instance")

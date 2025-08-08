@@ -6,6 +6,7 @@ import (
 
 type paramReaderFunc func(c *CPU) ([]any, []byte)
 
+// paramReader maps addressing modes to their parameter reading functions.
 var paramReader = map[AddressingMode]paramReaderFunc{
 	ImpliedAddressing:          paramReaderImplied,
 	RegisterAddressing:         paramReaderRegister,
@@ -57,8 +58,8 @@ func paramReaderImmediate(c *CPU) ([]any, []byte) {
 		b2 := c.memory.Read(c.PC + 3) // High byte
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
-		opcodes := []byte{b1, b2}
-		return params, opcodes
+		opcodes := [2]uint8{b1, b2}
+		return params, opcodes[:]
 	}
 
 	opcode := c.memory.Read(c.PC)
@@ -70,14 +71,14 @@ func paramReaderImmediate(c *CPU) ([]any, []byte) {
 		b2 := c.memory.Read(c.PC + 2) // High byte
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
-		opcodes := []byte{b1, b2}
-		return params, opcodes
+		opcodes := [2]uint8{b1, b2}
+		return params, opcodes[:]
 	} else {
 		// 8-bit immediate (2-byte instruction: opcode + immediate)
 		b := c.memory.Read(c.PC + 1)
 		params := []any{Immediate8(b)}
-		opcodes := []byte{b}
-		return params, opcodes
+		opcodes := [1]uint8{b}
+		return params, opcodes[:]
 	}
 }
 
@@ -87,8 +88,8 @@ func paramReaderExtended(c *CPU) ([]any, []byte) {
 
 	address := uint16(b2)<<8 | uint16(b1)
 	params := []any{Extended(address)}
-	opcodes := []byte{b1, b2}
-	return params, opcodes
+	opcodes := [2]uint8{b1, b2}
+	return params, opcodes[:]
 }
 
 func paramReaderRegisterIndirect(c *CPU) ([]any, []byte) {
@@ -133,16 +134,16 @@ func paramReaderIndexed(c *CPU) ([]any, []byte) {
 	}
 
 	params := []any{indexed}
-	opcodes := []byte{byte(displacement)}
-	return params, opcodes
+	opcodes := [1]uint8{uint8(displacement)}
+	return params, opcodes[:]
 }
 
 func paramReaderRelative(c *CPU) ([]any, []byte) {
 	offset := int8(c.memory.Read(c.PC + 1))
 
 	params := []any{Relative(offset)}
-	opcodes := []byte{byte(offset)}
-	return params, opcodes
+	opcodes := [1]uint8{uint8(offset)}
+	return params, opcodes[:]
 }
 
 func paramReaderBit(c *CPU) ([]any, []byte) {
@@ -163,8 +164,8 @@ func paramReaderPort(c *CPU) ([]any, []byte) {
 	if opcode == 0xDB || opcode == 0xD3 { // IN A,(n) or OUT (n),A
 		portAddr := c.memory.Read(c.PC + 1)
 		params := []any{Port(portAddr)}
-		opcodes := []byte{portAddr}
-		return params, opcodes
+		opcodes := [1]uint8{portAddr}
+		return params, opcodes[:]
 	}
 
 	// Port (C) - use C register as port address
@@ -172,7 +173,7 @@ func paramReaderPort(c *CPU) ([]any, []byte) {
 	return params, nil
 }
 
-// RegisterEncoding maps register numbers to register names for debugging
+// RegisterEncoding maps register numbers to register names for debugging.
 var RegisterEncoding = map[uint8]string{
 	0: "B",
 	1: "C",
@@ -184,8 +185,12 @@ var RegisterEncoding = map[uint8]string{
 	7: "A",
 }
 
-// GetRegisterValue returns the value of a register by its encoding number
+// GetRegisterValue returns the value of a register by its encoding number.
 func (c *CPU) GetRegisterValue(reg uint8) uint8 {
+	if reg > 7 {
+		return 0
+	}
+
 	switch reg {
 	case 0:
 		return c.B
@@ -208,8 +213,12 @@ func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 	}
 }
 
-// SetRegisterValue sets the value of a register by its encoding number
+// SetRegisterValue sets the value of a register by its encoding number.
 func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
+	if reg > 7 {
+		return
+	}
+
 	switch reg {
 	case 0:
 		c.B = value
