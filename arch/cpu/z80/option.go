@@ -2,11 +2,18 @@ package z80
 
 type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 
+// IOHandler defines the interface for handling I/O port operations.
+type IOHandler interface {
+	ReadPort(port uint8) uint8
+	WritePort(port uint8, value uint8)
+}
+
 // Options contains options for the CPU.
 type Options struct {
 	tracing                  bool
 	disableUnofficialOpcodes bool
 	preExecutionHook         preExecutionHook
+	ioHandler                IOHandler
 }
 
 // Option defines a CPU parameter.
@@ -40,5 +47,12 @@ func WithUnofficialOpcodesDisabled() func(*Options) {
 func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
 	return func(options *Options) {
 		options.preExecutionHook = hook
+	}
+}
+
+// WithIOHandler sets an I/O handler for port operations.
+func WithIOHandler(handler IOHandler) func(*Options) {
+	return func(options *Options) {
+		options.ioHandler = handler
 	}
 }

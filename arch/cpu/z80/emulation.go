@@ -1085,13 +1085,47 @@ func call(c *CPU, params ...any) error {
 
 // outPort outputs to port.
 func outPort(c *CPU, params ...any) error {
-	// TODO: Implement outPort with proper I/O port output operations.
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var portAddr uint8
+	switch param := params[0].(type) {
+	case Port:
+		portAddr = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	// OUT (n),A - Output accumulator to port
+	if c.opts.ioHandler != nil {
+		c.opts.ioHandler.WritePort(portAddr, c.A)
+	}
+
 	return nil
 }
 
 // inPort inputs from port.
 func inPort(c *CPU, params ...any) error {
-	// TODO: Implement inPort with proper I/O port input operations.
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var portAddr uint8
+	switch param := params[0].(type) {
+	case Port:
+		portAddr = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	// IN A,(n) - Input from port to accumulator
+	if c.opts.ioHandler != nil {
+		c.A = c.opts.ioHandler.ReadPort(portAddr)
+	} else {
+		c.A = 0xFF
+	}
+
 	return nil
 }
 
@@ -1123,7 +1157,22 @@ func exx(c *CPU) error {
 
 // exSp exchanges top of stack with register pair.
 func exSp(c *CPU, params ...any) error {
-	// TODO: Implement exSp with proper stack operations for register exchange.
+	// EX (SP),HL - Exchange HL with word at top of stack
+	// Read word from stack (SP and SP+1)
+	low := c.memory.Read(c.SP)
+	high := c.memory.Read(c.SP + 1)
+	stackValue := uint16(high)<<8 | uint16(low)
+
+	// Get current HL value
+	hlValue := c.HL()
+
+	// Write HL to stack
+	c.memory.Write(c.SP, uint8(hlValue))
+	c.memory.Write(c.SP+1, uint8(hlValue>>8))
+
+	// Set HL to old stack value
+	c.setHL(stackValue)
+
 	return nil
 }
 

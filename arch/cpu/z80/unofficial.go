@@ -174,10 +174,14 @@ func outf(c *CPU) error {
 
 // Port I/O helper functions (these would need to be implemented in the main CPU)
 func (c *CPU) readPort(port uint8) uint8 {
-	// TODO: Implement readPort with system-specific I/O port reading.
+	if c.opts.ioHandler != nil {
+		return c.opts.ioHandler.ReadPort(port)
+	}
 	return 0xFF
 }
 
 func (c *CPU) writePort(port uint8, value uint8) {
-	// TODO: Implement writePort with system-specific I/O port writing.
+	if c.opts.ioHandler != nil {
+		c.opts.ioHandler.WritePort(port, value)
+	}
 }
