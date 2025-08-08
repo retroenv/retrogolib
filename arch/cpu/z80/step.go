@@ -79,19 +79,19 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC)
 
 	switch opcodeByte {
-	case 0xCB:
+	case PrefixCB:
 		// CB-prefixed instructions (bit operations)
 		return c.decodeCBInstruction()
 
-	case 0xED:
+	case PrefixED:
 		// ED-prefixed instructions (extended operations)
 		return c.decodeEDInstruction()
 
-	case 0xDD:
+	case PrefixDD:
 		// DD-prefixed instructions (IX operations)
 		return c.decodeDDInstruction()
 
-	case 0xFD:
+	case PrefixFD:
 		// FD-prefixed instructions (IY operations)
 		return c.decodeFDInstruction()
 	}
@@ -160,11 +160,11 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xCB, opcodeByte},
+			OpcodeOperands: []byte{PrefixCB, opcodeByte},
 		}
 	}
 
-	return opcode, 0xCB, nil
+	return opcode, PrefixCB, nil
 }
 
 // decodeCBInstructionType determines the instruction and timing for CB-prefixed opcodes.
@@ -249,7 +249,7 @@ func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
 
 	instruction, timing, size, err := c.decodeEDInstructionType(opcodeByte)
 	if err != nil {
-		return Opcode{}, 0xED, err
+		return Opcode{}, PrefixED, err
 	}
 
 	opcode := Opcode{
@@ -263,11 +263,11 @@ func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xED, opcodeByte},
+			OpcodeOperands: []byte{PrefixED, opcodeByte},
 		}
 	}
 
-	return opcode, 0xED, nil
+	return opcode, PrefixED, nil
 }
 
 // decodeEDInstructionType determines the instruction, timing, and size for ED-prefixed opcodes.
@@ -513,13 +513,13 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual DD instruction
 
 	// Handle DD CB prefix first
-	if opcodeByte == 0xCB {
+	if opcodeByte == PrefixCB {
 		return c.decodeDDCBInstruction()
 	}
 
 	instruction, timing, size, err := c.decodeDDInstructionType(opcodeByte)
 	if err != nil {
-		return Opcode{}, 0xDD, err
+		return Opcode{}, PrefixDD, err
 	}
 
 	opcode := Opcode{
@@ -533,11 +533,11 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xDD, opcodeByte},
+			OpcodeOperands: []byte{PrefixDD, opcodeByte},
 		}
 	}
 
-	return opcode, 0xDD, nil
+	return opcode, PrefixDD, nil
 }
 
 // decodeDDInstructionType determines the instruction, timing, and size for DD-prefixed opcodes.
@@ -741,11 +741,11 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xDD, 0xCB, uint8(displacement), opcodeByte},
+			OpcodeOperands: []byte{PrefixDD, PrefixCB, uint8(displacement), opcodeByte},
 		}
 	}
 
-	return opcode, 0xDD, nil
+	return opcode, PrefixDD, nil
 }
 
 // decodeFDInstruction decodes FD-prefixed instructions (IY operations).
@@ -753,13 +753,13 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual FD instruction
 
 	// Handle FD CB prefix first
-	if opcodeByte == 0xCB {
+	if opcodeByte == PrefixCB {
 		return c.decodeFDCBInstruction()
 	}
 
 	instruction, timing, size, err := c.decodeFDInstructionType(opcodeByte)
 	if err != nil {
-		return Opcode{}, 0xFD, err
+		return Opcode{}, PrefixFD, err
 	}
 
 	opcode := Opcode{
@@ -773,11 +773,11 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xFD, opcodeByte},
+			OpcodeOperands: []byte{PrefixFD, opcodeByte},
 		}
 	}
 
-	return opcode, 0xFD, nil
+	return opcode, PrefixFD, nil
 }
 
 // decodeFDInstructionType determines the instruction, timing, and size for FD-prefixed opcodes.
@@ -981,11 +981,11 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 		c.TraceStep = TraceStep{
 			PC:             c.PC,
 			Opcode:         opcode,
-			OpcodeOperands: []byte{0xFD, 0xCB, uint8(displacement), opcodeByte},
+			OpcodeOperands: []byte{PrefixFD, PrefixCB, uint8(displacement), opcodeByte},
 		}
 	}
 
-	return opcode, 0xFD, nil
+	return opcode, PrefixFD, nil
 }
 
 // handleInterrupts processes pending interrupts.

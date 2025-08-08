@@ -52,7 +52,7 @@ func paramReaderRegister(c *CPU) ([]any, []byte) {
 func paramReaderImmediate(c *CPU) ([]any, []byte) {
 	// Check if this is a DD-prefixed instruction
 	prefixByte := c.memory.Read(c.PC)
-	if prefixByte == 0xDD {
+	if prefixByte == PrefixDD {
 		// For DD-prefixed instructions, read the 16-bit immediate after the DD XX prefix
 		b1 := c.memory.Read(c.PC + 2) // Low byte (after DD 21)
 		b2 := c.memory.Read(c.PC + 3) // High byte
@@ -120,9 +120,9 @@ func paramReaderIndexed(c *CPU) ([]any, []byte) {
 
 	var baseReg uint16
 	switch prefix {
-	case 0xDD:
+	case PrefixDD:
 		baseReg = c.IX
-	case 0xFD:
+	case PrefixFD:
 		baseReg = c.IY
 	default:
 		baseReg = uint16(c.H)<<8 | uint16(c.L) // Default to HL
@@ -171,18 +171,6 @@ func paramReaderPort(c *CPU) ([]any, []byte) {
 	// Port (C) - use C register as port address
 	params := []any{Port(c.C)}
 	return params, nil
-}
-
-// RegisterEncoding maps register numbers to register names for debugging.
-var RegisterEncoding = map[uint8]string{
-	0: "B",
-	1: "C",
-	2: "D",
-	3: "E",
-	4: "H",
-	5: "L",
-	6: "(HL)",
-	7: "A",
 }
 
 // GetRegisterValue returns the value of a register by its encoding number.

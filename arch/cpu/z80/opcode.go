@@ -5,6 +5,14 @@ import "github.com/retroenv/retrogolib/set"
 // MaxOpcodeSize is the maximum size of an opcode and its operands in bytes.
 const MaxOpcodeSize = 4
 
+// Z80 instruction prefix bytes
+const (
+	PrefixCB = 0xCB // Bit operations prefix
+	PrefixDD = 0xDD // IX operations prefix
+	PrefixED = 0xED // Extended operations prefix
+	PrefixFD = 0xFD // IY operations prefix
+)
+
 // Opcode is a CPU opcode that contains the instruction info and used addressing mode.
 type Opcode struct {
 	Instruction *Instruction

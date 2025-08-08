@@ -59,7 +59,7 @@ var NopUndoc1 = &Instruction{
 	Name:       Nop.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xDD, Size: 1, Cycles: 4}, // DD alone (partial IX prefix)
+		ImpliedAddressing: {Opcode: PrefixDD, Size: 1, Cycles: 4}, // DD alone (partial IX prefix)
 	},
 	NoParamFunc: nop,
 }
@@ -69,7 +69,7 @@ var NopUndoc2 = &Instruction{
 	Name:       Nop.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xFD, Size: 1, Cycles: 4}, // FD alone (partial IY prefix)
+		ImpliedAddressing: {Opcode: PrefixFD, Size: 1, Cycles: 4}, // FD alone (partial IY prefix)
 	},
 	NoParamFunc: nop,
 }

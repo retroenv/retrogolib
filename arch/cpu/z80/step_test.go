@@ -260,8 +260,8 @@ func TestStepExtendedInstructions(t *testing.T) {
 
 	// Test CB prefix instruction (CB 00 - RLC B)
 	cpu.B = 0x81
-	memory.Write(0x0100, 0xCB) // CB prefix
-	memory.Write(0x0101, 0x00) // RLC B
+	memory.Write(0x0100, PrefixCB) // CB prefix
+	memory.Write(0x0101, 0x00)     // RLC B
 
 	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
@@ -271,8 +271,8 @@ func TestStepExtendedInstructions(t *testing.T) {
 
 	// Test ED prefix instruction (ED 44 - NEG)
 	cpu.A = 0x01
-	memory.Write(0x0102, 0xED) // ED prefix
-	memory.Write(0x0103, 0x44) // NEG
+	memory.Write(0x0102, PrefixED) // ED prefix
+	memory.Write(0x0103, 0x44)     // NEG
 
 	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
@@ -280,10 +280,10 @@ func TestStepExtendedInstructions(t *testing.T) {
 	assert.Equal(t, uint8(1), cpu.Flags.N, "N flag should be set for negation")
 
 	// Test DD prefix instruction (DD 21 - LD IX,nn)
-	memory.Write(0x0104, 0xDD) // DD prefix
-	memory.Write(0x0105, 0x21) // LD IX,nn
-	memory.Write(0x0106, 0x34) // Low byte
-	memory.Write(0x0107, 0x12) // High byte
+	memory.Write(0x0104, PrefixDD) // DD prefix
+	memory.Write(0x0105, 0x21)     // LD IX,nn
+	memory.Write(0x0106, 0x34)     // Low byte
+	memory.Write(0x0107, 0x12)     // High byte
 
 	err = cpu.Step()
 	assert.NoError(t, err, "Step should not return error")
@@ -323,8 +323,8 @@ func TestStepErrorHandling(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test unimplemented opcode (ED prefix with invalid instruction)
-	memory.Write(0x0100, 0xED) // ED prefix
-	memory.Write(0x0101, 0xFF) // Invalid ED instruction
+	memory.Write(0x0100, PrefixED) // ED prefix
+	memory.Write(0x0101, 0xFF)     // Invalid ED instruction
 
 	err = cpu.Step()
 	assert.NotNil(t, err, "Step should return error for unimplemented opcode")
