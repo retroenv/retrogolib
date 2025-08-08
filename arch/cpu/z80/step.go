@@ -1,26 +1,20 @@
 package z80
 
 import (
-	"errors"
 	"fmt"
 )
 
-// TraceStep contains information about the current step for tracing.
+// TraceStep contains all info needed to print a trace step.
 type TraceStep struct {
-	PC     uint16
-	Opcode uint8
+	PC             uint16 // program counter
+	OpcodeOperands []byte // instruction opcode and operand bytes
+	Opcode         Opcode
 
-	// Register values before execution
-	A, B, C, D, E, H, L uint8
-	SP, IX, IY          uint16
-	Flags               uint8
-
-	// Instruction info
-	InstructionName string
-	CyclesTaken     uint8
+	CustomData  string // custom data field that can be used in the pre execution hook
+	PageCrossed bool
 }
 
-// Step executes a single instruction and returns any error.
+// Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
 	if c.halted {
 		// CPU is halted, just advance cycles
@@ -28,61 +22,179 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	// Validate memory is available
-	if c.memory == nil {
-		return errors.New("z80: memory is nil")
-	}
-
 	// Handle interrupts first
 	if err := c.handleInterrupts(); err != nil {
 		return err
 	}
 
-	// Save trace information if tracing is enabled
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:    c.PC,
-			A:     c.A,
-			B:     c.B,
-			C:     c.C,
-			D:     c.D,
-			E:     c.E,
-			H:     c.H,
-			L:     c.L,
-			SP:    c.SP,
-			IX:    c.IX,
-			IY:    c.IY,
-			Flags: c.GetFlags(),
-		}
+	oldPC := c.PC
+	opcode, opcodeByte, err := c.decodeNextInstruction()
+	if err != nil {
+		return err
 	}
 
-	// Fetch instruction with bounds checking
-	// PC should be within valid memory range
-	opcode := c.memory.Read(c.PC)
-	if c.opts.tracing {
-		c.TraceStep.Opcode = opcode
-	}
+	c.cycles += uint64(opcode.Timing)
+
+	// Store current opcode for instruction functions to access
+	c.currentOpcode = opcodeByte
 
 	// Increment refresh register
 	c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
 
-	// Call pre-execution hook if set
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, opcode)
+	ins := opcode.Instruction
+	if ins.NoParamFunc != nil {
+		if c.opts.tracing {
+			c.TraceStep.PageCrossed = false
+		}
+		if c.opts.preExecutionHook != nil {
+			c.opts.preExecutionHook(c, opcodeByte)
+		}
+
+		if err := ins.NoParamFunc(c); err != nil {
+			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
+		}
+		c.updatePC(ins, oldPC, int(opcode.Size))
+		return nil
 	}
 
-	// Execute instruction
-	cycles, err := c.executeInstruction(opcode)
+	params, operands, pageCrossed, err := readOpParams(c, opcode.Addressing)
 	if err != nil {
-		return fmt.Errorf("error executing instruction at PC=0x%04X, opcode=0x%02X: %w", c.PC, opcode, err)
+		return fmt.Errorf("reading opcode params: %w", err)
 	}
-
-	c.cycles += uint64(cycles)
 	if c.opts.tracing {
-		c.TraceStep.CyclesTaken = cycles
+		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
+		c.TraceStep.PageCrossed = pageCrossed
+	}
+	if c.opts.preExecutionHook != nil {
+		c.opts.preExecutionHook(c, opcodeByte, params...)
 	}
 
+	// Z80 doesn't have page crossing cycles like 6502
+	_ = pageCrossed
+
+	opcodeLen := int(opcode.Size)
+
+	if err := ins.ParamFunc(c, params...); err != nil {
+		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
+	}
+	c.updatePC(ins, oldPC, opcodeLen)
 	return nil
+}
+
+// decodeNextInstruction decodes the current instruction at the program counter.
+func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
+	// Handle extended instruction prefixes first
+	opcodeByte := c.memory.Read(c.PC)
+
+	switch opcodeByte {
+	case 0xCB:
+		// CB-prefixed instructions (bit operations)
+		return c.decodeCBInstruction()
+
+	case 0xED:
+		// ED-prefixed instructions (extended operations)
+		return c.decodeEDInstruction()
+
+	case 0xDD:
+		// DD-prefixed instructions (IX operations)
+		return c.decodeDDInstruction()
+
+	case 0xFD:
+		// FD-prefixed instructions (IY operations)
+		return Opcode{}, opcodeByte, fmt.Errorf("unimplemented FD-prefixed instruction: 0x%02X", opcodeByte)
+	}
+
+	// Single-byte instructions
+	opcode := Opcodes[opcodeByte]
+	if opcode.Instruction == nil {
+		return Opcode{}, opcodeByte, fmt.Errorf("%w: opcode 0x%02x", ErrUnsupportedAddressingMode, opcodeByte)
+	}
+
+	if c.opts.tracing {
+		c.TraceStep = TraceStep{
+			PC:             c.PC,
+			Opcode:         opcode,
+			OpcodeOperands: []byte{opcodeByte},
+		}
+	}
+	return opcode, opcodeByte, nil
+}
+
+// updatePC updates the program counter based on the instruction execution.
+func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
+	// Update PC only if the instruction execution did not change it
+	if oldPC == c.PC {
+		if ins.Name == JpAbs.Name || ins.Name == JpCond.Name {
+			return // endless loop detected
+		}
+
+		c.PC += uint16(amount)
+		return
+	}
+
+	// For relative branches, we might need to account for branch timing
+	// (Z80 doesn't have the same page crossing penalty as 6502)
+}
+
+// decodeCBInstruction decodes CB-prefixed instructions (bit operations).
+func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
+	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual CB instruction
+
+	// For CB 00 - RLC B
+	if opcodeByte == 0x00 {
+		opcode := Opcode{
+			Instruction: &Instruction{
+				Name:        "rlc",
+				NoParamFunc: rlcB,
+			},
+			Size:   2,
+			Timing: 8,
+		}
+		return opcode, 0xCB, nil
+	}
+
+	return Opcode{}, 0xCB, fmt.Errorf("unimplemented CB instruction: CB %02X", opcodeByte)
+}
+
+// decodeEDInstruction decodes ED-prefixed instructions (extended operations).
+func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
+	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual ED instruction
+
+	// For ED 44 - NEG
+	if opcodeByte == 0x44 {
+		opcode := Opcode{
+			Instruction: &Instruction{
+				Name:        "neg",
+				NoParamFunc: negA,
+			},
+			Size:   2,
+			Timing: 8,
+		}
+		return opcode, 0xED, nil
+	}
+
+	return Opcode{}, 0xED, fmt.Errorf("unimplemented ED instruction: ED %02X", opcodeByte)
+}
+
+// decodeDDInstruction decodes DD-prefixed instructions (IX operations).
+func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
+	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual DD instruction
+
+	// For DD 21 - LD IX,nn
+	if opcodeByte == 0x21 {
+		opcode := Opcode{
+			Instruction: &Instruction{
+				Name:      "ld",
+				ParamFunc: ldIXnn,
+			},
+			Addressing: ImmediateAddressing,
+			Size:       4,
+			Timing:     14,
+		}
+		return opcode, 0xDD, nil
+	}
+
+	return Opcode{}, 0xDD, fmt.Errorf("unimplemented DD instruction: DD %02X", opcodeByte)
 }
 
 // handleInterrupts processes pending interrupts.
@@ -117,7 +229,6 @@ func (c *CPU) handleInterrupts() error {
 		switch c.im {
 		case 0:
 			// Interrupt mode 0: Execute instruction on data bus (usually RST)
-			// For Game Boy, this is typically RST 40h
 			c.PC = 0x0040
 			c.cycles += 13
 		case 1:
@@ -135,254 +246,4 @@ func (c *CPU) handleInterrupts() error {
 	}
 
 	return nil
-}
-
-// executeInstruction executes a single instruction and returns the number of cycles taken.
-func (c *CPU) executeInstruction(opcode uint8) (uint8, error) {
-	// Handle extended instruction prefixes first
-	switch opcode {
-	case 0xCB:
-		return c.executeCBInstruction()
-	case 0xED:
-		return c.executeEDInstruction()
-	case 0xDD:
-		return c.executeDDInstruction()
-	case 0xFD:
-		return c.executeFDInstruction()
-	}
-
-	// Handle single-byte instructions
-	return c.executeSingleByteInstruction(opcode)
-}
-
-// executeSingleByteInstruction handles non-prefixed Z80 instructions.
-func (c *CPU) executeSingleByteInstruction(opcode uint8) (uint8, error) {
-	switch {
-	case opcode <= 0x0F:
-		return c.executeBasicInstructions(opcode)
-	case opcode == 0x10:
-		return c.executeDJNZ()
-	case opcode == 0x76:
-		return c.executeHALT()
-	case opcode >= 0xC0:
-		return c.executeControlInstructions(opcode)
-	default:
-		return 4, fmt.Errorf("unimplemented opcode: 0x%02X", opcode)
-	}
-}
-
-// executeBasicInstructions handles opcodes 0x00-0x0F.
-func (c *CPU) executeBasicInstructions(opcode uint8) (uint8, error) {
-	switch {
-	case opcode <= 0x07:
-		return c.executeBasicInstructions0x00To0x07(opcode)
-	case opcode <= 0x0F:
-		return c.executeBasicInstructions0x08To0x0F(opcode)
-	}
-	return 4, fmt.Errorf("unimplemented basic opcode: 0x%02X", opcode)
-}
-
-// executeBasicInstructions0x00To0x07 handles opcodes 0x00-0x07.
-func (c *CPU) executeBasicInstructions0x00To0x07(opcode uint8) (uint8, error) {
-	switch opcode {
-	case 0x00: // NOP
-		c.PC++
-		return 4, nil
-	case 0x01: // LD BC,nn
-		nn := c.memory.ReadWord(c.PC + 1)
-		c.setBC(nn)
-		c.PC += 3
-		return 10, nil
-	case 0x02: // LD (BC),A
-		c.memory.Write(c.BC(), c.A)
-		c.PC++
-		return 7, nil
-	case 0x03: // INC BC
-		c.setBC(c.BC() + 1)
-		c.PC++
-		return 6, nil
-	case 0x04: // INC B
-		c.B = c.inc8(c.B)
-		c.PC++
-		return 4, nil
-	case 0x05: // DEC B
-		c.B = c.dec8(c.B)
-		c.PC++
-		return 4, nil
-	case 0x06: // LD B,n
-		c.B = c.memory.Read(c.PC + 1)
-		c.PC += 2
-		return 7, nil
-	case 0x07: // RLCA
-		c.A = c.rlca(c.A)
-		c.PC++
-		return 4, nil
-	}
-	return 4, fmt.Errorf("unimplemented basic opcode: 0x%02X", opcode)
-}
-
-// executeBasicInstructions0x08To0x0F handles opcodes 0x08-0x0F.
-func (c *CPU) executeBasicInstructions0x08To0x0F(opcode uint8) (uint8, error) {
-	switch opcode {
-	case 0x08: // EX AF,AF'
-		c.exchangeAF()
-		c.PC++
-		return 4, nil
-	case 0x09: // ADD HL,BC
-		c.setHL(c.add16(c.HL(), c.BC()))
-		c.PC++
-		return 11, nil
-	case 0x0A: // LD A,(BC)
-		c.A = c.memory.Read(c.BC())
-		c.PC++
-		return 7, nil
-	case 0x0B: // DEC BC
-		c.setBC(c.BC() - 1)
-		c.PC++
-		return 6, nil
-	case 0x0C: // INC C
-		c.C = c.inc8(c.C)
-		c.PC++
-		return 4, nil
-	case 0x0D: // DEC C
-		c.C = c.dec8(c.C)
-		c.PC++
-		return 4, nil
-	case 0x0E: // LD C,n
-		c.C = c.memory.Read(c.PC + 1)
-		c.PC += 2
-		return 7, nil
-	case 0x0F: // RRCA
-		c.A = c.rrca(c.A)
-		c.PC++
-		return 4, nil
-	}
-	return 4, fmt.Errorf("unimplemented basic opcode: 0x%02X", opcode)
-}
-
-// executeDJNZ handles the DJNZ instruction.
-func (c *CPU) executeDJNZ() (uint8, error) {
-	c.B--
-	if c.B != 0 {
-		offset := int8(c.memory.Read(c.PC + 1))
-		c.PC = uint16(int32(c.PC) + int32(offset) + 2)
-		return 13, nil
-	}
-	c.PC += 2
-	return 8, nil
-}
-
-// executeHALT handles the HALT instruction.
-func (c *CPU) executeHALT() (uint8, error) {
-	c.halted = true
-	c.PC++
-	return 4, nil
-}
-
-// executeControlInstructions handles control flow instructions (0xC0-0xFF range).
-func (c *CPU) executeControlInstructions(opcode uint8) (uint8, error) {
-	switch opcode {
-	case 0xC3: // JP nn
-		c.PC = c.memory.ReadWord(c.PC + 1)
-		return 10, nil
-	case 0xCD: // CALL nn
-		c.push16(c.PC + 3)
-		c.PC = c.memory.ReadWord(c.PC + 1)
-		return 17, nil
-	case 0xC9: // RET
-		c.PC = c.pop16()
-		return 10, nil
-	case 0xF3: // DI
-		c.iff1 = false
-		c.iff2 = false
-		c.PC++
-		return 4, nil
-	case 0xFB: // EI
-		c.iff1 = true
-		c.iff2 = true
-		c.PC++
-		return 4, nil
-	case 0xFF: // RST 38h
-		c.push16(c.PC + 1)
-		c.PC = 0x0038
-		return 11, nil
-	}
-	return 4, fmt.Errorf("unimplemented control opcode: 0x%02X", opcode)
-}
-
-// executeCBInstruction executes CB-prefixed instructions.
-func (c *CPU) executeCBInstruction() (uint8, error) {
-	opcode := c.memory.Read(c.PC + 1)
-	c.PC += 2
-
-	// CB instructions are mostly bit operations
-	switch opcode {
-	case 0x00: // RLC B
-		c.B = c.rlc(c.B)
-		return 8, nil
-	case 0x01: // RLC C
-		c.C = c.rlc(c.C)
-		return 8, nil
-	// Add more CB instructions as needed
-	default:
-		return 8, fmt.Errorf("unimplemented CB instruction: 0x%02X", opcode)
-	}
-}
-
-// executeEDInstruction executes ED-prefixed instructions.
-func (c *CPU) executeEDInstruction() (uint8, error) {
-	opcode := c.memory.Read(c.PC + 1)
-	c.PC += 2
-
-	switch opcode {
-	case 0x44: // NEG
-		c.A = c.neg(c.A)
-		return 8, nil
-	case 0x46: // IM 0
-		c.im = 0
-		return 8, nil
-	case 0x56: // IM 1
-		c.im = 1
-		return 8, nil
-	case 0x5E: // IM 2
-		c.im = 2
-		return 8, nil
-	// Add more ED instructions as needed
-	default:
-		return 8, fmt.Errorf("unimplemented ED instruction: 0x%02X", opcode)
-	}
-}
-
-// executeDDInstruction executes DD-prefixed instructions (IX).
-func (c *CPU) executeDDInstruction() (uint8, error) {
-	opcode := c.memory.Read(c.PC + 1)
-	c.PC += 2
-
-	// DD instructions work with IX register
-	switch opcode {
-	case 0x21: // LD IX,nn
-		c.IX = c.memory.ReadWord(c.PC)
-		c.PC += 2
-		return 14, nil
-	// Add more DD instructions as needed
-	default:
-		return 8, fmt.Errorf("unimplemented DD instruction: 0x%02X", opcode)
-	}
-}
-
-// executeFDInstruction executes FD-prefixed instructions (IY).
-func (c *CPU) executeFDInstruction() (uint8, error) {
-	opcode := c.memory.Read(c.PC + 1)
-	c.PC += 2
-
-	// FD instructions work with IY register
-	switch opcode {
-	case 0x21: // LD IY,nn
-		c.IY = c.memory.ReadWord(c.PC)
-		c.PC += 2
-		return 14, nil
-	// Add more FD instructions as needed
-	default:
-		return 8, fmt.Errorf("unimplemented FD instruction: 0x%02X", opcode)
-	}
 }

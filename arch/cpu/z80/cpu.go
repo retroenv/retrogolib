@@ -90,6 +90,8 @@ type CPU struct {
 	opts      Options
 	TraceStep TraceStep // trace step info, set if tracing is enabled
 
+	currentOpcode uint8 // opcode being executed (for instruction functions to access)
+
 	memory *Memory
 }
 

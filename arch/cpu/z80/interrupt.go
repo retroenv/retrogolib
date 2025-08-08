@@ -108,27 +108,3 @@ func (c *CPU) executeIRQ() {
 		c.cycles += 19
 	}
 }
-
-// RETI instruction - Return from maskable interrupt
-func (c *CPU) reti() {
-	// Pop PC from stack
-	c.PC = c.memory.ReadWord(c.SP)
-	c.SP += 2
-
-	// Restore interrupt enable state
-	c.iff1 = c.iff2
-
-	c.cycles += 14
-}
-
-// RETN instruction - Return from non-maskable interrupt
-func (c *CPU) retn() {
-	// Pop PC from stack
-	c.PC = c.memory.ReadWord(c.SP)
-	c.SP += 2
-
-	// Restore interrupt enable state
-	c.iff1 = c.iff2
-
-	c.cycles += 14
-}
