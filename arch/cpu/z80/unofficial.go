@@ -174,10 +174,10 @@ func outf(c *CPU) error {
 
 // Port I/O helper functions (these would need to be implemented in the main CPU)
 func (c *CPU) readPort(port uint8) uint8 {
-	// Placeholder - actual implementation depends on system
+	// TODO: Implement readPort with system-specific I/O port reading.
 	return 0xFF
 }
 
 func (c *CPU) writePort(port uint8, value uint8) {
-	// Placeholder - actual implementation depends on system
+	// TODO: Implement writePort with system-specific I/O port writing.
 }

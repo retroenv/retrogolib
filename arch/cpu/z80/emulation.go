@@ -577,15 +577,37 @@ func ldIndirect(c *CPU, params ...any) error {
 
 // incReg16 increments a 16-bit register pair.
 func incReg16(c *CPU, params ...any) error {
-	// For opcode 0x03: INC BC - increment BC register pair
-	// In a full implementation, we'd determine which register pair from the opcode
-	c.setBC(c.BC() + 1)
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0x03: // INC BC
+		c.setBC(c.BC() + 1)
+	case 0x13: // INC DE
+		c.setDE(c.DE() + 1)
+	case 0x23: // INC HL
+		c.setHL(c.HL() + 1)
+	case 0x33: // INC SP
+		c.SP++
+	default:
+		return fmt.Errorf("unsupported incReg16 opcode: 0x%02X", opcode)
+	}
 	return nil
 }
 
 // decReg16 decrements a 16-bit register pair.
 func decReg16(c *CPU, params ...any) error {
-	// Implementation placeholder - would need opcode analysis for specific register pair
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0x0B: // DEC BC
+		c.setBC(c.BC() - 1)
+	case 0x1B: // DEC DE
+		c.setDE(c.DE() - 1)
+	case 0x2B: // DEC HL
+		c.setHL(c.HL() - 1)
+	case 0x3B: // DEC SP
+		c.SP--
+	default:
+		return fmt.Errorf("unsupported decReg16 opcode: 0x%02X", opcode)
+	}
 	return nil
 }
 
@@ -656,19 +678,115 @@ func djnz(c *CPU, params ...any) error {
 
 // jrCond performs conditional relative jump.
 func jrCond(c *CPU, params ...any) error {
-	// Implementation placeholder - would need condition checking
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	offset, ok := params[0].(Relative)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	var shouldJump bool
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0x20: // JR NZ,e - jump if zero flag is clear
+		shouldJump = c.Flags.Z == 0
+	case 0x28: // JR Z,e - jump if zero flag is set
+		shouldJump = c.Flags.Z != 0
+	case 0x30: // JR NC,e - jump if carry flag is clear
+		shouldJump = c.Flags.C == 0
+	case 0x38: // JR C,e - jump if carry flag is set
+		shouldJump = c.Flags.C != 0
+	default:
+		return fmt.Errorf("unsupported jrCond opcode: 0x%02X", opcode)
+	}
+
+	if shouldJump {
+		// Calculate target address: PC after this 2-byte instruction + offset
+		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
+	}
 	return nil
 }
 
 // ldExtended loads using extended addressing.
 func ldExtended(c *CPU, params ...any) error {
-	// Implementation placeholder - would need specific addressing mode handling
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	address, ok := params[0].(Extended)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0x22: // LD (nn),HL - store HL to memory address nn
+		c.memory.WriteWord(uint16(address), c.HL())
+	case 0x2A: // LD HL,(nn) - load HL from memory address nn
+		value := c.memory.ReadWord(uint16(address))
+		c.setHL(value)
+	case 0x32: // LD (nn),A - store A to memory address nn
+		c.memory.Write(uint16(address), c.A)
+	case 0x3A: // LD A,(nn) - load A from memory address nn
+		value := c.memory.Read(uint16(address))
+		c.A = value
+	default:
+		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
+	}
 	return nil
+}
+
+// daaAdditionMode calculates correction for DAA in addition mode.
+func (c *CPU) daaAdditionMode() (uint8, bool) {
+	correction := uint8(0)
+	carrySet := false
+
+	if c.Flags.H != 0 || (c.A&0x0F) > 9 {
+		correction |= 0x06
+	}
+	if c.Flags.C != 0 || c.A > 0x99 {
+		correction |= 0x60
+		carrySet = true
+	}
+	return correction, carrySet
+}
+
+// daaSubtractionMode calculates correction for DAA in subtraction mode.
+func (c *CPU) daaSubtractionMode() (uint8, bool) {
+	correction := uint8(0)
+	carrySet := false
+
+	if c.Flags.H != 0 {
+		correction |= 0x06
+	}
+	if c.Flags.C != 0 {
+		correction |= 0x60
+		carrySet = true
+	}
+	return correction, carrySet
 }
 
 // daa performs decimal adjust accumulator.
 func daa(c *CPU) error {
-	// Implementation placeholder - complex BCD adjustment logic
+	var correction uint8
+	var carrySet bool
+
+	if c.Flags.N == 0 {
+		correction, carrySet = c.daaAdditionMode()
+		c.A += correction
+	} else {
+		correction, carrySet = c.daaSubtractionMode()
+		c.A -= correction
+	}
+
+	// Set flags
+	c.setS(c.A)
+	c.setZ(c.A)
+	c.setP(c.A) // Parity flag
+	c.setC(carrySet)
+	c.setH(false) // H is always reset after DAA
+	// N flag remains unchanged
+
 	return nil
 }
 
@@ -682,19 +800,57 @@ func cpl(c *CPU) error {
 
 // incIndirect increments memory location pointed to by register pair.
 func incIndirect(c *CPU, params ...any) error {
-	// Implementation placeholder - would need specific addressing
+	// For opcode 0x34: INC (HL) - increment memory at HL
+	address := c.HL()
+	value := c.memory.Read(address)
+	newValue := value + 1
+	c.memory.Write(address, newValue)
+
+	// Set flags (S, Z, H, PV, N)
+	c.setS(newValue)
+	c.setZ(newValue)
+	c.setH((value & 0x0F) == 0x0F) // Half carry when low nibble overflows
+	c.setPOverflow(value == 0x7F)  // Overflow when 0x7F -> 0x80
+	c.setN(false)
 	return nil
 }
 
 // decIndirect decrements memory location pointed to by register pair.
 func decIndirect(c *CPU, params ...any) error {
-	// Implementation placeholder - would need specific addressing
+	// For opcode 0x35: DEC (HL) - decrement memory at HL
+	address := c.HL()
+	value := c.memory.Read(address)
+	newValue := value - 1
+	c.memory.Write(address, newValue)
+
+	// Set flags (S, Z, H, PV, N)
+	c.setS(newValue)
+	c.setZ(newValue)
+	c.setH((value & 0x0F) == 0x00) // Half carry when low nibble underflows
+	c.setPOverflow(value == 0x80)  // Overflow when 0x80 -> 0x7F
+	c.setN(true)
 	return nil
 }
 
 // ldIndirectImm loads immediate value to indirect memory location.
 func ldIndirectImm(c *CPU, params ...any) error {
-	// Implementation placeholder - would need specific addressing
+	// For opcode 0x36: LD (HL),n - load immediate to memory at HL
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var immediate uint8
+	switch v := params[0].(type) {
+	case Immediate8:
+		immediate = uint8(v)
+	case uint8:
+		immediate = v
+	default:
+		return ErrInvalidParameterType
+	}
+
+	address := c.HL()
+	c.memory.Write(address, immediate)
 	return nil
 }
 
@@ -754,39 +910,148 @@ func sbcA(c *CPU, params ...any) error {
 	return nil
 }
 
+// checkCondition returns true if the condition is met based on the opcode.
+func (c *CPU) checkCondition(opcode uint8) bool {
+	switch opcode {
+	// NZ (Not Zero) - Z flag clear
+	case 0xC0, 0xC2, 0xC4:
+		return c.Flags.Z == 0
+	// Z (Zero) - Z flag set
+	case 0xC8, 0xCA, 0xCC:
+		return c.Flags.Z != 0
+	// NC (Not Carry) - C flag clear
+	case 0xD0, 0xD2, 0xD4:
+		return c.Flags.C == 0
+	// C (Carry) - C flag set
+	case 0xD8, 0xDA, 0xDC:
+		return c.Flags.C != 0
+	// PO (Parity Odd) - P flag clear
+	case 0xE0, 0xE2, 0xE4:
+		return c.Flags.P == 0
+	// PE (Parity Even) - P flag set
+	case 0xE8, 0xEA, 0xEC:
+		return c.Flags.P != 0
+	// P (Plus/Positive) - S flag clear
+	case 0xF0, 0xF2, 0xF4:
+		return c.Flags.S == 0
+	// M (Minus/Negative) - S flag set
+	case 0xF8, 0xFA, 0xFC:
+		return c.Flags.S != 0
+	default:
+		return false
+	}
+}
+
 // retCond performs conditional return.
 func retCond(c *CPU) error {
-	// Implementation placeholder - would need condition checking
+	if c.checkCondition(c.currentOpcode) {
+		c.PC = c.pop16()
+	}
 	return nil
 }
 
 // popReg16 pops 16-bit register from stack.
 func popReg16(c *CPU, params ...any) error {
-	// Implementation placeholder - would need stack operations
+	value := c.pop16()
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0xC1: // POP BC
+		c.setBC(value)
+	case 0xD1: // POP DE
+		c.setDE(value)
+	case 0xE1: // POP HL
+		c.setHL(value)
+	case 0xF1: // POP AF
+		c.setAF(value)
+	default:
+		return fmt.Errorf("unsupported popReg16 opcode: 0x%02X", opcode)
+	}
 	return nil
 }
 
 // jpCond performs conditional jump.
 func jpCond(c *CPU, params ...any) error {
-	// Implementation placeholder - would need condition checking
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	address, ok := params[0].(Extended)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	if c.checkCondition(c.currentOpcode) {
+		c.PC = uint16(address)
+	}
 	return nil
 }
 
 // callCond performs conditional call.
 func callCond(c *CPU, params ...any) error {
-	// Implementation placeholder - would need condition checking and stack operations
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	address, ok := params[0].(Extended)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	if c.checkCondition(c.currentOpcode) {
+		c.push16(c.PC)
+		c.PC = uint16(address)
+	}
 	return nil
 }
 
 // pushReg16 pushes 16-bit register to stack.
 func pushReg16(c *CPU, params ...any) error {
-	// Implementation placeholder - would need stack operations
+	opcode := c.currentOpcode
+	var value uint16
+	switch opcode {
+	case 0xC5: // PUSH BC
+		value = c.BC()
+	case 0xD5: // PUSH DE
+		value = c.DE()
+	case 0xE5: // PUSH HL
+		value = c.HL()
+	case 0xF5: // PUSH AF
+		value = c.AF()
+	default:
+		return fmt.Errorf("unsupported pushReg16 opcode: 0x%02X", opcode)
+	}
+	c.push16(value)
 	return nil
 }
 
 // rst performs restart (call to fixed address).
 func rst(c *CPU, params ...any) error {
-	// Implementation placeholder - would need stack operations and address calculation
+	// RST pushes current PC to stack and jumps to fixed address
+	c.push16(c.PC)
+
+	// Calculate restart vector from opcode
+	opcode := c.currentOpcode
+	var vector uint16
+	switch opcode {
+	case 0xC7: // RST 00H
+		vector = 0x0000
+	case 0xCF: // RST 08H
+		vector = 0x0008
+	case 0xD7: // RST 10H
+		vector = 0x0010
+	case 0xDF: // RST 18H
+		vector = 0x0018
+	case 0xE7: // RST 20H
+		vector = 0x0020
+	case 0xEF: // RST 28H
+		vector = 0x0028
+	case 0xF7: // RST 30H
+		vector = 0x0030
+	case 0xFF: // RST 38H
+		vector = 0x0038
+	default:
+		return fmt.Errorf("unsupported rst opcode: 0x%02X", opcode)
+	}
+
+	c.PC = vector
 	return nil
 }
 
@@ -820,13 +1085,13 @@ func call(c *CPU, params ...any) error {
 
 // outPort outputs to port.
 func outPort(c *CPU, params ...any) error {
-	// Implementation placeholder - would need port I/O
+	// TODO: Implement outPort with proper I/O port output operations.
 	return nil
 }
 
 // inPort inputs from port.
 func inPort(c *CPU, params ...any) error {
-	// Implementation placeholder - would need port I/O
+	// TODO: Implement inPort with proper I/O port input operations.
 	return nil
 }
 
@@ -858,13 +1123,14 @@ func exx(c *CPU) error {
 
 // exSp exchanges top of stack with register pair.
 func exSp(c *CPU, params ...any) error {
-	// Implementation placeholder - would need stack operations
+	// TODO: Implement exSp with proper stack operations for register exchange.
 	return nil
 }
 
 // jpIndirect performs indirect jump.
 func jpIndirect(c *CPU, params ...any) error {
-	// Implementation placeholder - would need indirect addressing
+	// JP (HL) - Jump to address in HL register
+	c.PC = c.HL()
 	return nil
 }
 
