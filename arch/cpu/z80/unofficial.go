@@ -99,9 +99,11 @@ var NopUndoc2 = &Instruction{
 
 // UnofficialInstructions maps undocumented instruction names to their definitions
 var UnofficialInstructions = map[string]*Instruction{
-	SLL.Name:  SLL,
-	INF.Name:  INF,
-	OUTF.Name: OUTF,
+	SLL.Name:       SLL,
+	INF.Name:       INF,
+	OUTF.Name:      OUTF,
+	"nop_undoc_dd": NopUndoc1, // DD prefix alone
+	"nop_undoc_fd": NopUndoc2, // FD prefix alone
 }
 
 // IsUnofficialInstruction returns true if the instruction name corresponds to

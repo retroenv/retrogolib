@@ -517,7 +517,16 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 
 	instruction, timing, size, err := c.decodeDDInstructionType(opcodeByte)
 	if err != nil {
-		return Opcode{}, PrefixDD, err
+		// Handle undocumented behavior: DD prefix alone acts as 4-cycle NOP
+		// This occurs when DD is followed by an invalid IX instruction
+		opcode := Opcode{
+			Instruction: Nop,
+			Addressing:  ImpliedAddressing,
+			Timing:      4,
+			Size:        1,
+		}
+		// Return nil error since we're handling it as undocumented NOP
+		return opcode, PrefixDD, nil //nolint:nilerr
 	}
 
 	opcode := Opcode{
@@ -757,7 +766,16 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 
 	instruction, timing, size, err := c.decodeFDInstructionType(opcodeByte)
 	if err != nil {
-		return Opcode{}, PrefixFD, err
+		// Handle undocumented behavior: FD prefix alone acts as 4-cycle NOP
+		// This occurs when FD is followed by an invalid IY instruction
+		opcode := Opcode{
+			Instruction: Nop,
+			Addressing:  ImpliedAddressing,
+			Timing:      4,
+			Size:        1,
+		}
+		// Return nil error since we're handling it as undocumented NOP
+		return opcode, PrefixFD, nil //nolint:nilerr
 	}
 
 	opcode := Opcode{
