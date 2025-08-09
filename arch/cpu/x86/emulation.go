@@ -423,3 +423,203 @@ func (c *CPU) completeTraceStep() {
 	c.TraceStep.PostSS = c.SS
 	c.TraceStep.PostFlags = c.Flags
 }
+
+// Instruction emulation functions
+
+// Data Movement Instructions
+
+// movRMReg8 implements MOV r/m8, r8.
+func movRMReg8(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg8(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		c.setReg8(RegisterParam(modrm.RM), srcValue)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		c.memory.Write8(addr, srcValue)
+	}
+	return nil
+}
+
+// movRMReg16 implements MOV r/m16, r16.
+func movRMReg16(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg16(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		c.setReg16(RegisterParam(modrm.RM), srcValue)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		c.memory.Write16(addr, srcValue)
+	}
+	return nil
+}
+
+// movRegRM8 implements MOV r8, r/m8.
+func movRegRM8(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	var srcValue uint8
+	if modrm.Mod == 3 {
+		srcValue = c.getReg8(RegisterParam(modrm.RM))
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		srcValue = c.memory.Read8(addr)
+	}
+	c.setReg8(RegisterParam(modrm.Reg), srcValue)
+	return nil
+}
+
+// movRegRM16 implements MOV r16, r/m16.
+func movRegRM16(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	var srcValue uint16
+	if modrm.Mod == 3 {
+		srcValue = c.getReg16(RegisterParam(modrm.RM))
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		srcValue = c.memory.Read16(addr)
+	}
+	c.setReg16(RegisterParam(modrm.Reg), srcValue)
+	return nil
+}
+
+// movRegImm8 implements MOV r8, imm8.
+func movRegImm8(c *CPU, params ...any) error {
+	_ = params[0].(uint8)
+	return nil
+}
+
+// movRegImm16 implements MOV r16, imm16.
+func movRegImm16(c *CPU, params ...any) error {
+	_ = params[0].(uint16)
+	return nil
+}
+
+// movMemImm8 implements MOV r/m8, imm8.
+func movMemImm8(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	immediate := params[2].(uint8)
+	if modrm.Mod == 3 {
+		c.setReg8(RegisterParam(modrm.RM), immediate)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		c.memory.Write8(addr, immediate)
+	}
+	return nil
+}
+
+// movMemImm16 implements MOV r/m16, imm16.
+func movMemImm16(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	immediate := params[2].(uint16)
+	if modrm.Mod == 3 {
+		c.setReg16(RegisterParam(modrm.RM), immediate)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		c.memory.Write16(addr, immediate)
+	}
+	return nil
+}
+
+// Arithmetic Instructions
+
+// addALImm8 implements ADD AL, imm8.
+func addALImm8(c *CPU, params ...any) error {
+	immediate := params[0].(uint8)
+	result := c.add8(c.AL(), immediate)
+	c.SetAL(result)
+	return nil
+}
+
+// addAXImm16 implements ADD AX, imm16.
+func addAXImm16(c *CPU, params ...any) error {
+	immediate := params[0].(uint16)
+	result := c.add16(c.AX, immediate)
+	c.AX = result
+	return nil
+}
+
+// subRMReg8 implements SUB r/m8, r8.
+func subRMReg8(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg8(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		dstValue := c.getReg8(RegisterParam(modrm.RM))
+		result := c.sub8(dstValue, srcValue)
+		c.setReg8(RegisterParam(modrm.RM), result)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		dstValue := c.memory.Read8(addr)
+		result := c.sub8(dstValue, srcValue)
+		c.memory.Write8(addr, result)
+	}
+	return nil
+}
+
+// subRMReg16 implements SUB r/m16, r16.
+func subRMReg16(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg16(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		dstValue := c.getReg16(RegisterParam(modrm.RM))
+		result := c.sub16(dstValue, srcValue)
+		c.setReg16(RegisterParam(modrm.RM), result)
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		dstValue := c.memory.Read16(addr)
+		result := c.sub16(dstValue, srcValue)
+		c.memory.Write16(addr, result)
+	}
+	return nil
+}
+
+// cmpRMReg8 implements CMP r/m8, r8.
+func cmpRMReg8(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg8(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		dstValue := c.getReg8(RegisterParam(modrm.RM))
+		_ = c.sub8(dstValue, srcValue) // Sets flags only
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		dstValue := c.memory.Read8(addr)
+		_ = c.sub8(dstValue, srcValue) // Sets flags only
+	}
+	return nil
+}
+
+// cmpRMReg16 implements CMP r/m16, r16.
+func cmpRMReg16(c *CPU, params ...any) error {
+	modrm := params[0].(ModRM)
+	displacement := params[1].(int16)
+	srcValue := c.getReg16(RegisterParam(modrm.Reg))
+	if modrm.Mod == 3 {
+		dstValue := c.getReg16(RegisterParam(modrm.RM))
+		_ = c.sub16(dstValue, srcValue) // Sets flags only
+	} else {
+		addr := c.GetEffectiveAddress(modrm, displacement, 0)
+		dstValue := c.memory.Read16(addr)
+		_ = c.sub16(dstValue, srcValue) // Sets flags only
+	}
+	return nil
+}
+
+// adcALImm8 implements ADC AL, imm8.
+func adcALImm8(c *CPU, params ...any) error {
+	immediate := params[0].(uint8)
+	carry := uint8(0)
+	if c.Flags.GetCarry() {
+		carry = 1
+	}
+	result := c.add8(c.AL(), immediate+carry)
+	c.SetAL(result)
+	return nil
+}
