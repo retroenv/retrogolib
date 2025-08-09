@@ -3,6 +3,20 @@
 
 package z80
 
+// Port I/O helper methods
+func (c *CPU) readPort(port uint8) uint8 {
+	if c.opts.ioHandler != nil {
+		return c.opts.ioHandler.ReadPort(port)
+	}
+	return 0xFF
+}
+
+func (c *CPU) writePort(port uint8, value uint8) {
+	if c.opts.ioHandler != nil {
+		c.opts.ioHandler.WritePort(port, value)
+	}
+}
+
 // SLL - Shift Left Logical (undocumented)
 // Shifts left and sets bit 0 to 1 (unlike SLA which sets bit 0 to 0)
 var SLL = &Instruction{
@@ -170,18 +184,4 @@ func outf(c *CPU) error {
 	c.setN(true)
 
 	return nil
-}
-
-// Port I/O helper functions (these would need to be implemented in the main CPU)
-func (c *CPU) readPort(port uint8) uint8 {
-	if c.opts.ioHandler != nil {
-		return c.opts.ioHandler.ReadPort(port)
-	}
-	return 0xFF
-}
-
-func (c *CPU) writePort(port uint8, value uint8) {
-	if c.opts.ioHandler != nil {
-		c.opts.ioHandler.WritePort(port, value)
-	}
 }

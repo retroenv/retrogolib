@@ -1,15 +1,15 @@
 // Package z80 provides a high-performance Z80 CPU emulator with comprehensive instruction set
-// support and memory management functionality for retro console systems.
+// support and memory management functionality for retro computing systems.
 //
 // # Architecture Overview
 //
-// The Z80 CPU emulates the Zilog Z80 microprocessor, widely used in retro gaming systems
-// including Game Boy, ZX Spectrum, and many arcade machines. This implementation provides:
+// The Z80 CPU emulates the Zilog Z80 microprocessor, widely used in retro computing systems
+// including home computers, gaming consoles, and embedded systems. This implementation provides:
 //
 //   - Complete Z80 instruction set emulation (official + undocumented opcodes)
 //   - 8-bit and 16-bit register operations with efficient flag management
 //   - Accurate interrupt handling (NMI, maskable interrupts, modes 0/1/2)
-//   - Memory banking support for cartridge systems (MBC1-compatible)
+//   - Memory banking support for extended address spaces
 //   - Cycle-accurate timing for precise emulation
 //   - Thread-safe concurrent access through mutex locks
 //   - Comprehensive state serialization for save/load functionality
@@ -26,31 +26,30 @@
 // # Memory Management
 //
 // The Memory component provides 64KB addressable space with banking support:
-//   - ROM banking for cartridge systems (up to 2MB with MBC1)
-//   - RAM banking for extended memory configurations
+//   - Memory banking for extended address spaces
 //   - Safe uint16 address space handling
 //   - Little-endian 16-bit word operations
+//   - Configurable memory mapping
 //
 // # System Compatibility
 //
 // Supports multiple target systems through configuration options:
 //   - Generic Z80 system (PC=0x0000, SP=0xFFFF)
-//   - Game Boy (PC=0x0100, SP=0xFFFE)
-//   - ZX Spectrum (PC=0x0000, SP=0xFFFF)
-//   - Custom initialization values
+//   - Custom initialization values for specific platforms
+//   - Configurable reset vectors and stack pointer locations
 //
 // # Usage Example
 //
-//	// Basic setup for Game Boy emulation
+//	// Basic Z80 CPU setup
 //	memory := z80.NewMemory()
-//	cpu, err := z80.New(memory, z80.WithSystemType(arch.GameBoy))
+//	cpu, err := z80.New(memory)
 //	if err != nil {
 //	    return fmt.Errorf("failed to create CPU: %w", err)
 //	}
 //
-//	// Load ROM data
-//	romData := []byte{...}
-//	memory.LoadROM(romData)
+//	// Load program data
+//	program := []byte{...}
+//	memory.LoadProgram(program)
 //
 //	// Main emulation loop
 //	for !cpu.Halted() {
@@ -69,9 +68,8 @@
 //	// Setup with tracing and I/O handling
 //	cpu, err := z80.New(memory,
 //	    z80.WithTracing(),                    // Enable instruction tracing
-//	    z80.WithSystemType(arch.GameBoy),     // Target system
 //	    z80.WithIOHandler(myIOHandler),       // Custom I/O port handling
-//	    z80.WithMemoryContention(),           // ZX Spectrum memory timing
+//	    z80.WithInterrupts(),                 // Enable interrupt handling
 //	)
 //	if err != nil {
 //	    return fmt.Errorf("failed to create CPU with options: %w", err)

@@ -2,6 +2,37 @@ package z80
 
 // ED prefix instruction implementations - Extended instructions
 
+// 16-bit ADC/SBC HL helper methods
+func (c *CPU) adcHL(value uint16) {
+	hl := uint16(c.H)<<8 | uint16(c.L)
+	carry := uint32(c.Flags.C)
+	result := uint32(hl) + uint32(value) + carry
+
+	c.H = uint8(result >> 8)
+	c.L = uint8(result)
+
+	c.setSZ(uint8(result >> 8))
+	c.setC(result > 0xFFFF)
+	c.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
+	c.setPOverflow(((hl ^ value ^ 0x8000) & (uint16(result) ^ hl) & 0x8000) != 0)
+	c.setN(false)
+}
+
+func (c *CPU) sbcHL(value uint16) {
+	hl := uint16(c.H)<<8 | uint16(c.L)
+	carry := uint32(c.Flags.C)
+	result := uint32(hl) - uint32(value) - carry
+
+	c.H = uint8(result >> 8)
+	c.L = uint8(result)
+
+	c.setSZ(uint8(result >> 8))
+	c.setC(result > 0xFFFF)
+	c.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
+	c.setPOverflow(((hl ^ value) & (hl ^ uint16(result)) & 0x8000) != 0)
+	c.setN(true)
+}
+
 // edNeg implements ED 44: NEG.
 func edNeg(c *CPU) error {
 	c.A = c.neg(c.A)
@@ -51,37 +82,6 @@ func edLdAR(c *CPU) error {
 	c.setN(false)
 	c.setPOverflow(c.iff2)
 	return nil
-}
-
-// 16-bit ADC/SBC HL helper methods
-func (c *CPU) adcHL(value uint16) {
-	hl := uint16(c.H)<<8 | uint16(c.L)
-	carry := uint32(c.Flags.C)
-	result := uint32(hl) + uint32(value) + carry
-
-	c.H = uint8(result >> 8)
-	c.L = uint8(result)
-
-	c.setSZ(uint8(result >> 8))
-	c.setC(result > 0xFFFF)
-	c.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
-	c.setPOverflow(((hl ^ value ^ 0x8000) & (uint16(result) ^ hl) & 0x8000) != 0)
-	c.setN(false)
-}
-
-func (c *CPU) sbcHL(value uint16) {
-	hl := uint16(c.H)<<8 | uint16(c.L)
-	carry := uint32(c.Flags.C)
-	result := uint32(hl) - uint32(value) - carry
-
-	c.H = uint8(result >> 8)
-	c.L = uint8(result)
-
-	c.setSZ(uint8(result >> 8))
-	c.setC(result > 0xFFFF)
-	c.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
-	c.setPOverflow(((hl ^ value) & (hl ^ uint16(result)) & 0x8000) != 0)
-	c.setN(true)
 }
 
 // ED instruction implementations for 16-bit memory operations

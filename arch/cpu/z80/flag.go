@@ -38,18 +38,6 @@ func (c *CPU) GetFlags() uint8 {
 		c.Flags.S<<7
 }
 
-// setFlags sets the flags from the given byte.
-func (c *CPU) setFlags(flags uint8) {
-	c.Flags.C = (flags >> 0) & 1
-	c.Flags.N = (flags >> 1) & 1
-	c.Flags.P = (flags >> 2) & 1
-	c.Flags.X = (flags >> 3) & 1
-	c.Flags.H = (flags >> 4) & 1
-	c.Flags.Y = (flags >> 5) & 1
-	c.Flags.Z = (flags >> 6) & 1
-	c.Flags.S = (flags >> 7) & 1
-}
-
 // setZ - set the zero flag if the argument is zero.
 func (c *CPU) setZ(value uint8) {
 	setFlag(&c.Flags.Z, value == 0)
@@ -105,6 +93,18 @@ func (c *CPU) setSZ(value uint8) {
 	c.setS(value)
 	c.setZ(value)
 	c.setXY(value) // Set undocumented X and Y flags
+}
+
+// setFlags sets the flags from the given byte.
+func (c *CPU) setFlags(flags uint8) {
+	c.Flags.C = (flags >> 0) & 1
+	c.Flags.N = (flags >> 1) & 1
+	c.Flags.P = (flags >> 2) & 1
+	c.Flags.X = (flags >> 3) & 1
+	c.Flags.H = (flags >> 4) & 1
+	c.Flags.Y = (flags >> 5) & 1
+	c.Flags.Z = (flags >> 6) & 1
+	c.Flags.S = (flags >> 7) & 1
 }
 
 // setFlag sets a flag to 1 if condition is true, 0 otherwise.

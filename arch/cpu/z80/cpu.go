@@ -235,6 +235,16 @@ func (c *CPU) AF() uint16 {
 	return uint16(c.A)<<8 | uint16(c.GetFlags())
 }
 
+// TriggerNMI triggers a non-maskable interrupt.
+func (c *CPU) TriggerNMI() {
+	c.triggerNmi = true
+}
+
+// TriggerIRQ triggers a maskable interrupt.
+func (c *CPU) TriggerIRQ() {
+	c.triggerIrq = true
+}
+
 // setBC sets the BC register pair from a 16-bit value.
 func (c *CPU) setBC(value uint16) {
 	c.B = uint8(value >> 8)
@@ -303,14 +313,4 @@ func (c *CPU) push16(value uint16) {
 	low := uint8(value)
 	c.push(high)
 	c.push(low)
-}
-
-// TriggerNMI triggers a non-maskable interrupt.
-func (c *CPU) TriggerNMI() {
-	c.triggerNmi = true
-}
-
-// TriggerIRQ triggers a maskable interrupt.
-func (c *CPU) TriggerIRQ() {
-	c.triggerIrq = true
 }

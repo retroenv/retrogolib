@@ -18,6 +18,60 @@ var paramReader = map[AddressingMode]paramReaderFunc{
 	PortAddressing:             paramReaderPort,
 }
 
+// GetRegisterValue returns the value of a register by its encoding number.
+func (c *CPU) GetRegisterValue(reg uint8) uint8 {
+	if reg > 7 {
+		return 0
+	}
+
+	switch reg {
+	case 0:
+		return c.B
+	case 1:
+		return c.C
+	case 2:
+		return c.D
+	case 3:
+		return c.E
+	case 4:
+		return c.H
+	case 5:
+		return c.L
+	case 6:
+		return c.memory.Read(uint16(c.H)<<8 | uint16(c.L))
+	case 7:
+		return c.A
+	default:
+		return 0
+	}
+}
+
+// SetRegisterValue sets the value of a register by its encoding number.
+func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
+	if reg > 7 {
+		return
+	}
+
+	switch reg {
+	case 0:
+		c.B = value
+	case 1:
+		c.C = value
+	case 2:
+		c.D = value
+	case 3:
+		c.E = value
+	case 4:
+		c.H = value
+	case 5:
+		c.L = value
+	case 6:
+		c.memory.Write(uint16(c.H)<<8|uint16(c.L), value)
+	case 7:
+		c.A = value
+	}
+}
+
 // readOpParams reads the opcode parameters after the first opcode byte
 // and translates it into emulator specific types.
 func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, error) {
@@ -145,58 +199,4 @@ func paramReaderPort(c *CPU) ([]any, []byte) {
 	// Port (C) - use C register as port address
 	params := []any{Port(c.C)}
 	return params, nil
-}
-
-// GetRegisterValue returns the value of a register by its encoding number.
-func (c *CPU) GetRegisterValue(reg uint8) uint8 {
-	if reg > 7 {
-		return 0
-	}
-
-	switch reg {
-	case 0:
-		return c.B
-	case 1:
-		return c.C
-	case 2:
-		return c.D
-	case 3:
-		return c.E
-	case 4:
-		return c.H
-	case 5:
-		return c.L
-	case 6:
-		return c.memory.Read(uint16(c.H)<<8 | uint16(c.L))
-	case 7:
-		return c.A
-	default:
-		return 0
-	}
-}
-
-// SetRegisterValue sets the value of a register by its encoding number.
-func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
-	if reg > 7 {
-		return
-	}
-
-	switch reg {
-	case 0:
-		c.B = value
-	case 1:
-		c.C = value
-	case 2:
-		c.D = value
-	case 3:
-		c.E = value
-	case 4:
-		c.H = value
-	case 5:
-		c.L = value
-	case 6:
-		c.memory.Write(uint16(c.H)<<8|uint16(c.L), value)
-	case 7:
-		c.A = value
-	}
 }
