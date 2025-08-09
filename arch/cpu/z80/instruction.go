@@ -5,8 +5,8 @@ type Instruction struct {
 	Name       string // lowercased instruction name
 	Unofficial bool   // unofficial instructions are not part of the original Z80 spec
 
-	Addressing      map[AddressingMode]OpcodeInfo       // addressing mode mapping to opcode info
-	RegisterOpcodes map[RegisterParam]OpcodeInfo        // register-specific opcode mapping for disambiguating variants
+	Addressing      map[AddressingMode]OpcodeInfo // addressing mode mapping to opcode info
+	RegisterOpcodes map[RegisterParam]OpcodeInfo  // register-specific opcode mapping for disambiguating variants
 
 	NoParamFunc func(c *CPU) error                // emulation function to execute when the instruction has no parameters
 	ParamFunc   func(c *CPU, params ...any) error // emulation function to execute when the instruction has parameters
@@ -24,7 +24,7 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 }
 
 // GetOpcodeByRegister returns opcode info for a specific register parameter.
-// This method provides the disambiguated opcode information that was previously 
+// This method provides the disambiguated opcode information that was previously
 // handled by the separate OpcodeMap.
 func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, bool) {
 	if ins.RegisterOpcodes == nil {
@@ -34,7 +34,7 @@ func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, 
 		}
 		return OpcodeInfo{}, false
 	}
-	
+
 	info, exists := ins.RegisterOpcodes[register]
 	return info, exists
 }
@@ -45,7 +45,7 @@ func (ins Instruction) GetAllRegisterVariants() map[RegisterParam]OpcodeInfo {
 	if ins.RegisterOpcodes == nil {
 		return nil
 	}
-	
+
 	// Return a copy to prevent external modification
 	variants := make(map[RegisterParam]OpcodeInfo)
 	for reg, info := range ins.RegisterOpcodes {

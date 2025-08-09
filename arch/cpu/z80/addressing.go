@@ -46,49 +46,98 @@ type Port uint8
 // Z80 Register constants for opcode mapping
 // These are used as keys in the RegisterOpcodes map to differentiate
 // between instructions that target different registers.
+// Using uint8 values for memory efficiency and performance.
 const (
+	RegNone RegisterParam = iota // No register / empty
+
 	// 8-bit registers
-	RegB RegisterParam = "b"
-	RegC RegisterParam = "c"
-	RegD RegisterParam = "d"
-	RegE RegisterParam = "e"
-	RegH RegisterParam = "h"
-	RegL RegisterParam = "l"
-	RegA RegisterParam = "a"
-	
+	RegB
+	RegC
+	RegD
+	RegE
+	RegH
+	RegL
+	RegA
+
 	// 16-bit register pairs
-	RegBC RegisterParam = "bc"
-	RegDE RegisterParam = "de"
-	RegHL RegisterParam = "hl"
-	RegSP RegisterParam = "sp"
-	RegAF RegisterParam = "af"
-	RegIX RegisterParam = "ix"
-	RegIY RegisterParam = "iy"
-	
-	// Special register references
-	RegHLIndirect RegisterParam = "(hl)"
-	RegBCIndirect RegisterParam = "(bc)"
-	RegDEIndirect RegisterParam = "(de)"
-	RegSPIndirect RegisterParam = "(sp)"
-	RegIXIndirect RegisterParam = "(ix)"
-	RegIYIndirect RegisterParam = "(iy)"
-	
+	RegBC
+	RegDE
+	RegHL
+	RegSP
+	RegAF
+	RegIX
+	RegIY
+
+	// Special register references (indirect addressing)
+	RegHLIndirect
+	RegBCIndirect
+	RegDEIndirect
+	RegSPIndirect
+	RegIXIndirect
+	RegIYIndirect
+
 	// Immediate value placeholders
-	RegImm8  RegisterParam = "n"   // 8-bit immediate
-	RegImm16 RegisterParam = "nn"  // 16-bit immediate
-	RegAddr  RegisterParam = "(nn)" // 16-bit address
-	RegRel   RegisterParam = "e"    // relative address
-	
+	RegImm8  // 8-bit immediate
+	RegImm16 // 16-bit immediate
+	RegAddr  // 16-bit address
+	RegRel   // relative address
+
 	// Special values for RST instruction
-	RegRst00 RegisterParam = "00h"
-	RegRst08 RegisterParam = "08h"
-	RegRst10 RegisterParam = "10h"
-	RegRst18 RegisterParam = "18h"
-	RegRst20 RegisterParam = "20h"
-	RegRst28 RegisterParam = "28h"
-	RegRst30 RegisterParam = "30h"
-	RegRst38 RegisterParam = "38h"
+	RegRst00
+	RegRst08
+	RegRst10
+	RegRst18
+	RegRst20
+	RegRst28
+	RegRst30
+	RegRst38
 )
 
 // RegisterParam represents a register parameter for opcode mapping.
-type RegisterParam string
+// Using uint8 for memory efficiency and performance.
+type RegisterParam uint8
+
+// registerNames provides a lookup table for register parameter string representations.
+var registerNames = [...]string{
+	RegNone:       "",
+	RegB:          "b",
+	RegC:          "c",
+	RegD:          "d",
+	RegE:          "e",
+	RegH:          "h",
+	RegL:          "l",
+	RegA:          "a",
+	RegBC:         "bc",
+	RegDE:         "de",
+	RegHL:         "hl",
+	RegSP:         "sp",
+	RegAF:         "af",
+	RegIX:         "ix",
+	RegIY:         "iy",
+	RegHLIndirect: "(hl)",
+	RegBCIndirect: "(bc)",
+	RegDEIndirect: "(de)",
+	RegSPIndirect: "(sp)",
+	RegIXIndirect: "(ix)",
+	RegIYIndirect: "(iy)",
+	RegImm8:       "n",
+	RegImm16:      "nn",
+	RegAddr:       "(nn)",
+	RegRel:        "e",
+	RegRst00:      "00h",
+	RegRst08:      "08h",
+	RegRst10:      "10h",
+	RegRst18:      "18h",
+	RegRst20:      "20h",
+	RegRst28:      "28h",
+	RegRst30:      "30h",
+	RegRst38:      "38h",
+}
+
+// String returns the human-readable representation of the register parameter.
+func (r RegisterParam) String() string {
+	if int(r) < len(registerNames) {
+		return registerNames[r]
+	}
+	return "unknown"
+}
