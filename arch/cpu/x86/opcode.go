@@ -285,19 +285,22 @@ var Opcodes = [256]Opcode{
 	{}, {}, // 0xFE-0xFF (Group 4/5 - INC/DEC, CALL/JMP indirect)
 }
 
-// InstructionOpcodeMap provides reverse lookup from instruction to opcode.
-var InstructionOpcodeMap = make(map[*Instruction][]uint8)
+// Package-level maps for optimal performance.
+var (
+	// InstructionOpcodeMap provides reverse lookup from instruction to opcode.
+	InstructionOpcodeMap = make(map[*Instruction][]uint8, 256)
 
-// RegisterOpcodeMap maps register-specific opcodes for faster lookup.
-var RegisterOpcodeMap = make(map[RegisterParam]map[uint8]*Instruction)
+	// RegisterOpcodeMap maps register-specific opcodes for faster lookup.
+	RegisterOpcodeMap = make(map[RegisterParam]map[uint8]*Instruction, 32)
 
-// AddressingModeOpcodeMap maps addressing modes to their opcodes.
-var AddressingModeOpcodeMap = make(map[AddressingMode]map[uint8]*Instruction)
+	// AddressingModeOpcodeMap maps addressing modes to their opcodes.
+	AddressingModeOpcodeMap = make(map[AddressingMode]map[uint8]*Instruction, 16)
+)
 
 // ValidOpcodes contains all valid opcode values.
 var ValidOpcodes = set.New[uint8]()
 
-// InitializeOpcodeMaps initializes the reverse lookup maps.
+// InitializeOpcodeMaps initializes the reverse lookup maps with optimal capacity.
 func InitializeOpcodeMaps() {
 	for opcode, opcodeInfo := range Opcodes {
 		if opcodeInfo.Instruction == nil {
@@ -307,24 +310,24 @@ func InitializeOpcodeMaps() {
 		opcodeValue := uint8(opcode)
 		ValidOpcodes.Add(opcodeValue)
 
-		// Build instruction to opcode map
-		if InstructionOpcodeMap[opcodeInfo.Instruction] == nil {
-			InstructionOpcodeMap[opcodeInfo.Instruction] = []uint8{}
+		// Build instruction to opcode map with pre-allocation
+		if _, exists := InstructionOpcodeMap[opcodeInfo.Instruction]; !exists {
+			InstructionOpcodeMap[opcodeInfo.Instruction] = make([]uint8, 0, 4)
 		}
 		InstructionOpcodeMap[opcodeInfo.Instruction] = append(
 			InstructionOpcodeMap[opcodeInfo.Instruction], opcodeValue)
 
-		// Build register to opcode map
+		// Build register to opcode map with pre-allocation
 		if opcodeInfo.Register != 0 {
 			if RegisterOpcodeMap[opcodeInfo.Register] == nil {
-				RegisterOpcodeMap[opcodeInfo.Register] = make(map[uint8]*Instruction)
+				RegisterOpcodeMap[opcodeInfo.Register] = make(map[uint8]*Instruction, 8)
 			}
 			RegisterOpcodeMap[opcodeInfo.Register][opcodeValue] = opcodeInfo.Instruction
 		}
 
-		// Build addressing mode to opcode map
+		// Build addressing mode to opcode map with pre-allocation
 		if AddressingModeOpcodeMap[opcodeInfo.Addressing] == nil {
-			AddressingModeOpcodeMap[opcodeInfo.Addressing] = make(map[uint8]*Instruction)
+			AddressingModeOpcodeMap[opcodeInfo.Addressing] = make(map[uint8]*Instruction, 64)
 		}
 		AddressingModeOpcodeMap[opcodeInfo.Addressing][opcodeValue] = opcodeInfo.Instruction
 	}

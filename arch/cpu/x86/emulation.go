@@ -4,7 +4,21 @@ import (
 	"fmt"
 )
 
-// Step executes a single instruction and returns any error.
+// Step executes a single CPU instruction following the fetch-decode-execute cycle.
+//
+// This implements the core x86 instruction execution pipeline:
+//  1. Interrupt Check: Handle pending interrupts if enabled
+//  2. Instruction Fetch: Read opcode from CS:IP address
+//  3. Instruction Decode: Look up opcode in instruction table
+//  4. Operand Fetch: Read immediate values, ModR/M bytes, displacements
+//  5. Instruction Execute: Perform the operation and update CPU state
+//  6. Cycle Accounting: Add instruction timing to total cycle count
+//  7. Trace Logging: Record execution trace if tracing is enabled
+//
+// The function maintains cycle-accurate timing and supports tracing for debugging.
+// All register and memory modifications follow x86 architectural behavior.
+//
+// Returns an error if the instruction is invalid or execution fails.
 func (c *CPU) Step() error {
 	if c.halted {
 		return nil
@@ -159,7 +173,25 @@ func (c *CPU) executeRelativeInstruction(instruction *Instruction, opcodeInfo Op
 	return ErrInvalidInstruction
 }
 
-// handleInterrupt processes interrupt requests.
+// handleInterrupt processes interrupt requests following x86 interrupt protocol.
+//
+// Interrupt handling sequence:
+//  1. Check interrupt enable flag (IF) - exit if disabled
+//  2. Push FLAGS register to stack (preserves processor state)
+//  3. Push return address (CS:IP) to stack for resumption
+//  4. Clear interrupt flag (IF=0) to prevent nested interrupts
+//  5. Load interrupt service routine address from interrupt vector table
+//  6. Jump to interrupt handler (update CS:IP)
+//
+// The interrupt vector table starts at memory address 0x00000 and contains
+// 256 four-byte entries (IP:CS pairs) for interrupt vectors 0-255.
+// Each entry is structured as [IP_low][IP_high][CS_low][CS_high].
+//
+// Stack layout after interrupt (growing downward):
+//
+//	[SP-6]: FLAGS (original)
+//	[SP-4]: CS (return segment)
+//	[SP-2]: IP (return offset)  ← SP points here
 func (c *CPU) handleInterrupt() {
 	if !c.interruptsEnabled {
 		return
@@ -181,7 +213,19 @@ func (c *CPU) handleInterrupt() {
 
 // Arithmetic operations
 
-// add8 adds two 8-bit values and sets flags.
+// add8 performs 8-bit addition with comprehensive flag computation.
+//
+// Flag computation follows x86 architecture specifications:
+//   - Carry Flag (CF): Set if unsigned overflow occurs (result > 255)
+//   - Zero Flag (ZF): Set if result equals zero
+//   - Sign Flag (SF): Set if result bit 7 is set (negative in signed arithmetic)
+//   - Overflow Flag (OF): Set if signed overflow occurs (result outside -128..+127)
+//   - Parity Flag (PF): Set if result has even number of set bits
+//   - Auxiliary Carry (AF): Set if carry from bit 3 to bit 4 (BCD arithmetic)
+//
+// Overflow detection uses XOR logic: OF = (A⊕B⊕0x80) & (R⊕A) & 0x80
+// where A and B are operands, R is result. This detects signed overflow when
+// two same-sign operands produce an opposite-sign result.
 func (c *CPU) add8(a, b uint8) uint8 {
 	result16 := uint16(a) + uint16(b)
 	result := uint8(result16)
@@ -271,49 +315,33 @@ func (c *CPU) or16(a, b uint16) uint16 {
 
 // Register access helpers
 
-// getReg8 gets an 8-bit register value.
-func (c *CPU) getReg8(reg RegisterParam) uint8 {
-	switch reg {
-	case RegAL:
-		return c.AL()
-	case RegCL:
-		return c.CL()
-	case RegDL:
-		return c.DL()
-	case RegBL:
-		return c.BL()
-	case RegAH:
-		return c.AH()
-	case RegCH:
-		return c.CH()
-	case RegDH:
-		return c.DH()
-	case RegBH:
-		return c.BH()
-	default:
-		return 0
+// Package-level register access maps for optimal performance.
+var (
+	// reg8Getters maps register parameters to their getter functions.
+	reg8Getters = map[RegisterParam]func(*CPU) uint8{
+		RegAL: (*CPU).AL, RegCL: (*CPU).CL, RegDL: (*CPU).DL, RegBL: (*CPU).BL,
+		RegAH: (*CPU).AH, RegCH: (*CPU).CH, RegDH: (*CPU).DH, RegBH: (*CPU).BH,
 	}
+
+	// reg8Setters maps register parameters to their setter functions.
+	reg8Setters = map[RegisterParam]func(*CPU, uint8){
+		RegAL: (*CPU).SetAL, RegCL: (*CPU).SetCL, RegDL: (*CPU).SetDL, RegBL: (*CPU).SetBL,
+		RegAH: (*CPU).SetAH, RegCH: (*CPU).SetCH, RegDH: (*CPU).SetDH, RegBH: (*CPU).SetBH,
+	}
+)
+
+// getReg8 gets an 8-bit register value using optimized lookup table.
+func (c *CPU) getReg8(reg RegisterParam) uint8 {
+	if getter, exists := reg8Getters[reg]; exists {
+		return getter(c)
+	}
+	return 0
 }
 
-// setReg8 sets an 8-bit register value.
+// setReg8 sets an 8-bit register value using optimized lookup table.
 func (c *CPU) setReg8(reg RegisterParam, value uint8) {
-	switch reg {
-	case RegAL:
-		c.SetAL(value)
-	case RegCL:
-		c.SetCL(value)
-	case RegDL:
-		c.SetDL(value)
-	case RegBL:
-		c.SetBL(value)
-	case RegAH:
-		c.SetAH(value)
-	case RegCH:
-		c.SetCH(value)
-	case RegDH:
-		c.SetDH(value)
-	case RegBH:
-		c.SetBH(value)
+	if setter, exists := reg8Setters[reg]; exists {
+		setter(c, value)
 	}
 }
 

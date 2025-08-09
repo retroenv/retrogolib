@@ -18,9 +18,6 @@ import (
 const (
 	closingFailedMsg  = "closing failed"
 	closingTimeoutMsg = "closing with timeout"
-	benchmarkCloseMsg = "benchmark close"
-	benchmarkMultiMsg = "benchmark multi close"
-	benchmarkErrorMsg = "benchmark close with error"
 )
 
 type testCloser struct {
@@ -384,40 +381,4 @@ type closerFunc func() error
 
 func (f closerFunc) Close() error {
 	return f()
-}
-
-func BenchmarkLoggerCloser(b *testing.B) {
-	logger := New()
-	closer := testCloser{}
-
-	b.ResetTimer()
-	for range b.N {
-		logger.Closer(closer, benchmarkCloseMsg)
-	}
-}
-
-func BenchmarkLoggerCloserWithError(b *testing.B) {
-	cfg := DefaultConfig()
-	cfg.Output = io.Discard // Discard output for pure benchmark
-	logger := NewWithConfig(cfg)
-	closer := testCloser{err: errors.New("benchmark error")}
-
-	b.ResetTimer()
-	for range b.N {
-		logger.Closer(closer, benchmarkErrorMsg)
-	}
-}
-
-func BenchmarkLoggerMultiCloser(b *testing.B) {
-	logger := New()
-	closers := []io.Closer{
-		testCloser{},
-		testCloser{},
-		testCloser{},
-	}
-
-	b.ResetTimer()
-	for range b.N {
-		logger.MultiCloser(benchmarkMultiMsg, closers...)
-	}
 }

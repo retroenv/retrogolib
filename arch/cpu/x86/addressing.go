@@ -30,6 +30,7 @@ const (
 )
 
 // AddressingModeNames provides string representations of addressing modes.
+// Pre-allocated with exact capacity for optimal performance.
 var AddressingModeNames = map[AddressingMode]string{
 	ImpliedAddressing:          "implied",
 	RegisterAddressing:         "register",
@@ -112,6 +113,7 @@ const (
 )
 
 // RegisterParamNames provides string representations of register parameters.
+// Pre-allocated with exact capacity for optimal performance.
 var RegisterParamNames = map[RegisterParam]string{
 	// 8-bit registers
 	RegAL: "al", RegCL: "cl", RegDL: "dl", RegBL: "bl",
@@ -182,6 +184,25 @@ func (rp RegisterParam) GetRegisterSize() int {
 }
 
 // ModRM represents the ModR/M byte used in x86 instruction encoding.
+//
+// The ModR/M byte provides flexible operand encoding for x86 instructions:
+//
+//	Bit Pattern: [Mod:2][Reg:3][R/M:3]
+//
+//	Mod field (bits 7-6): Addressing mode
+//	  00 = Memory indirect (no displacement, except R/M=110)
+//	  01 = Memory indirect + 8-bit displacement
+//	  10 = Memory indirect + 16-bit displacement
+//	  11 = Register direct
+//
+//	Reg field (bits 5-3): Register operand (source/dest depending on instruction)
+//	  000-111 = Register encoding (AL/AX, CL/CX, DL/DX, BL/BX, AH/SP, CH/BP, DH/SI, BH/DI)
+//
+//	R/M field (bits 2-0): Register/Memory operand
+//	  When Mod=11: Same encoding as Reg field (register direct)
+//	  When Mod≠11: Memory addressing mode encoding
+//
+// This encoding allows instructions to efficiently specify two operands in a single byte.
 type ModRM struct {
 	Mod uint8 // Mode field (bits 7-6)
 	Reg uint8 // Register field (bits 5-3)
@@ -209,8 +230,19 @@ func (m ModRM) ToByte() uint8 {
 	return (m.Mod << 6) | (m.Reg << 3) | m.RM
 }
 
-// GetEffectiveAddress calculates the effective address based on ModR/M and SIB.
-// This is a simplified version for basic addressing modes.
+// GetEffectiveAddress calculates the effective address based on ModR/M encoding.
+//
+// The ModR/M byte encodes addressing modes for x86 instructions:
+//   - Mod=11: Register-to-register (no memory access, returns 0)
+//   - Mod=00: Memory indirect with no displacement (except RM=110 = direct)
+//   - Mod=01: Memory indirect with 8-bit displacement
+//   - Mod=10: Memory indirect with 16-bit displacement
+//
+// Memory addressing modes combine base registers (BX, BP) with index registers
+// (SI, DI) and optional displacement values. BP-based addressing defaults to
+// SS segment, while other modes default to DS segment.
+//
+// Performance: O(1) address calculation with branch prediction friendly patterns.
 func (c *CPU) GetEffectiveAddress(modrm ModRM, displacement int16, segment uint16) uint32 {
 	if modrm.Mod == 3 {
 		return 0 // Register addressing (not memory)

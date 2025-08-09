@@ -43,7 +43,8 @@ func (ins Instruction) GetAllRegisterVariants() map[RegisterParam]OpcodeInfo {
 	}
 
 	// Return a copy to prevent external modification
-	variants := make(map[RegisterParam]OpcodeInfo)
+	// Pre-allocate with exact capacity for optimal performance
+	variants := make(map[RegisterParam]OpcodeInfo, len(ins.RegisterOpcodes))
 	for reg, info := range ins.RegisterOpcodes {
 		variants[reg] = info
 	}

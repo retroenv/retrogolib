@@ -23,6 +23,7 @@ const (
 )
 
 // NewMemory creates a new memory instance with the specified size.
+// Pre-allocates memory buffer with exact capacity for optimal performance.
 func NewMemory(size uint32, logger *log.Logger) (*Memory, error) {
 	if size < MinMemorySize {
 		return nil, fmt.Errorf("memory size %d is below minimum %d", size, MinMemorySize)
@@ -44,6 +45,7 @@ func (m *Memory) Size() uint32 {
 }
 
 // Data returns a copy of the memory data.
+// Pre-allocates buffer with exact capacity for optimal performance.
 func (m *Memory) Data() []uint8 {
 	data := make([]uint8, len(m.data))
 	copy(data, m.data)
@@ -161,8 +163,8 @@ func (m *Memory) Dump(start, end uint32) []string {
 		end = m.size
 	}
 
-	var lines []string
 	const bytesPerLine = 16
+	lines := make([]string, 0, (end-start+bytesPerLine-1)/bytesPerLine)
 
 	for addr := start; addr < end; addr += bytesPerLine {
 		var line string
