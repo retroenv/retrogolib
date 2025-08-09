@@ -51,46 +51,46 @@ const (
 	RegNone RegisterParam = iota // No register / empty
 
 	// 8-bit registers
-	RegB
-	RegC
-	RegD
-	RegE
-	RegH
-	RegL
-	RegA
+	RegB // B register - general purpose 8-bit
+	RegC // C register - general purpose 8-bit
+	RegD // D register - general purpose 8-bit
+	RegE // E register - general purpose 8-bit
+	RegH // H register - high byte of HL register pair
+	RegL // L register - low byte of HL register pair
+	RegA // A register - accumulator, primary register for arithmetic operations
 
 	// 16-bit register pairs
-	RegBC
-	RegDE
-	RegHL
-	RegSP
-	RegAF
-	RegIX
-	RegIY
+	RegBC // BC register pair - combination of B and C registers
+	RegDE // DE register pair - combination of D and E registers
+	RegHL // HL register pair - combination of H and L registers, commonly used as memory pointer
+	RegSP // SP register - stack pointer, points to top of stack
+	RegAF // AF register pair - combination of A (accumulator) and F (flags) registers
+	RegIX // IX register - 16-bit index register for indexed addressing
+	RegIY // IY register - 16-bit index register for indexed addressing
 
 	// Special register references (indirect addressing)
-	RegHLIndirect
-	RegBCIndirect
-	RegDEIndirect
-	RegSPIndirect
-	RegIXIndirect
-	RegIYIndirect
+	RegHLIndirect // (HL) - memory location pointed to by HL register pair
+	RegBCIndirect // (BC) - memory location pointed to by BC register pair
+	RegDEIndirect // (DE) - memory location pointed to by DE register pair
+	RegSPIndirect // (SP) - memory location pointed to by SP register
+	RegIXIndirect // (IX) - memory location pointed to by IX register
+	RegIYIndirect // (IY) - memory location pointed to by IY register
 
 	// Immediate value placeholders
-	RegImm8  // 8-bit immediate
-	RegImm16 // 16-bit immediate
-	RegAddr  // 16-bit address
-	RegRel   // relative address
+	RegImm8  // n - 8-bit immediate value
+	RegImm16 // nn - 16-bit immediate value
+	RegAddr  // (nn) - 16-bit absolute address
+	RegRel   // e - relative address for branch instructions
 
-	// Special values for RST instruction
-	RegRst00
-	RegRst08
-	RegRst10
-	RegRst18
-	RegRst20
-	RegRst28
-	RegRst30
-	RegRst38
+	// Special values for RST instruction (restart vectors)
+	RegRst00 // RST 00H - restart at address 0x00
+	RegRst08 // RST 08H - restart at address 0x08
+	RegRst10 // RST 10H - restart at address 0x10
+	RegRst18 // RST 18H - restart at address 0x18
+	RegRst20 // RST 20H - restart at address 0x20
+	RegRst28 // RST 28H - restart at address 0x28
+	RegRst30 // RST 30H - restart at address 0x30
+	RegRst38 // RST 38H - restart at address 0x38
 )
 
 // RegisterParam represents a register parameter for opcode mapping.
