@@ -425,8 +425,8 @@ func ldReg8(c *CPU, params ...any) error {
 		return ErrMissingParameter
 	}
 
-	dst, ok1 := params[0].(Register8)
-	src, ok2 := params[1].(Register8)
+	dst, ok1 := params[0].(Register)
+	src, ok2 := params[1].(Register)
 
 	if !ok1 || !ok2 {
 		return ErrInvalidParameterType
@@ -444,7 +444,7 @@ func incReg8(c *CPU, params ...any) error {
 	}
 
 	// For INC operations, the destination register (params[1]) is what gets incremented
-	dstReg, ok := params[1].(Register8)
+	dstReg, ok := params[1].(Register)
 	if !ok {
 		return ErrInvalidParameterType
 	}
@@ -462,7 +462,7 @@ func decReg8(c *CPU, params ...any) error {
 	}
 
 	// For DEC operations, the destination register (params[1]) is what gets decremented
-	dstReg, ok := params[1].(Register8)
+	dstReg, ok := params[1].(Register)
 	if !ok {
 		return ErrInvalidParameterType
 	}
@@ -482,7 +482,7 @@ func addA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -503,7 +503,7 @@ func subA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -524,7 +524,7 @@ func andA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -545,7 +545,7 @@ func orA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -566,7 +566,7 @@ func xorA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -587,7 +587,7 @@ func cpA(c *CPU, params ...any) error {
 	var value uint8
 
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -738,9 +738,9 @@ func exAf(c *CPU) error {
 	// Exchange AF with shadow AF'
 	tempA := c.A
 	tempF := c.Flags
-	c.A = c.A_
+	c.A = c.AltA
 	c.Flags = c.AltFlags
-	c.A_ = tempA
+	c.AltA = tempA
 	c.AltFlags = tempF
 	return nil
 }
@@ -975,7 +975,7 @@ func adcA(c *CPU, params ...any) error {
 
 	var value uint8
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -995,7 +995,7 @@ func sbcA(c *CPU, params ...any) error {
 
 	var value uint8
 	switch param := params[0].(type) {
-	case Register8:
+	case Register:
 		value = c.GetRegisterValue(uint8(param))
 	case Immediate8:
 		value = uint8(param)
@@ -1240,19 +1240,19 @@ func exx(c *CPU) error {
 	tempH := c.H
 	tempL := c.L
 
-	c.B = c.B_
-	c.C = c.C_
-	c.D = c.D_
-	c.E = c.E_
-	c.H = c.H_
-	c.L = c.L_
+	c.B = c.AltB
+	c.C = c.AltC
+	c.D = c.AltD
+	c.E = c.AltE
+	c.H = c.AltH
+	c.L = c.AltL
 
-	c.B_ = tempB
-	c.C_ = tempC
-	c.D_ = tempD
-	c.E_ = tempE
-	c.H_ = tempH
-	c.L_ = tempL
+	c.AltB = tempB
+	c.AltC = tempC
+	c.AltD = tempD
+	c.AltE = tempE
+	c.AltH = tempH
+	c.AltL = tempL
 	return nil
 }
 

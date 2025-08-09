@@ -11,8 +11,8 @@ const (
 
 // Timing calculation helpers for complex instruction patterns.
 
-// GetCBTiming calculates timing for CB-prefixed instructions based on operation and register.
-func GetCBTiming(opcodeByte, reg uint8) byte {
+// getCBTiming calculates timing for CB-prefixed instructions based on operation and register.
+func getCBTiming(opcodeByte, reg uint8) byte {
 	switch {
 	case opcodeByte <= 0x3F && reg == 6: // Rotate/shift (HL)
 		return 15
@@ -25,7 +25,7 @@ func GetCBTiming(opcodeByte, reg uint8) byte {
 	}
 }
 
-// CreateUnimplementedError creates a formatted error for unimplemented instructions.
-func CreateUnimplementedError(format string, opcodeByte uint8) error {
+// createUnimplementedError creates a formatted error for unimplemented instructions.
+func createUnimplementedError(format string, opcodeByte uint8) error {
 	return fmt.Errorf(format, opcodeByte)
 }

@@ -13,7 +13,6 @@ var paramReader = map[AddressingMode]paramReaderFunc{
 	ImmediateAddressing:        paramReaderImmediate,
 	ExtendedAddressing:         paramReaderExtended,
 	RegisterIndirectAddressing: paramReaderRegisterIndirect,
-	IndexedAddressing:          paramReaderIndexed,
 	RelativeAddressing:         paramReaderRelative,
 	BitAddressing:              paramReaderBit,
 	PortAddressing:             paramReaderPort,
@@ -45,7 +44,7 @@ func paramReaderRegister(c *CPU) ([]any, []byte) {
 	srcReg := opcode & 0x07
 	dstReg := (opcode >> 3) & 0x07
 
-	params := []any{Register8(srcReg), Register8(dstReg)}
+	params := []any{Register(srcReg), Register(dstReg)}
 	return params, nil
 }
 
@@ -113,31 +112,6 @@ func paramReaderRegisterIndirect(c *CPU) ([]any, []byte) {
 	return params, nil
 }
 
-func paramReaderIndexed(c *CPU) ([]any, []byte) {
-	// Indexed addressing (IX+d) or (IY+d)
-	prefix := c.memory.Read(c.PC - 1) // Previous byte should be DD (IX) or FD (IY)
-	displacement := int8(c.memory.Read(c.PC + 1))
-
-	var baseReg uint16
-	switch prefix {
-	case PrefixDD:
-		baseReg = c.IX
-	case PrefixFD:
-		baseReg = c.IY
-	default:
-		baseReg = uint16(c.H)<<8 | uint16(c.L) // Default to HL
-	}
-
-	indexed := Indexed{
-		Base:   baseReg,
-		Offset: displacement,
-	}
-
-	params := []any{indexed}
-	opcodes := [1]uint8{uint8(displacement)}
-	return params, opcodes[:]
-}
-
 func paramReaderRelative(c *CPU) ([]any, []byte) {
 	offset := int8(c.memory.Read(c.PC + 1))
 
@@ -153,7 +127,7 @@ func paramReaderBit(c *CPU) ([]any, []byte) {
 	bitNum := (opcode >> 3) & 0x07 // Bits 3-5 contain bit number
 	targetReg := opcode & 0x07     // Bits 0-2 contain target register
 
-	params := []any{Bit(bitNum), Register8(targetReg)}
+	params := []any{Bit(bitNum), Register(targetReg)}
 	return params, nil
 }
 

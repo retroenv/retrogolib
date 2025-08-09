@@ -116,13 +116,13 @@ func TestExchange(t *testing.T) {
 	cpu.setFlags(0x88)
 
 	// Set alternate registers
-	cpu.A_ = 0xAA
-	cpu.B_ = 0xBB
-	cpu.C_ = 0xCC
-	cpu.D_ = 0xDD
-	cpu.E_ = 0xEE
-	cpu.H_ = 0xFF
-	cpu.L_ = 0x00
+	cpu.AltA = 0xAA
+	cpu.AltB = 0xBB
+	cpu.AltC = 0xCC
+	cpu.AltD = 0xDD
+	cpu.AltE = 0xEE
+	cpu.AltH = 0xFF
+	cpu.AltL = 0x00
 	cpu.AltFlags.C = 1
 	cpu.AltFlags.Z = 1
 
@@ -138,13 +138,13 @@ func TestExchange(t *testing.T) {
 	assert.Equal(t, uint8(0xFF), cpu.H, "H should be swapped")
 	assert.Equal(t, uint8(0x00), cpu.L, "L should be swapped")
 
-	assert.Equal(t, uint8(0x11), cpu.A_, "A' should be swapped")
-	assert.Equal(t, uint8(0x22), cpu.B_, "B' should be swapped")
-	assert.Equal(t, uint8(0x33), cpu.C_, "C' should be swapped")
-	assert.Equal(t, uint8(0x44), cpu.D_, "D' should be swapped")
-	assert.Equal(t, uint8(0x55), cpu.E_, "E' should be swapped")
-	assert.Equal(t, uint8(0x66), cpu.H_, "H' should be swapped")
-	assert.Equal(t, uint8(0x77), cpu.L_, "L' should be swapped")
+	assert.Equal(t, uint8(0x11), cpu.AltA, "A' should be swapped")
+	assert.Equal(t, uint8(0x22), cpu.AltB, "B' should be swapped")
+	assert.Equal(t, uint8(0x33), cpu.AltC, "C' should be swapped")
+	assert.Equal(t, uint8(0x44), cpu.AltD, "D' should be swapped")
+	assert.Equal(t, uint8(0x55), cpu.AltE, "E' should be swapped")
+	assert.Equal(t, uint8(0x66), cpu.AltH, "H' should be swapped")
+	assert.Equal(t, uint8(0x77), cpu.AltL, "L' should be swapped")
 }
 
 func TestExchangeAF(t *testing.T) {
@@ -157,7 +157,7 @@ func TestExchangeAF(t *testing.T) {
 	cpu.setFlags(0x34)
 
 	// Set alternate AF
-	cpu.A_ = 0x56
+	cpu.AltA = 0x56
 	cpu.AltFlags.C = 1
 	cpu.AltFlags.Z = 1
 	cpu.AltFlags.S = 1
@@ -167,7 +167,7 @@ func TestExchangeAF(t *testing.T) {
 
 	// Check that AF is swapped
 	assert.Equal(t, uint8(0x56), cpu.A, "A should be swapped")
-	assert.Equal(t, uint8(0x12), cpu.A_, "A' should be swapped")
+	assert.Equal(t, uint8(0x12), cpu.AltA, "A' should be swapped")
 
 	// Flags should be swapped
 	assert.Equal(t, uint8(1), cpu.Flags.C, "C flag should be from alternate")

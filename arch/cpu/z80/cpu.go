@@ -20,13 +20,13 @@ type State struct {
 	L uint8
 
 	// Alternate registers
-	A_ uint8
-	B_ uint8
-	C_ uint8
-	D_ uint8
-	E_ uint8
-	H_ uint8
-	L_ uint8
+	AltA uint8
+	AltB uint8
+	AltC uint8
+	AltD uint8
+	AltE uint8
+	AltH uint8
+	AltL uint8
 
 	// Index registers
 	IX uint16
@@ -61,13 +61,13 @@ type CPU struct {
 	L uint8
 
 	// Alternate registers (shadow registers)
-	A_ uint8
-	B_ uint8
-	C_ uint8
-	D_ uint8
-	E_ uint8
-	H_ uint8
-	L_ uint8
+	AltA uint8
+	AltB uint8
+	AltC uint8
+	AltD uint8
+	AltE uint8
+	AltH uint8
+	AltL uint8
 
 	// Index registers
 	IX uint16
@@ -183,13 +183,13 @@ func (c *CPU) State() State {
 		E:        c.E,
 		H:        c.H,
 		L:        c.L,
-		A_:       c.A_,
-		B_:       c.B_,
-		C_:       c.C_,
-		D_:       c.D_,
-		E_:       c.E_,
-		H_:       c.H_,
-		L_:       c.L_,
+		AltA:     c.AltA,
+		AltB:     c.AltB,
+		AltC:     c.AltC,
+		AltD:     c.AltD,
+		AltE:     c.AltE,
+		AltH:     c.AltH,
+		AltL:     c.AltL,
 		IX:       c.IX,
 		IY:       c.IY,
 		SP:       c.SP,
@@ -261,19 +261,19 @@ func (c *CPU) setAF(value uint16) {
 
 // exchange exchanges the main and alternate register sets.
 func (c *CPU) exchange() {
-	c.A, c.A_ = c.A_, c.A
-	c.B, c.B_ = c.B_, c.B
-	c.C, c.C_ = c.C_, c.C
-	c.D, c.D_ = c.D_, c.D
-	c.E, c.E_ = c.E_, c.E
-	c.H, c.H_ = c.H_, c.H
-	c.L, c.L_ = c.L_, c.L
+	c.A, c.AltA = c.AltA, c.A
+	c.B, c.AltB = c.AltB, c.B
+	c.C, c.AltC = c.AltC, c.C
+	c.D, c.AltD = c.AltD, c.D
+	c.E, c.AltE = c.AltE, c.E
+	c.H, c.AltH = c.AltH, c.H
+	c.L, c.AltL = c.AltL, c.L
 	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 
 // exchangeAF exchanges only the AF and AF' registers.
 func (c *CPU) exchangeAF() {
-	c.A, c.A_ = c.A_, c.A
+	c.A, c.AltA = c.AltA, c.A
 	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 

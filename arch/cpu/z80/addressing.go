@@ -11,7 +11,6 @@ const (
 	ImmediateAddressing                       // n, nn
 	ExtendedAddressing                        // (nn)
 	RegisterIndirectAddressing                // (rr), (r)
-	IndexedAddressing                         // (IX+d), (IY+d)
 	RelativeAddressing                        // e
 	BitAddressing                             // b,r / b,(HL) / b,(IX+d) / b,(IY+d)
 	PortAddressing                            // (n), (C)
@@ -19,15 +18,8 @@ const (
 
 // Register types for Z80 addressing
 type (
-	// Register8 represents an 8-bit register (A, B, C, D, E, H, L)
-	Register8 uint8
-	// Register16 represents a 16-bit register (BC, DE, HL, SP, IX, IY)
-	Register16 uint16
-	// IndexRegister represents IX or IY with displacement
-	IndexRegister struct {
-		Register uint16 // IX or IY value
-		Offset   int8   // displacement (-128 to +127)
-	}
+	// Register represents an 8-bit register (A, B, C, D, E, H, L)
+	Register uint8
 )
 
 // Immediate8 indicates that the parameter is an 8-bit immediate value.
@@ -41,12 +33,6 @@ type Extended uint16
 
 // RegisterIndirect indicates that the parameter uses register indirect addressing.
 type RegisterIndirect uint16
-
-// Indexed indicates that the parameter uses indexed addressing (IX+d) or (IY+d).
-type Indexed struct {
-	Base   uint16 // IX or IY register value
-	Offset int8   // displacement
-}
 
 // Relative indicates that the parameter is a relative address for jumps.
 type Relative int8

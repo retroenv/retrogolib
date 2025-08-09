@@ -212,7 +212,7 @@ func (c *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
 	}
 
 	// Use helper function for timing calculation
-	timing := GetCBTiming(opcodeByte, reg)
+	timing := getCBTiming(opcodeByte, reg)
 	return instruction, timing
 }
 
@@ -293,7 +293,7 @@ func (c *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedEDInstruction, opcodeByte)
+	return nil, 0, 0, createUnimplementedError(ErrUnimplementedEDInstruction, opcodeByte)
 }
 
 // decodeEDBasicInstructions handles basic ED instructions (NEG, IM, RETN, RETI, RRD, RLD).
@@ -559,7 +559,7 @@ func (c *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedDDInstruction, opcodeByte)
+	return nil, 0, 0, createUnimplementedError(ErrUnimplementedDDInstruction, opcodeByte)
 }
 
 // decodeDDBasicInstructions handles basic DD instructions (INC/DEC IX, ADD IX,rr).
@@ -799,7 +799,7 @@ func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, CreateUnimplementedError(ErrUnimplementedFDInstruction, opcodeByte)
+	return nil, 0, 0, createUnimplementedError(ErrUnimplementedFDInstruction, opcodeByte)
 }
 
 // decodeFDBasicInstructions handles basic FD instructions (INC/DEC IY, ADD IY,rr).

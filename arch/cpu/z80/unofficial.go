@@ -105,7 +105,7 @@ func sll(c *CPU, params ...any) error {
 		return ErrMissingParameter
 	}
 
-	reg, ok := params[0].(Register8)
+	reg, ok := params[0].(Register)
 	if !ok {
 		return ErrInvalidParameterType
 	}
