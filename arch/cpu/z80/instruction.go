@@ -5,7 +5,8 @@ type Instruction struct {
 	Name       string // lowercased instruction name
 	Unofficial bool   // unofficial instructions are not part of the original Z80 spec
 
-	Addressing map[AddressingMode]OpcodeInfo // addressing mode mapping to opcode info
+	Addressing      map[AddressingMode]OpcodeInfo       // addressing mode mapping to opcode info
+	RegisterOpcodes map[RegisterParam]OpcodeInfo        // register-specific opcode mapping for disambiguating variants
 
 	NoParamFunc func(c *CPU) error                // emulation function to execute when the instruction has no parameters
 	ParamFunc   func(c *CPU, params ...any) error // emulation function to execute when the instruction has parameters
@@ -20,6 +21,37 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 		}
 	}
 	return false
+}
+
+// GetOpcodeByRegister returns opcode info for a specific register parameter.
+// This method provides the disambiguated opcode information that was previously 
+// handled by the separate OpcodeMap.
+func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, bool) {
+	if ins.RegisterOpcodes == nil {
+		// Fall back to Addressing map if RegisterOpcodes is not defined
+		for _, info := range ins.Addressing {
+			return info, true
+		}
+		return OpcodeInfo{}, false
+	}
+	
+	info, exists := ins.RegisterOpcodes[register]
+	return info, exists
+}
+
+// GetAllRegisterVariants returns all register variants for this instruction.
+// This replaces the functionality from OpcodeMap.GetInstructionVariants.
+func (ins Instruction) GetAllRegisterVariants() map[RegisterParam]OpcodeInfo {
+	if ins.RegisterOpcodes == nil {
+		return nil
+	}
+	
+	// Return a copy to prevent external modification
+	variants := make(map[RegisterParam]OpcodeInfo)
+	for reg, info := range ins.RegisterOpcodes {
+		variants[reg] = info
+	}
+	return variants
 }
 
 // Nop - No Operation.
@@ -44,7 +76,16 @@ var Halt = &Instruction{
 var LdImm8 = &Instruction{
 	Name: "ld",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x3E, Size: 2, Cycles: 7}, // LD A,n
+		ImmediateAddressing: {Opcode: 0x3E, Size: 2, Cycles: 7}, // LD A,n (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegB: {Opcode: 0x06, Size: 2, Cycles: 7}, // LD B,n
+		RegC: {Opcode: 0x0E, Size: 2, Cycles: 7}, // LD C,n
+		RegD: {Opcode: 0x16, Size: 2, Cycles: 7}, // LD D,n
+		RegE: {Opcode: 0x1E, Size: 2, Cycles: 7}, // LD E,n
+		RegH: {Opcode: 0x26, Size: 2, Cycles: 7}, // LD H,n
+		RegL: {Opcode: 0x2E, Size: 2, Cycles: 7}, // LD L,n
+		RegA: {Opcode: 0x3E, Size: 2, Cycles: 7}, // LD A,n
 	},
 	ParamFunc: ldImm8,
 }
@@ -64,6 +105,15 @@ var IncReg8 = &Instruction{
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RegisterAddressing: {Opcode: 0x3C, Size: 1, Cycles: 4}, // INC A (base opcode)
 	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegB: {Opcode: 0x04, Size: 1, Cycles: 4}, // INC B
+		RegC: {Opcode: 0x0C, Size: 1, Cycles: 4}, // INC C
+		RegD: {Opcode: 0x14, Size: 1, Cycles: 4}, // INC D
+		RegE: {Opcode: 0x1C, Size: 1, Cycles: 4}, // INC E
+		RegH: {Opcode: 0x24, Size: 1, Cycles: 4}, // INC H
+		RegL: {Opcode: 0x2C, Size: 1, Cycles: 4}, // INC L
+		RegA: {Opcode: 0x3C, Size: 1, Cycles: 4}, // INC A
+	},
 	ParamFunc: incReg8,
 }
 
@@ -72,6 +122,15 @@ var DecReg8 = &Instruction{
 	Name: "dec",
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RegisterAddressing: {Opcode: 0x3D, Size: 1, Cycles: 4}, // DEC A (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegB: {Opcode: 0x05, Size: 1, Cycles: 4}, // DEC B
+		RegC: {Opcode: 0x0D, Size: 1, Cycles: 4}, // DEC C
+		RegD: {Opcode: 0x15, Size: 1, Cycles: 4}, // DEC D
+		RegE: {Opcode: 0x1D, Size: 1, Cycles: 4}, // DEC E
+		RegH: {Opcode: 0x25, Size: 1, Cycles: 4}, // DEC H
+		RegL: {Opcode: 0x2D, Size: 1, Cycles: 4}, // DEC L
+		RegA: {Opcode: 0x3D, Size: 1, Cycles: 4}, // DEC A
 	},
 	ParamFunc: decReg8,
 }
@@ -160,7 +219,13 @@ var JrRel = &Instruction{
 var LdReg16 = &Instruction{
 	Name: "ld",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x01, Size: 3, Cycles: 10}, // LD BC,nn
+		ImmediateAddressing: {Opcode: 0x01, Size: 3, Cycles: 10}, // LD BC,nn (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegBC: {Opcode: 0x01, Size: 3, Cycles: 10}, // LD BC,nn
+		RegDE: {Opcode: 0x11, Size: 3, Cycles: 10}, // LD DE,nn
+		RegHL: {Opcode: 0x21, Size: 3, Cycles: 10}, // LD HL,nn
+		RegSP: {Opcode: 0x31, Size: 3, Cycles: 10}, // LD SP,nn
 	},
 	ParamFunc: ldReg16,
 }
@@ -178,7 +243,13 @@ var LdIndirect = &Instruction{
 var IncReg16 = &Instruction{
 	Name: "inc",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0x03, Size: 1, Cycles: 6}, // INC BC
+		RegisterAddressing: {Opcode: 0x03, Size: 1, Cycles: 6}, // INC BC (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegBC: {Opcode: 0x03, Size: 1, Cycles: 6}, // INC BC
+		RegDE: {Opcode: 0x13, Size: 1, Cycles: 6}, // INC DE
+		RegHL: {Opcode: 0x23, Size: 1, Cycles: 6}, // INC HL
+		RegSP: {Opcode: 0x33, Size: 1, Cycles: 6}, // INC SP
 	},
 	ParamFunc: incReg16,
 }
@@ -187,7 +258,13 @@ var IncReg16 = &Instruction{
 var DecReg16 = &Instruction{
 	Name: "dec",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0x0B, Size: 1, Cycles: 6}, // DEC BC
+		RegisterAddressing: {Opcode: 0x0B, Size: 1, Cycles: 6}, // DEC BC (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegBC: {Opcode: 0x0B, Size: 1, Cycles: 6}, // DEC BC
+		RegDE: {Opcode: 0x1B, Size: 1, Cycles: 6}, // DEC DE
+		RegHL: {Opcode: 0x2B, Size: 1, Cycles: 6}, // DEC HL
+		RegSP: {Opcode: 0x3B, Size: 1, Cycles: 6}, // DEC SP
 	},
 	ParamFunc: decReg16,
 }
@@ -369,7 +446,13 @@ var RetCond = &Instruction{
 var PopReg16 = &Instruction{
 	Name: "pop",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0xC1, Size: 1, Cycles: 10}, // POP BC
+		RegisterAddressing: {Opcode: 0xC1, Size: 1, Cycles: 10}, // POP BC (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegBC: {Opcode: 0xC1, Size: 1, Cycles: 10}, // POP BC
+		RegDE: {Opcode: 0xD1, Size: 1, Cycles: 10}, // POP DE
+		RegHL: {Opcode: 0xE1, Size: 1, Cycles: 10}, // POP HL
+		RegAF: {Opcode: 0xF1, Size: 1, Cycles: 10}, // POP AF
 	},
 	ParamFunc: popReg16,
 }
@@ -396,7 +479,13 @@ var CallCond = &Instruction{
 var PushReg16 = &Instruction{
 	Name: "push",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0xC5, Size: 1, Cycles: 11}, // PUSH BC
+		RegisterAddressing: {Opcode: 0xC5, Size: 1, Cycles: 11}, // PUSH BC (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegBC: {Opcode: 0xC5, Size: 1, Cycles: 11}, // PUSH BC
+		RegDE: {Opcode: 0xD5, Size: 1, Cycles: 11}, // PUSH DE
+		RegHL: {Opcode: 0xE5, Size: 1, Cycles: 11}, // PUSH HL
+		RegAF: {Opcode: 0xF5, Size: 1, Cycles: 11}, // PUSH AF
 	},
 	ParamFunc: pushReg16,
 }
@@ -405,7 +494,17 @@ var PushReg16 = &Instruction{
 var Rst = &Instruction{
 	Name: "rst",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xC7, Size: 1, Cycles: 11}, // RST 00H
+		ImpliedAddressing: {Opcode: 0xC7, Size: 1, Cycles: 11}, // RST 00H (base opcode)
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegRst00: {Opcode: 0xC7, Size: 1, Cycles: 11}, // RST 00H
+		RegRst08: {Opcode: 0xCF, Size: 1, Cycles: 11}, // RST 08H
+		RegRst10: {Opcode: 0xD7, Size: 1, Cycles: 11}, // RST 10H
+		RegRst18: {Opcode: 0xDF, Size: 1, Cycles: 11}, // RST 18H
+		RegRst20: {Opcode: 0xE7, Size: 1, Cycles: 11}, // RST 20H
+		RegRst28: {Opcode: 0xEF, Size: 1, Cycles: 11}, // RST 28H
+		RegRst30: {Opcode: 0xF7, Size: 1, Cycles: 11}, // RST 30H
+		RegRst38: {Opcode: 0xFF, Size: 1, Cycles: 11}, // RST 38H
 	},
 	ParamFunc: rst,
 }
