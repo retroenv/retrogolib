@@ -1,8 +1,6 @@
 package z80
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // TraceStep contains all info needed to print a trace step.
 type TraceStep struct {
@@ -99,7 +97,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 	// Single-byte instructions
 	opcode := Opcodes[opcodeByte]
 	if opcode.Instruction == nil {
-		return Opcode{}, opcodeByte, fmt.Errorf("%w: opcode 0x%02x", ErrUnsupportedAddressingMode, opcodeByte)
+		return Opcode{}, opcodeByte, fmt.Errorf("%w: opcode 0x%02x", ErrUnsupportedOpcode, opcodeByte)
 	}
 
 	if c.opts.tracing {
@@ -293,7 +291,7 @@ func (c *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, createUnimplementedError(ErrUnimplementedEDInstruction, opcodeByte)
+	return nil, 0, 0, fmt.Errorf("%w: opcode ED %02X", ErrUnsupportedEDOpcode, opcodeByte)
 }
 
 // decodeEDBasicInstructions handles basic ED instructions (NEG, IM, RETN, RETI, RRD, RLD).
@@ -559,7 +557,7 @@ func (c *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, createUnimplementedError(ErrUnimplementedDDInstruction, opcodeByte)
+	return nil, 0, 0, fmt.Errorf("%w: opcode DD %02X", ErrUnsupportedDDOpcode, opcodeByte)
 }
 
 // decodeDDBasicInstructions handles basic DD instructions (INC/DEC IX, ADD IX,rr).
@@ -799,7 +797,7 @@ func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 		return instruction, timing, size, nil
 	}
 
-	return nil, 0, 0, createUnimplementedError(ErrUnimplementedFDInstruction, opcodeByte)
+	return nil, 0, 0, fmt.Errorf("%w: opcode FD %02X", ErrUnsupportedFDOpcode, opcodeByte)
 }
 
 // decodeFDBasicInstructions handles basic FD instructions (INC/DEC IY, ADD IY,rr).

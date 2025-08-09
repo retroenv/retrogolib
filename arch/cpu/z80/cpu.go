@@ -1,7 +1,6 @@
 package z80
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/retroenv/retrogolib/arch"
@@ -114,11 +113,6 @@ type Interrupts struct {
 // CPU initialization constants
 const (
 	initialCycles = 0
-)
-
-// CPU creation errors
-var (
-	ErrNilMemory = errors.New("memory cannot be nil")
 )
 
 // New creates a new Z80 CPU.

@@ -4,15 +4,18 @@ import "errors"
 
 // Common errors for Z80 emulation
 var (
+	// CPU creation errors
+	ErrNilMemory = errors.New("memory cannot be nil")
+
+	// Parameter validation errors
 	ErrUnsupportedAddressingMode = errors.New("unsupported addressing mode")
 	ErrInvalidParameterType      = errors.New("invalid parameter type")
 	ErrMissingParameter          = errors.New("missing required parameter")
-	ErrInvalidRegisterType       = errors.New("invalid register type")
-	ErrUnsupportedOpcode         = errors.New("unsupported or unimplemented opcode")
-	ErrInvalidBitNumber          = errors.New("invalid bit number (must be 0-7)")
-	ErrInvalidPortAddress        = errors.New("invalid port address")
-	ErrInvalidConditionCode      = errors.New("invalid condition code")
 	ErrInvalidInterruptMode      = errors.New("invalid interrupt mode (must be 0, 1, or 2)")
-	ErrOpcodeNotImplemented      = errors.New("opcode not implemented")
-	ErrInvalidInstruction        = errors.New("invalid instruction format")
+
+	// Opcode execution errors
+	ErrUnsupportedOpcode   = errors.New("unsupported or unimplemented opcode")
+	ErrUnsupportedDDOpcode = errors.New("unsupported DD-prefixed opcode")
+	ErrUnsupportedEDOpcode = errors.New("unsupported ED-prefixed opcode")
+	ErrUnsupportedFDOpcode = errors.New("unsupported FD-prefixed opcode")
 )
