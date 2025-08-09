@@ -12,42 +12,42 @@ type TraceStep struct {
 }
 
 // Step executes the next instruction in the CPU.
-func (c *CPU) Step() error {
-	if c.halted {
+func (cpu *CPU) Step() error {
+	if cpu.halted {
 		// CPU is halted, just advance cycles
-		c.cycles += 4
+		cpu.cycles += 4
 		return nil
 	}
 
 	// Handle interrupts first
-	if err := c.handleInterrupts(); err != nil {
+	if err := cpu.handleInterrupts(); err != nil {
 		return err
 	}
 
-	oldPC := c.PC
-	opcode, opcodeByte, err := c.decodeNextInstruction()
+	oldPC := cpu.PC
+	opcode, opcodeByte, err := cpu.decodeNextInstruction()
 	if err != nil {
 		return err
 	}
 
-	c.cycles += uint64(opcode.Timing)
+	cpu.cycles += uint64(opcode.Timing)
 
 	// Store current opcode for instruction functions to access
-	c.currentOpcode = opcodeByte
+	cpu.currentOpcode = opcodeByte
 
 	// Increment refresh register
-	c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
+	cpu.R = (cpu.R & 0x80) | ((cpu.R + 1) & 0x7F)
 
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
-		if c.opts.preExecutionHook != nil {
-			c.opts.preExecutionHook(c, opcodeByte)
+		if cpu.opts.preExecutionHook != nil {
+			cpu.opts.preExecutionHook(c, opcodeByte)
 		}
 
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
-		c.updatePC(ins, oldPC, int(opcode.Size))
+		cpu.updatePC(ins, oldPC, int(opcode.Size))
 		return nil
 	}
 
@@ -55,11 +55,11 @@ func (c *CPU) Step() error {
 	if err != nil {
 		return fmt.Errorf("reading opcode params: %w", err)
 	}
-	if c.opts.tracing {
-		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
+	if cpu.opts.tracing {
+		cpu.TraceStep.OpcodeOperands = append(cpu.TraceStep.OpcodeOperands, operands...)
 	}
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, opcodeByte, params...)
+	if cpu.opts.preExecutionHook != nil {
+		cpu.opts.preExecutionHook(c, opcodeByte, params...)
 	}
 
 	opcodeLen := int(opcode.Size)
@@ -67,31 +67,31 @@ func (c *CPU) Step() error {
 	if err := ins.ParamFunc(c, params...); err != nil {
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
-	c.updatePC(ins, oldPC, opcodeLen)
+	cpu.updatePC(ins, oldPC, opcodeLen)
 	return nil
 }
 
 // decodeNextInstruction decodes the current instruction at the program counter.
-func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
+func (cpu *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 	// Handle extended instruction prefixes first
-	opcodeByte := c.memory.Read(c.PC)
+	opcodeByte := cpu.memory.Read(cpu.PC)
 
 	switch opcodeByte {
 	case PrefixCB:
 		// CB-prefixed instructions (bit operations)
-		return c.decodeCBInstruction()
+		return cpu.decodeCBInstruction()
 
 	case PrefixED:
 		// ED-prefixed instructions (extended operations)
-		return c.decodeEDInstruction()
+		return cpu.decodeEDInstruction()
 
 	case PrefixDD:
 		// DD-prefixed instructions (IX operations)
-		return c.decodeDDInstruction()
+		return cpu.decodeDDInstruction()
 
 	case PrefixFD:
 		// FD-prefixed instructions (IY operations)
-		return c.decodeFDInstruction()
+		return cpu.decodeFDInstruction()
 	}
 
 	// Single-byte instructions
@@ -100,9 +100,9 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 		return Opcode{}, opcodeByte, fmt.Errorf("%w: opcode 0x%02x", ErrUnsupportedOpcode, opcodeByte)
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{opcodeByte},
 		}
@@ -111,7 +111,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 }
 
 // updatePC updates the program counter based on the instruction execution.
-func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
+func (cpu *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// Check if this is a jump instruction that always changes PC
 	if ins != nil && isJumpInstruction(ins) {
 		// Jump instructions handle PC themselves, don't modify it
@@ -119,9 +119,9 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// Update PC only if the instruction execution did not change it
-	if oldPC == c.PC {
+	if oldPC == cpu.PC {
 		// PC unchanged, advance by instruction size
-		c.PC += uint16(amount)
+		cpu.PC += uint16(amount)
 		return
 	}
 
@@ -142,10 +142,10 @@ func isJumpInstruction(ins *Instruction) bool {
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
-func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual CB instruction
+func (cpu *CPU) decodeCBInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.memory.Read(cpu.PC + 1) // Get the actual CB instruction
 
-	instruction, timing := c.decodeCBInstructionType(opcodeByte)
+	instruction, timing := cpu.decodeCBInstructionType(opcodeByte)
 
 	opcode := Opcode{
 		Instruction: instruction,
@@ -154,9 +154,9 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixCB, opcodeByte},
 		}
@@ -166,7 +166,7 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 }
 
 // decodeCBInstructionType determines the instruction and timing for CB-prefixed opcodes.
-func (c *CPU) decodeCBInstructionType(opcodeByte uint8) (*Instruction, byte) {
+func (cpu *CPU) decodeCBInstructionType(opcodeByte uint8) (*Instruction, byte) {
 	// CB instructions follow a pattern:
 	// 00-07: RLC r    08-0F: RRC r    10-17: RL r     18-1F: RR r
 	// 20-27: SLA r    28-2F: SRA r    30-37: SLL r    38-3F: SRL r
@@ -176,18 +176,18 @@ func (c *CPU) decodeCBInstructionType(opcodeByte uint8) (*Instruction, byte) {
 
 	switch {
 	case opcodeByte <= 0x3F:
-		return c.decodeCBRotateShift(opcodeByte, reg)
+		return cpu.decodeCBRotateShift(opcodeByte, reg)
 	case opcodeByte <= 0x7F:
-		return c.decodeCBBit(reg)
+		return cpu.decodeCBBit(reg)
 	case opcodeByte <= 0xBF:
-		return c.decodeCBRes(reg)
+		return cpu.decodeCBRes(reg)
 	default:
-		return c.decodeCBSet(reg)
+		return cpu.decodeCBSet(reg)
 	}
 }
 
 // decodeCBRotateShift handles CB rotate/shift instructions (0x00-0x3F).
-func (c *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
+func (cpu *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
 	var instruction *Instruction
 
 	switch {
@@ -215,7 +215,7 @@ func (c *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
 }
 
 // decodeCBBit handles CB BIT instructions (0x40-0x7F).
-func (c *CPU) decodeCBBit(reg uint8) (*Instruction, byte) {
+func (cpu *CPU) decodeCBBit(reg uint8) (*Instruction, byte) {
 	timing := byte(8)
 	if reg == 6 { // BIT n,(HL)
 		timing = 12
@@ -224,7 +224,7 @@ func (c *CPU) decodeCBBit(reg uint8) (*Instruction, byte) {
 }
 
 // decodeCBRes handles CB RES instructions (0x80-0xBF).
-func (c *CPU) decodeCBRes(reg uint8) (*Instruction, byte) {
+func (cpu *CPU) decodeCBRes(reg uint8) (*Instruction, byte) {
 	timing := byte(8)
 	if reg == 6 { // RES n,(HL)
 		timing = 15
@@ -233,7 +233,7 @@ func (c *CPU) decodeCBRes(reg uint8) (*Instruction, byte) {
 }
 
 // decodeCBSet handles CB SET instructions (0xC0-0xFF).
-func (c *CPU) decodeCBSet(reg uint8) (*Instruction, byte) {
+func (cpu *CPU) decodeCBSet(reg uint8) (*Instruction, byte) {
 	timing := byte(8)
 	if reg == 6 { // SET n,(HL)
 		timing = 15
@@ -242,10 +242,10 @@ func (c *CPU) decodeCBSet(reg uint8) (*Instruction, byte) {
 }
 
 // decodeEDInstruction decodes ED-prefixed instructions (extended operations).
-func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual ED instruction
+func (cpu *CPU) decodeEDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.memory.Read(cpu.PC + 1) // Get the actual ED instruction
 
-	instruction, timing, size, err := c.decodeEDInstructionType(opcodeByte)
+	instruction, timing, size, err := cpu.decodeEDInstructionType(opcodeByte)
 	if err != nil {
 		return Opcode{}, PrefixED, err
 	}
@@ -257,9 +257,9 @@ func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixED, opcodeByte},
 		}
@@ -269,25 +269,25 @@ func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeEDInstructionType determines the instruction, timing, and size for ED-prefixed opcodes.
-func (c *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
+func (cpu *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
 	// Group instructions by functionality to reduce complexity
-	if instruction, timing, size := c.decodeEDBasicInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDBasicInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeEDArithmeticInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDArithmeticInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeEDLoadInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDLoadInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeEDBlockInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDBlockInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeEDIOInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDIOInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
@@ -295,7 +295,7 @@ func (c *CPU) decodeEDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 }
 
 // decodeEDBasicInstructions handles basic ED instructions (NEG, IM, RETN, RETI, RRD, RLD).
-func (c *CPU) decodeEDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// NEG - Negate Accumulator
 	case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6C, 0x74, 0x7C:
@@ -326,7 +326,7 @@ func (c *CPU) decodeEDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeEDArithmeticInstructions handles ED arithmetic instructions (ADC HL,rr / SBC HL,rr).
-func (c *CPU) decodeEDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// ADC HL,rr
 	case 0x4A: // ADC HL,BC
@@ -353,7 +353,7 @@ func (c *CPU) decodeEDArithmeticInstructions(opcodeByte uint8) (*Instruction, by
 }
 
 // decodeEDLoadInstructions handles ED load instructions.
-func (c *CPU) decodeEDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// LD I,A / LD R,A
 	case 0x47: // LD I,A
@@ -392,7 +392,7 @@ func (c *CPU) decodeEDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 }
 
 // decodeEDBlockInstructions handles ED block transfer and search instructions.
-func (c *CPU) decodeEDBlockInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDBlockInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// Block transfer instructions
 	case 0xA0: // LDI
@@ -419,19 +419,19 @@ func (c *CPU) decodeEDBlockInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeEDIOInstructions handles ED I/O instructions.
-func (c *CPU) decodeEDIOInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDIOInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	// Block I/O instructions
-	if instruction, timing, size := c.decodeEDBlockIO(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDBlockIO(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
 	// I/O with register - IN r,(C)
-	if instruction, timing, size := c.decodeEDInputInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDInputInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
 	// I/O with register - OUT (C),r
-	if instruction, timing, size := c.decodeEDOutputInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeEDOutputInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
@@ -439,7 +439,7 @@ func (c *CPU) decodeEDIOInstructions(opcodeByte uint8) (*Instruction, byte, byte
 }
 
 // decodeEDBlockIO handles ED block I/O instructions.
-func (c *CPU) decodeEDBlockIO(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDBlockIO(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0xA2: // INI
 		return EdIni, 16, 2
@@ -463,7 +463,7 @@ func (c *CPU) decodeEDBlockIO(opcodeByte uint8) (*Instruction, byte, byte) {
 }
 
 // decodeEDInputInstructions handles ED IN r,(C) instructions.
-func (c *CPU) decodeEDInputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDInputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x40: // IN B,(C)
 		return EdInBC, 12, 2
@@ -485,7 +485,7 @@ func (c *CPU) decodeEDInputInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeEDOutputInstructions handles ED OUT (C),r instructions.
-func (c *CPU) decodeEDOutputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeEDOutputInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x41: // OUT (C),B
 		return EdOutCB, 12, 2
@@ -507,15 +507,15 @@ func (c *CPU) decodeEDOutputInstructions(opcodeByte uint8) (*Instruction, byte, 
 }
 
 // decodeDDInstruction decodes DD-prefixed instructions (IX operations).
-func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual DD instruction
+func (cpu *CPU) decodeDDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.memory.Read(cpu.PC + 1) // Get the actual DD instruction
 
 	// Handle DD CB prefix first
 	if opcodeByte == PrefixCB {
-		return c.decodeDDCBInstruction()
+		return cpu.decodeDDCBInstruction()
 	}
 
-	instruction, timing, size, err := c.decodeDDInstructionType(opcodeByte)
+	instruction, timing, size, err := cpu.decodeDDInstructionType(opcodeByte)
 	if err != nil {
 		// Handle undocumented behavior: DD prefix alone acts as 4-cycle NOP
 		// This occurs when DD is followed by an invalid IX instruction
@@ -536,9 +536,9 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixDD, opcodeByte},
 		}
@@ -548,21 +548,21 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeDDInstructionType determines the instruction, timing, and size for DD-prefixed opcodes.
-func (c *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
+func (cpu *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
 	// Group instructions by functionality to reduce complexity
-	if instruction, timing, size := c.decodeDDBasicInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDBasicInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeDDLoadInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDLoadInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeDDArithmeticInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDArithmeticInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeDDStackInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDStackInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
@@ -570,7 +570,7 @@ func (c *CPU) decodeDDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 }
 
 // decodeDDBasicInstructions handles basic DD instructions (INC/DEC IX, ADD IX,rr).
-func (c *CPU) decodeDDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// INC IX / DEC IX
 	case 0x23:
@@ -599,7 +599,7 @@ func (c *CPU) decodeDDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeDDLoadInstructions handles DD load instructions.
-func (c *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// LD IX,nn
 	case 0x21:
@@ -617,12 +617,12 @@ func (c *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 	}
 
 	// LD r,(IX+d) - Load register from (IX+d)
-	if instruction, timing, size := c.decodeDDLoadFromIX(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDLoadFromIX(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
 	// LD (IX+d),r - Load (IX+d) from register
-	if instruction, timing, size := c.decodeDDLoadToIX(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeDDLoadToIX(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
@@ -630,7 +630,7 @@ func (c *CPU) decodeDDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 }
 
 // decodeDDLoadFromIX handles LD r,(IX+d) instructions.
-func (c *CPU) decodeDDLoadFromIX(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDLoadFromIX(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x46: // LD B,(IX+d)
 		return DdLdBIXd, 19, 3
@@ -652,7 +652,7 @@ func (c *CPU) decodeDDLoadFromIX(opcodeByte uint8) (*Instruction, byte, byte) {
 }
 
 // decodeDDLoadToIX handles LD (IX+d),r instructions.
-func (c *CPU) decodeDDLoadToIX(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDLoadToIX(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x70: // LD (IX+d),B
 		return DdLdIXdB, 19, 3
@@ -674,7 +674,7 @@ func (c *CPU) decodeDDLoadToIX(opcodeByte uint8) (*Instruction, byte, byte) {
 }
 
 // decodeDDArithmeticInstructions handles DD arithmetic instructions with (IX+d).
-func (c *CPU) decodeDDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x86: // ADD A,(IX+d)
 		return DdAddAIXd, 19, 3
@@ -698,7 +698,7 @@ func (c *CPU) decodeDDArithmeticInstructions(opcodeByte uint8) (*Instruction, by
 }
 
 // decodeDDStackInstructions handles DD stack and jump instructions.
-func (c *CPU) decodeDDStackInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeDDStackInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// JP (IX)
 	case 0xE9:
@@ -719,9 +719,9 @@ func (c *CPU) decodeDDStackInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeDDCBInstruction decodes DD CB prefixed instructions (IX bit operations).
-func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
-	displacement := int8(c.memory.Read(c.PC + 2)) // Get displacement
-	opcodeByte := c.memory.Read(c.PC + 3)         // Get bit operation
+func (cpu *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
+	displacement := int8(cpu.memory.Read(cpu.PC + 2)) // Get displacement
+	opcodeByte := cpu.memory.Read(cpu.PC + 3)         // Get bit operation
 
 	var instruction *Instruction
 	var timing byte = 23 // All DDCB operations take 23 T-states
@@ -744,9 +744,9 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixDD, PrefixCB, uint8(displacement), opcodeByte},
 		}
@@ -756,15 +756,15 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 }
 
 // decodeFDInstruction decodes FD-prefixed instructions (IY operations).
-func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual FD instruction
+func (cpu *CPU) decodeFDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.memory.Read(cpu.PC + 1) // Get the actual FD instruction
 
 	// Handle FD CB prefix first
 	if opcodeByte == PrefixCB {
-		return c.decodeFDCBInstruction()
+		return cpu.decodeFDCBInstruction()
 	}
 
-	instruction, timing, size, err := c.decodeFDInstructionType(opcodeByte)
+	instruction, timing, size, err := cpu.decodeFDInstructionType(opcodeByte)
 	if err != nil {
 		// Handle undocumented behavior: FD prefix alone acts as 4-cycle NOP
 		// This occurs when FD is followed by an invalid IY instruction
@@ -785,9 +785,9 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixFD, opcodeByte},
 		}
@@ -797,21 +797,21 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeFDInstructionType determines the instruction, timing, and size for FD-prefixed opcodes.
-func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
+func (cpu *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byte, error) {
 	// Group instructions by functionality to reduce complexity
-	if instruction, timing, size := c.decodeFDBasicInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDBasicInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeFDLoadInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDLoadInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeFDArithmeticInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDArithmeticInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
-	if instruction, timing, size := c.decodeFDStackInstructions(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDStackInstructions(opcodeByte); instruction != nil {
 		return instruction, timing, size, nil
 	}
 
@@ -819,7 +819,7 @@ func (c *CPU) decodeFDInstructionType(opcodeByte uint8) (*Instruction, byte, byt
 }
 
 // decodeFDBasicInstructions handles basic FD instructions (INC/DEC IY, ADD IY,rr).
-func (c *CPU) decodeFDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDBasicInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// INC IY / DEC IY
 	case 0x23:
@@ -848,7 +848,7 @@ func (c *CPU) decodeFDBasicInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeFDLoadInstructions handles FD load instructions.
-func (c *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// LD IY,nn
 	case 0x21:
@@ -866,12 +866,12 @@ func (c *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 	}
 
 	// LD r,(IY+d) - Load register from (IY+d)
-	if instruction, timing, size := c.decodeFDLoadFromIY(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDLoadFromIY(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
 	// LD (IY+d),r - Load (IY+d) from register
-	if instruction, timing, size := c.decodeFDLoadToIY(opcodeByte); instruction != nil {
+	if instruction, timing, size := cpu.decodeFDLoadToIY(opcodeByte); instruction != nil {
 		return instruction, timing, size
 	}
 
@@ -879,7 +879,7 @@ func (c *CPU) decodeFDLoadInstructions(opcodeByte uint8) (*Instruction, byte, by
 }
 
 // decodeFDLoadFromIY handles LD r,(IY+d) instructions.
-func (c *CPU) decodeFDLoadFromIY(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDLoadFromIY(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x46: // LD B,(IY+d)
 		return FdLdBIYd, 19, 3
@@ -901,7 +901,7 @@ func (c *CPU) decodeFDLoadFromIY(opcodeByte uint8) (*Instruction, byte, byte) {
 }
 
 // decodeFDLoadToIY handles LD (IY+d),r instructions.
-func (c *CPU) decodeFDLoadToIY(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDLoadToIY(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x70: // LD (IY+d),B
 		return FdLdIYdB, 19, 3
@@ -923,7 +923,7 @@ func (c *CPU) decodeFDLoadToIY(opcodeByte uint8) (*Instruction, byte, byte) {
 }
 
 // decodeFDArithmeticInstructions handles FD arithmetic instructions with (IY+d).
-func (c *CPU) decodeFDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDArithmeticInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	case 0x86: // ADD A,(IY+d)
 		return FdAddAIYd, 19, 3
@@ -947,7 +947,7 @@ func (c *CPU) decodeFDArithmeticInstructions(opcodeByte uint8) (*Instruction, by
 }
 
 // decodeFDStackInstructions handles FD stack and jump instructions.
-func (c *CPU) decodeFDStackInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
+func (cpu *CPU) decodeFDStackInstructions(opcodeByte uint8) (*Instruction, byte, byte) {
 	switch opcodeByte {
 	// JP (IY)
 	case 0xE9:
@@ -968,9 +968,9 @@ func (c *CPU) decodeFDStackInstructions(opcodeByte uint8) (*Instruction, byte, b
 }
 
 // decodeFDCBInstruction decodes FD CB prefixed instructions (IY bit operations).
-func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
-	displacement := int8(c.memory.Read(c.PC + 2)) // Get displacement
-	opcodeByte := c.memory.Read(c.PC + 3)         // Get bit operation
+func (cpu *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
+	displacement := int8(cpu.memory.Read(cpu.PC + 2)) // Get displacement
+	opcodeByte := cpu.memory.Read(cpu.PC + 3)         // Get bit operation
 
 	var instruction *Instruction
 	var timing byte = 23 // All FDCB operations take 23 T-states
@@ -993,9 +993,9 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixFD, PrefixCB, uint8(displacement), opcodeByte},
 		}
@@ -1005,48 +1005,48 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 }
 
 // handleInterrupts processes pending interrupts.
-func (c *CPU) handleInterrupts() error {
+func (cpu *CPU) handleInterrupts() error {
 	// Non-maskable interrupt has highest priority
-	if c.triggerNmi {
-		c.triggerNmi = false
-		c.halted = false
+	if cpu.triggerNmi {
+		cpu.triggerNmi = false
+		cpu.halted = false
 
 		// Save current PC
-		c.push16(c.PC)
+		cpu.push16(cpu.PC)
 
 		// Jump to NMI vector
-		c.PC = 0x0066
-		c.iff2 = c.iff1
-		c.iff1 = false
+		cpu.PC = 0x0066
+		cpu.iff2 = cpu.iff1
+		cpu.iff1 = false
 
-		c.cycles += 11
+		cpu.cycles += 11
 		return nil
 	}
 
 	// Maskable interrupt
-	if c.triggerIrq && c.iff1 {
-		c.triggerIrq = false
-		c.halted = false
-		c.iff1 = false
-		c.iff2 = false
+	if cpu.triggerIrq && cpu.iff1 {
+		cpu.triggerIrq = false
+		cpu.halted = false
+		cpu.iff1 = false
+		cpu.iff2 = false
 
 		// Save current PC
-		c.push16(c.PC)
+		cpu.push16(cpu.PC)
 
-		switch c.im {
+		switch cpu.im {
 		case 0:
 			// Interrupt mode 0: Execute instruction on data bus (usually RST)
-			c.PC = 0x0040
-			c.cycles += 13
+			cpu.PC = 0x0040
+			cpu.cycles += 13
 		case 1:
 			// Interrupt mode 1: Jump to 0x0038
-			c.PC = 0x0038
-			c.cycles += 13
+			cpu.PC = 0x0038
+			cpu.cycles += 13
 		case 2:
 			// Interrupt mode 2: Vector table lookup
-			vector := uint16(c.I)<<8 | uint16(c.memory.Read(0xFFFF))
-			c.PC = c.memory.ReadWord(vector)
-			c.cycles += 19
+			vector := uint16(cpu.I)<<8 | uint16(cpu.memory.Read(0xFFFF))
+			cpu.PC = cpu.memory.ReadWord(vector)
+			cpu.cycles += 19
 		}
 
 		return nil
