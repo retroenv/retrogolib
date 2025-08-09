@@ -79,66 +79,16 @@ func (ts TraceStep) DetailedString() string {
 		ts.CS, ts.IP, ts.Opcode, ts.Instruction, ts.Size, ts.Timing)
 
 	// Register changes
-	result += "Registers:\n"
-	if ts.PreAX != ts.PostAX {
-		result += fmt.Sprintf("  AX: %04X -> %04X\n", ts.PreAX, ts.PostAX)
-	}
-	if ts.PreBX != ts.PostBX {
-		result += fmt.Sprintf("  BX: %04X -> %04X\n", ts.PreBX, ts.PostBX)
-	}
-	if ts.PreCX != ts.PostCX {
-		result += fmt.Sprintf("  CX: %04X -> %04X\n", ts.PreCX, ts.PostCX)
-	}
-	if ts.PreDX != ts.PostDX {
-		result += fmt.Sprintf("  DX: %04X -> %04X\n", ts.PreDX, ts.PostDX)
-	}
-	if ts.PreSI != ts.PostSI {
-		result += fmt.Sprintf("  SI: %04X -> %04X\n", ts.PreSI, ts.PostSI)
-	}
-	if ts.PreDI != ts.PostDI {
-		result += fmt.Sprintf("  DI: %04X -> %04X\n", ts.PreDI, ts.PostDI)
-	}
-	if ts.PreBP != ts.PostBP {
-		result += fmt.Sprintf("  BP: %04X -> %04X\n", ts.PreBP, ts.PostBP)
-	}
-	if ts.PreSP != ts.PostSP {
-		result += fmt.Sprintf("  SP: %04X -> %04X\n", ts.PreSP, ts.PostSP)
-	}
+	result += ts.formatRegisterChanges()
 
 	// Segment register changes
-	if ts.PreCS != ts.PostCS || ts.PreDS != ts.PostDS || ts.PreES != ts.PostES || ts.PreSS != ts.PostSS {
-		result += "Segments:\n"
-		if ts.PreCS != ts.PostCS {
-			result += fmt.Sprintf("  CS: %04X -> %04X\n", ts.PreCS, ts.PostCS)
-		}
-		if ts.PreDS != ts.PostDS {
-			result += fmt.Sprintf("  DS: %04X -> %04X\n", ts.PreDS, ts.PostDS)
-		}
-		if ts.PreES != ts.PostES {
-			result += fmt.Sprintf("  ES: %04X -> %04X\n", ts.PreES, ts.PostES)
-		}
-		if ts.PreSS != ts.PostSS {
-			result += fmt.Sprintf("  SS: %04X -> %04X\n", ts.PreSS, ts.PostSS)
-		}
-	}
+	result += ts.formatSegmentChanges()
 
 	// Flag changes
-	if ts.PreFlags != ts.PostFlags {
-		result += fmt.Sprintf("Flags: %04X -> %04X\n", uint16(ts.PreFlags), uint16(ts.PostFlags))
-		result += ts.formatFlagChanges()
-	}
+	result += ts.formatFlags()
 
 	// Memory access
-	if ts.MemoryRead || ts.MemoryWrite {
-		switch {
-		case ts.MemoryRead && ts.MemoryWrite:
-			result += fmt.Sprintf("Memory: R/W %06X = %04X\n", ts.MemoryAddress, ts.MemoryValue)
-		case ts.MemoryRead:
-			result += fmt.Sprintf("Memory: R %06X = %04X\n", ts.MemoryAddress, ts.MemoryValue)
-		default: // MemoryWrite only
-			result += fmt.Sprintf("Memory: W %06X = %04X\n", ts.MemoryAddress, ts.MemoryValue)
-		}
-	}
+	result += ts.formatMemoryAccess()
 
 	return result
 }
@@ -149,78 +99,35 @@ func (ts TraceStep) formatFlagChanges() string {
 		return ""
 	}
 
+	flagChecks := []struct {
+		name    string
+		preVal  bool
+		postVal bool
+	}{
+		{"CF", ts.PreFlags.GetCarry(), ts.PostFlags.GetCarry()},
+		{"ZF", ts.PreFlags.GetZero(), ts.PostFlags.GetZero()},
+		{"SF", ts.PreFlags.GetSign(), ts.PostFlags.GetSign()},
+		{"OF", ts.PreFlags.GetOverflow(), ts.PostFlags.GetOverflow()},
+		{"PF", ts.PreFlags.GetParity(), ts.PostFlags.GetParity()},
+		{"AF", ts.PreFlags.GetAuxCarry(), ts.PostFlags.GetAuxCarry()},
+		{"IF", ts.PreFlags.GetInterrupt(), ts.PostFlags.GetInterrupt()},
+		{"DF", ts.PreFlags.GetDirection(), ts.PostFlags.GetDirection()},
+		{"TF", ts.PreFlags.GetTrap(), ts.PostFlags.GetTrap()},
+	}
+
 	var changes []string
-
-	if ts.PreFlags.GetCarry() != ts.PostFlags.GetCarry() {
-		if ts.PostFlags.GetCarry() {
-			changes = append(changes, "+CF")
-		} else {
-			changes = append(changes, "-CF")
+	for _, flag := range flagChecks {
+		if flag.preVal != flag.postVal {
+			prefix := "+"
+			if !flag.postVal {
+				prefix = "-"
+			}
+			changes = append(changes, prefix+flag.name)
 		}
 	}
 
-	if ts.PreFlags.GetZero() != ts.PostFlags.GetZero() {
-		if ts.PostFlags.GetZero() {
-			changes = append(changes, "+ZF")
-		} else {
-			changes = append(changes, "-ZF")
-		}
-	}
-
-	if ts.PreFlags.GetSign() != ts.PostFlags.GetSign() {
-		if ts.PostFlags.GetSign() {
-			changes = append(changes, "+SF")
-		} else {
-			changes = append(changes, "-SF")
-		}
-	}
-
-	if ts.PreFlags.GetOverflow() != ts.PostFlags.GetOverflow() {
-		if ts.PostFlags.GetOverflow() {
-			changes = append(changes, "+OF")
-		} else {
-			changes = append(changes, "-OF")
-		}
-	}
-
-	if ts.PreFlags.GetParity() != ts.PostFlags.GetParity() {
-		if ts.PostFlags.GetParity() {
-			changes = append(changes, "+PF")
-		} else {
-			changes = append(changes, "-PF")
-		}
-	}
-
-	if ts.PreFlags.GetAuxCarry() != ts.PostFlags.GetAuxCarry() {
-		if ts.PostFlags.GetAuxCarry() {
-			changes = append(changes, "+AF")
-		} else {
-			changes = append(changes, "-AF")
-		}
-	}
-
-	if ts.PreFlags.GetInterrupt() != ts.PostFlags.GetInterrupt() {
-		if ts.PostFlags.GetInterrupt() {
-			changes = append(changes, "+IF")
-		} else {
-			changes = append(changes, "-IF")
-		}
-	}
-
-	if ts.PreFlags.GetDirection() != ts.PostFlags.GetDirection() {
-		if ts.PostFlags.GetDirection() {
-			changes = append(changes, "+DF")
-		} else {
-			changes = append(changes, "-DF")
-		}
-	}
-
-	if ts.PreFlags.GetTrap() != ts.PostFlags.GetTrap() {
-		if ts.PostFlags.GetTrap() {
-			changes = append(changes, "+TF")
-		} else {
-			changes = append(changes, "-TF")
-		}
+	if len(changes) == 0 {
+		return ""
 	}
 
 	result := "  Changed: "
@@ -233,6 +140,93 @@ func (ts TraceStep) formatFlagChanges() string {
 	result += "\n"
 
 	return result
+}
+
+// formatRegisterChanges formats general purpose register changes.
+func (ts TraceStep) formatRegisterChanges() string {
+	regChanges := []struct {
+		name      string
+		preValue  uint16
+		postValue uint16
+	}{
+		{"AX", ts.PreAX, ts.PostAX},
+		{"BX", ts.PreBX, ts.PostBX},
+		{"CX", ts.PreCX, ts.PostCX},
+		{"DX", ts.PreDX, ts.PostDX},
+		{"SI", ts.PreSI, ts.PostSI},
+		{"DI", ts.PreDI, ts.PostDI},
+		{"BP", ts.PreBP, ts.PostBP},
+		{"SP", ts.PreSP, ts.PostSP},
+	}
+
+	var result string
+	hasChanges := false
+	for _, reg := range regChanges {
+		if reg.preValue != reg.postValue {
+			if !hasChanges {
+				result += "Registers:\n"
+				hasChanges = true
+			}
+			result += fmt.Sprintf("  %s: %04X -> %04X\n", reg.name, reg.preValue, reg.postValue)
+		}
+	}
+	return result
+}
+
+// formatSegmentChanges formats segment register changes.
+func (ts TraceStep) formatSegmentChanges() string {
+	segChanges := []struct {
+		name      string
+		preValue  uint16
+		postValue uint16
+	}{
+		{"CS", ts.PreCS, ts.PostCS},
+		{"DS", ts.PreDS, ts.PostDS},
+		{"ES", ts.PreES, ts.PostES},
+		{"SS", ts.PreSS, ts.PostSS},
+	}
+
+	var result string
+	hasChanges := false
+	for _, seg := range segChanges {
+		if seg.preValue != seg.postValue {
+			if !hasChanges {
+				result += "Segments:\n"
+				hasChanges = true
+			}
+			result += fmt.Sprintf("  %s: %04X -> %04X\n", seg.name, seg.preValue, seg.postValue)
+		}
+	}
+	return result
+}
+
+// formatFlags formats flag changes.
+func (ts TraceStep) formatFlags() string {
+	if ts.PreFlags == ts.PostFlags {
+		return ""
+	}
+	result := fmt.Sprintf("Flags: %04X -> %04X\n", uint16(ts.PreFlags), uint16(ts.PostFlags))
+	result += ts.formatFlagChanges()
+	return result
+}
+
+// formatMemoryAccess formats memory access information.
+func (ts TraceStep) formatMemoryAccess() string {
+	if !ts.MemoryRead && !ts.MemoryWrite {
+		return ""
+	}
+
+	var accessType string
+	switch {
+	case ts.MemoryRead && ts.MemoryWrite:
+		accessType = "R/W"
+	case ts.MemoryRead:
+		accessType = "R"
+	default:
+		accessType = "W"
+	}
+
+	return fmt.Sprintf("Memory: %s %06X = %04X\n", accessType, ts.MemoryAddress, ts.MemoryValue)
 }
 
 // GetMemoryAccess returns memory access information as a formatted string.

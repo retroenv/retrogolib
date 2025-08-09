@@ -212,7 +212,17 @@ var (
 
 // initializeInstructions creates and initializes all instruction definitions.
 func initializeInstructions() {
-	// Data Movement Instructions
+	initializeDataMovementInstructions()
+	initializeArithmeticInstructions()
+	initializeExtendedArithmeticInstructions()
+	initializeJumpInstructions()
+	initializeStackInstructions()
+	initializeLogicalInstructions()
+	initializeMiscInstructions()
+}
+
+// initializeDataMovementInstructions initializes data movement instructions.
+func initializeDataMovementInstructions() {
 	MovRMReg8 = &Instruction{
 		Name: "mov",
 		ParamFunc: func(c *CPU, params ...any) error {
@@ -253,7 +263,10 @@ func initializeInstructions() {
 			return nil
 		},
 	}
+}
 
+// initializeArithmeticInstructions initializes arithmetic instructions (ADD, SUB, ADC, SBB).
+func initializeArithmeticInstructions() {
 	// ADD Instructions
 	AddALImm8 = &Instruction{
 		Name: "add",
@@ -274,262 +287,10 @@ func initializeInstructions() {
 			return nil
 		},
 	}
+}
 
-	// Conditional Jump Instructions
-	Jo = &Instruction{
-		Name: "jo",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetOverflow() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jno = &Instruction{
-		Name: "jno",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetOverflow() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jb = &Instruction{
-		Name: "jb",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetCarry() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnb = &Instruction{
-		Name: "jnb",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetCarry() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jz = &Instruction{
-		Name: "jz",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetZero() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnz = &Instruction{
-		Name: "jnz",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetZero() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jbe = &Instruction{
-		Name: "jbe",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetCarry() || c.Flags.GetZero() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnbe = &Instruction{
-		Name: "jnbe",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetCarry() && !c.Flags.GetZero() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Js = &Instruction{
-		Name: "js",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetSign() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jns = &Instruction{
-		Name: "jns",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetSign() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jp = &Instruction{
-		Name: "jp",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetParity() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnp = &Instruction{
-		Name: "jnp",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetParity() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jl = &Instruction{
-		Name: "jl",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetSign() != c.Flags.GetOverflow() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnl = &Instruction{
-		Name: "jnl",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetSign() == c.Flags.GetOverflow() {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jle = &Instruction{
-		Name: "jle",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if c.Flags.GetZero() || (c.Flags.GetSign() != c.Flags.GetOverflow()) {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	Jnle = &Instruction{
-		Name: "jnle",
-		ParamFunc: func(c *CPU, params ...any) error {
-			offset := params[0].(int16)
-			if !c.Flags.GetZero() && (c.Flags.GetSign() == c.Flags.GetOverflow()) {
-				c.IP = uint16(int32(c.IP) + int32(offset))
-			}
-			return nil
-		},
-	}
-
-	// Stack Instructions
-	PushES = &Instruction{
-		Name: "push",
-		NoParamFunc: func(c *CPU) error {
-			c.push16(c.ES)
-			return nil
-		},
-	}
-
-	PopES = &Instruction{
-		Name: "pop",
-		NoParamFunc: func(c *CPU) error {
-			c.ES = c.pop16()
-			return nil
-		},
-	}
-
-	PushCS = &Instruction{
-		Name: "push",
-		NoParamFunc: func(c *CPU) error {
-			c.push16(c.CS)
-			return nil
-		},
-	}
-
-	PushDS = &Instruction{
-		Name: "push",
-		NoParamFunc: func(c *CPU) error {
-			c.push16(c.DS)
-			return nil
-		},
-	}
-
-	PopDS = &Instruction{
-		Name: "pop",
-		NoParamFunc: func(c *CPU) error {
-			c.DS = c.pop16()
-			return nil
-		},
-	}
-
-	PushSS = &Instruction{
-		Name: "push",
-		NoParamFunc: func(c *CPU) error {
-			c.push16(c.SS)
-			return nil
-		},
-	}
-
-	PopSS = &Instruction{
-		Name: "pop",
-		NoParamFunc: func(c *CPU) error {
-			c.SS = c.pop16()
-			return nil
-		},
-	}
-
-	// Logical Instructions - OR
-	OrALImm8 = &Instruction{
-		Name: "or",
-		ParamFunc: func(c *CPU, params ...any) error {
-			immediate := params[0].(uint8)
-			result := c.or8(c.AL(), immediate)
-			c.SetAL(result)
-			return nil
-		},
-	}
-
-	OrAXImm16 = &Instruction{
-		Name: "or",
-		ParamFunc: func(c *CPU, params ...any) error {
-			immediate := params[0].(uint16)
-			result := c.or16(c.AX, immediate)
-			c.AX = result
-			return nil
-		},
-	}
-
+// initializeExtendedArithmeticInstructions initializes ADC and SBB instructions.
+func initializeExtendedArithmeticInstructions() {
 	// ADC Instructions
 	AdcALImm8 = &Instruction{
 		Name: "adc",
@@ -587,6 +348,126 @@ func initializeInstructions() {
 			return nil
 		},
 	}
+}
+
+// makeConditionalJump creates a conditional jump instruction with the given condition function.
+func makeConditionalJump(name string, condition func(*CPU) bool) *Instruction {
+	return &Instruction{
+		Name: name,
+		ParamFunc: func(c *CPU, params ...any) error {
+			offset := params[0].(int16)
+			if condition(c) {
+				c.IP = uint16(int32(c.IP) + int32(offset))
+			}
+			return nil
+		},
+	}
+}
+
+// initializeJumpInstructions initializes jump and control flow instructions.
+func initializeJumpInstructions() {
+	// Conditional Jump Instructions
+	Jo = makeConditionalJump("jo", func(c *CPU) bool { return c.Flags.GetOverflow() })
+	Jno = makeConditionalJump("jno", func(c *CPU) bool { return !c.Flags.GetOverflow() })
+	Jb = makeConditionalJump("jb", func(c *CPU) bool { return c.Flags.GetCarry() })
+	Jnb = makeConditionalJump("jnb", func(c *CPU) bool { return !c.Flags.GetCarry() })
+	Jz = makeConditionalJump("jz", func(c *CPU) bool { return c.Flags.GetZero() })
+	Jnz = makeConditionalJump("jnz", func(c *CPU) bool { return !c.Flags.GetZero() })
+	Jbe = makeConditionalJump("jbe", func(c *CPU) bool { return c.Flags.GetCarry() || c.Flags.GetZero() })
+	Jnbe = makeConditionalJump("jnbe", func(c *CPU) bool { return !c.Flags.GetCarry() && !c.Flags.GetZero() })
+	Js = makeConditionalJump("js", func(c *CPU) bool { return c.Flags.GetSign() })
+	Jns = makeConditionalJump("jns", func(c *CPU) bool { return !c.Flags.GetSign() })
+	Jp = makeConditionalJump("jp", func(c *CPU) bool { return c.Flags.GetParity() })
+	Jnp = makeConditionalJump("jnp", func(c *CPU) bool { return !c.Flags.GetParity() })
+	Jl = makeConditionalJump("jl", func(c *CPU) bool { return c.Flags.GetSign() != c.Flags.GetOverflow() })
+	Jnl = makeConditionalJump("jnl", func(c *CPU) bool { return c.Flags.GetSign() == c.Flags.GetOverflow() })
+	Jle = makeConditionalJump("jle", func(c *CPU) bool { return c.Flags.GetZero() || (c.Flags.GetSign() != c.Flags.GetOverflow()) })
+	Jnle = makeConditionalJump("jnle", func(c *CPU) bool { return !c.Flags.GetZero() && (c.Flags.GetSign() == c.Flags.GetOverflow()) })
+	// TODO: Add remaining jump instructions...
+}
+
+// initializeStackInstructions initializes stack operation instructions.
+func initializeStackInstructions() {
+	// Stack Instructions
+	PushES = &Instruction{
+		Name: "push",
+		NoParamFunc: func(c *CPU) error {
+			c.push16(c.ES)
+			return nil
+		},
+	}
+
+	PopES = &Instruction{
+		Name: "pop",
+		NoParamFunc: func(c *CPU) error {
+			c.ES = c.pop16()
+			return nil
+		},
+	}
+
+	PushCS = &Instruction{
+		Name: "push",
+		NoParamFunc: func(c *CPU) error {
+			c.push16(c.CS)
+			return nil
+		},
+	}
+
+	PushDS = &Instruction{
+		Name: "push",
+		NoParamFunc: func(c *CPU) error {
+			c.push16(c.DS)
+			return nil
+		},
+	}
+
+	PopDS = &Instruction{
+		Name: "pop",
+		NoParamFunc: func(c *CPU) error {
+			c.DS = c.pop16()
+			return nil
+		},
+	}
+
+	PushSS = &Instruction{
+		Name: "push",
+		NoParamFunc: func(c *CPU) error {
+			c.push16(c.SS)
+			return nil
+		},
+	}
+
+	PopSS = &Instruction{
+		Name: "pop",
+		NoParamFunc: func(c *CPU) error {
+			c.SS = c.pop16()
+			return nil
+		},
+	}
+}
+
+// initializeLogicalInstructions initializes logical operation instructions.
+func initializeLogicalInstructions() {
+	// Logical Instructions - OR
+	OrALImm8 = &Instruction{
+		Name: "or",
+		ParamFunc: func(c *CPU, params ...any) error {
+			immediate := params[0].(uint8)
+			result := c.or8(c.AL(), immediate)
+			c.SetAL(result)
+			return nil
+		},
+	}
+
+	OrAXImm16 = &Instruction{
+		Name: "or",
+		ParamFunc: func(c *CPU, params ...any) error {
+			immediate := params[0].(uint16)
+			result := c.or16(c.AX, immediate)
+			c.AX = result
+			return nil
+		},
+	}
 
 	// AND Instructions
 	AndALImm8 = &Instruction{
@@ -608,7 +489,11 @@ func initializeInstructions() {
 			return nil
 		},
 	}
+	// TODO: Add remaining logical instructions (XOR, etc.)
+}
 
+// initializeMiscInstructions initializes miscellaneous instructions.
+func initializeMiscInstructions() {
 	// Segment Prefixes
 	SegES = &Instruction{
 		Name: "es:",
@@ -663,7 +548,7 @@ func initializeInstructions() {
 		},
 	}
 
-	// TODO: Implement remaining instructions...
+	// TODO: Add remaining misc instructions (DAA, DAS, etc.)
 	// This is a subset showing the pattern. A complete implementation
 	// would include all ~585 instructions commonly used in DOS development.
 }

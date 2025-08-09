@@ -212,98 +212,112 @@ func (m ModRM) ToByte() uint8 {
 // GetEffectiveAddress calculates the effective address based on ModR/M and SIB.
 // This is a simplified version for basic addressing modes.
 func (c *CPU) GetEffectiveAddress(modrm ModRM, displacement int16, segment uint16) uint32 {
-	var offset uint16
-
-	switch modrm.Mod {
-	case 0: // No displacement (except special cases)
-		switch modrm.RM {
-		case 0: // [BX + SI]
-			offset = c.BX + c.SI
-		case 1: // [BX + DI]
-			offset = c.BX + c.DI
-		case 2: // [BP + SI] (SS segment default)
-			offset = c.BP + c.SI
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 3: // [BP + DI] (SS segment default)
-			offset = c.BP + c.DI
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 4: // [SI]
-			offset = c.SI
-		case 5: // [DI]
-			offset = c.DI
-		case 6: // Direct address (16-bit displacement)
-			offset = uint16(displacement)
-		case 7: // [BX]
-			offset = c.BX
-		}
-	case 1: // 8-bit displacement
-		switch modrm.RM {
-		case 0: // [BX + SI + disp8]
-			offset = c.BX + c.SI + uint16(int8(displacement))
-		case 1: // [BX + DI + disp8]
-			offset = c.BX + c.DI + uint16(int8(displacement))
-		case 2: // [BP + SI + disp8] (SS segment default)
-			offset = c.BP + c.SI + uint16(int8(displacement))
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 3: // [BP + DI + disp8] (SS segment default)
-			offset = c.BP + c.DI + uint16(int8(displacement))
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 4: // [SI + disp8]
-			offset = c.SI + uint16(int8(displacement))
-		case 5: // [DI + disp8]
-			offset = c.DI + uint16(int8(displacement))
-		case 6: // [BP + disp8] (SS segment default)
-			offset = c.BP + uint16(int8(displacement))
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 7: // [BX + disp8]
-			offset = c.BX + uint16(int8(displacement))
-		}
-	case 2: // 16-bit displacement
-		switch modrm.RM {
-		case 0: // [BX + SI + disp16]
-			offset = c.BX + c.SI + uint16(displacement)
-		case 1: // [BX + DI + disp16]
-			offset = c.BX + c.DI + uint16(displacement)
-		case 2: // [BP + SI + disp16] (SS segment default)
-			offset = c.BP + c.SI + uint16(displacement)
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 3: // [BP + DI + disp16] (SS segment default)
-			offset = c.BP + c.DI + uint16(displacement)
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 4: // [SI + disp16]
-			offset = c.SI + uint16(displacement)
-		case 5: // [DI + disp16]
-			offset = c.DI + uint16(displacement)
-		case 6: // [BP + disp16] (SS segment default)
-			offset = c.BP + uint16(displacement)
-			if segment == 0 {
-				segment = c.SS
-			}
-		case 7: // [BX + disp16]
-			offset = c.BX + uint16(displacement)
-		}
-	case 3: // Register addressing (not memory)
-		return 0 // This should not be called for register addressing
+	if modrm.Mod == 3 {
+		return 0 // Register addressing (not memory)
 	}
+
+	offset, usedSegment := c.calculateOffset(modrm, displacement, segment)
 
 	// Use DS as default segment if no specific segment was provided
-	if segment == 0 {
-		segment = c.DS
+	if usedSegment == 0 {
+		usedSegment = c.DS
 	}
 
-	return c.CalculateAddress(segment, offset)
+	return c.CalculateAddress(usedSegment, offset)
+}
+
+// calculateOffset calculates the offset portion of the effective address.
+func (c *CPU) calculateOffset(modrm ModRM, displacement int16, segment uint16) (uint16, uint16) {
+	switch modrm.Mod {
+	case 0:
+		return c.calculateOffsetMod0(modrm.RM, displacement, segment)
+	case 1:
+		return c.calculateOffsetMod1(modrm.RM, displacement, segment)
+	case 2:
+		return c.calculateOffsetMod2(modrm.RM, displacement, segment)
+	default:
+		return 0, segment
+	}
+}
+
+// calculateOffsetMod0 handles Mod=0 addressing (no displacement, except special cases).
+func (c *CPU) calculateOffsetMod0(rm uint8, displacement int16, segment uint16) (uint16, uint16) {
+	switch rm {
+	case 0: // [BX + SI]
+		return c.BX + c.SI, segment
+	case 1: // [BX + DI]
+		return c.BX + c.DI, segment
+	case 2: // [BP + SI] (SS segment default)
+		return c.BP + c.SI, c.defaultToSS(segment)
+	case 3: // [BP + DI] (SS segment default)
+		return c.BP + c.DI, c.defaultToSS(segment)
+	case 4: // [SI]
+		return c.SI, segment
+	case 5: // [DI]
+		return c.DI, segment
+	case 6: // Direct address (16-bit displacement)
+		return uint16(displacement), segment
+	case 7: // [BX]
+		return c.BX, segment
+	default:
+		return 0, segment
+	}
+}
+
+// calculateOffsetMod1 handles Mod=1 addressing (8-bit displacement).
+func (c *CPU) calculateOffsetMod1(rm uint8, displacement int16, segment uint16) (uint16, uint16) {
+	disp8 := uint16(int8(displacement))
+	switch rm {
+	case 0: // [BX + SI + disp8]
+		return c.BX + c.SI + disp8, segment
+	case 1: // [BX + DI + disp8]
+		return c.BX + c.DI + disp8, segment
+	case 2: // [BP + SI + disp8] (SS segment default)
+		return c.BP + c.SI + disp8, c.defaultToSS(segment)
+	case 3: // [BP + DI + disp8] (SS segment default)
+		return c.BP + c.DI + disp8, c.defaultToSS(segment)
+	case 4: // [SI + disp8]
+		return c.SI + disp8, segment
+	case 5: // [DI + disp8]
+		return c.DI + disp8, segment
+	case 6: // [BP + disp8] (SS segment default)
+		return c.BP + disp8, c.defaultToSS(segment)
+	case 7: // [BX + disp8]
+		return c.BX + disp8, segment
+	default:
+		return 0, segment
+	}
+}
+
+// calculateOffsetMod2 handles Mod=2 addressing (16-bit displacement).
+func (c *CPU) calculateOffsetMod2(rm uint8, displacement int16, segment uint16) (uint16, uint16) {
+	disp16 := uint16(displacement)
+	switch rm {
+	case 0: // [BX + SI + disp16]
+		return c.BX + c.SI + disp16, segment
+	case 1: // [BX + DI + disp16]
+		return c.BX + c.DI + disp16, segment
+	case 2: // [BP + SI + disp16] (SS segment default)
+		return c.BP + c.SI + disp16, c.defaultToSS(segment)
+	case 3: // [BP + DI + disp16] (SS segment default)
+		return c.BP + c.DI + disp16, c.defaultToSS(segment)
+	case 4: // [SI + disp16]
+		return c.SI + disp16, segment
+	case 5: // [DI + disp16]
+		return c.DI + disp16, segment
+	case 6: // [BP + disp16] (SS segment default)
+		return c.BP + disp16, c.defaultToSS(segment)
+	case 7: // [BX + disp16]
+		return c.BX + disp16, segment
+	default:
+		return 0, segment
+	}
+}
+
+// defaultToSS returns SS segment if segment is 0, otherwise returns the provided segment.
+func (c *CPU) defaultToSS(segment uint16) uint16 {
+	if segment == 0 {
+		return c.SS
+	}
+	return segment
 }
