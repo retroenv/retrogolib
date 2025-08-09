@@ -145,166 +145,166 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 }
 
 // Cycles returns the amount of CPU cycles executed since system start.
-func (cpu *CPU) Cycles() uint64 {
-	return cpu.cycles
+func (c *CPU) Cycles() uint64 {
+	return c.cycles
 }
 
 // Halted returns whether the CPU is in halted state.
-func (cpu *CPU) Halted() bool {
-	return cpu.halted
+func (c *CPU) Halted() bool {
+	return c.halted
 }
 
 // Halt puts the CPU into halted state.
-func (cpu *CPU) Halt() {
-	cpu.halted = true
+func (c *CPU) Halt() {
+	c.halted = true
 }
 
 // Resume resumes the CPU from halted state.
-func (cpu *CPU) Resume() {
-	cpu.halted = false
+func (c *CPU) Resume() {
+	c.halted = false
 }
 
 // State returns the current state of the CPU.
-func (cpu *CPU) State() State {
-	cpu.mu.RLock()
-	defer cpu.mu.RUnlock()
+func (c *CPU) State() State {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	return State{
-		A:        cpu.A,
-		B:        cpu.B,
-		C:        cpu.C,
-		D:        cpu.D,
-		E:        cpu.E,
-		H:        cpu.H,
-		L:        cpu.L,
-		AltA:     cpu.AltA,
-		AltB:     cpu.AltB,
-		AltC:     cpu.AltC,
-		AltD:     cpu.AltD,
-		AltE:     cpu.AltE,
-		AltH:     cpu.AltH,
-		AltL:     cpu.AltL,
-		IX:       cpu.IX,
-		IY:       cpu.IY,
-		SP:       cpu.SP,
-		PC:       cpu.PC,
-		I:        cpu.I,
-		R:        cpu.R,
-		Cycles:   cpu.cycles,
-		Flags:    cpu.Flags,
-		AltFlags: cpu.AltFlags,
+		A:        c.A,
+		B:        c.B,
+		C:        c.C,
+		D:        c.D,
+		E:        c.E,
+		H:        c.H,
+		L:        c.L,
+		AltA:     c.AltA,
+		AltB:     c.AltB,
+		AltC:     c.AltC,
+		AltD:     c.AltD,
+		AltE:     c.AltE,
+		AltH:     c.AltH,
+		AltL:     c.AltL,
+		IX:       c.IX,
+		IY:       c.IY,
+		SP:       c.SP,
+		PC:       c.PC,
+		I:        c.I,
+		R:        c.R,
+		Cycles:   c.cycles,
+		Flags:    c.Flags,
+		AltFlags: c.AltFlags,
 		Interrupts: Interrupts{
-			IFF1:         cpu.iff1,
-			IFF2:         cpu.iff2,
-			IM:           cpu.im,
-			NMITriggered: cpu.triggerNmi,
-			IrqTriggered: cpu.triggerIrq,
+			IFF1:         c.iff1,
+			IFF2:         c.iff2,
+			IM:           c.im,
+			NMITriggered: c.triggerNmi,
+			IrqTriggered: c.triggerIrq,
 		},
-		Halted: cpu.halted,
+		Halted: c.halted,
 	}
 }
 
 // Memory returns the CPU memory.
-func (cpu *CPU) Memory() *Memory {
-	return cpu.memory
+func (c *CPU) Memory() *Memory {
+	return c.memory
 }
 
 // BC returns the BC register pair as a 16-bit value.
-func (cpu *CPU) BC() uint16 {
-	return uint16(cpu.B)<<8 | uint16(cpu.C)
+func (c *CPU) BC() uint16 {
+	return uint16(c.B)<<8 | uint16(c.C)
 }
 
 // DE returns the DE register pair as a 16-bit value.
-func (cpu *CPU) DE() uint16 {
-	return uint16(cpu.D)<<8 | uint16(cpu.E)
+func (c *CPU) DE() uint16 {
+	return uint16(c.D)<<8 | uint16(c.E)
 }
 
 // HL returns the HL register pair as a 16-bit value.
-func (cpu *CPU) HL() uint16 {
-	return uint16(cpu.H)<<8 | uint16(cpu.L)
+func (c *CPU) HL() uint16 {
+	return uint16(c.H)<<8 | uint16(c.L)
 }
 
 // AF returns the AF register pair as a 16-bit value.
-func (cpu *CPU) AF() uint16 {
-	return uint16(cpu.A)<<8 | uint16(cpu.GetFlags())
+func (c *CPU) AF() uint16 {
+	return uint16(c.A)<<8 | uint16(c.GetFlags())
 }
 
 // TriggerNMI triggers a non-maskable interrupt.
-func (cpu *CPU) TriggerNMI() {
-	cpu.triggerNmi = true
+func (c *CPU) TriggerNMI() {
+	c.triggerNmi = true
 }
 
 // TriggerIRQ triggers a maskable interrupt.
-func (cpu *CPU) TriggerIRQ() {
-	cpu.triggerIrq = true
+func (c *CPU) TriggerIRQ() {
+	c.triggerIrq = true
 }
 
 // setBC sets the BC register pair from a 16-bit value.
-func (cpu *CPU) setBC(value uint16) {
-	cpu.B = uint8(value >> 8)
-	cpu.C = uint8(value)
+func (c *CPU) setBC(value uint16) {
+	c.B = uint8(value >> 8)
+	c.C = uint8(value)
 }
 
 // setDE sets the DE register pair from a 16-bit value.
-func (cpu *CPU) setDE(value uint16) {
-	cpu.D = uint8(value >> 8)
-	cpu.E = uint8(value)
+func (c *CPU) setDE(value uint16) {
+	c.D = uint8(value >> 8)
+	c.E = uint8(value)
 }
 
 // setHL sets the HL register pair from a 16-bit value.
-func (cpu *CPU) setHL(value uint16) {
-	cpu.H = uint8(value >> 8)
-	cpu.L = uint8(value)
+func (c *CPU) setHL(value uint16) {
+	c.H = uint8(value >> 8)
+	c.L = uint8(value)
 }
 
 // setAF sets the AF register pair from a 16-bit value.
-func (cpu *CPU) setAF(value uint16) {
-	cpu.A = uint8(value >> 8)
-	cpu.setFlags(uint8(value))
+func (c *CPU) setAF(value uint16) {
+	c.A = uint8(value >> 8)
+	c.setFlags(uint8(value))
 }
 
 // exchange exchanges the main and alternate register sets.
-func (cpu *CPU) exchange() {
-	cpu.A, cpu.AltA = cpu.AltA, cpu.A
-	cpu.B, cpu.AltB = cpu.AltB, cpu.B
-	cpu.C, cpu.AltC = cpu.AltC, cpu.C
-	cpu.D, cpu.AltD = cpu.AltD, cpu.D
-	cpu.E, cpu.AltE = cpu.AltE, cpu.E
-	cpu.H, cpu.AltH = cpu.AltH, cpu.H
-	cpu.L, cpu.AltL = cpu.AltL, cpu.L
-	cpu.Flags, cpu.AltFlags = cpu.AltFlags, cpu.Flags
+func (c *CPU) exchange() {
+	c.A, c.AltA = c.AltA, c.A
+	c.B, c.AltB = c.AltB, c.B
+	c.C, c.AltC = c.AltC, c.C
+	c.D, c.AltD = c.AltD, c.D
+	c.E, c.AltE = c.AltE, c.E
+	c.H, c.AltH = c.AltH, c.H
+	c.L, c.AltL = c.AltL, c.L
+	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 
 // exchangeAF exchanges only the AF and AF' registers.
-func (cpu *CPU) exchangeAF() {
-	cpu.A, cpu.AltA = cpu.AltA, cpu.A
-	cpu.Flags, cpu.AltFlags = cpu.AltFlags, cpu.Flags
+func (c *CPU) exchangeAF() {
+	c.A, c.AltA = c.AltA, c.A
+	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 }
 
 // pop pops a byte from the stack and updates the stack pointer.
-func (cpu *CPU) pop() uint8 {
-	value := cpu.memory.Read(cpu.SP)
-	cpu.SP++
+func (c *CPU) pop() uint8 {
+	value := c.memory.Read(c.SP)
+	c.SP++
 	return value
 }
 
 // pop16 pops a word from the stack and updates the stack pointer.
-func (cpu *CPU) pop16() uint16 {
-	low := uint16(cpu.pop())
-	high := uint16(cpu.pop())
+func (c *CPU) pop16() uint16 {
+	low := uint16(c.pop())
+	high := uint16(c.pop())
 	return high<<8 | low
 }
 
 // push pushes a byte to the stack and updates the stack pointer.
-func (cpu *CPU) push(value uint8) {
-	cpu.SP--
-	cpu.memory.Write(cpu.SP, value)
+func (c *CPU) push(value uint8) {
+	c.SP--
+	c.memory.Write(c.SP, value)
 }
 
 // push16 pushes a word to the stack and updates the stack pointer.
-func (cpu *CPU) push16(value uint16) {
+func (c *CPU) push16(value uint16) {
 	high := uint8(value >> 8)
 	low := uint8(value)
-	cpu.push(high)
-	cpu.push(low)
+	c.push(high)
+	c.push(low)
 }

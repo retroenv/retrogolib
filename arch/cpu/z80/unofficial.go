@@ -1,19 +1,19 @@
 // This file contains support for unofficial/undocumented Z80 CPU instructions.
-// Reference: https://www.z80.info/z80undocpu.htm
+// Reference: https://www.z80.info/z80undoc.htm
 
 package z80
 
 // Port I/O helper methods
-func (cpu *CPU) readPort(port uint8) uint8 {
-	if cpu.opts.ioHandler != nil {
-		return cpu.opts.ioHandler.ReadPort(port)
+func (c *CPU) readPort(port uint8) uint8 {
+	if c.opts.ioHandler != nil {
+		return c.opts.ioHandler.ReadPort(port)
 	}
 	return 0xFF
 }
 
-func (cpu *CPU) writePort(port uint8, value uint8) {
-	if cpu.opts.ioHandler != nil {
-		cpu.opts.ioHandler.WritePort(port, value)
+func (c *CPU) writePort(port uint8, value uint8) {
+	if c.opts.ioHandler != nil {
+		c.opts.ioHandler.WritePort(port, value)
 	}
 }
 
@@ -126,18 +126,18 @@ func sll(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	value := cpu.GetRegisterValue(uint8(reg))
+	value := c.GetRegisterValue(uint8(reg))
 
 	// Set carry flag from bit 7
-	cpu.setC(value&0x80 != 0)
+	c.setC(value&0x80 != 0)
 
 	// Shift left and set bit 0 to 1 (this is the undocumented behavior)
 	result := (value << 1) | 0x01
 
-	cpu.SetRegisterValue(uint8(reg), result)
-	cpu.setSZP(result)
-	cpu.setH(false)
-	cpu.setN(false)
+	c.SetRegisterValue(uint8(reg), result)
+	c.setSZP(result)
+	c.setH(false)
+	c.setN(false)
 
 	return nil
 }
@@ -145,21 +145,21 @@ func sll(c *CPU, params ...any) error {
 // inf performs input and decrement (undocumented port instruction)
 func inf(c *CPU) error {
 	// Read from port C into memory location (HL)
-	value := cpu.readPort(cpu.C)
-	address := uint16(cpu.H)<<8 | uint16(cpu.L)
-	cpu.memory.Write(address, value)
+	value := c.readPort(c.C)
+	address := uint16(c.H)<<8 | uint16(c.L)
+	c.memory.Write(address, value)
 
 	// Decrement HL
 	hl := address - 1
-	cpu.H = uint8(hl >> 8)
-	cpu.L = uint8(hl & 0xFF)
+	c.H = uint8(hl >> 8)
+	c.L = uint8(hl & 0xFF)
 
 	// Decrement B
-	cpu.B--
+	c.B--
 
 	// Set flags (undocumented behavior may differ from documented INI/IND)
-	setFlag(&cpu.Flags.Z, cpu.B == 0)
-	cpu.setN(true)
+	setFlag(&c.Flags.Z, c.B == 0)
+	c.setN(true)
 
 	return nil
 }
@@ -167,23 +167,23 @@ func inf(c *CPU) error {
 // outf performs output and decrement (undocumented port instruction)
 func outf(c *CPU) error {
 	// Read from memory location (HL)
-	address := uint16(cpu.H)<<8 | uint16(cpu.L)
-	value := cpu.memory.Read(address)
+	address := uint16(c.H)<<8 | uint16(c.L)
+	value := c.memory.Read(address)
 
 	// Output to port C
-	cpu.writePort(cpu.C, value)
+	c.writePort(c.C, value)
 
 	// Decrement HL
 	hl := address - 1
-	cpu.H = uint8(hl >> 8)
-	cpu.L = uint8(hl & 0xFF)
+	c.H = uint8(hl >> 8)
+	c.L = uint8(hl & 0xFF)
 
 	// Decrement B
-	cpu.B--
+	c.B--
 
 	// Set flags (undocumented behavior may differ from documented OUTI/OUTD)
-	setFlag(&cpu.Flags.Z, cpu.B == 0)
-	cpu.setN(true)
+	setFlag(&c.Flags.Z, c.B == 0)
+	c.setN(true)
 
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // inc8 increments an 8-bit value and sets flags appropriately.
-func (cpu *CPU) inc8(value uint8) uint8 {
+func (c *CPU) inc8(value uint8) uint8 {
 	result := value + 1
 
 	c.setSZ(result)
@@ -18,7 +18,7 @@ func (cpu *CPU) inc8(value uint8) uint8 {
 }
 
 // dec8 decrements an 8-bit value and sets flags appropriately.
-func (cpu *CPU) dec8(value uint8) uint8 {
+func (c *CPU) dec8(value uint8) uint8 {
 	result := value - 1
 
 	c.setSZ(result)
@@ -30,7 +30,7 @@ func (cpu *CPU) dec8(value uint8) uint8 {
 }
 
 // add8 adds two 8-bit values and sets flags appropriately.
-func (cpu *CPU) add8(a, b uint8) uint8 {
+func (c *CPU) add8(a, b uint8) uint8 {
 	result16 := uint16(a) + uint16(b)
 	result := uint8(result16)
 
@@ -45,7 +45,7 @@ func (cpu *CPU) add8(a, b uint8) uint8 {
 }
 
 // sub8 subtracts two 8-bit values and sets flags appropriately.
-func (cpu *CPU) sub8(a, b uint8) uint8 {
+func (c *CPU) sub8(a, b uint8) uint8 {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
@@ -60,7 +60,7 @@ func (cpu *CPU) sub8(a, b uint8) uint8 {
 }
 
 // add16 adds two 16-bit values and sets carry/half-carry flags.
-func (cpu *CPU) add16(a, b uint16) uint16 {
+func (c *CPU) add16(a, b uint16) uint16 {
 	result32 := uint32(a) + uint32(b)
 	result := uint16(result32)
 
@@ -73,7 +73,7 @@ func (cpu *CPU) add16(a, b uint16) uint16 {
 }
 
 // and8 performs bitwise AND on two 8-bit values and sets flags.
-func (cpu *CPU) and8(a, b uint8) uint8 {
+func (c *CPU) and8(a, b uint8) uint8 {
 	result := a & b
 
 	// Set flags
@@ -86,7 +86,7 @@ func (cpu *CPU) and8(a, b uint8) uint8 {
 }
 
 // or8 performs bitwise OR on two 8-bit values and sets flags.
-func (cpu *CPU) or8(a, b uint8) uint8 {
+func (c *CPU) or8(a, b uint8) uint8 {
 	result := a | b
 
 	// Set flags
@@ -99,7 +99,7 @@ func (cpu *CPU) or8(a, b uint8) uint8 {
 }
 
 // xor8 performs bitwise XOR on two 8-bit values and sets flags.
-func (cpu *CPU) xor8(a, b uint8) uint8 {
+func (c *CPU) xor8(a, b uint8) uint8 {
 	result := a ^ b
 
 	// Set flags
@@ -112,7 +112,7 @@ func (cpu *CPU) xor8(a, b uint8) uint8 {
 }
 
 // cp compares two 8-bit values (like SUB but doesn't store result).
-func (cpu *CPU) cp(a, b uint8) {
+func (c *CPU) cp(a, b uint8) {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
@@ -125,7 +125,7 @@ func (cpu *CPU) cp(a, b uint8) {
 }
 
 // rlca rotates accumulator left circular and sets carry.
-func (cpu *CPU) rlca(value uint8) uint8 {
+func (c *CPU) rlca(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | carry
 
@@ -137,7 +137,7 @@ func (cpu *CPU) rlca(value uint8) uint8 {
 }
 
 // rrca rotates accumulator right circular and sets carry.
-func (cpu *CPU) rrca(value uint8) uint8 {
+func (c *CPU) rrca(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (carry << 7)
 
@@ -149,7 +149,7 @@ func (cpu *CPU) rrca(value uint8) uint8 {
 }
 
 // rlc rotates value left circular and sets all flags.
-func (cpu *CPU) rlc(value uint8) uint8 {
+func (c *CPU) rlc(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | carry
 
@@ -162,7 +162,7 @@ func (cpu *CPU) rlc(value uint8) uint8 {
 }
 
 // rrc rotates value right circular and sets all flags.
-func (cpu *CPU) rrc(value uint8) uint8 {
+func (c *CPU) rrc(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (carry << 7)
 
@@ -175,7 +175,7 @@ func (cpu *CPU) rrc(value uint8) uint8 {
 }
 
 // rl rotates value left through carry and sets all flags.
-func (cpu *CPU) rl(value uint8) uint8 {
+func (c *CPU) rl(value uint8) uint8 {
 	newCarry := (value & 0x80) >> 7
 	result := (value << 1) | c.Flags.C
 
@@ -188,7 +188,7 @@ func (cpu *CPU) rl(value uint8) uint8 {
 }
 
 // rr rotates value right through carry and sets all flags.
-func (cpu *CPU) rr(value uint8) uint8 {
+func (c *CPU) rr(value uint8) uint8 {
 	newCarry := value & 0x01
 	result := (value >> 1) | (c.Flags.C << 7)
 
@@ -201,7 +201,7 @@ func (cpu *CPU) rr(value uint8) uint8 {
 }
 
 // sla shifts value left arithmetic and sets all flags.
-func (cpu *CPU) sla(value uint8) uint8 {
+func (c *CPU) sla(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := value << 1
 
@@ -214,7 +214,7 @@ func (cpu *CPU) sla(value uint8) uint8 {
 }
 
 // sra shifts value right arithmetic and sets all flags.
-func (cpu *CPU) sra(value uint8) uint8 {
+func (c *CPU) sra(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (value & 0x80) // Keep sign bit
 
@@ -227,7 +227,7 @@ func (cpu *CPU) sra(value uint8) uint8 {
 }
 
 // sll shifts value left logical (undocumented) and sets all flags.
-func (cpu *CPU) sll(value uint8) uint8 {
+func (c *CPU) sll(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | 0x01 // Set bit 0
 
@@ -240,7 +240,7 @@ func (cpu *CPU) sll(value uint8) uint8 {
 }
 
 // srl shifts value right logical and sets all flags.
-func (cpu *CPU) srl(value uint8) uint8 {
+func (c *CPU) srl(value uint8) uint8 {
 	carry := value & 0x01
 	result := value >> 1
 
@@ -253,7 +253,7 @@ func (cpu *CPU) srl(value uint8) uint8 {
 }
 
 // bit tests bit n of value and sets flags.
-func (cpu *CPU) bit(n uint8, value uint8) {
+func (c *CPU) bit(n uint8, value uint8) {
 	bit := (value >> n) & 1
 
 	setFlag(&c.Flags.Z, bit == 0)
@@ -266,17 +266,17 @@ func (cpu *CPU) bit(n uint8, value uint8) {
 }
 
 // set sets bit n of value.
-func (cpu *CPU) setBit(n uint8, value uint8) uint8 {
+func (c *CPU) setBit(n uint8, value uint8) uint8 {
 	return value | (1 << n)
 }
 
 // res resets bit n of value.
-func (cpu *CPU) res(n uint8, value uint8) uint8 {
+func (c *CPU) res(n uint8, value uint8) uint8 {
 	return value & ^(1 << n)
 }
 
 // neg negates the accumulator (two's complement).
-func (cpu *CPU) neg(value uint8) uint8 {
+func (c *CPU) neg(value uint8) uint8 {
 	result := uint8(-int8(value))
 
 	c.setSZP(result)
@@ -289,7 +289,7 @@ func (cpu *CPU) neg(value uint8) uint8 {
 }
 
 // adc adds with carry.
-func (cpu *CPU) adc(a, b uint8) uint8 {
+func (c *CPU) adc(a, b uint8) uint8 {
 	carry := c.Flags.C
 	result16 := uint16(a) + uint16(b) + uint16(carry)
 	result := uint8(result16)
@@ -305,7 +305,7 @@ func (cpu *CPU) adc(a, b uint8) uint8 {
 }
 
 // sbc subtracts with carry.
-func (cpu *CPU) sbc(a, b uint8) uint8 {
+func (c *CPU) sbc(a, b uint8) uint8 {
 	carry := c.Flags.C
 	result16 := uint16(a) - uint16(b) - uint16(carry)
 	result := uint8(result16)
@@ -780,7 +780,7 @@ func ldExtended(c *CPU, params ...any) error {
 }
 
 // daaAdditionMode calculates correction for DAA in addition mode.
-func (cpu *CPU) daaAdditionMode() (uint8, bool) {
+func (c *CPU) daaAdditionMode() (uint8, bool) {
 	correction := uint8(0)
 	carrySet := false
 
@@ -795,7 +795,7 @@ func (cpu *CPU) daaAdditionMode() (uint8, bool) {
 }
 
 // daaSubtractionMode calculates correction for DAA in subtraction mode.
-func (cpu *CPU) daaSubtractionMode() (uint8, bool) {
+func (c *CPU) daaSubtractionMode() (uint8, bool) {
 	correction := uint8(0)
 	carrySet := false
 
@@ -955,7 +955,7 @@ func sbcA(c *CPU, params ...any) error {
 }
 
 // checkCondition returns true if the condition is met based on the opcode.
-func (cpu *CPU) checkCondition(opcode uint8) bool {
+func (c *CPU) checkCondition(opcode uint8) bool {
 	switch opcode {
 	// NZ (Not Zero) - Z flag clear
 	case 0xC0, 0xC2, 0xC4:

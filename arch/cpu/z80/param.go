@@ -19,56 +19,56 @@ var paramReader = map[AddressingMode]paramReaderFunc{
 }
 
 // GetRegisterValue returns the value of a register by its encoding number.
-func (cpu *CPU) GetRegisterValue(reg uint8) uint8 {
+func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 	if reg > 7 {
 		return 0
 	}
 
 	switch reg {
 	case 0:
-		return cpu.B
+		return c.B
 	case 1:
-		return cpu.C
+		return c.C
 	case 2:
-		return cpu.D
+		return c.D
 	case 3:
-		return cpu.E
+		return c.E
 	case 4:
-		return cpu.H
+		return c.H
 	case 5:
-		return cpu.L
+		return c.L
 	case 6:
-		return cpu.memory.Read(uint16(cpu.H)<<8 | uint16(cpu.L))
+		return c.memory.Read(uint16(c.H)<<8 | uint16(c.L))
 	case 7:
-		return cpu.A
+		return c.A
 	default:
 		return 0
 	}
 }
 
 // SetRegisterValue sets the value of a register by its encoding number.
-func (cpu *CPU) SetRegisterValue(reg uint8, value uint8) {
+func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
 	if reg > 7 {
 		return
 	}
 
 	switch reg {
 	case 0:
-		cpu.B = value
+		c.B = value
 	case 1:
-		cpu.C = value
+		c.C = value
 	case 2:
-		cpu.D = value
+		c.D = value
 	case 3:
-		cpu.E = value
+		c.E = value
 	case 4:
-		cpu.H = value
+		c.H = value
 	case 5:
-		cpu.L = value
+		c.L = value
 	case 6:
-		cpu.memory.Write(uint16(cpu.H)<<8|uint16(cpu.L), value)
+		c.memory.Write(uint16(c.H)<<8|uint16(c.L), value)
 	case 7:
-		cpu.A = value
+		c.A = value
 	}
 }
 

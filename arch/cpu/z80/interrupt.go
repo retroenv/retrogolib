@@ -9,51 +9,51 @@ const (
 	InterruptMode2 InterruptMode = 2 // Vector table lookup using I register
 )
 
-// Note: Interrupts struct and TriggerIRQ/TriggerNMI methods are defined in cpu.go
+// Note: Interrupts struct and TriggerIRQ/TriggerNMI methods are defined in c.go
 
 // EnableInterrupts enables maskable interrupts (sets IFF1 and IFF2).
-func (cpu *CPU) EnableInterrupts() {
-	cpu.iff1 = true
-	cpu.iff2 = true
+func (c *CPU) EnableInterrupts() {
+	c.iff1 = true
+	c.iff2 = true
 }
 
 // DisableInterrupts disables maskable interrupts (clears IFF1 and IFF2).
-func (cpu *CPU) DisableInterrupts() {
-	cpu.iff1 = false
-	cpu.iff2 = false
+func (c *CPU) DisableInterrupts() {
+	c.iff1 = false
+	c.iff2 = false
 }
 
 // SetInterruptMode sets the interrupt mode (0, 1, or 2).
-func (cpu *CPU) SetInterruptMode(mode InterruptMode) error {
+func (c *CPU) SetInterruptMode(mode InterruptMode) error {
 	if mode > 2 {
 		return ErrInvalidInterruptMode
 	}
-	cpu.im = uint8(mode)
+	c.im = uint8(mode)
 	return nil
 }
 
 // GetInterruptMode returns the current interrupt mode.
-func (cpu *CPU) GetInterruptMode() InterruptMode {
-	return InterruptMode(cpu.im)
+func (c *CPU) GetInterruptMode() InterruptMode {
+	return InterruptMode(c.im)
 }
 
 // InterruptsEnabled returns whether maskable interrupts are enabled.
-func (cpu *CPU) InterruptsEnabled() bool {
-	return cpu.iff1
+func (c *CPU) InterruptsEnabled() bool {
+	return c.iff1
 }
 
 // CheckInterrupts checks if an interrupt is triggered and executes it.
 // It returns true if an interrupt was executed.
-func (cpu *CPU) CheckInterrupts() bool {
+func (c *CPU) CheckInterrupts() bool {
 	// Non-maskable interrupt has highest priority
-	if cpu.triggerNmi {
-		cpu.executeNMI()
+	if c.triggerNmi {
+		c.executeNMI()
 		return true
 	}
 
 	// Maskable interrupt (only if enabled)
-	if cpu.triggerIrq && cpu.iff1 {
-		cpu.executeIRQ()
+	if c.triggerIrq && c.iff1 {
+		c.executeIRQ()
 		return true
 	}
 
@@ -61,50 +61,50 @@ func (cpu *CPU) CheckInterrupts() bool {
 }
 
 // executeNMI handles non-maskable interrupt execution.
-func (cpu *CPU) executeNMI() {
-	cpu.triggerNmi = false
+func (c *CPU) executeNMI() {
+	c.triggerNmi = false
 
 	// Save IFF1 to IFF2 and disable interrupts
-	cpu.iff2 = cpu.iff1
-	cpu.iff1 = false
+	c.iff2 = c.iff1
+	c.iff1 = false
 
 	// Push PC to stack
-	cpu.SP -= 2
-	cpu.memory.WriteWord(cpu.SP, cpu.PC)
+	c.SP -= 2
+	c.memory.WriteWord(c.SP, c.PC)
 
 	// Jump to NMI vector
-	cpu.PC = 0x0066
-	cpu.cycles += 11
+	c.PC = 0x0066
+	c.cycles += 11
 }
 
 // executeIRQ handles maskable interrupt execution based on interrupt mode.
-func (cpu *CPU) executeIRQ() {
-	cpu.triggerIrq = false
+func (c *CPU) executeIRQ() {
+	c.triggerIrq = false
 
 	// Disable interrupts
-	cpu.iff1 = false
-	cpu.iff2 = false
+	c.iff1 = false
+	c.iff2 = false
 
 	// Push PC to stack
-	cpu.SP -= 2
-	cpu.memory.WriteWord(cpu.SP, cpu.PC)
+	c.SP -= 2
+	c.memory.WriteWord(c.SP, c.PC)
 
-	switch InterruptMode(cpu.im) {
+	switch InterruptMode(c.im) {
 	case InterruptMode0:
 		// Execute instruction on data bus (usually RST)
 		// For simplicity, we'll execute RST 38H
-		cpu.PC = 0x0038
-		cpu.cycles += 13
+		c.PC = 0x0038
+		c.cycles += 13
 
 	case InterruptMode1:
 		// Jump to fixed address 0x0038
-		cpu.PC = 0x0038
-		cpu.cycles += 13
+		c.PC = 0x0038
+		c.cycles += 13
 
 	case InterruptMode2:
 		// Vector table lookup using I register
-		vector := uint16(cpu.I)<<8 | uint16(cpu.memory.Read(0xFFFF))
-		cpu.PC = cpu.memory.ReadWord(vector)
-		cpu.cycles += 19
+		vector := uint16(c.I)<<8 | uint16(c.memory.Read(0xFFFF))
+		c.PC = c.memory.ReadWord(vector)
+		c.cycles += 19
 	}
 }
