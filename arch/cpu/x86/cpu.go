@@ -72,9 +72,7 @@ type CPU struct {
 	triggerInt        bool
 	intVector         uint8
 
-	opts      Options
-	TraceStep TraceStep // trace step info, set if tracing is enabled
-
+	opts   Options
 	memory *Memory
 }
 

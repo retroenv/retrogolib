@@ -12,16 +12,8 @@ type Options struct {
 	initialES uint16
 	initialSS uint16
 
-	// Tracing options
-	tracing         bool
-	tracingCallback func(TraceStep)
-
 	// Memory options
 	memorySize uint32
-
-	// Execution options
-	cyclesPerSecond uint64
-	enableTiming    bool
 
 	// Interrupt options
 	interruptEnabled bool
@@ -40,10 +32,7 @@ func NewOptions(options ...Option) Options {
 		initialDS:        0x0000,
 		initialES:        0x0000,
 		initialSS:        0x0000,
-		tracing:          false,
 		memorySize:       1024 * 1024, // 1MB default
-		cyclesPerSecond:  4770000,     // ~4.77MHz (8088 speed)
-		enableTiming:     false,
 		interruptEnabled: false,
 	}
 
@@ -103,39 +92,10 @@ func WithInitialSS(ss uint16) Option {
 	}
 }
 
-// WithTracing enables instruction tracing.
-func WithTracing(enabled bool) Option {
-	return func(opts *Options) {
-		opts.tracing = enabled
-	}
-}
-
-// WithTracingCallback sets a custom tracing callback function.
-func WithTracingCallback(callback func(TraceStep)) Option {
-	return func(opts *Options) {
-		opts.tracingCallback = callback
-		opts.tracing = true
-	}
-}
-
 // WithMemorySize sets the memory size in bytes.
 func WithMemorySize(size uint32) Option {
 	return func(opts *Options) {
 		opts.memorySize = size
-	}
-}
-
-// WithCyclesPerSecond sets the CPU speed in cycles per second.
-func WithCyclesPerSecond(cycles uint64) Option {
-	return func(opts *Options) {
-		opts.cyclesPerSecond = cycles
-	}
-}
-
-// WithTiming enables cycle-accurate timing.
-func WithTiming(enabled bool) Option {
-	return func(opts *Options) {
-		opts.enableTiming = enabled
 	}
 }
 
