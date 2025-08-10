@@ -8,55 +8,132 @@ var (
 	// Data Movement Instructions
 	MovRMReg8 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x88, Size: 2, Cycles: 2, HasModRM: true},
+		},
 	}
 
 	MovRMReg16 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x89, Size: 2, Cycles: 2, HasModRM: true},
+		},
 	}
 
 	MovRegRM8 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x8A, Size: 2, Cycles: 2, HasModRM: true},
+		},
 	}
 
 	MovRegRM16 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x8B, Size: 2, Cycles: 2, HasModRM: true},
+		},
 	}
 
 	MovRegImm8 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0xB0, Size: 2, Cycles: 4, HasModRM: false}, // Base for B0-B7
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAL: {Opcode: 0xB0, Size: 2, Cycles: 4, HasModRM: false},
+			RegCL: {Opcode: 0xB1, Size: 2, Cycles: 4, HasModRM: false},
+			RegDL: {Opcode: 0xB2, Size: 2, Cycles: 4, HasModRM: false},
+			RegBL: {Opcode: 0xB3, Size: 2, Cycles: 4, HasModRM: false},
+			RegAH: {Opcode: 0xB4, Size: 2, Cycles: 4, HasModRM: false},
+			RegCH: {Opcode: 0xB5, Size: 2, Cycles: 4, HasModRM: false},
+			RegDH: {Opcode: 0xB6, Size: 2, Cycles: 4, HasModRM: false},
+			RegBH: {Opcode: 0xB7, Size: 2, Cycles: 4, HasModRM: false},
+		},
 	}
 
 	MovRegImm16 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0xB8, Size: 3, Cycles: 4, HasModRM: false}, // Base for B8-BF
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0xB8, Size: 3, Cycles: 4, HasModRM: false},
+			RegCX: {Opcode: 0xB9, Size: 3, Cycles: 4, HasModRM: false},
+			RegDX: {Opcode: 0xBA, Size: 3, Cycles: 4, HasModRM: false},
+			RegBX: {Opcode: 0xBB, Size: 3, Cycles: 4, HasModRM: false},
+			RegSP: {Opcode: 0xBC, Size: 3, Cycles: 4, HasModRM: false},
+			RegBP: {Opcode: 0xBD, Size: 3, Cycles: 4, HasModRM: false},
+			RegSI: {Opcode: 0xBE, Size: 3, Cycles: 4, HasModRM: false},
+			RegDI: {Opcode: 0xBF, Size: 3, Cycles: 4, HasModRM: false},
+		},
 	}
 
 	MovMemImm8 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMImmediateAddressing: {Opcode: 0xC6, Size: 3, Cycles: 10, HasModRM: true},
+			DirectAddressing:         {Opcode: 0xA2, Size: 3, Cycles: 10, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAL: {Opcode: 0xA2, Size: 3, Cycles: 10, HasModRM: false}, // MOV moffs8, AL
+		},
 	}
 
 	MovMemImm16 = &Instruction{
 		Name: "mov",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMImmediateAddressing: {Opcode: 0xC7, Size: 4, Cycles: 10, HasModRM: true},
+			DirectAddressing:         {Opcode: 0xA3, Size: 3, Cycles: 10, HasModRM: false},
+			ModRMRegisterAddressing:  {Opcode: 0x8C, Size: 2, Cycles: 2, HasModRM: true}, // MOV r/m16, Sreg
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0xA3, Size: 3, Cycles: 10, HasModRM: false}, // MOV moffs16, AX
+		},
 	}
 
 	// Arithmetic Instructions - ADD
 	AddRMReg8 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x00, Size: 2, Cycles: 3, HasModRM: true},
+		},
 	}
 	AddRMReg16 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x01, Size: 2, Cycles: 3, HasModRM: true},
+		},
 	}
 	AddRegRM8 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x02, Size: 2, Cycles: 3, HasModRM: true},
+		},
 	}
 	AddRegRM16 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x03, Size: 2, Cycles: 3, HasModRM: true},
+		},
 	}
 	AddALImm8 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0x04, Size: 2, Cycles: 4, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAL: {Opcode: 0x04, Size: 2, Cycles: 4, HasModRM: false},
+		},
 	}
 
 	AddAXImm16 = &Instruction{
 		Name: "add",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0x05, Size: 3, Cycles: 4, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0x05, Size: 3, Cycles: 4, HasModRM: false},
+		},
 	}
 
 	// Arithmetic Instructions - SUB
@@ -207,9 +284,25 @@ var (
 	// Increment/Decrement Instructions
 	IncReg8 = &Instruction{
 		Name: "inc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFE, Size: 2, Cycles: 2, HasModRM: true}, // Group 4
+		},
 	}
 	IncReg16 = &Instruction{
 		Name: "inc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RegisterAddressing: {Opcode: 0x40, Size: 1, Cycles: 2, HasModRM: false}, // Base for 40-47
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0x40, Size: 1, Cycles: 2, HasModRM: false},
+			RegCX: {Opcode: 0x41, Size: 1, Cycles: 2, HasModRM: false},
+			RegDX: {Opcode: 0x42, Size: 1, Cycles: 2, HasModRM: false},
+			RegBX: {Opcode: 0x43, Size: 1, Cycles: 2, HasModRM: false},
+			RegSP: {Opcode: 0x44, Size: 1, Cycles: 2, HasModRM: false},
+			RegBP: {Opcode: 0x45, Size: 1, Cycles: 2, HasModRM: false},
+			RegSI: {Opcode: 0x46, Size: 1, Cycles: 2, HasModRM: false},
+			RegDI: {Opcode: 0x47, Size: 1, Cycles: 2, HasModRM: false},
+		},
 	}
 	IncRM8 = &Instruction{
 		Name: "inc",
@@ -222,6 +315,19 @@ var (
 	}
 	DecReg16 = &Instruction{
 		Name: "dec",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RegisterAddressing: {Opcode: 0x48, Size: 1, Cycles: 2, HasModRM: false}, // Base for 48-4F
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0x48, Size: 1, Cycles: 2, HasModRM: false},
+			RegCX: {Opcode: 0x49, Size: 1, Cycles: 2, HasModRM: false},
+			RegDX: {Opcode: 0x4A, Size: 1, Cycles: 2, HasModRM: false},
+			RegBX: {Opcode: 0x4B, Size: 1, Cycles: 2, HasModRM: false},
+			RegSP: {Opcode: 0x4C, Size: 1, Cycles: 2, HasModRM: false},
+			RegBP: {Opcode: 0x4D, Size: 1, Cycles: 2, HasModRM: false},
+			RegSI: {Opcode: 0x4E, Size: 1, Cycles: 2, HasModRM: false},
+			RegDI: {Opcode: 0x4F, Size: 1, Cycles: 2, HasModRM: false},
+		},
 	}
 	DecRM8 = &Instruction{
 		Name: "dec",
@@ -233,9 +339,35 @@ var (
 	// Stack Instructions
 	PushReg16 = &Instruction{
 		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RegisterAddressing: {Opcode: 0x50, Size: 1, Cycles: 11, HasModRM: false}, // Base for 50-57
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0x50, Size: 1, Cycles: 11, HasModRM: false},
+			RegCX: {Opcode: 0x51, Size: 1, Cycles: 11, HasModRM: false},
+			RegDX: {Opcode: 0x52, Size: 1, Cycles: 11, HasModRM: false},
+			RegBX: {Opcode: 0x53, Size: 1, Cycles: 11, HasModRM: false},
+			RegSP: {Opcode: 0x54, Size: 1, Cycles: 11, HasModRM: false},
+			RegBP: {Opcode: 0x55, Size: 1, Cycles: 11, HasModRM: false},
+			RegSI: {Opcode: 0x56, Size: 1, Cycles: 11, HasModRM: false},
+			RegDI: {Opcode: 0x57, Size: 1, Cycles: 11, HasModRM: false},
+		},
 	}
 	PopReg16 = &Instruction{
 		Name: "pop",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RegisterAddressing: {Opcode: 0x58, Size: 1, Cycles: 8, HasModRM: false}, // Base for 58-5F
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegAX: {Opcode: 0x58, Size: 1, Cycles: 8, HasModRM: false},
+			RegCX: {Opcode: 0x59, Size: 1, Cycles: 8, HasModRM: false},
+			RegDX: {Opcode: 0x5A, Size: 1, Cycles: 8, HasModRM: false},
+			RegBX: {Opcode: 0x5B, Size: 1, Cycles: 8, HasModRM: false},
+			RegSP: {Opcode: 0x5C, Size: 1, Cycles: 8, HasModRM: false},
+			RegBP: {Opcode: 0x5D, Size: 1, Cycles: 8, HasModRM: false},
+			RegSI: {Opcode: 0x5E, Size: 1, Cycles: 8, HasModRM: false},
+			RegDI: {Opcode: 0x5F, Size: 1, Cycles: 8, HasModRM: false},
+		},
 	}
 	PushSeg = &Instruction{
 		Name: "push",
@@ -245,15 +377,39 @@ var (
 	}
 	PushCS = &Instruction{
 		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x0E, Size: 1, Cycles: 10, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegCS: {Opcode: 0x0E, Size: 1, Cycles: 10, HasModRM: false},
+		},
 	}
 	PushDS = &Instruction{
 		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x1E, Size: 1, Cycles: 10, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegDS: {Opcode: 0x1E, Size: 1, Cycles: 10, HasModRM: false},
+		},
 	}
 	PushES = &Instruction{
 		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x06, Size: 1, Cycles: 10, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegES: {Opcode: 0x06, Size: 1, Cycles: 10, HasModRM: false},
+		},
 	}
 	PushSS = &Instruction{
 		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x16, Size: 1, Cycles: 10, HasModRM: false},
+		},
+		RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+			RegSS: {Opcode: 0x16, Size: 1, Cycles: 10, HasModRM: false},
+		},
 	}
 	PopDS = &Instruction{
 		Name: "pop",
@@ -268,9 +424,15 @@ var (
 	// Jump Instructions - Conditional
 	Jo = &Instruction{ // Jump if overflow
 		Name: "jo",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing: {Opcode: 0x70, Size: 2, Cycles: 16, HasModRM: false},
+		},
 	}
 	Jno = &Instruction{ // Jump if not overflow
 		Name: "jno",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing: {Opcode: 0x71, Size: 2, Cycles: 16, HasModRM: false},
+		},
 	}
 	Jb = &Instruction{ // Jump if below/carry
 		Name: "jb",
@@ -280,9 +442,15 @@ var (
 	}
 	Jz = &Instruction{ // Jump if zero/equal
 		Name: "jz",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing: {Opcode: 0x74, Size: 2, Cycles: 16, HasModRM: false},
+		},
 	}
 	Jnz = &Instruction{ // Jump if not zero/not equal
 		Name: "jnz",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing: {Opcode: 0x75, Size: 2, Cycles: 16, HasModRM: false},
+		},
 	}
 	Jbe = &Instruction{ // Jump if below or equal
 		Name: "jbe",
@@ -318,18 +486,30 @@ var (
 	// Jump Instructions - Unconditional
 	Jmp = &Instruction{ // Unconditional jump
 		Name: "jmp",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing:      {Opcode: 0xE9, Size: 3, Cycles: 15, HasModRM: false}, // JMP rel16
+			ModRMRegisterAddressing: {Opcode: 0xFF, Size: 2, Cycles: 11, HasModRM: true},  // Group 5, /4
+		},
 	}
 	JmpFar = &Instruction{ // Far jump
 		Name: "jmp",
 	}
 	Call = &Instruction{ // Call procedure
 		Name: "call",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			RelativeAddressing:      {Opcode: 0xE8, Size: 3, Cycles: 19, HasModRM: false}, // CALL rel16
+			ModRMRegisterAddressing: {Opcode: 0xFF, Size: 2, Cycles: 16, HasModRM: true},  // Group 5, /2
+		},
 	}
 	CallFar = &Instruction{ // Far call
 		Name: "call",
 	}
 	Ret = &Instruction{ // Return
 		Name: "ret",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing:   {Opcode: 0xC3, Size: 1, Cycles: 16, HasModRM: false}, // RET
+			ImmediateAddressing: {Opcode: 0xC2, Size: 3, Cycles: 20, HasModRM: false}, // RET imm16
+		},
 	}
 	RetFar = &Instruction{ // Far return
 		Name: "retf",
@@ -349,9 +529,15 @@ var (
 	// Flag Instructions
 	Clc = &Instruction{ // Clear carry flag
 		Name: "clc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0xF8, Size: 1, Cycles: 2, HasModRM: false},
+		},
 	}
 	Stc = &Instruction{ // Set carry flag
 		Name: "stc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0xF9, Size: 1, Cycles: 2, HasModRM: false},
+		},
 	}
 	Cmc = &Instruction{ // Complement carry flag
 		Name: "cmc",
@@ -498,9 +684,15 @@ var (
 	// Control Instructions
 	Nop = &Instruction{ // No operation
 		Name: "nop",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x90, Size: 1, Cycles: 3, HasModRM: false},
+		},
 	}
 	Hlt = &Instruction{ // Halt
 		Name: "hlt",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0xF4, Size: 1, Cycles: 2, HasModRM: false},
+		},
 	}
 
 	// Other Instructions
