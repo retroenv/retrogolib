@@ -245,7 +245,10 @@ var Opcodes = [256]Opcode{
 	{Instruction: Iret, Addressing: ImpliedAddressing, Timing: 32, Size: 1},                     // 0xCF IRET
 
 	// 0xD0-0xDF: Shift/rotate, AAM/AAD, XLAT
-	{}, {}, {}, {}, // 0xD0-0xD3 (Shift Group 2)
+	{Instruction: Rol, Addressing: ModRMRegisterAddressing, Timing: 2, Size: 2, HasModRM: true}, // 0xD0 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m8, 1
+	{Instruction: Rol, Addressing: ModRMRegisterAddressing, Timing: 2, Size: 2, HasModRM: true}, // 0xD1 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m16, 1
+	{Instruction: Rol, Addressing: ModRMRegisterAddressing, Timing: 5, Size: 2, HasModRM: true}, // 0xD2 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m8, CL
+	{Instruction: Rol, Addressing: ModRMRegisterAddressing, Timing: 5, Size: 2, HasModRM: true}, // 0xD3 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m16, CL
 	{}, {}, // 0xD4-0xD5 AAM, AAD
 	{}, // 0xD6 (reserved)
 	{Instruction: Xlat, Addressing: ImpliedAddressing, Timing: 11, Size: 1}, // 0xD7 XLAT
@@ -271,18 +274,20 @@ var Opcodes = [256]Opcode{
 	// 0xF0-0xFF: Prefixes, TEST, control flags, INC/DEC memory, CALL/JMP indirect
 	{}, // 0xF0 LOCK prefix
 	{}, // 0xF1 (reserved)
-	{Instruction: Repnz, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xF2 REPNZ prefix
-	{Instruction: Rep, Addressing: ImpliedAddressing, Timing: 2, Size: 1},   // 0xF3 REP/REPZ prefix
-	{Instruction: Hlt, Addressing: ImpliedAddressing, Timing: 2, Size: 1},   // 0xF4 HLT
-	{Instruction: Cmc, Addressing: ImpliedAddressing, Timing: 2, Size: 1},   // 0xF5 CMC
-	{}, {}, // 0xF6-0xF7 (Group 3 - TEST, NOT, NEG, MUL, IMUL, DIV, IDIV)
-	{Instruction: Clc, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xF8 CLC
-	{Instruction: Stc, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xF9 STC
-	{Instruction: Cli, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xFA CLI
-	{Instruction: Sti, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xFB STI
-	{Instruction: Cld, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xFC CLD
-	{Instruction: Std, Addressing: ImpliedAddressing, Timing: 2, Size: 1}, // 0xFD STD
-	{}, {}, // 0xFE-0xFF (Group 4/5 - INC/DEC, CALL/JMP indirect)
+	{Instruction: Repnz, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                         // 0xF2 REPNZ prefix
+	{Instruction: Repz, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                          // 0xF3 REP/REPZ prefix
+	{Instruction: Hlt, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xF4 HLT
+	{Instruction: Cmc, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xF5 CMC
+	{Instruction: Test, Addressing: ModRMRegisterAddressing, Timing: 3, Size: 2, HasModRM: true},    // 0xF6 Group 3 - TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m8
+	{Instruction: Test, Addressing: ModRMRegisterAddressing, Timing: 3, Size: 2, HasModRM: true},    // 0xF7 Group 3 - TEST/NOT/NEG/MUL/IMUL/DIV/IDIV r/m16
+	{Instruction: Clc, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xF8 CLC
+	{Instruction: Stc, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xF9 STC
+	{Instruction: Cli, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xFA CLI
+	{Instruction: Sti, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xFB STI
+	{Instruction: Cld, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xFC CLD
+	{Instruction: Std, Addressing: ImpliedAddressing, Timing: 2, Size: 1},                           // 0xFD STD
+	{Instruction: IncRM8, Addressing: ModRMRegisterAddressing, Timing: 3, Size: 2, HasModRM: true},  // 0xFE Group 4 - INC/DEC r/m8
+	{Instruction: IncRM16, Addressing: ModRMRegisterAddressing, Timing: 3, Size: 2, HasModRM: true}, // 0xFF Group 5 - INC/DEC/CALL/JMP r/m16
 }
 
 // Package-level maps for optimal performance.

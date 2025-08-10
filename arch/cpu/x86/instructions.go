@@ -306,12 +306,21 @@ var (
 	}
 	IncRM8 = &Instruction{
 		Name: "inc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFE, Size: 2, Cycles: 3, HasModRM: true}, // Group 4, /0
+		},
 	}
 	IncRM16 = &Instruction{
 		Name: "inc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFF, Size: 2, Cycles: 3, HasModRM: true}, // Group 5, /0
+		},
 	}
 	DecReg8 = &Instruction{
 		Name: "dec",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFE, Size: 2, Cycles: 3, HasModRM: true}, // Group 4, /1
+		},
 	}
 	DecReg16 = &Instruction{
 		Name: "dec",
@@ -331,9 +340,15 @@ var (
 	}
 	DecRM8 = &Instruction{
 		Name: "dec",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFE, Size: 2, Cycles: 3, HasModRM: true}, // Group 4, /1
+		},
 	}
 	DecRM16 = &Instruction{
 		Name: "dec",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0xFF, Size: 2, Cycles: 3, HasModRM: true}, // Group 5, /1
+		},
 	}
 
 	// Stack Instructions
