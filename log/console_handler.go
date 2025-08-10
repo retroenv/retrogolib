@@ -88,7 +88,9 @@ func (h *ConsoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 // Handle handles the Record.
 func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
-	var buf bytes.Buffer
+	// Pre-allocate buffer with estimated capacity for better performance
+	b := make([]byte, 0, 256)
+	buf := bytes.NewBuffer(b)
 
 	if h.opts.TimeFormat != "-" {
 		buf.WriteString(r.Time.Format(h.opts.TimeFormat))
