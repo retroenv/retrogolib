@@ -91,32 +91,44 @@ func (l *Logger) MultiCloserCtx(ctx context.Context, msg string, closers ...clos
 	}
 }
 
+// expectedCloseErrors contains error types that are expected during normal close operations.
+// Pre-allocated as package-level variable for performance.
+var expectedCloseErrors = []error{
+	os.ErrClosed,
+	net.ErrClosed,
+	io.EOF,
+	syscall.EBADF,
+	syscall.EINVAL,
+}
+
+// expectedCloseErrorStrings contains error strings that indicate expected close conditions.
+// Pre-allocated as package-level variable for performance.
+var expectedCloseErrorStrings = []string{
+	"use of closed network connection",
+	"broken pipe",
+	"connection reset by peer",
+}
+
 // shouldIgnoreCloseError returns true for errors that are expected and should not be logged.
 func (l *Logger) shouldIgnoreCloseError(err error) bool {
 	if err == nil {
 		return true
 	}
 
-	// Common expected errors that should not be logged
-	if errors.Is(err, os.ErrClosed) ||
-		errors.Is(err, net.ErrClosed) ||
-		errors.Is(err, io.EOF) ||
-		errors.Is(err, syscall.EBADF) ||
-		errors.Is(err, syscall.EINVAL) {
-
-		return true
+	// Check common expected errors using pre-allocated slice
+	for _, expectedErr := range expectedCloseErrors {
+		if errors.Is(err, expectedErr) {
+			return true
+		}
 	}
 
-	// Check for "use of closed network connection" error string
+	// Check for network operation errors with expected strings
 	// This is necessary because Go's net package doesn't always wrap these properly
 	var opErr *net.OpError
-	if errors.As(err, &opErr) {
-		if opErr.Err != nil {
-			errStr := opErr.Err.Error()
-			if errStr == "use of closed network connection" ||
-				errStr == "broken pipe" ||
-				errStr == "connection reset by peer" {
-
+	if errors.As(err, &opErr) && opErr.Err != nil {
+		errStr := opErr.Err.Error()
+		for _, expectedStr := range expectedCloseErrorStrings {
+			if errStr == expectedStr {
 				return true
 			}
 		}

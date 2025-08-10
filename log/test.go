@@ -91,7 +91,9 @@ type testingWriter struct {
 
 func (w testingWriter) Write(p []byte) (int, error) {
 	n := len(p)
-	p = bytes.TrimRight(p, "\n") // strip trailing newline because t.Log always adds one
+	// Strip trailing newline because t.Log always adds one
+	// Use TrimRight for better performance with multiple trailing newlines
+	p = bytes.TrimRight(p, "\n")
 
 	w.t.Logf("%s", p)
 	return n, nil
