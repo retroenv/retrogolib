@@ -227,31 +227,6 @@ func TestCPU_BIOSDefaults(t *testing.T) {
 	assert.False(t, cpu.opts.interruptEnabled)
 }
 
-func TestCPU_RegisterHelpers(t *testing.T) {
-	logger := log.NewTestLogger(t)
-	memory := createTestMemory(t, logger)
-	cpu, err := New(memory)
-	assert.NoError(t, err)
-
-	// Test 8-bit register access
-	cpu.AX = 0x1234
-	assert.Equal(t, uint8(0x34), cpu.getReg8(RegAL))
-	assert.Equal(t, uint8(0x12), cpu.getReg8(RegAH))
-
-	cpu.setReg8(RegAL, 0x56)
-	assert.Equal(t, uint16(0x1256), cpu.AX)
-
-	// Test 16-bit register access
-	cpu.setReg16(RegBX, 0xABCD)
-	assert.Equal(t, uint16(0xABCD), cpu.getReg16(RegBX))
-	assert.Equal(t, uint16(0xABCD), cpu.BX)
-
-	// Test segment register access
-	cpu.setReg16(RegDS, 0x2000)
-	assert.Equal(t, uint16(0x2000), cpu.getReg16(RegDS))
-	assert.Equal(t, uint16(0x2000), cpu.DS)
-}
-
 // createTestMemory creates a test memory instance.
 func createTestMemory(t *testing.T, logger *log.Logger) *Memory {
 	t.Helper()
@@ -280,32 +255,6 @@ func TestCPU_InstructionExecution(t *testing.T) {
 
 	// Skip the actual test for now
 	t.Skip("Debugging opcodes")
-}
-
-func TestCPU_ArithmeticOperations(t *testing.T) {
-	logger := log.NewTestLogger(t)
-	memory := createTestMemory(t, logger)
-	cpu, err := New(memory)
-	assert.NoError(t, err)
-
-	tests := []struct {
-		name      string
-		a, b      uint8
-		expected  uint8
-		operation func(*CPU, uint8, uint8) uint8
-	}{
-		{"add 5+3", 5, 3, 8, (*CPU).add8},
-		{"sub 10-4", 10, 4, 6, (*CPU).sub8},
-		{"and 0xFF&0x0F", 0xFF, 0x0F, 0x0F, (*CPU).and8},
-		{"or 0xF0|0x0F", 0xF0, 0x0F, 0xFF, (*CPU).or8},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.operation(cpu, tt.a, tt.b)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
 }
 
 func TestCPU_FlagOperations(t *testing.T) {

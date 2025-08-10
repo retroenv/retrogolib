@@ -7,9 +7,6 @@ type Instruction struct {
 
 	Addressing      map[AddressingMode]OpcodeInfo // addressing mode mapping to opcode info
 	RegisterOpcodes map[RegisterParam]OpcodeInfo  // register-specific opcode mapping
-
-	NoParamFunc func(c *CPU) error                // emulation function with no parameters
-	ParamFunc   func(c *CPU, params ...any) error // emulation function with parameters
 }
 
 // HasAddressing returns whether the instruction has any of the passed addressing modes.
@@ -87,27 +84,6 @@ func (ins Instruction) GetSupportedRegisters() []RegisterParam {
 // IsValid returns whether the instruction has valid opcode mappings.
 func (ins Instruction) IsValid() bool {
 	return len(ins.Addressing) > 0 || len(ins.RegisterOpcodes) > 0
-}
-
-// RequiresParameters returns whether the instruction requires parameters.
-func (ins Instruction) RequiresParameters() bool {
-	return ins.ParamFunc != nil && ins.NoParamFunc == nil
-}
-
-// SupportsNoParameters returns whether the instruction can execute without parameters.
-func (ins Instruction) SupportsNoParameters() bool {
-	return ins.NoParamFunc != nil
-}
-
-// Execute executes the instruction with the given parameters.
-func (ins Instruction) Execute(c *CPU, params ...any) error {
-	if len(params) == 0 && ins.NoParamFunc != nil {
-		return ins.NoParamFunc(c)
-	}
-	if ins.ParamFunc != nil {
-		return ins.ParamFunc(c, params...)
-	}
-	return ErrInvalidInstruction
 }
 
 // InstructionSet contains all x86 instructions indexed by name.
