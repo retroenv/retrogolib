@@ -25,8 +25,15 @@ const (
 	// Includes original Game Boy, Game Boy Pocket, and Game Boy Color compatibility.
 	GameBoy System = "gameboy"
 
+	// Generic represents a generic system without specific hardware quirks.
+	// Can be used for any CPU architecture when no system-specific behavior is needed.
+	Generic System = "generic"
+
 	// NES represents the Nintendo Entertainment System (Famicom).
 	NES System = "nes"
+
+	// ZXSpectrum represents the Sinclair ZX Spectrum home computer series.
+	ZXSpectrum System = "zx-spectrum"
 )
 
 // allSupportedSystems defines the single source of truth for supported systems.
@@ -35,7 +42,9 @@ var allSupportedSystems = []System{
 	CHIP8System,
 	DOS,
 	GameBoy,
+	Generic,
 	NES,
+	ZXSpectrum,
 }
 
 // supportedSystemsSet provides O(1) lookup performance for system validation.
