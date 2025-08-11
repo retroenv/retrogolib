@@ -164,9 +164,9 @@ func edSbcHlSp(c *CPU, params ...any) error { c.sbcHL(c.SP); return nil }
 
 // edLdi implements ED A0: LDI (HL),(DE), INC HL, INC DE, DEC BC.
 func edLdi(c *CPU) error {
-	hl := c.HL()
-	de := c.DE()
-	bc := c.BC()
+	hl := c.hl()
+	de := c.de()
+	bc := c.bc()
 
 	c.memory.Write(de, c.memory.Read(hl))
 	c.setHL(hl + 1)
@@ -181,9 +181,9 @@ func edLdi(c *CPU) error {
 
 // edLdd implements ED A8: LDD (HL),(DE), DEC HL, DEC DE, DEC BC.
 func edLdd(c *CPU) error {
-	hl := c.HL()
-	de := c.DE()
-	bc := c.BC()
+	hl := c.hl()
+	de := c.de()
+	bc := c.bc()
 
 	c.memory.Write(de, c.memory.Read(hl))
 	c.setHL(hl - 1)
@@ -198,7 +198,7 @@ func edLdd(c *CPU) error {
 
 // edLdir implements ED B0: LDIR - Repeat LDI until BC=0.
 func edLdir(c *CPU) error {
-	for c.BC() != 0 {
+	for c.bc() != 0 {
 		if err := edLdi(c); err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func edLdir(c *CPU) error {
 
 // edLddr implements ED B8: LDDR - Repeat LDD until BC=0.
 func edLddr(c *CPU) error {
-	for c.BC() != 0 {
+	for c.bc() != 0 {
 		if err := edLdd(c); err != nil {
 			return err
 		}
@@ -218,8 +218,8 @@ func edLddr(c *CPU) error {
 
 // edCpi implements ED A1: CPI - Compare A with (HL), INC HL, DEC BC.
 func edCpi(c *CPU) error {
-	hl := c.HL()
-	bc := c.BC()
+	hl := c.hl()
+	bc := c.bc()
 	memValue := c.memory.Read(hl)
 
 	result := c.A - memValue
@@ -235,8 +235,8 @@ func edCpi(c *CPU) error {
 
 // edCpd implements ED A9: CPD - Compare A with (HL), DEC HL, DEC BC.
 func edCpd(c *CPU) error {
-	hl := c.HL()
-	bc := c.BC()
+	hl := c.hl()
+	bc := c.bc()
 	memValue := c.memory.Read(hl)
 
 	result := c.A - memValue
@@ -252,7 +252,7 @@ func edCpd(c *CPU) error {
 
 // edCpir implements ED B1: CPIR - Repeat CPI until BC=0 or match found.
 func edCpir(c *CPU) error {
-	for c.BC() != 0 {
+	for c.bc() != 0 {
 		if err := edCpi(c); err != nil {
 			return err
 		}
@@ -265,7 +265,7 @@ func edCpir(c *CPU) error {
 
 // edCpdr implements ED B9: CPDR - Repeat CPD until BC=0 or match found.
 func edCpdr(c *CPU) error {
-	for c.BC() != 0 {
+	for c.bc() != 0 {
 		if err := edCpd(c); err != nil {
 			return err
 		}
@@ -280,7 +280,7 @@ func edCpdr(c *CPU) error {
 
 // edIni implements ED A2: INI - IN (HL),(C), INC HL, DEC B.
 func edIni(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	port := c.C
 	value := c.readPort(port)
 
@@ -295,7 +295,7 @@ func edIni(c *CPU) error {
 
 // edInd implements ED AA: IND - IN (HL),(C), DEC HL, DEC B.
 func edInd(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	port := c.C
 	value := c.readPort(port)
 
@@ -330,7 +330,7 @@ func edIndr(c *CPU) error {
 
 // edOuti implements ED A3: OUTI - OUT (C),(HL), INC HL, DEC B.
 func edOuti(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	port := c.C
 	value := c.memory.Read(hl)
 
@@ -345,7 +345,7 @@ func edOuti(c *CPU) error {
 
 // edOutd implements ED AB: OUTD - OUT (C),(HL), DEC HL, DEC B.
 func edOutd(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	port := c.C
 	value := c.memory.Read(hl)
 
@@ -508,7 +508,7 @@ func edReti(c *CPU) error {
 // edRrd implements ED 67: RRD - Rotate Right Decimal.
 // The contents of A and (HL) are rotated right 4 bits.
 func edRrd(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	memValue := c.memory.Read(hl)
 
 	// Rotate A and (HL) right 4 bits
@@ -526,7 +526,7 @@ func edRrd(c *CPU) error {
 // edRld implements ED 6F: RLD - Rotate Left Decimal.
 // The contents of A and (HL) are rotated left 4 bits.
 func edRld(c *CPU) error {
-	hl := c.HL()
+	hl := c.hl()
 	memValue := c.memory.Read(hl)
 
 	// Rotate A and (HL) left 4 bits

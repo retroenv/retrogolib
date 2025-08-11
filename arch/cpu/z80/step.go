@@ -13,6 +13,9 @@ type TraceStep struct {
 
 // Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.halted {
 		// CPU is halted, just advance cycles
 		c.cycles += 4
@@ -20,9 +23,7 @@ func (c *CPU) Step() error {
 	}
 
 	// Handle interrupts first
-	if err := c.handleInterrupts(); err != nil {
-		return err
-	}
+	c.handleInterrupts()
 
 	oldPC := c.PC
 	opcode, opcodeByte, err := c.decodeNextInstruction()
@@ -1005,7 +1006,7 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 }
 
 // handleInterrupts processes pending interrupts.
-func (c *CPU) handleInterrupts() error {
+func (c *CPU) handleInterrupts() {
 	// Non-maskable interrupt has highest priority
 	if c.triggerNmi {
 		c.triggerNmi = false
@@ -1020,7 +1021,7 @@ func (c *CPU) handleInterrupts() error {
 		c.iff1 = false
 
 		c.cycles += 11
-		return nil
+		return
 	}
 
 	// Maskable interrupt
@@ -1048,9 +1049,5 @@ func (c *CPU) handleInterrupts() error {
 			c.PC = c.memory.ReadWord(vector)
 			c.cycles += 19
 		}
-
-		return nil
 	}
-
-	return nil
 }

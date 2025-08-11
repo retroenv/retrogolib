@@ -66,7 +66,7 @@ func (c *CPU) add16(a, b uint16) uint16 {
 
 	// Set flags (only C, H, and N for 16-bit operations)
 	c.setC(result32 > 0xFFFF)              // Carry if result > 65535
-	c.setH((a&0x07FF)+(b&0x07FF) > 0x07FF) // Half carry on bit 11 (not bit 12)
+	c.setH((a&0x0FFF)+(b&0x0FFF) > 0x0FFF) // Half carry from bit 11 to bit 12
 	c.setN(false)                          // Clear N flag for addition
 
 	return result
@@ -603,13 +603,13 @@ func ldIndirect(c *CPU, params ...any) error {
 
 	switch opcode {
 	case 0x02: // LD (BC),A - store A at (BC)
-		c.memory.Write(c.BC(), c.A)
+		c.memory.Write(c.bc(), c.A)
 	case 0x0A: // LD A,(BC) - load A from (BC)
-		c.A = c.memory.Read(c.BC())
+		c.A = c.memory.Read(c.bc())
 	case 0x12: // LD (DE),A - store A at (DE)
-		c.memory.Write(c.DE(), c.A)
+		c.memory.Write(c.de(), c.A)
 	case 0x1A: // LD A,(DE) - load A from (DE)
-		c.A = c.memory.Read(c.DE())
+		c.A = c.memory.Read(c.de())
 	default:
 		return fmt.Errorf("unsupported indirect load opcode: 0x%02X", opcode)
 	}
@@ -621,11 +621,11 @@ func incReg16(c *CPU, params ...any) error {
 	opcode := c.currentOpcode
 	switch opcode {
 	case 0x03: // INC BC
-		c.setBC(c.BC() + 1)
+		c.setBC(c.bc() + 1)
 	case 0x13: // INC DE
-		c.setDE(c.DE() + 1)
+		c.setDE(c.de() + 1)
 	case 0x23: // INC HL
-		c.setHL(c.HL() + 1)
+		c.setHL(c.hl() + 1)
 	case 0x33: // INC SP
 		c.SP++
 	default:
@@ -639,11 +639,11 @@ func decReg16(c *CPU, params ...any) error {
 	opcode := c.currentOpcode
 	switch opcode {
 	case 0x0B: // DEC BC
-		c.setBC(c.BC() - 1)
+		c.setBC(c.bc() - 1)
 	case 0x1B: // DEC DE
-		c.setDE(c.DE() - 1)
+		c.setDE(c.de() - 1)
 	case 0x2B: // DEC HL
-		c.setHL(c.HL() - 1)
+		c.setHL(c.hl() - 1)
 	case 0x3B: // DEC SP
 		c.SP--
 	default:
@@ -696,7 +696,7 @@ func exAf(c *CPU) error {
 func addHl(c *CPU, params ...any) error {
 	// For opcode 0x09: ADD HL,BC - add BC to HL
 	// In a full implementation, we'd determine which register pair from the opcode
-	c.setHL(c.add16(c.HL(), c.BC()))
+	c.setHL(c.add16(c.hl(), c.bc()))
 	return nil
 }
 
@@ -764,7 +764,7 @@ func ldExtended(c *CPU, params ...any) error {
 	opcode := c.currentOpcode
 	switch opcode {
 	case 0x22: // LD (nn),HL - store HL to memory address nn
-		c.memory.WriteWord(uint16(address), c.HL())
+		c.memory.WriteWord(uint16(address), c.hl())
 	case 0x2A: // LD HL,(nn) - load HL from memory address nn
 		value := c.memory.ReadWord(uint16(address))
 		c.setHL(value)
@@ -845,7 +845,7 @@ func cpl(c *CPU) error {
 // incIndirect increments memory location pointed to by register pair.
 func incIndirect(c *CPU, params ...any) error {
 	// For opcode 0x34: INC (HL) - increment memory at HL
-	address := c.HL()
+	address := c.hl()
 	value := c.memory.Read(address)
 	newValue := value + 1
 	c.memory.Write(address, newValue)
@@ -862,7 +862,7 @@ func incIndirect(c *CPU, params ...any) error {
 // decIndirect decrements memory location pointed to by register pair.
 func decIndirect(c *CPU, params ...any) error {
 	// For opcode 0x35: DEC (HL) - decrement memory at HL
-	address := c.HL()
+	address := c.hl()
 	value := c.memory.Read(address)
 	newValue := value - 1
 	c.memory.Write(address, newValue)
@@ -893,7 +893,7 @@ func ldIndirectImm(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	address := c.HL()
+	address := c.hl()
 	c.memory.Write(address, immediate)
 	return nil
 }
@@ -1056,13 +1056,13 @@ func pushReg16(c *CPU, params ...any) error {
 	var value uint16
 	switch opcode {
 	case 0xC5: // PUSH BC
-		value = c.BC()
+		value = c.bc()
 	case 0xD5: // PUSH DE
-		value = c.DE()
+		value = c.de()
 	case 0xE5: // PUSH HL
-		value = c.HL()
+		value = c.hl()
 	case 0xF5: // PUSH AF
-		value = c.AF()
+		value = c.af()
 	default:
 		return fmt.Errorf("unsupported pushReg16 opcode: 0x%02X", opcode)
 	}
@@ -1212,7 +1212,7 @@ func exSp(c *CPU, params ...any) error {
 	stackValue := uint16(high)<<8 | uint16(low)
 
 	// Get current HL value
-	hlValue := c.HL()
+	hlValue := c.hl()
 
 	// Write HL to stack
 	c.memory.Write(c.SP, uint8(hlValue))
@@ -1227,7 +1227,7 @@ func exSp(c *CPU, params ...any) error {
 // jpIndirect performs indirect jump.
 func jpIndirect(c *CPU, params ...any) error {
 	// JP (HL) - Jump to address in HL register
-	c.PC = c.HL()
+	c.PC = c.hl()
 	return nil
 }
 

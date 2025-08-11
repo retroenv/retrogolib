@@ -146,21 +146,29 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 
 // Cycles returns the amount of CPU cycles executed since system start.
 func (c *CPU) Cycles() uint64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.cycles
 }
 
 // Halted returns whether the CPU is in halted state.
 func (c *CPU) Halted() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.halted
 }
 
 // Halt puts the CPU into halted state.
 func (c *CPU) Halt() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.halted = true
 }
 
 // Resume resumes the CPU from halted state.
 func (c *CPU) Resume() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.halted = false
 }
 
@@ -206,37 +214,71 @@ func (c *CPU) State() State {
 
 // Memory returns the CPU memory.
 func (c *CPU) Memory() *Memory {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.memory
 }
 
 // BC returns the BC register pair as a 16-bit value.
 func (c *CPU) BC() uint16 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return uint16(c.B)<<8 | uint16(c.C)
 }
 
 // DE returns the DE register pair as a 16-bit value.
 func (c *CPU) DE() uint16 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return uint16(c.D)<<8 | uint16(c.E)
 }
 
 // HL returns the HL register pair as a 16-bit value.
 func (c *CPU) HL() uint16 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return uint16(c.H)<<8 | uint16(c.L)
 }
 
 // AF returns the AF register pair as a 16-bit value.
 func (c *CPU) AF() uint16 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return uint16(c.A)<<8 | uint16(c.GetFlags())
 }
 
 // TriggerNMI triggers a non-maskable interrupt.
 func (c *CPU) TriggerNMI() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.triggerNmi = true
 }
 
 // TriggerIRQ triggers a maskable interrupt.
 func (c *CPU) TriggerIRQ() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.triggerIrq = true
+}
+
+// bc returns the BC register pair as a 16-bit value (internal, no lock).
+func (c *CPU) bc() uint16 {
+	return uint16(c.B)<<8 | uint16(c.C)
+}
+
+// de returns the DE register pair as a 16-bit value (internal, no lock).
+func (c *CPU) de() uint16 {
+	return uint16(c.D)<<8 | uint16(c.E)
+}
+
+// hl returns the HL register pair as a 16-bit value (internal, no lock).
+func (c *CPU) hl() uint16 {
+	return uint16(c.H)<<8 | uint16(c.L)
+}
+
+// af returns the AF register pair as a 16-bit value (internal, no lock).
+func (c *CPU) af() uint16 {
+	return uint16(c.A)<<8 | uint16(c.GetFlags())
 }
 
 // setBC sets the BC register pair from a 16-bit value.
