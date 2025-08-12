@@ -226,9 +226,23 @@ func TestBrk(t *testing.T) {
 	t.Parallel()
 	cpu := cpuTestSetup(t)
 
+	// Set initial PC and stack pointer
+	cpu.PC = 0x1000
+	cpu.SP = 0xFD
+
 	assert.NoError(t, brk(cpu))
 
-	assert.Equal(t, testIrqAddress, cpu.PC)
+	assert.Equal(t, testIrqAddress, cpu.PC) // Verify PC jumps to IRQ vector
+	assert.Equal(t, uint8(0xFA), cpu.SP)    // Stack pointer decremented by 3 (2 for address, 1 for flags)
+
+	// Check what was pushed to stack
+	lowByte := cpu.memory.Read(0x01FC)  // Return address low byte
+	highByte := cpu.memory.Read(0x01FD) // Return address high byte
+	returnAddr := uint16(highByte)<<8 | uint16(lowByte)
+	assert.Equal(t, 0x1002, returnAddr) // PC+2 was pushed
+
+	assert.Equal(t, 1, cpu.Flags.I)
+	assert.True(t, cpu.irqRunning)
 }
 
 func TestBvc(t *testing.T) {

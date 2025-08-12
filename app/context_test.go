@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"os"
+	"runtime"
 	"syscall"
 	"testing"
 	"time"
@@ -25,6 +26,10 @@ func TestContext(t *testing.T) {
 }
 
 func TestContext_SIGINT(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping SIGINT test on Windows - Unix signals not supported")
+	}
+
 	ctx := app.Context()
 
 	// Send SIGINT to current process
@@ -46,6 +51,10 @@ func TestContext_SIGINT(t *testing.T) {
 }
 
 func TestContext_SIGTERM(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping SIGTERM test on Windows - Unix signals not supported")
+	}
+
 	ctx := app.Context()
 
 	// Send SIGTERM to current process

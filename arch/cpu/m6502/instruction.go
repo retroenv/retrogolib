@@ -135,7 +135,7 @@ var Bpl = &Instruction{
 var Brk = &Instruction{
 	Name: "brk",
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x00, Size: 1},
+		ImpliedAddressing: {Opcode: 0x00, Size: 2},
 	},
 	NoParamFunc: brk,
 }
