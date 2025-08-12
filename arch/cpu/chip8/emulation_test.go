@@ -19,10 +19,26 @@ func TestCls(t *testing.T) {
 
 func TestRet(t *testing.T) {
 	c := New()
-	c.Stack[0] = 0x200
+	c.Stack[0] = 0x202 // Stack contains return address (after CALL instruction)
 	c.SP = 1
 	assert.NoError(t, ret(c, 0))
-	assert.Equal(t, uint16(0x200), c.PC)
+	assert.Equal(t, uint16(0x202), c.PC) // PC restored to return address
+	assert.Equal(t, uint8(0), c.SP)
+}
+
+func TestCallReturnInteraction(t *testing.T) {
+	c := New()
+
+	// Simulate CALL from address 0x200
+	c.PC = 0x200
+	assert.NoError(t, call(c, 0x300)) // CALL 0x300
+	assert.Equal(t, uint16(0x300), c.PC)
+	assert.Equal(t, uint16(0x202), c.Stack[0]) // Return address saved
+	assert.Equal(t, uint8(1), c.SP)
+
+	// Simulate RET
+	assert.NoError(t, ret(c, 0))
+	assert.Equal(t, uint16(0x202), c.PC) // Back to instruction after CALL
 	assert.Equal(t, uint8(0), c.SP)
 }
 
@@ -37,15 +53,15 @@ func TestCall(t *testing.T) {
 	c.PC = 0x200
 	assert.NoError(t, call(c, 0x123))
 	assert.Equal(t, uint16(0x123), c.PC)
-	assert.Equal(t, uint16(0x200), c.Stack[0])
+	assert.Equal(t, uint16(0x202), c.Stack[0]) // Should save return address (PC+2)
 	assert.Equal(t, uint8(1), c.SP)
 }
 
 func TestSe(t *testing.T) {
 	c := New()
 	c.V[0] = 0x12
-	assert.NoError(t, se(c, 0x3000))
-	assert.Equal(t, uint16(0x202), c.PC)
+	assert.NoError(t, se(c, 0x3012))     // SE V0, 0x12 - should skip because V0 == 0x12
+	assert.Equal(t, uint16(0x204), c.PC) // Should skip next instruction
 }
 
 func TestSne(t *testing.T) {
@@ -310,4 +326,216 @@ func TestRandomization(t *testing.T) {
 		}
 	}
 	assert.True(t, different, "RND should produce different results")
+}
+
+func TestLdVxK(t *testing.T) {
+	c := New()
+
+	// Test waiting for key press (no key pressed)
+	err := c.ldVxK(0)
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(0x200), c.PC) // PC should not advance
+
+	// Test key press detected
+	c.Key[5] = true
+	err = c.ldVxK(0)
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(5), c.V[0])
+	assert.Equal(t, uint16(0x202), c.PC) // PC should advance
+}
+
+func TestJpV0(t *testing.T) {
+	c := New()
+	c.V[0] = 0x10
+	assert.NoError(t, jp(c, 0xB100))     // JP V0, 0x100
+	assert.Equal(t, uint16(0x110), c.PC) // PC should be 0x100 + V0 (0x10)
+}
+
+func TestSeRegisterRegister(t *testing.T) {
+	c := New()
+	c.V[0] = 0x12
+	c.V[1] = 0x12
+	assert.NoError(t, se(c, 0x5010))     // SE V0, V1
+	assert.Equal(t, uint16(0x204), c.PC) // Should skip next instruction
+
+	c.PC = 0x200
+	c.V[1] = 0x13
+	assert.NoError(t, se(c, 0x5010))     // SE V0, V1
+	assert.Equal(t, uint16(0x202), c.PC) // Should not skip
+}
+
+func TestSneRegisterRegister(t *testing.T) {
+	c := New()
+	c.V[0] = 0x12
+	c.V[1] = 0x13
+	assert.NoError(t, sne(c, 0x9010))    // SNE V0, V1
+	assert.Equal(t, uint16(0x204), c.PC) // Should skip next instruction
+
+	c.PC = 0x200
+	c.V[1] = 0x12
+	assert.NoError(t, sne(c, 0x9010))    // SNE V0, V1
+	assert.Equal(t, uint16(0x202), c.PC) // Should not skip
+}
+
+func TestLdDT(t *testing.T) {
+	c := New()
+	c.DelayTimer = 0x42
+	assert.NoError(t, ldF(c, 0xF007)) // LD V0, DT
+	assert.Equal(t, uint8(0x42), c.V[0])
+	assert.Equal(t, uint16(0x202), c.PC)
+}
+
+func TestLdST(t *testing.T) {
+	c := New()
+	c.V[0] = 0x42
+	assert.NoError(t, ldF(c, 0xF018)) // LD ST, V0
+	assert.Equal(t, uint8(0x42), c.SoundTimer)
+	assert.Equal(t, uint16(0x202), c.PC)
+}
+
+func TestLdBVxCorrectness(t *testing.T) {
+	c := New()
+	c.V[0] = 123
+	c.I = 0x300
+	assert.NoError(t, c.ldBVx(0))
+	assert.Equal(t, uint8(1), c.Memory[0x300]) // Hundreds
+	assert.Equal(t, uint8(2), c.Memory[0x301]) // Tens
+	assert.Equal(t, uint8(3), c.Memory[0x302]) // Ones
+}
+
+func TestLdIVxCorrectness(t *testing.T) {
+	c := New()
+	c.I = 0x300
+	for i := range uint16(4) {
+		c.V[i] = uint8(i + 1)
+	}
+	assert.NoError(t, c.ldIVx(3)) // Store V0-V3
+	for i := range uint16(4) {
+		assert.Equal(t, uint8(i+1), c.Memory[0x300+i])
+	}
+}
+
+func TestLdVxICorrectness(t *testing.T) {
+	c := New()
+	c.I = 0x300
+	for i := range uint16(4) {
+		c.Memory[0x300+i] = uint8(i + 10)
+	}
+	assert.NoError(t, c.ldVxI(3)) // Load V0-V3
+	for i := range uint16(4) {
+		assert.Equal(t, uint8(i+10), c.V[i])
+	}
+}
+
+func TestAddI(t *testing.T) {
+	c := New()
+	c.I = 0x100
+	c.V[0] = 0x50
+	assert.NoError(t, add(c, 0xF01E)) // ADD I, V0
+	assert.Equal(t, uint16(0x150), c.I)
+	assert.Equal(t, uint16(0x202), c.PC)
+}
+
+func TestUpdateTimers(t *testing.T) {
+	c := New()
+	c.DelayTimer = 10
+	c.SoundTimer = 5
+
+	c.UpdateTimers()
+	assert.Equal(t, uint8(9), c.DelayTimer)
+	assert.Equal(t, uint8(4), c.SoundTimer)
+
+	// Test that timers don't go below 0
+	for range 10 {
+		c.UpdateTimers()
+	}
+	assert.Equal(t, uint8(0), c.DelayTimer)
+	assert.Equal(t, uint8(0), c.SoundTimer)
+}
+
+func TestReset(t *testing.T) {
+	c := New()
+
+	// Modify state
+	c.PC = 0x300
+	c.SP = 5
+	c.I = 0x123
+	c.V[0] = 0x42
+	c.Stack[0] = 0x200
+	c.Display[0] = 1
+	c.Key[0] = true
+	c.DelayTimer = 10
+	c.SoundTimer = 5
+	c.RedrawScreen = true
+
+	c.Reset()
+
+	// Verify reset state
+	assert.Equal(t, uint16(0x200), c.PC)
+	assert.Equal(t, uint8(0), c.SP)
+	assert.Equal(t, uint16(0), c.I)
+	assert.Equal(t, uint8(0), c.V[0])
+	assert.Equal(t, uint16(0), c.Stack[0])
+	assert.Equal(t, uint8(0), c.Display[0])
+	assert.False(t, c.Key[0])
+	assert.Equal(t, uint8(0), c.DelayTimer)
+	assert.Equal(t, uint8(0), c.SoundTimer)
+	assert.False(t, c.RedrawScreen)
+
+	// Verify font data is preserved
+	assert.Equal(t, fontSet[0], c.Memory[0])
+}
+
+func TestGetSetState(t *testing.T) {
+	c := New()
+
+	// Modify state
+	c.PC = 0x300
+	c.I = 0x123
+	c.V[0] = 0x42
+	c.DelayTimer = 10
+
+	// Get state
+	state := c.GetState()
+	assert.Equal(t, uint16(0x300), state.PC)
+	assert.Equal(t, uint16(0x123), state.I)
+	assert.Equal(t, uint8(0x42), state.V[0])
+	assert.Equal(t, uint8(10), state.DelayTimer)
+
+	// Create new CPU and set state
+	c2 := New()
+	c2.SetState(state)
+	assert.Equal(t, uint16(0x300), c2.PC)
+	assert.Equal(t, uint16(0x123), c2.I)
+	assert.Equal(t, uint8(0x42), c2.V[0])
+	assert.Equal(t, uint8(10), c2.DelayTimer)
+}
+
+func TestDrwWrapping(t *testing.T) {
+	c := New()
+
+	// Test X wrapping
+	c.V[0] = 62 // Near right edge
+	c.V[1] = 0
+	c.I = 0x200
+	c.Memory[0x200] = 0xFF // 8 pixels wide sprite
+
+	assert.NoError(t, drw(c, 0xD011)) // DRW V0, V1, 1
+
+	// Should draw 2 pixels on right edge, rest should wrap but are cut off
+	assert.Equal(t, uint8(1), c.Display[62])
+	assert.Equal(t, uint8(1), c.Display[63])
+
+	// Test Y wrapping
+	c = New()
+	c.V[0] = 0
+	c.V[1] = 31 // Bottom row
+	c.I = 0x200
+	c.Memory[0x200] = 0xFF
+	c.Memory[0x201] = 0xFF // This would wrap but should be cut off
+
+	assert.NoError(t, drw(c, 0xD012)) // DRW V0, V1, 2
+
+	// Only first row should be drawn
+	assert.Equal(t, uint8(1), c.Display[31*64])
 }

@@ -22,7 +22,7 @@ func ret(c *CPU, _ uint16) error {
 		return fmt.Errorf("%w: cannot return from subroutine", ErrStackUnderflow)
 	}
 	c.SP--
-	c.PC = c.Stack[c.SP]
+	c.PC = c.Stack[c.SP] // PC already contains return address (next instruction)
 	return nil
 }
 
@@ -48,7 +48,7 @@ func call(c *CPU, param uint16) error {
 	if c.SP >= uint8(len(c.Stack)) {
 		return fmt.Errorf("%w: cannot call subroutine", ErrStackOverflow)
 	}
-	c.Stack[c.SP] = c.PC
+	c.Stack[c.SP] = c.PC + 2 // Save return address (next instruction)
 	c.SP++
 	c.PC = param & 0x0FFF
 	return nil
