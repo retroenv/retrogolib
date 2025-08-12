@@ -36,7 +36,14 @@ func (c *CPU) Step() error {
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
-		c.updatePC(ins, oldPC, 1)
+
+		// Get the correct instruction size from the opcode info
+		size := 1
+		for _, info := range ins.Addressing {
+			size = int(info.Size)
+			break
+		}
+		c.updatePC(ins, oldPC, size)
 		return nil
 	}
 
