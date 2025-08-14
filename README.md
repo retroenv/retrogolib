@@ -66,4 +66,4 @@ For detailed API documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License Version 2.0 - see the LICENSE file for details.
