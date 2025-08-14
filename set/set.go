@@ -184,3 +184,10 @@ func (s Set[T]) IsDisjoint(other Set[T]) bool {
 
 	return true
 }
+
+// ForEach applies a function to each element in the set.
+func (s Set[T]) ForEach(fn func(T)) {
+	for element := range s {
+		fn(element)
+	}
+}

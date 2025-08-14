@@ -168,6 +168,28 @@ func TestStringSet(t *testing.T) {
 	assert.Equal(t, 2, s.Size(), "Expected size 2")
 }
 
+func TestForEach(t *testing.T) {
+	s := NewFromSlice([]int{1, 2, 3})
+	var sum int
+	var count int
+
+	s.ForEach(func(element int) {
+		sum += element
+		count++
+	})
+
+	assert.Equal(t, 6, sum, "Sum should be 6 (1+2+3)")
+	assert.Equal(t, 3, count, "Should iterate over 3 elements")
+
+	// Test with empty set
+	empty := New[int]()
+	var emptyCalled bool
+	empty.ForEach(func(element int) {
+		emptyCalled = true
+	})
+	assert.False(t, emptyCalled, "ForEach should not be called on empty set")
+}
+
 func TestEmptySetOperations(t *testing.T) {
 	empty := New[int]()
 	s := NewFromSlice([]int{1, 2, 3})
