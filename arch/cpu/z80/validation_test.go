@@ -22,7 +22,6 @@ func TestEnhancedOpcodeConsistency(t *testing.T) {
 			}
 		}
 
-		t.Logf("Found %d valid opcodes out of %d total", definedCount, len(Opcodes))
 		assert.True(t, definedCount >= 250, "Should have at least 250 valid opcodes")
 	})
 
@@ -49,7 +48,6 @@ func TestEnhancedOpcodeConsistency(t *testing.T) {
 			}
 		}
 
-		t.Logf("Found %d opcodes with enhanced register information", enhancedCount)
 		assert.True(t, enhancedCount >= 80, "Should have at least 80 opcodes with register info")
 	})
 }
@@ -67,17 +65,6 @@ func TestOpcodeCoverage(t *testing.T) {
 	}
 
 	undefinedCount := len(undefinedOpcodes)
-	totalOpcodes := len(Opcodes)
-
-	t.Logf("Opcode coverage summary:")
-	t.Logf("  Defined opcodes: %d/%d (%.1f%%)",
-		definedCount, totalOpcodes, float64(definedCount*100)/float64(totalOpcodes))
-	t.Logf("  Undefined opcodes: %d/%d (%.1f%%)",
-		undefinedCount, totalOpcodes, float64(undefinedCount*100)/float64(totalOpcodes))
-
-	if len(undefinedOpcodes) > 0 {
-		t.Logf("  Undefined opcode bytes: %v", undefinedOpcodes)
-	}
 
 	// Most Z80 opcodes should be implemented
 	assert.True(t, definedCount >= 250, "Should have at least 250 defined opcodes")
@@ -127,9 +114,7 @@ func TestCriticalOpcodesAreEnhanced(t *testing.T) {
 			opcode.Register != RegNone
 
 		assert.True(t, hasRegisterInfo,
-			"✅ Opcode 0x%02X (%s): Enhanced with register info",
-			test.opcode, test.description)
-		t.Logf("✅ Opcode 0x%02X (%s): Enhanced with register info",
+			"Opcode 0x%02X (%s): Enhanced with register info",
 			test.opcode, test.description)
 	}
 }
@@ -151,9 +136,6 @@ func TestNoRegisterCollisions(t *testing.T) {
 			opcode := Opcodes[test.opcode]
 			assert.Equal(t, test.expectSrc, opcode.SrcRegister)
 			assert.Equal(t, test.expectDst, opcode.DstRegister)
-			t.Logf("✅ %s (0x%02X): No ambiguity - src=%s, dst=%s, reg=%s",
-				test.description, test.opcode,
-				opcode.SrcRegister, opcode.DstRegister, opcode.Register)
 		}
 	})
 }
@@ -345,9 +327,8 @@ func validateRegisterAddressing(t *testing.T, index int, hasRegisterInfo bool) {
 	t.Helper()
 	// Some register addressing opcodes might not have enhanced register info
 	// This is acceptable as the opcode table is still being enhanced
-	if !hasRegisterInfo {
-		t.Logf("Note: Opcode 0x%02X with RegisterAddressing lacks register info (enhancement opportunity)", index)
-	}
+	_ = index           // Used for potential future validation
+	_ = hasRegisterInfo // Used for potential future validation
 }
 
 func validateImmediateAddressing(t *testing.T, opcode *Opcode, index int) {
@@ -360,14 +341,7 @@ func validateImmediateAddressing(t *testing.T, opcode *Opcode, index int) {
 
 func validateRegisterIndirectAddressing(t *testing.T, opcode *Opcode, index int) {
 	t.Helper()
-	hasIndirectRegister := opcode.SrcRegister == RegHLIndirect ||
-		opcode.SrcRegister == RegBCIndirect ||
-		opcode.SrcRegister == RegDEIndirect ||
-		opcode.DstRegister == RegHLIndirect ||
-		opcode.DstRegister == RegBCIndirect ||
-		opcode.DstRegister == RegDEIndirect
-
-	if !hasIndirectRegister {
-		t.Logf("Note: Opcode 0x%02X with RegisterIndirectAddressing lacks indirect register info (enhancement opportunity)", index)
-	}
+	// Function can be used for validation if needed in the future
+	_ = opcode // Used for potential future validation
+	_ = index  // Used for potential future validation
 }
