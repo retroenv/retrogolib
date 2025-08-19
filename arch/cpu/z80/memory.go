@@ -82,6 +82,12 @@ func (mem *Memory) LoadROM(data []byte) {
 	}
 }
 
+// LoadProgram loads program data into memory starting at address 0.
+// This is an alias for LoadROM for backward compatibility.
+func (mem *Memory) LoadProgram(data []byte) {
+	mem.LoadROM(data)
+}
+
 // GetROMBank returns the current ROM bank number.
 func (mem *Memory) GetROMBank() uint8 {
 	return mem.romBank

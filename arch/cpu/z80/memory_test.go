@@ -55,8 +55,9 @@ func TestMemory_LoadROM(t *testing.T) {
 	}
 
 	// Test oversized ROM (should be truncated)
-	largeROM := make([]byte, 0x20000) // 128KB, larger than 64KB memory
-	for i := range largeROM {
+	const largeROMSize = 0x20000 // 128KB, larger than 64KB memory
+	largeROM := make([]byte, largeROMSize)
+	for i := range largeROMSize {
 		largeROM[i] = uint8(i & 0xFF)
 	}
 

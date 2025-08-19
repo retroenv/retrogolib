@@ -97,6 +97,79 @@ func TestInterruptInstructions(t *testing.T) {
 }
 
 // =============================================================================
+// CPU Public API Tests
+// =============================================================================
+
+func TestCPUPublicAPI(t *testing.T) {
+	memory := NewMemory()
+	cpu, err := New(memory)
+	assert.NoError(t, err)
+
+	// Test Cycles()
+	initialCycles := cpu.Cycles()
+	assert.Equal(t, uint64(0), initialCycles, "Initial cycles should be 0")
+
+	// Test register pair getters
+	cpu.B = 0x12
+	cpu.C = 0x34
+	assert.Equal(t, uint16(0x1234), cpu.BC(), "BC should return combined B and C registers")
+
+	cpu.D = 0x56
+	cpu.E = 0x78
+	assert.Equal(t, uint16(0x5678), cpu.DE(), "DE should return combined D and E registers")
+
+	cpu.H = 0x9A
+	cpu.L = 0xBC
+	assert.Equal(t, uint16(0x9ABC), cpu.HL(), "HL should return combined H and L registers")
+
+	cpu.A = 0xDE
+	cpu.setFlags(0xF0)
+	assert.Equal(t, uint16(0xDEF0), cpu.AF(), "AF should return combined A and flags")
+}
+
+func TestLoadProgram(t *testing.T) {
+	memory := NewMemory()
+
+	// Test LoadProgram (alias for LoadROM)
+	program := []byte{0x01, 0x02, 0x03, 0x04}
+	memory.LoadProgram(program)
+
+	for i, expected := range program {
+		actual := memory.Read(uint16(i))
+		assert.Equal(t, expected, actual, "LoadProgram should work like LoadROM")
+	}
+
+	// Test nil program
+	memory.LoadProgram(nil)
+	// Should not panic or error
+}
+
+func TestCPUErrorConditions(t *testing.T) {
+	// Test CPU creation with nil memory
+	cpu, err := New(nil)
+	assert.ErrorIs(t, err, ErrNilMemory, "Should return ErrNilMemory for nil memory")
+	assert.Nil(t, cpu, "CPU should be nil when creation fails")
+
+	// Test interrupt mode validation
+	memory := NewMemory()
+	cpu, err = New(memory)
+	assert.NoError(t, err)
+
+	err = cpu.SetInterruptMode(InterruptMode2)
+	assert.NoError(t, err, "Should accept valid interrupt mode")
+
+	err = cpu.SetInterruptMode(InterruptMode(3))
+	assert.ErrorIs(t, err, ErrInvalidInterruptMode, "Should reject invalid interrupt mode")
+
+	// Test valid interrupt modes
+	for _, mode := range []InterruptMode{InterruptMode0, InterruptMode1, InterruptMode2} {
+		err = cpu.SetInterruptMode(mode)
+		assert.NoError(t, err, "Should accept valid interrupt mode")
+		assert.Equal(t, mode, cpu.GetInterruptMode(), "Should return set interrupt mode")
+	}
+}
+
+// =============================================================================
 // Flag Operations Tests
 // =============================================================================
 
