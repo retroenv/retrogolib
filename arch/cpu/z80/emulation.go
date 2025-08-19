@@ -12,7 +12,7 @@ func (c *CPU) inc8(value uint8) uint8 {
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x0F) // Half carry if lower nibble was 0xF
 	c.setPOverflow(value == 0x7F)  // Overflow if incrementing 0x7F
-	c.Flags.N = 0                  // Clear N flag for increment (direct assignment)
+	c.setN(false)                  // Clear N flag for increment
 
 	return result
 }
@@ -24,7 +24,7 @@ func (c *CPU) dec8(value uint8) uint8 {
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x00) // Half carry if lower nibble was 0x0
 	c.setPOverflow(value == 0x80)  // Overflow if decrementing 0x80
-	c.Flags.N = 1                  // Set N flag for decrement (direct assignment)
+	c.setN(true)                   // Set N flag for decrement
 
 	return result
 }

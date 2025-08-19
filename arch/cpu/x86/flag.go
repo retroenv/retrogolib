@@ -96,3 +96,101 @@ func (f Flags) GetIOPL() uint8 {
 func (f Flags) GetNested() bool {
 	return (f & MaskNested) != 0
 }
+
+// Flag setter methods
+
+// SetCarry sets or clears the carry flag (CF).
+func (f *Flags) SetCarry(set bool) {
+	if set {
+		*f |= MaskCarry
+	} else {
+		*f &= ^Flags(MaskCarry)
+	}
+}
+
+// SetParity sets or clears the parity flag (PF).
+func (f *Flags) SetParity(set bool) {
+	if set {
+		*f |= MaskParity
+	} else {
+		*f &= ^Flags(MaskParity)
+	}
+}
+
+// SetAuxCarry sets or clears the auxiliary carry flag (AF).
+func (f *Flags) SetAuxCarry(set bool) {
+	if set {
+		*f |= MaskAuxCarry
+	} else {
+		*f &= ^Flags(MaskAuxCarry)
+	}
+}
+
+// SetZero sets or clears the zero flag (ZF).
+func (f *Flags) SetZero(set bool) {
+	if set {
+		*f |= MaskZero
+	} else {
+		*f &= ^Flags(MaskZero)
+	}
+}
+
+// SetSign sets or clears the sign flag (SF).
+func (f *Flags) SetSign(set bool) {
+	if set {
+		*f |= MaskSign
+	} else {
+		*f &= ^Flags(MaskSign)
+	}
+}
+
+// SetTrap sets or clears the trap flag (TF).
+func (f *Flags) SetTrap(set bool) {
+	if set {
+		*f |= MaskTrap
+	} else {
+		*f &= ^Flags(MaskTrap)
+	}
+}
+
+// SetInterrupt sets or clears the interrupt flag (IF).
+func (f *Flags) SetInterrupt(set bool) {
+	if set {
+		*f |= MaskInterrupt
+	} else {
+		*f &= ^Flags(MaskInterrupt)
+	}
+}
+
+// SetDirection sets or clears the direction flag (DF).
+func (f *Flags) SetDirection(set bool) {
+	if set {
+		*f |= MaskDirection
+	} else {
+		*f &= ^Flags(MaskDirection)
+	}
+}
+
+// SetOverflow sets or clears the overflow flag (OF).
+func (f *Flags) SetOverflow(set bool) {
+	if set {
+		*f |= MaskOverflow
+	} else {
+		*f &= ^Flags(MaskOverflow)
+	}
+}
+
+// SetIOPL sets the I/O privilege level (IOPL).
+func (f *Flags) SetIOPL(level uint8) {
+	*f &= ^Flags(MaskIOPL)            // Clear current IOPL bits
+	*f |= Flags(level&3) << FlagIOPL0 // Set new IOPL bits (mask to 2 bits)
+}
+
+// SetNested sets or clears the nested task flag (NT).
+func (f *Flags) SetNested(set bool) {
+	if set {
+		*f |= MaskNested
+	} else {
+		*f &= ^Flags(MaskNested)
+	}
+}
