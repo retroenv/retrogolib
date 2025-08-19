@@ -12,7 +12,7 @@ func (c *CPU) inc8(value uint8) uint8 {
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x0F) // Half carry if lower nibble was 0xF
 	c.setPOverflow(value == 0x7F)  // Overflow if incrementing 0x7F
-	c.setN(false)                  // Clear N flag for increment
+	c.setN(false)                  // Indicates arithmetic (not logical) operation
 
 	return result
 }
@@ -24,7 +24,7 @@ func (c *CPU) dec8(value uint8) uint8 {
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x00) // Half carry if lower nibble was 0x0
 	c.setPOverflow(value == 0x80)  // Overflow if decrementing 0x80
-	c.setN(true)                   // Set N flag for decrement
+	c.setN(true)                   // Indicates subtraction operation for BCD correction
 
 	return result
 }
@@ -34,12 +34,12 @@ func (c *CPU) add8(a, b uint8) uint8 {
 	result16 := uint16(a) + uint16(b)
 	result := uint8(result16)
 
-	// Set flags
+	// Update CPU flags based on arithmetic result
 	c.setSZ(result)
 	c.setC(result16 > 0xFF)                                     // Carry if result > 255
-	c.setH((a&0x0F)+(b&0x0F) > 0x0F)                            // Half carry
-	c.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0) // Overflow
-	c.setN(false)                                               // Clear N flag for addition
+	c.setH((a&0x0F)+(b&0x0F) > 0x0F)                            // Half carry from bit 3 to 4
+	c.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0) // Two's complement overflow detection
+	c.setN(false)                                               // Indicates addition for BCD correction
 
 	return result
 }
@@ -49,12 +49,12 @@ func (c *CPU) sub8(a, b uint8) uint8 {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
-	// Set flags
+	// Update CPU flags based on subtraction result
 	c.setSZ(result)
-	c.setC(a < b)                                        // Carry if a < b
-	c.setH((a & 0x0F) < (b & 0x0F))                      // Half carry
-	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Overflow
-	c.setN(true)                                         // Set N flag for subtraction
+	c.setC(a < b)                                        // Borrow if minuend < subtrahend
+	c.setH((a & 0x0F) < (b & 0x0F))                      // Half borrow from bit 3
+	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Two's complement overflow detection
+	c.setN(true)                                         // Indicates subtraction for BCD correction
 
 	return result
 }
@@ -64,10 +64,10 @@ func (c *CPU) add16(a, b uint16) uint16 {
 	result32 := uint32(a) + uint32(b)
 	result := uint16(result32)
 
-	// Set flags (only C, H, and N for 16-bit operations)
+	// Update limited flags for 16-bit arithmetic (Z80 16-bit ops don't affect S,Z,P)
 	c.setC(result32 > 0xFFFF)              // Carry if result > 65535
 	c.setH((a&0x0FFF)+(b&0x0FFF) > 0x0FFF) // Half carry from bit 11 to bit 12
-	c.setN(false)                          // Clear N flag for addition
+	c.setN(false)                          // Indicates addition for BCD correction
 
 	return result
 }
@@ -76,11 +76,11 @@ func (c *CPU) add16(a, b uint16) uint16 {
 func (c *CPU) and8(a, b uint8) uint8 {
 	result := a & b
 
-	// Set flags
+	// Update flags for logical AND operation
 	c.setSZP(result)
-	c.setH(true)  // Half carry is always set for AND
-	c.setN(false) // Clear N flag
-	c.setC(false) // Clear carry flag
+	c.setH(true)  // H always set for Z80 AND instruction
+	c.setN(false) // Indicates logical (not arithmetic) operation
+	c.setC(false) // Logical operations clear carry
 
 	return result
 }
@@ -89,11 +89,11 @@ func (c *CPU) and8(a, b uint8) uint8 {
 func (c *CPU) or8(a, b uint8) uint8 {
 	result := a | b
 
-	// Set flags
+	// Update flags for logical OR operation
 	c.setSZP(result)
-	c.setH(false) // Clear half carry
-	c.setN(false) // Clear N flag
-	c.setC(false) // Clear carry flag
+	c.setH(false) // Logical operations clear half carry
+	c.setN(false) // Indicates logical (not arithmetic) operation
+	c.setC(false) // Logical operations clear carry
 
 	return result
 }
@@ -102,11 +102,11 @@ func (c *CPU) or8(a, b uint8) uint8 {
 func (c *CPU) xor8(a, b uint8) uint8 {
 	result := a ^ b
 
-	// Set flags
+	// Update flags for logical OR operation
 	c.setSZP(result)
-	c.setH(false) // Clear half carry
-	c.setN(false) // Clear N flag
-	c.setC(false) // Clear carry flag
+	c.setH(false) // Logical operations clear half carry
+	c.setN(false) // Indicates logical (not arithmetic) operation
+	c.setC(false) // Logical operations clear carry
 
 	return result
 }
@@ -121,7 +121,7 @@ func (c *CPU) cp(a, b uint8) {
 	c.setC(a < b)                                        // Carry if a < b
 	c.setH((a & 0x0F) < (b & 0x0F))                      // Half carry
 	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Overflow
-	c.setN(true)                                         // Set N flag for subtraction
+	c.setN(true)                                         // Indicates subtraction for BCD correction
 }
 
 // rlca rotates accumulator left circular and sets carry.
@@ -258,7 +258,7 @@ func (c *CPU) bit(n uint8, value uint8) {
 
 	setFlag(&c.Flags.Z, bit == 0)
 	c.setH(true)  // Half carry is always set for BIT
-	c.setN(false) // Clear N flag
+	c.setN(false) // Indicates logical (not arithmetic) operation
 	// S and P flags are affected differently for BIT instruction
 	if n == 7 {
 		setFlag(&c.Flags.S, bit != 0)
@@ -283,7 +283,7 @@ func (c *CPU) neg(value uint8) uint8 {
 	c.setC(value != 0)            // Carry set unless original value was 0
 	c.setH((value & 0x0F) != 0)   // Half carry
 	c.setPOverflow(value == 0x80) // Overflow if negating 0x80
-	c.setN(true)                  // Set N flag for negation
+	c.setN(true)                  // Indicates subtraction-based operation (two's complement)
 
 	return result
 }

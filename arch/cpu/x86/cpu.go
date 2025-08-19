@@ -1,21 +1,17 @@
 package x86
 
-// CPU represents x86 instruction processing capabilities for assembler/disassembler use.
-// Maintains minimal register state for address calculations.
+// CPU represents x86 instruction processing capabilities.
 type CPU struct {
-	// Segment registers for address calculations
 	CS uint16 // code segment
 	DS uint16 // data segment
 	ES uint16 // extra segment
 	SS uint16 // stack segment
 
-	// General purpose registers for addressing modes
 	AX uint16 // accumulator (AH:AL)
 	BX uint16 // base register (BH:BL)
 	CX uint16 // count register (CH:CL)
 	DX uint16 // data register (DH:DL)
 
-	// Index and pointer registers for addressing modes
 	SI uint16 // source index
 	DI uint16 // destination index
 	BP uint16 // base pointer
@@ -34,12 +30,11 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 	opts := NewOptions(options...)
 
 	c := &CPU{
-		// Initialize with standard segment values
-		CS: 0x1000, // Typical code segment
-		DS: 0x1000, // Data segment
-		ES: 0x1000, // Extra segment
-		SS: 0x2000, // Stack segment
-		SP: 0x1000, // Stack pointer
+		CS: 0x1000,
+		DS: 0x1000,
+		ES: 0x1000,
+		SS: 0x2000,
+		SP: 0x1000,
 
 		opts:   opts,
 		memory: memory,

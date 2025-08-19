@@ -38,43 +38,43 @@ func (c *CPU) GetFlags() uint8 {
 		c.Flags.S<<7
 }
 
-// setZ - set the zero flag if the argument is zero.
+// setZ updates zero flag based on arithmetic/logical result.
 func (c *CPU) setZ(value uint8) {
 	setFlag(&c.Flags.Z, value == 0)
 }
 
-// setS - set the sign flag if the argument is negative (high bit is set).
+// setS updates sign flag based on MSB of result (two's complement).
 func (c *CPU) setS(value uint8) {
 	setFlag(&c.Flags.S, value&0x80 != 0)
 }
 
-// setP - set the parity flag based on the parity of the argument.
+// setP calculates and sets parity flag (even parity = 1).
 func (c *CPU) setP(value uint8) {
 	count := bits.OnesCount8(value)
 	setFlag(&c.Flags.P, count%2 == 0) // even parity
 }
 
-// setPOverflow - set the parity/overflow flag with a boolean value.
+// setPOverflow directly sets P/V flag for overflow conditions.
 func (c *CPU) setPOverflow(set bool) {
 	setFlag(&c.Flags.P, set)
 }
 
-// setH - set the half carry flag.
+// setH updates half carry flag for BCD and carry detection.
 func (c *CPU) setH(set bool) {
 	setFlag(&c.Flags.H, set)
 }
 
-// setN - set the add/subtract flag.
+// setN indicates operation type for BCD correction (1=subtract, 0=add).
 func (c *CPU) setN(set bool) {
 	setFlag(&c.Flags.N, set)
 }
 
-// setC - set the carry flag.
+// setC updates carry flag for arithmetic overflow conditions.
 func (c *CPU) setC(set bool) {
 	setFlag(&c.Flags.C, set)
 }
 
-// setSZP - set the sign, zero, and parity flags.
+// setSZP updates S/Z/P flags and undocumented X/Y flags from result.
 func (c *CPU) setSZP(value uint8) {
 	c.setS(value)
 	c.setZ(value)
@@ -82,20 +82,20 @@ func (c *CPU) setSZP(value uint8) {
 	c.setXY(value) // Set undocumented X and Y flags
 }
 
-// setXY - set the undocumented X and Y flags from bits 3 and 5.
+// setXY copies bits 3 and 5 to undocumented flags (Z80 quirk).
 func (c *CPU) setXY(value uint8) {
 	c.Flags.X = (value >> 3) & 1 // bit 3
 	c.Flags.Y = (value >> 5) & 1 // bit 5
 }
 
-// setSZ - set the sign and zero flags.
+// setSZ updates S/Z flags and undocumented X/Y flags from result.
 func (c *CPU) setSZ(value uint8) {
 	c.setS(value)
 	c.setZ(value)
 	c.setXY(value) // Set undocumented X and Y flags
 }
 
-// setFlags sets the flags from the given byte.
+// setFlags restores complete flag register state from byte value.
 func (c *CPU) setFlags(flags uint8) {
 	c.Flags.C = (flags >> 0) & 1
 	c.Flags.N = (flags >> 1) & 1
@@ -107,7 +107,7 @@ func (c *CPU) setFlags(flags uint8) {
 	c.Flags.S = (flags >> 7) & 1
 }
 
-// setFlag sets a flag to 1 if condition is true, 0 otherwise.
+// setFlag helper converts boolean to Z80 flag bit value.
 func setFlag(flag *uint8, condition bool) {
 	if condition {
 		*flag = 1

@@ -99,7 +99,7 @@ func (f Flags) GetNested() bool {
 
 // Flag setter methods
 
-// SetCarry sets or clears the carry flag (CF).
+// SetCarry updates carry flag for arithmetic overflow and shift operations.
 func (f *Flags) SetCarry(set bool) {
 	if set {
 		*f |= MaskCarry
@@ -108,7 +108,7 @@ func (f *Flags) SetCarry(set bool) {
 	}
 }
 
-// SetParity sets or clears the parity flag (PF).
+// SetParity updates parity flag based on even/odd bit count in result.
 func (f *Flags) SetParity(set bool) {
 	if set {
 		*f |= MaskParity
@@ -117,7 +117,7 @@ func (f *Flags) SetParity(set bool) {
 	}
 }
 
-// SetAuxCarry sets or clears the auxiliary carry flag (AF).
+// SetAuxCarry updates auxiliary carry flag for BCD arithmetic operations.
 func (f *Flags) SetAuxCarry(set bool) {
 	if set {
 		*f |= MaskAuxCarry
@@ -126,7 +126,7 @@ func (f *Flags) SetAuxCarry(set bool) {
 	}
 }
 
-// SetZero sets or clears the zero flag (ZF).
+// SetZero updates zero flag based on arithmetic/logical operation result.
 func (f *Flags) SetZero(set bool) {
 	if set {
 		*f |= MaskZero
@@ -135,7 +135,7 @@ func (f *Flags) SetZero(set bool) {
 	}
 }
 
-// SetSign sets or clears the sign flag (SF).
+// SetSign updates sign flag based on MSB of result (two's complement).
 func (f *Flags) SetSign(set bool) {
 	if set {
 		*f |= MaskSign
@@ -144,7 +144,7 @@ func (f *Flags) SetSign(set bool) {
 	}
 }
 
-// SetTrap sets or clears the trap flag (TF).
+// SetTrap controls single-step debugging mode (generates INT 1).
 func (f *Flags) SetTrap(set bool) {
 	if set {
 		*f |= MaskTrap
@@ -153,7 +153,7 @@ func (f *Flags) SetTrap(set bool) {
 	}
 }
 
-// SetInterrupt sets or clears the interrupt flag (IF).
+// SetInterrupt enables/disables maskable interrupt processing.
 func (f *Flags) SetInterrupt(set bool) {
 	if set {
 		*f |= MaskInterrupt
@@ -162,7 +162,7 @@ func (f *Flags) SetInterrupt(set bool) {
 	}
 }
 
-// SetDirection sets or clears the direction flag (DF).
+// SetDirection controls string operation direction (0=up, 1=down).
 func (f *Flags) SetDirection(set bool) {
 	if set {
 		*f |= MaskDirection
@@ -171,7 +171,7 @@ func (f *Flags) SetDirection(set bool) {
 	}
 }
 
-// SetOverflow sets or clears the overflow flag (OF).
+// SetOverflow indicates signed arithmetic overflow conditions.
 func (f *Flags) SetOverflow(set bool) {
 	if set {
 		*f |= MaskOverflow
@@ -180,13 +180,13 @@ func (f *Flags) SetOverflow(set bool) {
 	}
 }
 
-// SetIOPL sets the I/O privilege level (IOPL).
+// SetIOPL controls I/O instruction privilege level (0-3, 80286+).
 func (f *Flags) SetIOPL(level uint8) {
 	*f &= ^Flags(MaskIOPL)            // Clear current IOPL bits
 	*f |= Flags(level&3) << FlagIOPL0 // Set new IOPL bits (mask to 2 bits)
 }
 
-// SetNested sets or clears the nested task flag (NT).
+// SetNested indicates nested task state in protected mode (80286+).
 func (f *Flags) SetNested(set bool) {
 	if set {
 		*f |= MaskNested

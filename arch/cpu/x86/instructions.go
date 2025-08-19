@@ -789,43 +789,43 @@ var (
 	}
 
 	// Flag Instructions
-	Clc = &Instruction{ // Clear carry flag
+	Clc = &Instruction{ // Resets carry flag to prepare for arithmetic operations
 		Name: "clc",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xF8, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Stc = &Instruction{ // Set carry flag
+	Stc = &Instruction{ // Forces carry flag for arithmetic operations
 		Name: "stc",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xF9, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Cmc = &Instruction{ // Complement carry flag
+	Cmc = &Instruction{ // Toggles carry flag state (0→1, 1→0)
 		Name: "cmc",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xF5, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Cld = &Instruction{ // Clear direction flag
+	Cld = &Instruction{ // Sets string operations to increment (forward direction)
 		Name: "cld",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xFC, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Std = &Instruction{ // Set direction flag
+	Std = &Instruction{ // Sets string operations to decrement (backward direction)
 		Name: "std",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xFD, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Cli = &Instruction{ // Clear interrupt flag
+	Cli = &Instruction{ // Disables maskable interrupts (critical sections)
 		Name: "cli",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xFA, Size: 1, Cycles: 2, HasModRM: false},
 		},
 	}
-	Sti = &Instruction{ // Set interrupt flag
+	Sti = &Instruction{ // Enables maskable interrupts after next instruction
 		Name: "sti",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xFB, Size: 1, Cycles: 2, HasModRM: false},

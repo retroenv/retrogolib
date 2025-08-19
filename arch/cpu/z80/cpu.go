@@ -6,10 +6,8 @@ import (
 	"github.com/retroenv/retrogolib/arch"
 )
 
-// State contains the current state of the CPU.
-// Used for save/load functionality and debugging.
+// State represents CPU state for serialization and debugging.
 type State struct {
-	// Main registers
 	A uint8
 	B uint8
 	C uint8
@@ -18,7 +16,6 @@ type State struct {
 	H uint8
 	L uint8
 
-	// Alternate registers
 	AltA uint8
 	AltB uint8
 	AltC uint8
@@ -27,31 +24,27 @@ type State struct {
 	AltH uint8
 	AltL uint8
 
-	// Index registers
 	IX uint16
 	IY uint16
 
-	// Special registers
-	SP uint16 // stack pointer
-	PC uint16 // program counter
-	I  uint8  // interrupt vector
-	R  uint8  // refresh register
+	SP uint16
+	PC uint16
+	I  uint8
+	R  uint8
 
 	Cycles     uint64
 	Flags      Flags
-	AltFlags   Flags // alternate flags
+	AltFlags   Flags
 	Interrupts Interrupts
 
 	Halted bool
 }
 
-// CPU represents a Z80 microprocessor with full instruction set emulation.
-// Thread-safe through mutex locks for concurrent access.
+// CPU represents a thread-safe Z80 microprocessor.
 type CPU struct {
 	mu sync.RWMutex
 
-	// Main registers
-	A uint8 // accumulator
+	A uint8
 	B uint8
 	C uint8
 	D uint8
@@ -59,7 +52,6 @@ type CPU struct {
 	H uint8
 	L uint8
 
-	// Alternate registers (shadow registers)
 	AltA uint8
 	AltB uint8
 	AltC uint8
@@ -68,18 +60,16 @@ type CPU struct {
 	AltH uint8
 	AltL uint8
 
-	// Index registers
 	IX uint16
 	IY uint16
 
-	// Special registers
-	SP uint16 // stack pointer
-	PC uint16 // program counter
-	I  uint8  // interrupt vector
-	R  uint8  // refresh register
+	SP uint16
+	PC uint16
+	I  uint8
+	R  uint8
 
 	Flags    Flags
-	AltFlags Flags // alternate flags
+	AltFlags Flags
 
 	cycles uint64
 	halted bool
@@ -101,7 +91,6 @@ type CPU struct {
 }
 
 // Interrupts holds the current interrupt state.
-// Used for interrupt management and state serialization.
 type Interrupts struct {
 	IFF1         bool
 	IFF2         bool
@@ -110,7 +99,6 @@ type Interrupts struct {
 	IrqTriggered bool
 }
 
-// CPU initialization constants
 const (
 	initialCycles = 0
 )
@@ -123,7 +111,7 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 
 	opts := NewOptions(options...)
 
-	// Set default values for generic system if no system type specified
+	// Default to generic system
 	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
 		opts.systemType = arch.Generic
 		opts.initialPC = 0x0000
@@ -136,43 +124,43 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 		cycles: initialCycles,
 		opts:   opts,
 		memory: memory,
-		iff1:   false, // interrupts disabled by default
+		iff1:   false,
 		iff2:   false,
-		im:     0, // interrupt mode 0 by default
+		im:     0,
 	}
 
 	return c, nil
 }
 
-// Cycles returns the amount of CPU cycles executed since system start.
+// Cycles returns total CPU cycles executed.
 func (c *CPU) Cycles() uint64 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.cycles
 }
 
-// Halted returns whether the CPU is in halted state.
+// Halted returns CPU halt state.
 func (c *CPU) Halted() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.halted
 }
 
-// Halt puts the CPU into halted state.
+// Halt stops CPU execution.
 func (c *CPU) Halt() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.halted = true
 }
 
-// Resume resumes the CPU from halted state.
+// Resume continues CPU execution.
 func (c *CPU) Resume() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.halted = false
 }
 
-// State returns the current state of the CPU.
+// State returns complete CPU state.
 func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -212,7 +200,7 @@ func (c *CPU) State() State {
 	}
 }
 
-// Memory returns the CPU memory.
+// Memory returns attached memory.
 func (c *CPU) Memory() *Memory {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

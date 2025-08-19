@@ -1,9 +1,8 @@
 package z80
 
-// AddressingMode defines an address mode for Z80 instructions.
+// AddressingMode defines Z80 instruction address modes.
 type AddressingMode int
 
-// Z80 addressing modes.
 const (
 	NoAddressing               AddressingMode = 0
 	ImpliedAddressing          AddressingMode = 1 << iota
@@ -16,68 +15,59 @@ const (
 	PortAddressing                            // (n), (C)
 )
 
-// Register types for Z80 addressing
 type (
-	// Register represents an 8-bit register (A, B, C, D, E, H, L)
 	Register uint8
 )
 
-// Immediate8 indicates that the parameter is an 8-bit immediate value.
+// Immediate8 represents 8-bit immediate values.
 type Immediate8 uint8
 
-// Immediate16 indicates that the parameter is a 16-bit immediate value.
+// Immediate16 represents 16-bit immediate values.
 type Immediate16 uint16
 
-// Extended indicates that the parameter is a 16-bit absolute address.
+// Extended represents 16-bit absolute addresses.
 type Extended uint16
 
-// RegisterIndirect indicates that the parameter uses register indirect addressing.
+// RegisterIndirect represents register indirect addressing.
 type RegisterIndirect uint16
 
-// Relative indicates that the parameter is a relative address for jumps.
+// Relative represents relative jump addresses.
 type Relative int8
 
-// Bit indicates that the parameter specifies a bit number (0-7).
+// Bit represents bit positions (0-7).
 type Bit uint8
 
-// Port indicates that the parameter is a port address for I/O operations.
+// Port represents I/O port addresses.
 type Port uint8
 
-// Z80 Register constants for opcode mapping
-// These are used as keys in the RegisterOpcodes map to differentiate
-// between instructions that target different registers.
-// Using uint8 values for memory efficiency and performance.
+// Z80 register constants for instruction encoding.
 const (
-	RegNone RegisterParam = iota // No register / empty
+	RegNone RegisterParam = iota
 
-	// 8-bit registers
-	RegB // B register - general purpose 8-bit
-	RegC // C register - general purpose 8-bit
-	RegD // D register - general purpose 8-bit
-	RegE // E register - general purpose 8-bit
-	RegH // H register - high byte of HL register pair
-	RegL // L register - low byte of HL register pair
-	RegA // A register - accumulator, primary register for arithmetic operations
+	RegB
+	RegC
+	RegD
+	RegE
+	RegH
+	RegL
+	RegA
 
-	// 16-bit register pairs
-	RegBC // BC register pair - combination of B and C registers
-	RegDE // DE register pair - combination of D and E registers
-	RegHL // HL register pair - combination of H and L registers, commonly used as memory pointer
-	RegSP // SP register - stack pointer, points to top of stack
-	RegAF // AF register pair - combination of A (accumulator) and F (flags) registers
-	RegIX // IX register - 16-bit index register for indexed addressing
-	RegIY // IY register - 16-bit index register for indexed addressing
+	RegBC
+	RegDE
+	RegHL
+	RegSP
+	RegAF
+	RegIX
+	RegIY
 
-	// Special register references (indirect addressing)
-	RegHLIndirect // (HL) - memory location pointed to by HL register pair
-	RegBCIndirect // (BC) - memory location pointed to by BC register pair
-	RegDEIndirect // (DE) - memory location pointed to by DE register pair
-	RegSPIndirect // (SP) - memory location pointed to by SP register
-	RegIXIndirect // (IX) - memory location pointed to by IX register
-	RegIYIndirect // (IY) - memory location pointed to by IY register
+	RegHLIndirect
+	RegBCIndirect
+	RegDEIndirect
+	RegSPIndirect
+	RegIXIndirect
+	RegIYIndirect
 
-	// Immediate value placeholders
-	RegImm8  // n - 8-bit immediate value
+	RegImm8
 	RegImm16 // nn - 16-bit immediate value
 	RegAddr  // (nn) - 16-bit absolute address
 	RegRel   // e - relative address for branch instructions
@@ -94,10 +84,9 @@ const (
 )
 
 // RegisterParam represents a register parameter for opcode mapping.
-// Using uint8 for memory efficiency and performance.
 type RegisterParam uint8
 
-// registerNames provides a lookup table for register parameter string representations.
+// registerNames provides register parameter string representations.
 var registerNames = [...]string{
 	RegNone:       "",
 	RegB:          "b",
@@ -134,7 +123,7 @@ var registerNames = [...]string{
 	RegRst38:      "38h",
 }
 
-// String returns the human-readable representation of the register parameter.
+// String returns the register parameter name.
 func (r RegisterParam) String() string {
 	if int(r) < len(registerNames) {
 		return registerNames[r]

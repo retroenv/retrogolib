@@ -24,8 +24,6 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 }
 
 // GetOpcodeByRegister returns opcode info for a specific register parameter.
-// This method provides the disambiguated opcode information that was previously
-// handled by the separate OpcodeMap.
 func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, bool) {
 	if ins.RegisterOpcodes == nil {
 		// Fall back to Addressing map if RegisterOpcodes is not defined
@@ -40,13 +38,11 @@ func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, 
 }
 
 // GetAllRegisterVariants returns all register variants for this instruction.
-// This replaces the functionality from OpcodeMap.GetInstructionVariants.
 func (ins Instruction) GetAllRegisterVariants() map[RegisterParam]OpcodeInfo {
 	if ins.RegisterOpcodes == nil {
 		return nil
 	}
 
-	// Return a copy to prevent external modification
 	variants := make(map[RegisterParam]OpcodeInfo)
 	for reg, info := range ins.RegisterOpcodes {
 		variants[reg] = info
