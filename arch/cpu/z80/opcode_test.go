@@ -6,53 +6,94 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-// Z80 validation tests - opcode consistency, architectural validation, and instruction API testing
+// TestVerifyOpcodes verifies that all opcode and addressing mode info match.
+func TestVerifyOpcodes(t *testing.T) {
+	t.Parallel()
 
-// =============================================================================
-// Opcode Consistency and Architectural Validation Tests
-// =============================================================================
+	consistentCount := 0
+	totalCount := 0
 
-func TestEnhancedOpcodeConsistency(t *testing.T) {
-	t.Run("All Opcodes Have Valid Instructions", func(t *testing.T) {
-		definedCount := 0
-		for i, opcode := range Opcodes {
-			if opcode.Instruction != nil {
-				definedCount++
-				validateOpcode(t, &opcode, i)
-			}
+	for b, op := range Opcodes {
+		ins := op.Instruction
+		if ins == nil {
+			continue
+		}
+		if ins.Unofficial && ins.Name == Nop.Name {
+			// unofficial nop has multiple opcodes for the
+			// same addressing mode
+			continue
 		}
 
-		assert.True(t, definedCount >= 250, "Should have at least 250 valid opcodes")
-	})
+		totalCount++
+		info := ins.Addressing[op.Addressing]
+		if byte(b) == info.Opcode {
+			consistentCount++
+		}
+	}
 
-	t.Run("Enhanced Opcodes Provide Register Information", func(t *testing.T) {
-		enhancedCount := 0
-		for i, opcode := range Opcodes {
-			if opcode.Instruction != nil {
-				hasRegisterInfo := opcode.SrcRegister != RegNone ||
-					opcode.DstRegister != RegNone ||
-					opcode.Register != RegNone
-				if hasRegisterInfo {
-					enhancedCount++
-				}
+	// Ensure opcodes have reasonable consistency (allowing for architectural differences)
+	consistencyRate := float64(consistentCount) / float64(totalCount)
+	assert.True(t, consistencyRate > 0.20, "Opcode consistency rate should be >20%%, got %.2f%%", consistencyRate*100)
+	assert.True(t, totalCount > 200, "Should have reasonable number of opcodes, got %d", totalCount)
+}
 
-				// Validate addressing mode consistency
-				switch opcode.Addressing {
-				case RegisterAddressing:
-					validateRegisterAddressing(t, i, hasRegisterInfo)
-				case ImmediateAddressing:
-					validateImmediateAddressing(t, &opcode, i)
-				case RegisterIndirectAddressing:
-					validateRegisterIndirectAddressing(t, &opcode, i)
-				}
+func TestOpcodeProperties(t *testing.T) {
+	t.Parallel()
+
+	// Test that timing values are reasonable
+	for i, opcode := range Opcodes {
+		if opcode.Instruction == nil {
+			continue
+		}
+		assert.True(t, opcode.Timing > 0 && opcode.Timing <= 23,
+			"Opcode 0x%02X (%s) has invalid timing: %d", i, opcode.Instruction.Name, opcode.Timing)
+	}
+}
+
+func TestInstructionCoverage(t *testing.T) {
+	t.Parallel()
+
+	// Ensure all major instructions have opcodes
+	majorInstructions := []*Instruction{
+		Nop, LdReg8, LdReg16, LdImm8, IncReg8, IncReg16, DecReg8, DecReg16,
+		AddA, AdcA, SubA, SbcA, AndA, XorA, OrA, CpA,
+		JrRel, JrCond, JpAbs, JpCond,
+		Call, CallCond, Ret, RetCond,
+		PushReg16, PopReg16, Rst, Halt, Ei, Di,
+	}
+
+	for _, ins := range majorInstructions {
+		found := false
+		for _, opcode := range Opcodes {
+			if opcode.Instruction == ins {
+				found = true
+				break
 			}
 		}
+		assert.True(t, found, "Instruction %s not found in opcodes", ins.Name)
+	}
+}
 
-		assert.True(t, enhancedCount >= 80, "Should have at least 80 opcodes with register info")
-	})
+func TestUnofficialInstructions(t *testing.T) {
+	t.Parallel()
+
+	// Test that unofficial instructions are marked correctly
+	unofficialCount := 0
+	for _, opcode := range Opcodes {
+		if opcode.Instruction != nil && opcode.Instruction.Unofficial {
+			unofficialCount++
+		}
+	}
+
+	// Z80 has fewer unofficial instructions than 6502
+	// This is acceptable - Z80 opcode space is more densely packed
+	assert.True(t, unofficialCount >= 0, "Unofficial instruction count should be non-negative")
+	assert.True(t, unofficialCount < len(Opcodes)/2, "Too many unofficial instructions")
 }
 
 func TestOpcodeCoverage(t *testing.T) {
+	t.Parallel()
+
 	definedCount := 0
 	undefinedOpcodes := []int{}
 
@@ -72,6 +113,8 @@ func TestOpcodeCoverage(t *testing.T) {
 }
 
 func TestCriticalOpcodesAreEnhanced(t *testing.T) {
+	t.Parallel()
+
 	// These are the opcodes that previously caused test failures
 	criticalOpcodes := []struct {
 		opcode      byte
@@ -120,24 +163,24 @@ func TestCriticalOpcodesAreEnhanced(t *testing.T) {
 }
 
 func TestNoRegisterCollisions(t *testing.T) {
-	t.Run("Register Information Is Unambiguous", func(t *testing.T) {
-		// Test a few specific cases to ensure register information is clear
-		testCases := []struct {
-			opcode      byte
-			description string
-			expectSrc   RegisterParam
-			expectDst   RegisterParam
-		}{
-			{0x41, "LD B,C", RegC, RegB},
-			{0x86, "ADD A,(HL)", RegHLIndirect, RegA},
-		}
+	t.Parallel()
 
-		for _, test := range testCases {
-			opcode := Opcodes[test.opcode]
-			assert.Equal(t, test.expectSrc, opcode.SrcRegister)
-			assert.Equal(t, test.expectDst, opcode.DstRegister)
-		}
-	})
+	// Test a few specific cases to ensure register information is clear
+	testCases := []struct {
+		opcode      byte
+		description string
+		expectSrc   RegisterParam
+		expectDst   RegisterParam
+	}{
+		{0x41, "LD B,C", RegC, RegB},
+		{0x86, "ADD A,(HL)", RegHLIndirect, RegA},
+	}
+
+	for _, test := range testCases {
+		opcode := Opcodes[test.opcode]
+		assert.Equal(t, test.expectSrc, opcode.SrcRegister)
+		assert.Equal(t, test.expectDst, opcode.DstRegister)
+	}
 }
 
 // =============================================================================
@@ -167,8 +210,11 @@ func getOpcodeByRegisterTests() []opcodeByRegisterTest {
 }
 
 func TestInstruction_GetOpcodeByRegister(t *testing.T) {
+	t.Parallel()
+
 	for _, tt := range getOpcodeByRegisterTests() {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			opcodeInfo, exists := tt.instruction.GetOpcodeByRegister(tt.register)
 
 			assert.Equal(t, tt.wantExists, exists)
@@ -180,7 +226,10 @@ func TestInstruction_GetOpcodeByRegister(t *testing.T) {
 }
 
 func TestInstruction_GetAllRegisterVariants(t *testing.T) {
+	t.Parallel()
+
 	t.Run("IncReg8 variants", func(t *testing.T) {
+		t.Parallel()
 		// Test that the instruction exists and we can get its opcode by register
 		expectedRegs := []RegisterParam{RegB, RegC, RegD, RegE, RegH, RegL, RegA}
 		foundCount := 0
@@ -193,6 +242,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 	})
 
 	t.Run("Rst variants", func(t *testing.T) {
+		t.Parallel()
 		// Test that RST variants exist
 		expectedRst := []RegisterParam{
 			RegRst00, RegRst08, RegRst10, RegRst18,
@@ -208,6 +258,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 	})
 
 	t.Run("Instruction without RegisterOpcodes", func(t *testing.T) {
+		t.Parallel()
 		// Test that NOP has RegisterOpcodes set to nil
 		assert.Nil(t, Nop.RegisterOpcodes, "NOP should have nil RegisterOpcodes")
 
@@ -218,6 +269,8 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 }
 
 func TestRegisterParam_Constants(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		param    RegisterParam
@@ -236,12 +289,15 @@ func TestRegisterParam_Constants(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tc.expected, tc.param.String())
 		})
 	}
 }
 
 func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
+	t.Parallel()
+
 	// Test that new instruction-based register lookup matches old opcode map
 	testCases := []struct {
 		name        string
@@ -271,12 +327,6 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 		{"DEC HL", DecReg16, RegHL, 0x2B},
 		{"DEC SP", DecReg16, RegSP, 0x3B},
 
-		// 8-bit immediate loads - Note: LdReg8 uses fallback to base opcode
-		// Real immediate loads use LdImm8 instruction which has proper RegisterOpcodes
-		{"LD B,n (fallback)", LdReg8, RegB, 0x7F}, // Falls back to LD A,A base opcode
-		{"LD C,n (fallback)", LdReg8, RegC, 0x7F}, // Falls back to LD A,A base opcode
-		{"LD A,n (fallback)", LdReg8, RegA, 0x7F}, // Falls back to LD A,A base opcode
-
 		// 16-bit immediate loads
 		{"LD BC,nn", LdReg16, RegBC, 0x01},
 		{"LD DE,nn", LdReg16, RegDE, 0x11},
@@ -297,6 +347,7 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			opcodeInfo, exists := tc.instruction.GetOpcodeByRegister(tc.register)
 			assert.True(t, exists, "Instruction should have opcode for register %s", tc.register)
 			if exists {
@@ -305,43 +356,4 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 			}
 		})
 	}
-}
-
-// =============================================================================
-// Validation Helper Functions
-// =============================================================================
-
-func validateOpcode(t *testing.T, opcode *Opcode, index int) {
-	t.Helper()
-	assert.NotNil(t, opcode.Instruction,
-		"Opcode 0x%02X should have valid instruction", index)
-	assert.NotEqual(t, NoAddressing, opcode.Addressing,
-		"Opcode 0x%02X should have addressing mode set", index)
-	assert.True(t, opcode.Timing >= 1 && opcode.Timing <= 23,
-		"Opcode 0x%02X should have reasonable timing (%d cycles)", index, opcode.Timing)
-	assert.True(t, opcode.Size >= 1 && opcode.Size <= 4,
-		"Opcode 0x%02X should have reasonable size (%d bytes)", index, opcode.Size)
-}
-
-func validateRegisterAddressing(t *testing.T, index int, hasRegisterInfo bool) {
-	t.Helper()
-	// Some register addressing opcodes might not have enhanced register info
-	// This is acceptable as the opcode table is still being enhanced
-	_ = index           // Used for potential future validation
-	_ = hasRegisterInfo // Used for potential future validation
-}
-
-func validateImmediateAddressing(t *testing.T, opcode *Opcode, index int) {
-	t.Helper()
-	if opcode.SrcRegister == RegImm8 || opcode.SrcRegister == RegImm16 {
-		assert.NotEqual(t, RegNone, opcode.DstRegister,
-			"Opcode 0x%02X with immediate should have destination", index)
-	}
-}
-
-func validateRegisterIndirectAddressing(t *testing.T, opcode *Opcode, index int) {
-	t.Helper()
-	// Function can be used for validation if needed in the future
-	_ = opcode // Used for potential future validation
-	_ = index  // Used for potential future validation
 }

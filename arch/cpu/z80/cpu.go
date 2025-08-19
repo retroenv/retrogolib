@@ -305,24 +305,6 @@ func (c *CPU) setAF(value uint16) {
 	c.setFlags(uint8(value))
 }
 
-// exchange exchanges the main and alternate register sets.
-func (c *CPU) exchange() {
-	c.A, c.AltA = c.AltA, c.A
-	c.B, c.AltB = c.AltB, c.B
-	c.C, c.AltC = c.AltC, c.C
-	c.D, c.AltD = c.AltD, c.D
-	c.E, c.AltE = c.AltE, c.E
-	c.H, c.AltH = c.AltH, c.H
-	c.L, c.AltL = c.AltL, c.L
-	c.Flags, c.AltFlags = c.AltFlags, c.Flags
-}
-
-// exchangeAF exchanges only the AF and AF' registers.
-func (c *CPU) exchangeAF() {
-	c.A, c.AltA = c.AltA, c.A
-	c.Flags, c.AltFlags = c.AltFlags, c.Flags
-}
-
 // pop pops a byte from the stack and updates the stack pointer.
 func (c *CPU) pop() uint8 {
 	value := c.memory.Read(c.SP)
