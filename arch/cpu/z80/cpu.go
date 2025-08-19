@@ -211,28 +211,28 @@ func (c *CPU) Memory() *Memory {
 func (c *CPU) BC() uint16 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return uint16(c.B)<<8 | uint16(c.C)
+	return c.bc()
 }
 
 // DE returns the DE register pair as a 16-bit value.
 func (c *CPU) DE() uint16 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return uint16(c.D)<<8 | uint16(c.E)
+	return c.de()
 }
 
 // HL returns the HL register pair as a 16-bit value.
 func (c *CPU) HL() uint16 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return uint16(c.H)<<8 | uint16(c.L)
+	return c.hl()
 }
 
 // AF returns the AF register pair as a 16-bit value.
 func (c *CPU) AF() uint16 {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return uint16(c.A)<<8 | uint16(c.GetFlags())
+	return c.af()
 }
 
 // TriggerNMI triggers a non-maskable interrupt.

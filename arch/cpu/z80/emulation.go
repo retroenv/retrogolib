@@ -34,7 +34,6 @@ func (c *CPU) add8(a, b uint8) uint8 {
 	result16 := uint16(a) + uint16(b)
 	result := uint8(result16)
 
-	// Update CPU flags based on arithmetic result
 	c.setSZ(result)
 	c.setC(result16 > 0xFF)                                     // Carry if result > 255
 	c.setH((a&0x0F)+(b&0x0F) > 0x0F)                            // Half carry from bit 3 to 4
@@ -49,7 +48,6 @@ func (c *CPU) sub8(a, b uint8) uint8 {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
-	// Update CPU flags based on subtraction result
 	c.setSZ(result)
 	c.setC(a < b)                                        // Borrow if minuend < subtrahend
 	c.setH((a & 0x0F) < (b & 0x0F))                      // Half borrow from bit 3
@@ -76,7 +74,6 @@ func (c *CPU) add16(a, b uint16) uint16 {
 func (c *CPU) and8(a, b uint8) uint8 {
 	result := a & b
 
-	// Update flags for logical AND operation
 	c.setSZP(result)
 	c.setH(true)  // H always set for Z80 AND instruction
 	c.setN(false) // Indicates logical (not arithmetic) operation
@@ -89,7 +86,6 @@ func (c *CPU) and8(a, b uint8) uint8 {
 func (c *CPU) or8(a, b uint8) uint8 {
 	result := a | b
 
-	// Update flags for logical OR operation
 	c.setSZP(result)
 	c.setH(false) // Logical operations clear half carry
 	c.setN(false) // Indicates logical (not arithmetic) operation
@@ -102,7 +98,6 @@ func (c *CPU) or8(a, b uint8) uint8 {
 func (c *CPU) xor8(a, b uint8) uint8 {
 	result := a ^ b
 
-	// Update flags for logical OR operation
 	c.setSZP(result)
 	c.setH(false) // Logical operations clear half carry
 	c.setN(false) // Indicates logical (not arithmetic) operation

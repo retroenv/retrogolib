@@ -365,7 +365,7 @@ func ddcbBit(c *CPU, params ...any) error {
 	bit := (opcode >> 3) & 0x07
 	result := value & (1 << bit)
 
-	c.setZ(result) // setZ will set the flag to 1 if result is 0
+	c.setZ(result)
 	c.setH(true)
 	c.setN(false)
 	if bit == 7 {
