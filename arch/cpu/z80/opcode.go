@@ -19,11 +19,6 @@ type Opcode struct {
 	Addressing  AddressingMode // Addressing mode
 	Timing      byte           // Timing in T-states
 	Size        byte           // Size of opcode in bytes
-
-	// Register disambiguation fields - specify which registers are involved
-	SrcRegister RegisterParam // Source register (for LD B,C this would be "c")
-	DstRegister RegisterParam // Destination register (for LD B,C this would be "b")
-	Register    RegisterParam // For single-register operations (INC B, RST 08H, etc.)
 }
 
 // OpcodeInfo contains the opcode and timing info for an instruction addressing mode.
@@ -36,229 +31,229 @@ type OpcodeInfo struct {
 // Opcodes maps the first opcode byte to CPU instruction information.
 // Reference: http://www.z80.info/z80oplist.txt
 var Opcodes = [256]Opcode{
-	{Instruction: Nop, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                                // 0x00 NOP
-	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3, SrcRegister: RegImm16, DstRegister: RegBC},              // 0x01 LD BC,nn
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegA, DstRegister: RegBCIndirect}, // 0x02 LD (BC),A
-	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegBC},                                         // 0x03 INC BC
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegB},                                           // 0x04 INC B
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegB},                                           // 0x05 DEC B
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegB},                  // 0x06 LD B,n
-	{Instruction: Rlca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                               // 0x07 RLCA
-	{Instruction: ExAf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                               // 0x08 EX AF,AF'
-	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1, SrcRegister: RegBC, DstRegister: RegHL},                    // 0x09 ADD HL,BC
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegBCIndirect, DstRegister: RegA}, // 0x0A LD A,(BC)
-	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegBC},                                         // 0x0B DEC BC
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegC},                                           // 0x0C INC C
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegC},                                           // 0x0D DEC C
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegC},                  // 0x0E LD C,n
-	{Instruction: Rrca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                               // 0x0F RRCA
+	{Instruction: Nop, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x00 NOP
+	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},          // 0x01 LD BC,nn
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x02 LD (BC),A
+	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x03 INC BC
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x04 INC B
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x05 DEC B
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x06 LD B,n
+	{Instruction: Rlca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x07 RLCA
+	{Instruction: ExAf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x08 EX AF,AF'
+	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},             // 0x09 ADD HL,BC
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x0A LD A,(BC)
+	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x0B DEC BC
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x0C INC C
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x0D DEC C
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x0E LD C,n
+	{Instruction: Rrca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x0F RRCA
 
-	{Instruction: Djnz, Addressing: RelativeAddressing, Timing: 8, Size: 2, SrcRegister: RegRel},                                         // 0x10 DJNZ e (8 if not taken, 13 if taken)
-	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3, SrcRegister: RegImm16, DstRegister: RegDE},              // 0x11 LD DE,nn
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegA, DstRegister: RegDEIndirect}, // 0x12 LD (DE),A
-	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegDE},                                         // 0x13 INC DE
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegD},                                           // 0x14 INC D
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegD},                                           // 0x15 DEC D
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegD},                  // 0x16 LD D,n
-	{Instruction: Rla, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                                // 0x17 RLA
-	{Instruction: JrRel, Addressing: RelativeAddressing, Timing: 12, Size: 2, SrcRegister: RegRel},                                       // 0x18 JR e
-	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1, SrcRegister: RegDE, DstRegister: RegHL},                    // 0x19 ADD HL,DE
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegDEIndirect, DstRegister: RegA}, // 0x1A LD A,(DE)
-	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegDE},                                         // 0x1B DEC DE
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegE},                                           // 0x1C INC E
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegE},                                           // 0x1D DEC E
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegE},                  // 0x1E LD E,n
-	{Instruction: Rra, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                                // 0x1F RRA
+	{Instruction: Djnz, Addressing: RelativeAddressing, Timing: 8, Size: 2},               // 0x10 DJNZ e (8 if not taken, 13 if taken)
+	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},          // 0x11 LD DE,nn
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x12 LD (DE),A
+	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x13 INC DE
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x14 INC D
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x15 DEC D
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x16 LD D,n
+	{Instruction: Rla, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x17 RLA
+	{Instruction: JrRel, Addressing: RelativeAddressing, Timing: 12, Size: 2},             // 0x18 JR e
+	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},             // 0x19 ADD HL,DE
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x1A LD A,(DE)
+	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x1B DEC DE
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x1C INC E
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x1D DEC E
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x1E LD E,n
+	{Instruction: Rra, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x1F RRA
 
-	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                                                // 0x20 JR NZ,e (7 if not taken, 12 if taken)
-	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3, SrcRegister: RegImm16, DstRegister: RegHL},  // 0x21 LD HL,nn
-	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 16, Size: 3, SrcRegister: RegHL, DstRegister: RegAddr}, // 0x22 LD (nn),HL
-	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegHL},                             // 0x23 INC HL
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegH},                               // 0x24 INC H
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegH},                               // 0x25 DEC H
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegH},      // 0x26 LD H,n
-	{Instruction: Daa, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                    // 0x27 DAA
-	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                                                // 0x28 JR Z,e (7 if not taken, 12 if taken)
-	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1, SrcRegister: RegHL, DstRegister: RegHL},        // 0x29 ADD HL,HL
-	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 16, Size: 3, SrcRegister: RegAddr, DstRegister: RegHL}, // 0x2A LD HL,(nn)
-	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegHL},                             // 0x2B DEC HL
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegL},                               // 0x2C INC L
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegL},                               // 0x2D DEC L
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegL},      // 0x2E LD L,n
-	{Instruction: Cpl, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                    // 0x2F CPL
+	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},      // 0x20 JR NZ,e (7 if not taken, 12 if taken)
+	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},   // 0x21 LD HL,nn
+	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 16, Size: 3}, // 0x22 LD (nn),HL
+	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},    // 0x23 INC HL
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x24 INC H
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x25 DEC H
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0x26 LD H,n
+	{Instruction: Daa, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0x27 DAA
+	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},      // 0x28 JR Z,e (7 if not taken, 12 if taken)
+	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},      // 0x29 ADD HL,HL
+	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 16, Size: 3}, // 0x2A LD HL,(nn)
+	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},    // 0x2B DEC HL
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x2C INC L
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x2D DEC L
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0x2E LD L,n
+	{Instruction: Cpl, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0x2F CPL
 
-	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                                                                   // 0x30 JR NC,e (7 if not taken, 12 if taken)
-	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3, SrcRegister: RegImm16, DstRegister: RegSP},                     // 0x31 LD SP,nn
-	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 13, Size: 3, SrcRegister: RegA, DstRegister: RegAddr},                     // 0x32 LD (nn),A
-	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegSP},                                                // 0x33 INC SP
-	{Instruction: IncIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1, SrcRegister: RegHLIndirect},                         // 0x34 INC (HL)
-	{Instruction: DecIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1, SrcRegister: RegHLIndirect},                         // 0x35 DEC (HL)
-	{Instruction: LdIndirectImm, Addressing: RegisterIndirectAddressing, Timing: 10, Size: 2, SrcRegister: RegImm8, DstRegister: RegHLIndirect}, // 0x36 LD (HL),n
-	{Instruction: Scf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                                       // 0x37 SCF
-	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                                                                   // 0x38 JR C,e (7 if not taken, 12 if taken)
-	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1, SrcRegister: RegSP, DstRegister: RegHL},                           // 0x39 ADD HL,SP
-	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 13, Size: 3, SrcRegister: RegAddr, DstRegister: RegA},                     // 0x3A LD A,(nn)
-	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1, Register: RegSP},                                                // 0x3B DEC SP
-	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegA},                                                  // 0x3C INC A
-	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, Register: RegA},                                                  // 0x3D DEC A
-	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2, SrcRegister: RegImm8, DstRegister: RegA},                         // 0x3E LD A,n
-	{Instruction: Ccf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                                       // 0x3F CCF
+	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                 // 0x30 JR NC,e (7 if not taken, 12 if taken)
+	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},              // 0x31 LD SP,nn
+	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 13, Size: 3},            // 0x32 LD (nn),A
+	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},               // 0x33 INC SP
+	{Instruction: IncIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1},   // 0x34 INC (HL)
+	{Instruction: DecIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1},   // 0x35 DEC (HL)
+	{Instruction: LdIndirectImm, Addressing: RegisterIndirectAddressing, Timing: 10, Size: 2}, // 0x36 LD (HL),n
+	{Instruction: Scf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                     // 0x37 SCF
+	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                 // 0x38 JR C,e (7 if not taken, 12 if taken)
+	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},                 // 0x39 ADD HL,SP
+	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 13, Size: 3},            // 0x3A LD A,(nn)
+	{Instruction: DecReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},               // 0x3B DEC SP
+	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},                // 0x3C INC A
+	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},                // 0x3D DEC A
+	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},                // 0x3E LD A,n
+	{Instruction: Ccf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                     // 0x3F CCF
 
 	// 0x40-0x7F: LD r,r instructions (register to register)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegB},                  // 0x40 LD B,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegB},                  // 0x41 LD B,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegB},                  // 0x42 LD B,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegB},                  // 0x43 LD B,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegB},                  // 0x44 LD B,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegB},                  // 0x45 LD B,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegB}, // 0x46 LD B,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegB},                  // 0x47 LD B,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegC},                  // 0x48 LD C,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegC},                  // 0x49 LD C,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegC},                  // 0x4A LD C,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegC},                  // 0x4B LD C,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegC},                  // 0x4C LD C,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegC},                  // 0x4D LD C,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegC}, // 0x4E LD C,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegC},                  // 0x4F LD C,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x40 LD B,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x41 LD B,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x42 LD B,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x43 LD B,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x44 LD B,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x45 LD B,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x46 LD B,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x47 LD B,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x48 LD C,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x49 LD C,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4A LD C,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4B LD C,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4C LD C,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4D LD C,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x4E LD C,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4F LD C,A
 
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegD},                  // 0x50 LD D,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegD},                  // 0x51 LD D,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegD},                  // 0x52 LD D,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegD},                  // 0x53 LD D,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegD},                  // 0x54 LD D,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegD},                  // 0x55 LD D,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegD}, // 0x56 LD D,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegD},                  // 0x57 LD D,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegE},                  // 0x58 LD E,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegE},                  // 0x59 LD E,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegE},                  // 0x5A LD E,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegE},                  // 0x5B LD E,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegE},                  // 0x5C LD E,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegE},                  // 0x5D LD E,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegE}, // 0x5E LD E,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegE},                  // 0x5F LD E,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x50 LD D,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x51 LD D,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x52 LD D,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x53 LD D,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x54 LD D,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x55 LD D,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x56 LD D,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x57 LD D,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x58 LD E,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x59 LD E,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5A LD E,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5B LD E,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5C LD E,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5D LD E,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x5E LD E,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5F LD E,A
 
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegH},                  // 0x60 LD H,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegH},                  // 0x61 LD H,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegH},                  // 0x62 LD H,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegH},                  // 0x63 LD H,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegH},                  // 0x64 LD H,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegH},                  // 0x65 LD H,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegH}, // 0x66 LD H,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegH},                  // 0x67 LD H,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegL},                  // 0x68 LD L,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegL},                  // 0x69 LD L,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegL},                  // 0x6A LD L,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegL},                  // 0x6B LD L,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegL},                  // 0x6C LD L,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegL},                  // 0x6D LD L,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegL}, // 0x6E LD L,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegL},                  // 0x6F LD L,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x60 LD H,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x61 LD H,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x62 LD H,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x63 LD H,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x64 LD H,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x65 LD H,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x66 LD H,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x67 LD H,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x68 LD L,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x69 LD L,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6A LD L,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6B LD L,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6C LD L,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6D LD L,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x6E LD L,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6F LD L,A
 
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegB, DstRegister: RegHLIndirect}, // 0x70 LD (HL),B
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegC, DstRegister: RegHLIndirect}, // 0x71 LD (HL),C
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegD, DstRegister: RegHLIndirect}, // 0x72 LD (HL),D
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegE, DstRegister: RegHLIndirect}, // 0x73 LD (HL),E
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegH, DstRegister: RegHLIndirect}, // 0x74 LD (HL),H
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegL, DstRegister: RegHLIndirect}, // 0x75 LD (HL),L
-	{Instruction: Halt, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                                                               // 0x76 HALT
-	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegA, DstRegister: RegHLIndirect}, // 0x77 LD (HL),A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                      // 0x78 LD A,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                      // 0x79 LD A,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                      // 0x7A LD A,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                      // 0x7B LD A,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                      // 0x7C LD A,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                      // 0x7D LD A,L
-	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA},     // 0x7E LD A,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                      // 0x7F LD A,A
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x70 LD (HL),B
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x71 LD (HL),C
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x72 LD (HL),D
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x73 LD (HL),E
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x74 LD (HL),H
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x75 LD (HL),L
+	{Instruction: Halt, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x76 HALT
+	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x77 LD (HL),A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x78 LD A,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x79 LD A,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x7A LD A,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x7B LD A,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x7C LD A,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x7D LD A,L
+	{Instruction: LdReg8, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1},     // 0x7E LD A,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},             // 0x7F LD A,A
 
 	// 0x80-0xBF: ALU operations
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0x80 ADD A,B
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0x81 ADD A,C
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0x82 ADD A,D
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0x83 ADD A,E
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0x84 ADD A,H
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0x85 ADD A,L
-	{Instruction: AddA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0x86 ADD A,(HL)
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0x87 ADD A,A
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0x88 ADC A,B
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0x89 ADC A,C
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0x8A ADC A,D
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0x8B ADC A,E
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0x8C ADC A,H
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0x8D ADC A,L
-	{Instruction: AdcA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0x8E ADC A,(HL)
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0x8F ADC A,A
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x80 ADD A,B
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x81 ADD A,C
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x82 ADD A,D
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x83 ADD A,E
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x84 ADD A,H
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x85 ADD A,L
+	{Instruction: AddA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x86 ADD A,(HL)
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x87 ADD A,A
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x88 ADC A,B
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x89 ADC A,C
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8A ADC A,D
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8B ADC A,E
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8C ADC A,H
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8D ADC A,L
+	{Instruction: AdcA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x8E ADC A,(HL)
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8F ADC A,A
 
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0x90 SUB B
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0x91 SUB C
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0x92 SUB D
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0x93 SUB E
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0x94 SUB H
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0x95 SUB L
-	{Instruction: SubA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0x96 SUB (HL)
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0x97 SUB A
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0x98 SBC A,B
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0x99 SBC A,C
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0x9A SBC A,D
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0x9B SBC A,E
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0x9C SBC A,H
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0x9D SBC A,L
-	{Instruction: SbcA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0x9E SBC A,(HL)
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0x9F SBC A,A
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x90 SUB B
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x91 SUB C
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x92 SUB D
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x93 SUB E
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x94 SUB H
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x95 SUB L
+	{Instruction: SubA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x96 SUB (HL)
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x97 SUB A
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x98 SBC A,B
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x99 SBC A,C
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9A SBC A,D
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9B SBC A,E
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9C SBC A,H
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9D SBC A,L
+	{Instruction: SbcA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x9E SBC A,(HL)
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9F SBC A,A
 
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0xA0 AND B
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0xA1 AND C
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0xA2 AND D
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0xA3 AND E
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0xA4 AND H
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0xA5 AND L
-	{Instruction: AndA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0xA6 AND (HL)
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0xA7 AND A
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0xA8 XOR B
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0xA9 XOR C
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0xAA XOR D
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0xAB XOR E
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0xAC XOR H
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0xAD XOR L
-	{Instruction: XorA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0xAE XOR (HL)
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0xAF XOR A
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA0 AND B
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA1 AND C
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA2 AND D
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA3 AND E
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA4 AND H
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA5 AND L
+	{Instruction: AndA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0xA6 AND (HL)
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA7 AND A
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA8 XOR B
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA9 XOR C
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAA XOR D
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAB XOR E
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAC XOR H
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAD XOR L
+	{Instruction: XorA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0xAE XOR (HL)
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAF XOR A
 
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0xB0 OR B
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0xB1 OR C
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0xB2 OR D
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0xB3 OR E
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0xB4 OR H
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0xB5 OR L
-	{Instruction: OrA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0xB6 OR (HL)
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0xB7 OR A
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegB, DstRegister: RegA},                  // 0xB8 CP B
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegC, DstRegister: RegA},                  // 0xB9 CP C
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegD, DstRegister: RegA},                  // 0xBA CP D
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegE, DstRegister: RegA},                  // 0xBB CP E
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegH, DstRegister: RegA},                  // 0xBC CP H
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegL, DstRegister: RegA},                  // 0xBD CP L
-	{Instruction: CpA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1, SrcRegister: RegHLIndirect, DstRegister: RegA}, // 0xBE CP (HL)
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1, SrcRegister: RegA, DstRegister: RegA},                  // 0xBF CP A
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB0 OR B
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB1 OR C
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB2 OR D
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB3 OR E
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB4 OR H
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB5 OR L
+	{Instruction: OrA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0xB6 OR (HL)
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB7 OR A
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB8 CP B
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB9 CP C
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBA CP D
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBB CP E
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBC CP H
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBD CP L
+	{Instruction: CpA, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0xBE CP (HL)
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBF CP A
 
 	// 0xC0-0xFF: Conditional returns, jumps, calls, and immediate operations
-	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},                  // 0xC0 RET NZ (5 if not taken, 11 if taken)
-	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},               // 0xC1 POP BC
-	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},                 // 0xC2 JP NZ,nn
-	{Instruction: JpAbs, Addressing: ExtendedAddressing, Timing: 10, Size: 3},                  // 0xC3 JP nn
-	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},               // 0xC4 CALL NZ,nn (10 if not taken, 17 if taken)
-	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1},              // 0xC5 PUSH BC
-	{Instruction: AddA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},                   // 0xC6 ADD A,n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1, Register: RegRst00}, // 0xC7 RST 00H
-	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},                  // 0xC8 RET Z (5 if not taken, 11 if taken)
-	{Instruction: Ret, Addressing: ImpliedAddressing, Timing: 10, Size: 1},                     // 0xC9 RET
-	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},                 // 0xCA JP Z,nn
+	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xC0 RET NZ (5 if not taken, 11 if taken)
+	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},  // 0xC1 POP BC
+	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xC2 JP NZ,nn
+	{Instruction: JpAbs, Addressing: ExtendedAddressing, Timing: 10, Size: 3},     // 0xC3 JP nn
+	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xC4 CALL NZ,nn (10 if not taken, 17 if taken)
+	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1}, // 0xC5 PUSH BC
+	{Instruction: AddA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},      // 0xC6 ADD A,n
+	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},        // 0xC7 RST 00H
+	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xC8 RET Z (5 if not taken, 11 if taken)
+	{Instruction: Ret, Addressing: ImpliedAddressing, Timing: 10, Size: 1},        // 0xC9 RET
+	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xCA JP Z,nn
 	{}, // 0xCB - Prefix for bit operations
-	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},               // 0xCC CALL Z,nn (10 if not taken, 17 if taken)
-	{Instruction: Call, Addressing: ExtendedAddressing, Timing: 17, Size: 3},                   // 0xCD CALL nn
-	{Instruction: AdcA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},                   // 0xCE ADC A,n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1, Register: RegRst08}, // 0xCF RST 08H
+	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3}, // 0xCC CALL Z,nn (10 if not taken, 17 if taken)
+	{Instruction: Call, Addressing: ExtendedAddressing, Timing: 17, Size: 3},     // 0xCD CALL nn
+	{Instruction: AdcA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0xCE ADC A,n
+	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},       // 0xCF RST 08H
 
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xD0 RET NC (5 if not taken, 11 if taken)
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},  // 0xD1 POP DE

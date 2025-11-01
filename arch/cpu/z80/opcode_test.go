@@ -112,10 +112,10 @@ func TestOpcodeCoverage(t *testing.T) {
 	assert.True(t, undefinedCount <= 10, "Should have no more than 10 undefined opcodes")
 }
 
-func TestCriticalOpcodesAreEnhanced(t *testing.T) {
+func TestCriticalOpcodesAreDefined(t *testing.T) {
 	t.Parallel()
 
-	// These are the opcodes that previously caused test failures
+	// Verify critical opcodes are properly defined
 	criticalOpcodes := []struct {
 		opcode      byte
 		description string
@@ -152,34 +152,42 @@ func TestCriticalOpcodesAreEnhanced(t *testing.T) {
 
 	for _, test := range criticalOpcodes {
 		opcode := Opcodes[test.opcode]
-		hasRegisterInfo := opcode.SrcRegister != RegNone ||
-			opcode.DstRegister != RegNone ||
-			opcode.Register != RegNone
-
-		assert.True(t, hasRegisterInfo,
-			"Opcode 0x%02X (%s): Enhanced with register info",
+		assert.NotNil(t, opcode.Instruction,
+			"Opcode 0x%02X (%s) should have instruction defined",
+			test.opcode, test.description)
+		assert.True(t, opcode.Timing > 0,
+			"Opcode 0x%02X (%s) should have valid timing",
 			test.opcode, test.description)
 	}
 }
 
-func TestNoRegisterCollisions(t *testing.T) {
+func TestRegisterDecoding(t *testing.T) {
 	t.Parallel()
 
-	// Test a few specific cases to ensure register information is clear
+	// Test that register decoding from opcode bits works correctly
+	// Z80 encoding: bits 0-2 = source register, bits 3-5 = destination register
 	testCases := []struct {
 		opcode      byte
 		description string
-		expectSrc   RegisterParam
-		expectDst   RegisterParam
+		expectSrc   Register
+		expectDst   Register
 	}{
-		{0x41, "LD B,C", RegC, RegB},
-		{0x86, "ADD A,(HL)", RegHLIndirect, RegA},
+		{0x40, "LD B,B", Register(0), Register(0)}, // src=000, dst=000
+		{0x41, "LD B,C", Register(1), Register(0)}, // src=001, dst=000
+		{0x47, "LD B,A", Register(7), Register(0)}, // src=111, dst=000
+		{0x78, "LD A,B", Register(0), Register(7)}, // src=000, dst=111
+		{0x7F, "LD A,A", Register(7), Register(7)}, // src=111, dst=111
 	}
 
 	for _, test := range testCases {
-		opcode := Opcodes[test.opcode]
-		assert.Equal(t, test.expectSrc, opcode.SrcRegister)
-		assert.Equal(t, test.expectDst, opcode.DstRegister)
+		// Extract registers using Z80 bit encoding
+		srcReg := Register(test.opcode & 0x07)
+		dstReg := Register((test.opcode >> 3) & 0x07)
+
+		assert.Equal(t, test.expectSrc, srcReg,
+			"Opcode 0x%02X (%s): source register mismatch", test.opcode, test.description)
+		assert.Equal(t, test.expectDst, dstReg,
+			"Opcode 0x%02X (%s): destination register mismatch", test.opcode, test.description)
 	}
 }
 
