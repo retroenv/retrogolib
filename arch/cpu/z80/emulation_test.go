@@ -14,7 +14,7 @@ type cpuTest struct {
 
 func cpuTestSetup(t *testing.T) *CPU {
 	t.Helper()
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 	return cpu

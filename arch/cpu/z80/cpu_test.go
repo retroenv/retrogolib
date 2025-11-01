@@ -10,7 +10,7 @@ import (
 // Core CPU functionality tests - initialization, state management, basic operations
 
 func TestNew(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 
 	// Test default initialization
 	cpu, err := New(memory)
@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, uint8(0), cpu.im, "Interrupt mode should be 0 initially")
 
 	// Test Game Boy system initialization
-	gameboyMemory := NewMemory()
+	gameboyMemory := NewBasicMemory()
 	gameboyCPU, err := New(gameboyMemory, WithSystemType(arch.GameBoy))
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(0x0100), gameboyCPU.PC, "PC should be initialized to 0x0100 for Game Boy")
@@ -37,7 +37,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestHaltedState(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
@@ -51,7 +51,7 @@ func TestHaltedState(t *testing.T) {
 }
 
 func TestState(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
@@ -80,7 +80,7 @@ func TestState(t *testing.T) {
 }
 
 func TestMemoryAccess(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 

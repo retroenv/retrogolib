@@ -1,77 +1,58 @@
 package z80
 
-// Memory represents the Z80 CPU memory with support for banking and memory mapping.
-type Memory struct {
-	data [0x10000]uint8 // 64KB address space
+// Memory defines the interface for Z80 memory access.
+// Different hardware implementations can provide their own memory controllers
+// by implementing this interface (e.g., Game Boy MBC, MSX, Spectrum).
+type Memory interface {
+	// Read reads a byte from memory at the given address.
+	Read(address uint16) uint8
 
-	// Memory banking support (for Game Boy)
-	romBank uint8
-	ramBank uint8
+	// Write writes a byte to memory at the given address.
+	Write(address uint16, value uint8)
 
-	// Memory control registers
-	mbc1Mode bool // MBC1 mode flag for banking
+	// ReadWord reads a 16-bit word from memory at the given address (little-endian).
+	ReadWord(address uint16) uint16
+
+	// WriteWord writes a 16-bit word to memory at the given address (little-endian).
+	WriteWord(address uint16, value uint16)
 }
 
-// NewMemory creates a new Z80 memory instance.
-func NewMemory() *Memory {
-	return &Memory{
-		romBank: 1, // ROM bank 1 is default for Game Boy
-		ramBank: 0,
-	}
+// BasicMemory implements a simple 64KB flat memory space with no banking.
+// This is suitable for basic Z80 systems without memory mappers.
+type BasicMemory struct {
+	data [0x10000]uint8
+}
+
+// NewBasicMemory creates a new basic memory controller with flat 64KB address space.
+func NewBasicMemory() *BasicMemory {
+	return &BasicMemory{}
 }
 
 // Read reads a byte from memory at the given address.
-func (mem *Memory) Read(address uint16) uint8 {
+func (mem *BasicMemory) Read(address uint16) uint8 {
 	return mem.data[address]
 }
 
 // Write writes a byte to memory at the given address.
-func (mem *Memory) Write(address uint16, value uint8) {
-	// For basic Z80 emulation, allow writes to all memory areas
-	// In a full Game Boy emulator, banking logic would be more complex
+func (mem *BasicMemory) Write(address uint16, value uint8) {
 	mem.data[address] = value
-
-	// Optional: Update banking state for Game Boy compatibility
-	// This allows the banking registers to be tracked without preventing writes
-	switch {
-	case address >= 0x2000 && address < 0x4000:
-		// ROM bank number (0x2000-0x3FFF)
-		bank := value & 0x1F
-		if bank == 0 {
-			bank = 1 // Bank 0 is not directly accessible (hardware constraint)
-		}
-		mem.romBank = bank
-
-	case address >= 0x4000 && address < 0x6000:
-		// RAM bank number or upper ROM bank bits (0x4000-0x5FFF)
-		if mem.mbc1Mode {
-			mem.ramBank = value & 0x03
-		} else {
-			// Upper 2 bits of ROM bank for larger ROMs
-			mem.romBank = (mem.romBank & 0x1F) | ((value & 0x03) << 5)
-		}
-
-	case address >= 0x6000 && address < 0x8000:
-		// Banking mode select (0x6000-0x7FFF)
-		mem.mbc1Mode = (value & 0x01) != 0
-	}
 }
 
 // ReadWord reads a 16-bit word from memory at the given address (little-endian).
-func (mem *Memory) ReadWord(address uint16) uint16 {
+func (mem *BasicMemory) ReadWord(address uint16) uint16 {
 	low := uint16(mem.Read(address))
 	high := uint16(mem.Read(address + 1))
 	return high<<8 | low
 }
 
 // WriteWord writes a 16-bit word to memory at the given address (little-endian).
-func (mem *Memory) WriteWord(address uint16, value uint16) {
+func (mem *BasicMemory) WriteWord(address uint16, value uint16) {
 	mem.Write(address, uint8(value))
 	mem.Write(address+1, uint8(value>>8))
 }
 
 // LoadROM loads ROM data into memory starting at address 0.
-func (mem *Memory) LoadROM(data []byte) {
+func (mem *BasicMemory) LoadROM(data []byte) {
 	if data == nil {
 		return
 	}
@@ -84,21 +65,12 @@ func (mem *Memory) LoadROM(data []byte) {
 
 // LoadProgram loads program data into memory starting at address 0.
 // This is an alias for LoadROM for backward compatibility.
-func (mem *Memory) LoadProgram(data []byte) {
+func (mem *BasicMemory) LoadProgram(data []byte) {
 	mem.LoadROM(data)
 }
 
-// GetROMBank returns the current ROM bank number.
-func (mem *Memory) GetROMBank() uint8 {
-	return mem.romBank
-}
-
-// GetRAMBank returns the current RAM bank number.
-func (mem *Memory) GetRAMBank() uint8 {
-	return mem.ramBank
-}
-
-// SetBankingMode sets the MBC1 banking mode.
-func (mem *Memory) SetBankingMode(mode bool) {
-	mem.mbc1Mode = mode
+// Data returns a reference to the underlying memory array.
+// This is useful for direct memory access in testing or debugging.
+func (mem *BasicMemory) Data() *[0x10000]uint8 {
+	return &mem.data
 }

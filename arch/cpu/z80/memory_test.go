@@ -6,15 +6,20 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func TestNewMemory(t *testing.T) {
-	memory := NewMemory()
+func TestNewBasicMemory(t *testing.T) {
+	memory := NewBasicMemory()
 	assert.NotNil(t, memory)
-	assert.Equal(t, uint8(1), memory.romBank, "ROM bank should be initialized to 1")
-	assert.Equal(t, uint8(0), memory.ramBank, "RAM bank should be initialized to 0")
 }
 
-func TestMemory_ReadWrite(t *testing.T) {
-	memory := NewMemory()
+func TestNewGameBoyMemory(t *testing.T) {
+	memory := NewGameBoyMemory()
+	assert.NotNil(t, memory)
+	assert.Equal(t, uint8(1), memory.GetROMBank(), "ROM bank should be initialized to 1")
+	assert.Equal(t, uint8(0), memory.GetRAMBank(), "RAM bank should be initialized to 0")
+}
+
+func TestBasicMemory_ReadWrite(t *testing.T) {
+	memory := NewBasicMemory()
 
 	// Test basic read/write
 	memory.Write(0x1000, 0x42)
@@ -29,8 +34,8 @@ func TestMemory_ReadWrite(t *testing.T) {
 	assert.Equal(t, uint8(0xAA), memory.Read(0xFFFF))
 }
 
-func TestMemory_ReadWriteWord(t *testing.T) {
-	memory := NewMemory()
+func TestBasicMemory_ReadWriteWord(t *testing.T) {
+	memory := NewBasicMemory()
 
 	// Test 16-bit read/write (little-endian)
 	memory.WriteWord(0x1000, 0x1234)
@@ -42,8 +47,8 @@ func TestMemory_ReadWriteWord(t *testing.T) {
 	assert.Equal(t, uint8(0x12), memory.Read(0x1001)) // High byte
 }
 
-func TestMemory_LoadROM(t *testing.T) {
-	memory := NewMemory()
+func TestBasicMemory_LoadROM(t *testing.T) {
+	memory := NewBasicMemory()
 
 	// Test small ROM
 	rom := []byte{0x01, 0x02, 0x03, 0x04}
@@ -61,7 +66,7 @@ func TestMemory_LoadROM(t *testing.T) {
 		largeROM[i] = uint8(i & 0xFF)
 	}
 
-	memory2 := NewMemory()
+	memory2 := NewBasicMemory()
 	memory2.LoadROM(largeROM)
 
 	// Should only load first 64KB
@@ -72,8 +77,8 @@ func TestMemory_LoadROM(t *testing.T) {
 	}
 }
 
-func TestMemory_Banking(t *testing.T) {
-	memory := NewMemory()
+func TestGameBoyMemory_Banking(t *testing.T) {
+	memory := NewGameBoyMemory()
 
 	// Test ROM bank switching
 	memory.Write(0x2000, 0x05) // Set ROM bank to 5

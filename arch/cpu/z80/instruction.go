@@ -640,7 +640,7 @@ var (
 		},
 		ParamFunc: cbRrc,
 	}
-	CBRl  = &Instruction{
+	CBRl = &Instruction{
 		Name: "rl",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x10, Size: 2, Cycles: 8},
@@ -657,7 +657,7 @@ var (
 		},
 		ParamFunc: cbRl,
 	}
-	CBRr  = &Instruction{
+	CBRr = &Instruction{
 		Name: "rr",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x18, Size: 2, Cycles: 8},
@@ -767,28 +767,28 @@ var (
 
 // ED-prefixed instructions (extended operations)
 var (
-	EdNeg  = &Instruction{
+	EdNeg = &Instruction{
 		Name: "neg",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0x44, Size: 2, Cycles: 8},
 		},
 		NoParamFunc: edNeg,
 	}
-	EdIm0  = &Instruction{
+	EdIm0 = &Instruction{
 		Name: "im",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImmediateAddressing: {Opcode: 0x46, Size: 2, Cycles: 8},
 		},
 		ParamFunc: edIm0,
 	}
-	EdIm1  = &Instruction{
+	EdIm1 = &Instruction{
 		Name: "im",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImmediateAddressing: {Opcode: 0x56, Size: 2, Cycles: 8},
 		},
 		ParamFunc: edIm1,
 	}
-	EdIm2  = &Instruction{
+	EdIm2 = &Instruction{
 		Name: "im",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImmediateAddressing: {Opcode: 0x5E, Size: 2, Cycles: 8},
@@ -809,14 +809,14 @@ var (
 		},
 		NoParamFunc: edReti,
 	}
-	EdRrd  = &Instruction{
+	EdRrd = &Instruction{
 		Name: "rrd",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0x67, Size: 2, Cycles: 18},
 		},
 		NoParamFunc: edRrd,
 	}
-	EdRld  = &Instruction{
+	EdRld = &Instruction{
 		Name: "rld",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0x6F, Size: 2, Cycles: 18},
@@ -970,14 +970,14 @@ var (
 	}
 
 	// ED block instructions
-	EdLdi  = &Instruction{
+	EdLdi = &Instruction{
 		Name: "ldi",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xA0, Size: 2, Cycles: 16},
 		},
 		NoParamFunc: edLdi,
 	}
-	EdLdd  = &Instruction{
+	EdLdd = &Instruction{
 		Name: "ldd",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xA8, Size: 2, Cycles: 16},
@@ -998,14 +998,14 @@ var (
 		},
 		NoParamFunc: edLddr,
 	}
-	EdCpi  = &Instruction{
+	EdCpi = &Instruction{
 		Name: "cpi",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xA1, Size: 2, Cycles: 16},
 		},
 		NoParamFunc: edCpi,
 	}
-	EdCpd  = &Instruction{
+	EdCpd = &Instruction{
 		Name: "cpd",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xA9, Size: 2, Cycles: 16},
@@ -1028,14 +1028,14 @@ var (
 	}
 
 	// ED I/O instructions
-	EdIni  = &Instruction{
+	EdIni = &Instruction{
 		Name: "ini",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xA2, Size: 2, Cycles: 16},
 		},
 		NoParamFunc: edIni,
 	}
-	EdInd  = &Instruction{
+	EdInd = &Instruction{
 		Name: "ind",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			ImpliedAddressing: {Opcode: 0xAA, Size: 2, Cycles: 16},
@@ -1188,14 +1188,14 @@ var (
 
 // DD-prefixed instructions (IX operations)
 var (
-	DdIncIX  = &Instruction{
+	DdIncIX = &Instruction{
 		Name: "inc",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x23, Size: 2, Cycles: 10},
 		},
 		NoParamFunc: ddIncIX,
 	}
-	DdDecIX  = &Instruction{
+	DdDecIX = &Instruction{
 		Name: "dec",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x2B, Size: 2, Cycles: 10},
@@ -1417,14 +1417,14 @@ var (
 		},
 		ParamFunc: ddXorAIXd,
 	}
-	DdOrAIXd  = &Instruction{
+	DdOrAIXd = &Instruction{
 		Name: "or",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xB6, Size: 3, Cycles: 19},
 		},
 		ParamFunc: ddOrAIXd,
 	}
-	DdCpAIXd  = &Instruction{
+	DdCpAIXd = &Instruction{
 		Name: "cp",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xBE, Size: 3, Cycles: 19},
@@ -1432,28 +1432,28 @@ var (
 		ParamFunc: ddCpAIXd,
 	}
 
-	DdJpIX    = &Instruction{
+	DdJpIX = &Instruction{
 		Name: "jp",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xE9, Size: 2, Cycles: 8},
 		},
 		NoParamFunc: ddJpIX,
 	}
-	DdExSpIX  = &Instruction{
+	DdExSpIX = &Instruction{
 		Name: "ex",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xE3, Size: 2, Cycles: 23},
 		},
 		NoParamFunc: ddExSpIX,
 	}
-	DdPushIX  = &Instruction{
+	DdPushIX = &Instruction{
 		Name: "push",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0xE5, Size: 2, Cycles: 15},
 		},
 		NoParamFunc: ddPushIX,
 	}
-	DdPopIX   = &Instruction{
+	DdPopIX = &Instruction{
 		Name: "pop",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0xE1, Size: 2, Cycles: 14},
@@ -1467,21 +1467,21 @@ var (
 		},
 		ParamFunc: ddcbShift,
 	}
-	DdcbBit   = &Instruction{
+	DdcbBit = &Instruction{
 		Name: "bit",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0x40, Size: 4, Cycles: 23},
 		},
 		ParamFunc: ddcbBit,
 	}
-	DdcbRes   = &Instruction{
+	DdcbRes = &Instruction{
 		Name: "res",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0x80, Size: 4, Cycles: 23},
 		},
 		ParamFunc: ddcbRes,
 	}
-	DdcbSet   = &Instruction{
+	DdcbSet = &Instruction{
 		Name: "set",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0xC0, Size: 4, Cycles: 23},
@@ -1492,14 +1492,14 @@ var (
 
 // FD-prefixed instructions (IY operations)
 var (
-	FdIncIY  = &Instruction{
+	FdIncIY = &Instruction{
 		Name: "inc",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x23, Size: 2, Cycles: 10},
 		},
 		NoParamFunc: fdIncIY,
 	}
-	FdDecIY  = &Instruction{
+	FdDecIY = &Instruction{
 		Name: "dec",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0x2B, Size: 2, Cycles: 10},
@@ -1722,14 +1722,14 @@ var (
 		},
 		ParamFunc: fdXorAIYd,
 	}
-	FdOrAIYd  = &Instruction{
+	FdOrAIYd = &Instruction{
 		Name: "or",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xB6, Size: 3, Cycles: 19},
 		},
 		ParamFunc: fdOrAIYd,
 	}
-	FdCpAIYd  = &Instruction{
+	FdCpAIYd = &Instruction{
 		Name: "cp",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xBE, Size: 3, Cycles: 19},
@@ -1737,28 +1737,28 @@ var (
 		ParamFunc: fdCpAIYd,
 	}
 
-	FdJpIY    = &Instruction{
+	FdJpIY = &Instruction{
 		Name: "jp",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xE9, Size: 2, Cycles: 8},
 		},
 		NoParamFunc: fdJpIY,
 	}
-	FdExSpIY  = &Instruction{
+	FdExSpIY = &Instruction{
 		Name: "ex",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterIndirectAddressing: {Opcode: 0xE3, Size: 2, Cycles: 23},
 		},
 		NoParamFunc: fdExSpIY,
 	}
-	FdPushIY  = &Instruction{
+	FdPushIY = &Instruction{
 		Name: "push",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0xE5, Size: 2, Cycles: 15},
 		},
 		NoParamFunc: fdPushIY,
 	}
-	FdPopIY   = &Instruction{
+	FdPopIY = &Instruction{
 		Name: "pop",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			RegisterAddressing: {Opcode: 0xE1, Size: 2, Cycles: 14},
@@ -1772,21 +1772,21 @@ var (
 		},
 		ParamFunc: fdcbShift,
 	}
-	FdcbBit   = &Instruction{
+	FdcbBit = &Instruction{
 		Name: "bit",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0x40, Size: 4, Cycles: 23},
 		},
 		ParamFunc: fdcbBit,
 	}
-	FdcbRes   = &Instruction{
+	FdcbRes = &Instruction{
 		Name: "res",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0x80, Size: 4, Cycles: 23},
 		},
 		ParamFunc: fdcbRes,
 	}
-	FdcbSet   = &Instruction{
+	FdcbSet = &Instruction{
 		Name: "set",
 		Addressing: map[AddressingMode]OpcodeInfo{
 			BitAddressing: {Opcode: 0xC0, Size: 4, Cycles: 23},

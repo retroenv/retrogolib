@@ -87,7 +87,7 @@ type CPU struct {
 
 	currentOpcode uint8 // opcode being executed (for instruction functions to access)
 
-	memory *Memory
+	memory Memory
 }
 
 // Interrupts holds the current interrupt state.
@@ -103,8 +103,10 @@ const (
 	initialCycles = 0
 )
 
-// New creates a new Z80 CPU.
-func New(memory *Memory, options ...Option) (*CPU, error) {
+// New creates a new Z80 CPU with a memory controller.
+// This allows different hardware implementations (Game Boy, MSX, ZX Spectrum, etc.)
+// to provide their own memory mapping logic.
+func New(memory Memory, options ...Option) (*CPU, error) {
 	if memory == nil {
 		return nil, ErrNilMemory
 	}
@@ -200,8 +202,10 @@ func (c *CPU) State() State {
 	}
 }
 
-// Memory returns attached memory.
-func (c *CPU) Memory() *Memory {
+// Memory returns the attached memory controller.
+//
+//nolint:ireturn // Returning interface is intentional for flexibility
+func (c *CPU) Memory() Memory {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.memory

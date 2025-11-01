@@ -46,7 +46,7 @@ func TestUndocumentedNopPrefixes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			memory := NewMemory()
+			memory := NewBasicMemory()
 			cpu, err := New(memory)
 			assert.NoError(t, err)
 
@@ -137,7 +137,7 @@ func TestValidDDFDInstructionsStillWork(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			memory := NewMemory()
+			memory := NewBasicMemory()
 			cpu, err := New(memory)
 			assert.NoError(t, err)
 
@@ -160,7 +160,7 @@ func TestValidDDFDInstructionsStillWork(t *testing.T) {
 }
 
 func TestMultipleUndocumentedNops(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 

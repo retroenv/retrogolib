@@ -14,7 +14,7 @@ import (
 // =============================================================================
 
 func TestStepNOP(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory, WithSystemType(arch.GameBoy))
 	assert.NoError(t, err) // Game Boy starts at 0x0100
 
@@ -31,7 +31,7 @@ func TestStepNOP(t *testing.T) {
 }
 
 func TestStepHalt(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory, WithSystemType(arch.GameBoy))
 	assert.NoError(t, err) // Game Boy starts at 0x0100
 
@@ -56,7 +56,7 @@ func TestStepHalt(t *testing.T) {
 // =============================================================================
 
 func TestInterrupts(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
@@ -73,7 +73,7 @@ func TestInterrupts(t *testing.T) {
 }
 
 func TestInterruptInstructions(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory, WithSystemType(arch.GameBoy))
 	assert.NoError(t, err)
 
@@ -101,7 +101,7 @@ func TestInterruptInstructions(t *testing.T) {
 // =============================================================================
 
 func TestCPUPublicAPI(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestCPUPublicAPI(t *testing.T) {
 }
 
 func TestLoadProgram(t *testing.T) {
-	memory := NewMemory()
+	memory := NewBasicMemory()
 
 	// Test LoadProgram (alias for LoadROM)
 	program := []byte{0x01, 0x02, 0x03, 0x04}
@@ -151,7 +151,7 @@ func TestCPUErrorConditions(t *testing.T) {
 	assert.Nil(t, cpu, "CPU should be nil when creation fails")
 
 	// Test interrupt mode validation
-	memory := NewMemory()
+	memory := NewBasicMemory()
 	cpu, err = New(memory)
 	assert.NoError(t, err)
 

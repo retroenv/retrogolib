@@ -40,8 +40,8 @@
 //
 // # Usage Example
 //
-//	// Basic Z80 CPU setup
-//	memory := z80.NewMemory()
+//	// Basic Z80 CPU setup with flat memory
+//	memory := z80.NewBasicMemory()
 //	cpu, err := z80.New(memory)
 //	if err != nil {
 //	    return fmt.Errorf("failed to create CPU: %w", err)
