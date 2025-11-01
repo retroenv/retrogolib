@@ -10,44 +10,64 @@ import (
 func TestVerifyOpcodes(t *testing.T) {
 	t.Parallel()
 
-	consistentCount := 0
-	totalCount := 0
+	verifyOpcodeArray := func(name string, opcodes [256]Opcode, minExpected int, checkConsistency bool) {
+		consistentCount := 0
+		totalCount := 0
 
-	for b, op := range Opcodes {
-		ins := op.Instruction
-		if ins == nil {
-			continue
-		}
-		if ins.Unofficial && ins.Name == Nop.Name {
-			// unofficial nop has multiple opcodes for the
-			// same addressing mode
-			continue
+		for b, op := range opcodes {
+			ins := op.Instruction
+			if ins == nil {
+				continue
+			}
+			if ins.Unofficial && ins.Name == Nop.Name {
+				// unofficial nop has multiple opcodes for the
+				// same addressing mode
+				continue
+			}
+
+			totalCount++
+			if checkConsistency {
+				info := ins.Addressing[op.Addressing]
+				if byte(b) == info.Opcode {
+					consistentCount++
+				}
+			}
 		}
 
-		totalCount++
-		info := ins.Addressing[op.Addressing]
-		if byte(b) == info.Opcode {
-			consistentCount++
+		// Ensure opcodes have reasonable consistency (allowing for architectural differences)
+		// Only check for base Opcodes array - prefix instructions have different mapping
+		if checkConsistency && totalCount > 0 {
+			consistencyRate := float64(consistentCount) / float64(totalCount)
+			assert.True(t, consistencyRate > 0.20, "%s: Opcode consistency rate should be >20%%, got %.2f%%", name, consistencyRate*100)
 		}
+		assert.True(t, totalCount >= minExpected, "%s: Should have at least %d opcodes, got %d", name, minExpected, totalCount)
 	}
 
-	// Ensure opcodes have reasonable consistency (allowing for architectural differences)
-	consistencyRate := float64(consistentCount) / float64(totalCount)
-	assert.True(t, consistencyRate > 0.20, "Opcode consistency rate should be >20%%, got %.2f%%", consistencyRate*100)
-	assert.True(t, totalCount > 200, "Should have reasonable number of opcodes, got %d", totalCount)
+	verifyOpcodeArray("Opcodes", Opcodes, 200, true)
+	verifyOpcodeArray("EDOpcodes", EDOpcodes, 50, false)
+	verifyOpcodeArray("DDOpcodes", DDOpcodes, 30, false)
+	verifyOpcodeArray("FDOpcodes", FDOpcodes, 30, false)
 }
 
 func TestOpcodeProperties(t *testing.T) {
 	t.Parallel()
 
-	// Test that timing values are reasonable
-	for i, opcode := range Opcodes {
-		if opcode.Instruction == nil {
-			continue
+	verifyOpcodeProperties := func(opcodes [256]Opcode, prefix string) {
+		for i, opcode := range opcodes {
+			if opcode.Instruction == nil {
+				continue
+			}
+			assert.True(t, opcode.Timing > 0 && opcode.Timing <= 23,
+				"%s 0x%02X (%s) has invalid timing: %d", prefix, i, opcode.Instruction.Name, opcode.Timing)
+			assert.True(t, opcode.Size > 0 && opcode.Size <= 4,
+				"%s 0x%02X (%s) has invalid size: %d", prefix, i, opcode.Instruction.Name, opcode.Size)
 		}
-		assert.True(t, opcode.Timing > 0 && opcode.Timing <= 23,
-			"Opcode 0x%02X (%s) has invalid timing: %d", i, opcode.Instruction.Name, opcode.Timing)
 	}
+
+	verifyOpcodeProperties(Opcodes, "Opcode")
+	verifyOpcodeProperties(EDOpcodes, "ED")
+	verifyOpcodeProperties(DDOpcodes, "DD")
+	verifyOpcodeProperties(FDOpcodes, "FD")
 }
 
 func TestInstructionCoverage(t *testing.T) {
