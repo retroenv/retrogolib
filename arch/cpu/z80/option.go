@@ -12,9 +12,7 @@ type IOHandler interface {
 
 // Options contains options for the CPU.
 type Options struct {
-	tracing                  bool
-	disableUnofficialOpcodes bool
-	enableMemoryContention   bool
+	tracing bool
 
 	preExecutionHook preExecutionHook
 	ioHandler        IOHandler
@@ -40,13 +38,6 @@ func NewOptions(optionList ...Option) Options {
 func WithTracing() func(*Options) {
 	return func(options *Options) {
 		options.tracing = true
-	}
-}
-
-// WithUnofficialOpcodesDisabled disables support for undocumented Z80 instructions.
-func WithUnofficialOpcodesDisabled() func(*Options) {
-	return func(options *Options) {
-		options.disableUnofficialOpcodes = true
 	}
 }
 
@@ -95,12 +86,5 @@ func WithInitialPC(pc uint16) func(*Options) {
 func WithInitialSP(sp uint16) func(*Options) {
 	return func(options *Options) {
 		options.initialSP = sp
-	}
-}
-
-// WithMemoryContention enables memory contention modeling.
-func WithMemoryContention() func(*Options) {
-	return func(options *Options) {
-		options.enableMemoryContention = true
 	}
 }
