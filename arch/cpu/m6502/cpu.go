@@ -5,42 +5,48 @@ import (
 	"sync"
 )
 
-// State contains the current state of the CPU.
+// State represents complete 6502 CPU state for save/load and debugging.
 type State struct {
-	A          uint8
-	X          uint8
-	Y          uint8
-	PC         uint16
-	SP         uint8
-	Cycles     uint64
-	Flags      Flags
-	Interrupts Interrupts
+	// Primary registers
+	A  uint8  // Accumulator (arithmetic and logic operations)
+	X  uint8  // X index register
+	Y  uint8  // Y index register
+	PC uint16 // Program counter
+	SP uint8  // Stack pointer ($0100-$01FF)
+
+	Cycles     uint64     // Total CPU cycles executed
+	Flags      Flags      // Processor status flags
+	Interrupts Interrupts // Interrupt state
 }
 
+// CPU represents a thread-safe 6502 microprocessor with full instruction set emulation.
 type CPU struct {
 	mu sync.RWMutex
 
-	A     uint8  // accumulator
-	X     uint8  // x register
-	Y     uint8  // y register
-	PC    uint16 // program counter
-	SP    uint8  // stack pointer
-	Flags Flags
+	// Primary registers
+	A  uint8  // Accumulator (arithmetic and logic operations)
+	X  uint8  // X index register
+	Y  uint8  // Y index register
+	PC uint16 // Program counter
+	SP uint8  // Stack pointer ($0100-$01FF)
+
+	Flags Flags // Processor status register
 
 	cycles      uint64
-	stallCycles uint16 // TODO stall cycles, use a Step() function
+	stallCycles uint16 // DMA transfer stall cycles
 
-	triggerIrq bool
-	triggerNmi bool
+	// Interrupt control
+	triggerIrq bool // IRQ interrupt triggered
+	triggerNmi bool // NMI interrupt triggered
+	irqRunning bool // IRQ handler executing
+	nmiRunning bool // NMI handler executing
 
-	irqRunning bool
-	nmiRunning bool
-
-	irqAddress uint16
-	nmiAddress uint16
+	// Interrupt vectors
+	irqAddress uint16 // IRQ/BRK handler address (from $FFFE-$FFFF)
+	nmiAddress uint16 // NMI handler address (from $FFFA-$FFFB)
 
 	opts      Options
-	TraceStep TraceStep // trace step info, set if tracing is enabled
+	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	memory *Memory
 }

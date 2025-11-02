@@ -6,7 +6,10 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-// TestVerifyOpcodes verifies that all opcode and addressing mode info match.
+// TestVerifyOpcodes ensures bidirectional opcode mapping consistency.
+// Every opcode in the lookup table (Opcodes[X] -> Instruction) must have
+// a reverse mapping in the instruction's Addressing map (Instruction -> X).
+// This enables disassembly and code generation tools.
 func TestVerifyOpcodes(t *testing.T) {
 	t.Parallel()
 
@@ -16,8 +19,7 @@ func TestVerifyOpcodes(t *testing.T) {
 			continue
 		}
 		if ins.Unofficial && ins.Name == Nop.Name {
-			// unofficial nop has multiple opcodes for the
-			// same addressing mode
+			// Unofficial NOPs share opcodes with different addressing modes
 			continue
 		}
 
@@ -26,10 +28,11 @@ func TestVerifyOpcodes(t *testing.T) {
 	}
 }
 
+// TestOpcodeProperties validates timing constraints for all opcodes.
+// Timing is in CPU cycles, typically 2-7 cycles for most 6502 instructions.
 func TestOpcodeProperties(t *testing.T) {
 	t.Parallel()
 
-	// Test that timing values are reasonable
 	for i, opcode := range Opcodes {
 		if opcode.Instruction == nil {
 			continue
@@ -39,10 +42,10 @@ func TestOpcodeProperties(t *testing.T) {
 	}
 }
 
+// TestInstructionCoverage verifies essential 6502 instructions are present in opcode table.
 func TestInstructionCoverage(t *testing.T) {
 	t.Parallel()
 
-	// Ensure all major instructions have opcodes
 	majorInstructions := []*Instruction{
 		Adc, And, Asl, Bcc, Bcs, Beq, Bit, Bmi, Bne, Bpl, Brk, Bvc, Bvs,
 		Clc, Cld, Cli, Clv, Cmp, Cpx, Cpy, Dec, Dex, Dey, Eor, Inc, Inx,
@@ -63,10 +66,10 @@ func TestInstructionCoverage(t *testing.T) {
 	}
 }
 
+// TestUnofficialInstructions validates undocumented opcodes are marked correctly.
 func TestUnofficialInstructions(t *testing.T) {
 	t.Parallel()
 
-	// Test that unofficial instructions are marked correctly
 	unofficialCount := 0
 	for _, opcode := range Opcodes {
 		if opcode.Instruction != nil && opcode.Instruction.Unofficial {
@@ -74,7 +77,6 @@ func TestUnofficialInstructions(t *testing.T) {
 		}
 	}
 
-	// There should be some unofficial instructions
 	assert.True(t, unofficialCount > 0, "Expected some unofficial instructions")
 	assert.True(t, unofficialCount < len(Opcodes)/2, "Too many unofficial instructions")
 }

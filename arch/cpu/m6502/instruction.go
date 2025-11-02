@@ -1,14 +1,18 @@
 package m6502
 
-// Instruction contains information about a CPU instruction.
+// Instruction defines a 6502 CPU instruction with its opcodes and execution logic.
+// Instructions support multiple addressing modes through the Addressing map that
+// enables opcode lookup for disassembly and code generation.
 type Instruction struct {
-	Name       string // lowercased instruction name
-	Unofficial bool   // unofficial instructions are not part of the original 6502 spec
+	Name       string // Instruction mnemonic (lowercase)
+	Unofficial bool   // True for undocumented opcodes not in original 6502 spec
 
-	Addressing map[AddressingMode]OpcodeInfo // addressing mode mapping to opcode info
+	// Opcode lookup map for addressing mode to opcode mapping
+	Addressing map[AddressingMode]OpcodeInfo // Maps addressing mode to opcode info
 
-	NoParamFunc func(c *CPU) error                // emulation function to execute when the instruction has no parameters
-	ParamFunc   func(c *CPU, params ...any) error // emulation function to execute when the instruction has parameters
+	// Execution handlers - exactly one must be set
+	NoParamFunc func(c *CPU) error                // Handler for implied addressing (NOP, DEX)
+	ParamFunc   func(c *CPU, params ...any) error // Handler for parameterized instructions (LDA, JMP)
 }
 
 // HasAddressing returns whether the instruction has any of the passed addressing modes.
