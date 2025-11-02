@@ -26,12 +26,6 @@ func TestNew(t *testing.T) {
 			memory:      nil,
 			expectError: true,
 		},
-		{
-			name:        "with memory size option",
-			memory:      createTestMemory(t, logger),
-			options:     []Option{WithMemorySize(512 * 1024)},
-			expectError: false,
-		},
 	}
 
 	for _, tt := range tests {

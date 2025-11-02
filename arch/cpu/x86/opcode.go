@@ -12,15 +12,9 @@ type Opcode struct {
 	Timing      uint8          // execution time in cycles
 	Size        uint8          // instruction size in bytes
 
-	// Register disambiguation fields
-	SrcRegister RegisterParam // source register
-	DstRegister RegisterParam // destination register
-	Register    RegisterParam // single register operand
-
-	// ModR/M and displacement info
-	HasModRM         bool  // instruction uses ModR/M byte
-	HasDisplacement  bool  // instruction has displacement
-	DisplacementSize uint8 // size of displacement (1 or 2 bytes)
+	// Metadata fields for tooling and tests (not used for emulation)
+	Register RegisterParam // single register operand (for reverse-lookup maps)
+	HasModRM bool          // instruction uses ModR/M byte (duplicates Instruction.Addressing data)
 }
 
 // OpcodeInfo contains opcode and timing information for instruction variants.
