@@ -300,11 +300,11 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		// Check specific register mappings
 		alInfo, exists := variants[RegAL]
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0xB0), alInfo.Opcode)
+		assert.Equal(t, uint16(0xB0), alInfo.Opcode)
 
 		bhInfo, exists := variants[RegBH]
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0xB7), bhInfo.Opcode)
+		assert.Equal(t, uint16(0xB7), bhInfo.Opcode)
 	})
 
 	t.Run("IncReg16 has all 16-bit register variants", func(t *testing.T) {
@@ -314,11 +314,11 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		// Check specific register mappings
 		axInfo, exists := variants[RegAX]
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0x40), axInfo.Opcode)
+		assert.Equal(t, uint16(0x40), axInfo.Opcode)
 
 		diInfo, exists := variants[RegDI]
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0x47), diInfo.Opcode)
+		assert.Equal(t, uint16(0x47), diInfo.Opcode)
 	})
 }
 
@@ -328,7 +328,7 @@ func TestArithmeticInstructions(t *testing.T) {
 		// Test ADD AL, imm8
 		info, exists := AddALImm8.GetOpcodeInfo(ImmediateAddressing)
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0x04), info.Opcode)
+		assert.Equal(t, uint16(0x04), info.Opcode)
 		assert.Equal(t, uint8(2), info.Size)
 		assert.Equal(t, uint8(4), info.Cycles)
 		assert.False(t, info.HasModRM)
@@ -336,7 +336,7 @@ func TestArithmeticInstructions(t *testing.T) {
 		// Test ADD AX, imm16
 		info, exists = AddAXImm16.GetOpcodeInfo(ImmediateAddressing)
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0x05), info.Opcode)
+		assert.Equal(t, uint16(0x05), info.Opcode)
 		assert.Equal(t, uint8(3), info.Size)
 		assert.Equal(t, uint8(4), info.Cycles)
 		assert.False(t, info.HasModRM)
@@ -344,7 +344,7 @@ func TestArithmeticInstructions(t *testing.T) {
 		// Test ADD r/m8, r8
 		info, exists = AddRMReg8.GetOpcodeInfo(ModRMRegisterAddressing)
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0x00), info.Opcode)
+		assert.Equal(t, uint16(0x00), info.Opcode)
 		assert.Equal(t, uint8(2), info.Size)
 		assert.Equal(t, uint8(3), info.Cycles)
 		assert.True(t, info.HasModRM)
@@ -377,13 +377,13 @@ func TestJumpInstructions(t *testing.T) {
 		// Test JMP rel16
 		info, exists := Jmp.GetOpcodeInfo(RelativeAddressing)
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0xE9), info.Opcode)
+		assert.Equal(t, uint16(0xE9), info.Opcode)
 		assert.Equal(t, uint8(3), info.Size)
 
 		// Test JMP r/m16 (indirect)
 		info, exists = Jmp.GetOpcodeInfo(ModRMRegisterAddressing)
 		assert.True(t, exists)
-		assert.Equal(t, uint8(0xFF), info.Opcode)
+		assert.Equal(t, uint16(0xFF), info.Opcode)
 		assert.True(t, info.HasModRM)
 	})
 }
@@ -443,5 +443,52 @@ func TestControlInstructions(t *testing.T) {
 			assert.Equal(t, tt.cycles, info.Cycles)
 			assert.False(t, info.HasModRM)
 		}
+	})
+}
+
+func TestOpcodeInfo_ByteMethods(t *testing.T) {
+	t.Run("Single-byte opcode (PUSHA)", func(t *testing.T) {
+		info, exists := Pusha.GetOpcodeInfo(ImpliedAddressing)
+		assert.True(t, exists)
+		assert.Equal(t, uint16(0x60), info.Opcode)
+
+		// Test helper methods
+		assert.False(t, info.IsTwoByte())
+		assert.Equal(t, uint8(0x60), info.PrimaryByte())
+		assert.Equal(t, uint8(0), info.SecondaryByte())
+	})
+
+	t.Run("Two-byte opcode (BSF)", func(t *testing.T) {
+		info, exists := Bsf.GetOpcodeInfo(ModRMRegisterAddressing)
+		assert.True(t, exists)
+		assert.Equal(t, uint16(0x0FBC), info.Opcode)
+
+		// Test helper methods
+		assert.True(t, info.IsTwoByte())
+		assert.Equal(t, uint8(0x0F), info.PrimaryByte())   // Escape prefix
+		assert.Equal(t, uint8(0xBC), info.SecondaryByte()) // Actual opcode
+	})
+
+	t.Run("Two-byte opcode (CMPXCHG)", func(t *testing.T) {
+		info, exists := Cmpxchg.GetOpcodeInfo(ModRMRegisterAddressing)
+		assert.True(t, exists)
+		assert.Equal(t, uint16(0x0FB0), info.Opcode)
+
+		// Test helper methods
+		assert.True(t, info.IsTwoByte())
+		assert.Equal(t, uint8(0x0F), info.PrimaryByte())
+		assert.Equal(t, uint8(0xB0), info.SecondaryByte())
+	})
+
+	t.Run("Single-byte opcode boundary (0xFF)", func(t *testing.T) {
+		// JMP r/m16 uses opcode 0xFF
+		info, exists := Jmp.GetOpcodeInfo(ModRMRegisterAddressing)
+		assert.True(t, exists)
+		assert.Equal(t, uint16(0xFF), info.Opcode)
+
+		// Should be single-byte
+		assert.False(t, info.IsTwoByte())
+		assert.Equal(t, uint8(0xFF), info.PrimaryByte())
+		assert.Equal(t, uint8(0), info.SecondaryByte())
 	})
 }

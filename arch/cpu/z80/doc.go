@@ -7,6 +7,7 @@
 // including home computers, gaming consoles, and embedded systems. This implementation provides:
 //
 //   - Complete Z80 instruction set emulation (official + undocumented opcodes)
+//   - Array-based opcode tables (4 arrays: base opcodes, ED prefix, DD prefix, FD prefix)
 //   - 8-bit and 16-bit register operations with efficient flag management
 //   - Accurate interrupt handling (NMI, maskable interrupts, modes 0/1/2)
 //   - Memory banking support for extended address spaces

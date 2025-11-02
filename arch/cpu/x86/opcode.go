@@ -18,11 +18,42 @@ type Opcode struct {
 }
 
 // OpcodeInfo contains opcode and timing information for instruction variants.
+//
+// The Opcode field uses the following encoding:
+//   - Single-byte opcodes (8086-80186): 0x00-0xFF (e.g., 0x60 = PUSHA)
+//   - Two-byte opcodes (80286+): 0x0F00-0x0FFF (e.g., 0x0FBC = BSF)
+//
+// For two-byte opcodes, the high byte (0x0F) is the escape prefix,
+// and the low byte is the actual opcode byte.
 type OpcodeInfo struct {
-	Opcode   uint8 // primary opcode byte
-	Size     uint8 // total instruction size in bytes
-	Cycles   uint8 // execution cycles
-	HasModRM bool  // uses ModR/M byte
+	Opcode   uint16 // opcode (uint8 for single-byte, uint16 for two-byte with 0x0F prefix)
+	Size     uint8  // total instruction size in bytes
+	Cycles   uint8  // execution cycles
+	HasModRM bool   // uses ModR/M byte
+}
+
+// IsTwoByte returns true if this is a two-byte opcode (0x0F prefix).
+func (o OpcodeInfo) IsTwoByte() bool {
+	return o.Opcode > 0xFF
+}
+
+// PrimaryByte returns the first/primary opcode byte.
+// For single-byte opcodes, this is the opcode itself.
+// For two-byte opcodes, this returns 0x0F (the escape prefix).
+func (o OpcodeInfo) PrimaryByte() uint8 {
+	if o.IsTwoByte() {
+		return 0x0F
+	}
+	return uint8(o.Opcode)
+}
+
+// SecondaryByte returns the second opcode byte for two-byte opcodes.
+// Returns 0 for single-byte opcodes.
+func (o OpcodeInfo) SecondaryByte() uint8 {
+	if o.IsTwoByte() {
+		return uint8(o.Opcode & 0xFF)
+	}
+	return 0
 }
 
 // Opcodes maps the first opcode byte to CPU instruction information.
@@ -136,9 +167,23 @@ var Opcodes = [256]Opcode{
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 8, Size: 1, Register: RegSI},   // 0x5E POP SI
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 8, Size: 1, Register: RegDI},   // 0x5F POP DI
 
-	// 0x60-0x6F: More operations (8086 reserved, but we'll add some common ones)
-	{}, {}, {}, {}, {}, {}, {}, {},
-	{}, {}, {}, {}, {}, {}, {}, {},
+	// 0x60-0x6F: 80186+ Instructions
+	{Instruction: Pusha, Addressing: ImpliedAddressing, Timing: 36, Size: 1},                       // 0x60 PUSHA
+	{Instruction: Popa, Addressing: ImpliedAddressing, Timing: 51, Size: 1},                        // 0x61 POPA
+	{Instruction: Bound, Addressing: ModRMRegisterAddressing, Timing: 33, Size: 2, HasModRM: true}, // 0x62 BOUND r16,m16&16
+	{}, // 0x63 (reserved)
+	{}, // 0x64 FS: segment override prefix
+	{}, // 0x65 GS: segment override prefix
+	{}, // 0x66 Operand-size override prefix
+	{}, // 0x67 Address-size override prefix
+	{Instruction: PushImm16, Addressing: ImmediateAddressing, Timing: 3, Size: 3},                           // 0x68 PUSH imm16
+	{Instruction: ImulRegRMImm16, Addressing: ModRMRegisterAddressing, Timing: 22, Size: 4, HasModRM: true}, // 0x69 IMUL r16,r/m16,imm16
+	{Instruction: PushImm8, Addressing: ImmediateAddressing, Timing: 3, Size: 2},                            // 0x6A PUSH imm8
+	{Instruction: ImulRegRMImm8, Addressing: ModRMRegisterAddressing, Timing: 22, Size: 3, HasModRM: true},  // 0x6B IMUL r16,r/m16,imm8
+	{Instruction: Insb, Addressing: ImpliedAddressing, Timing: 14, Size: 1},                                 // 0x6C INSB
+	{Instruction: Insw, Addressing: ImpliedAddressing, Timing: 14, Size: 1},                                 // 0x6D INSW
+	{Instruction: Outsb, Addressing: ImpliedAddressing, Timing: 14, Size: 1},                                // 0x6E OUTSB
+	{Instruction: Outsw, Addressing: ImpliedAddressing, Timing: 14, Size: 1},                                // 0x6F OUTSW
 
 	// 0x70-0x7F: Conditional jump instructions
 	{Instruction: Jo, Addressing: RelativeAddressing, Timing: 16, Size: 2},   // 0x70 JO rel8
@@ -224,19 +269,21 @@ var Opcodes = [256]Opcode{
 	{Instruction: MovRegImm16, Addressing: ImmediateAddressing, Timing: 4, Size: 3, Register: RegDI}, // 0xBF MOV DI, imm16
 
 	// 0xC0-0xCF: Shifts, RET, LES/LDS, MOV immediate to memory, INT
-	{}, {}, // 0xC0-0xC1 (Shift Group 2 - not in 8086)
-	{Instruction: Ret, Addressing: ImmediateAddressing, Timing: 20, Size: 3}, // 0xC2 RET imm16
-	{Instruction: Ret, Addressing: ImpliedAddressing, Timing: 16, Size: 1},   // 0xC3 RET
+	{Instruction: Rol, Addressing: ModRMImmediateAddressing, Timing: 5, Size: 3, HasModRM: true}, // 0xC0 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m8, imm8 (80186+)
+	{Instruction: Rol, Addressing: ModRMImmediateAddressing, Timing: 5, Size: 3, HasModRM: true}, // 0xC1 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m16, imm8 (80186+)
+	{Instruction: Ret, Addressing: ImmediateAddressing, Timing: 20, Size: 3},                     // 0xC2 RET imm16
+	{Instruction: Ret, Addressing: ImpliedAddressing, Timing: 16, Size: 1},                       // 0xC3 RET
 	{}, {}, // 0xC4-0xC5 LES, LDS
 	{Instruction: MovMemImm8, Addressing: ModRMImmediateAddressing, Timing: 10, Size: 3, HasModRM: true},  // 0xC6 MOV r/m8, imm8
 	{Instruction: MovMemImm16, Addressing: ModRMImmediateAddressing, Timing: 10, Size: 4, HasModRM: true}, // 0xC7 MOV r/m16, imm16
-	{}, {}, // 0xC8-0xC9 ENTER, LEAVE (not in 8086)
-	{Instruction: RetFar, Addressing: ImmediateAddressing, Timing: 25, Size: 3},                 // 0xCA RETF imm16
-	{Instruction: RetFar, Addressing: ImpliedAddressing, Timing: 34, Size: 1},                   // 0xCB RETF
-	{Instruction: Int, Addressing: ImmediateAddressing, Timing: 52, Size: 2, Register: RegImm8}, // 0xCC INT 3
-	{Instruction: Int, Addressing: ImmediateAddressing, Timing: 51, Size: 2},                    // 0xCD INT imm8
-	{Instruction: Into, Addressing: ImpliedAddressing, Timing: 53, Size: 1},                     // 0xCE INTO
-	{Instruction: Iret, Addressing: ImpliedAddressing, Timing: 32, Size: 1},                     // 0xCF IRET
+	{Instruction: Enter, Addressing: ImmediateAddressing, Timing: 25, Size: 4},                            // 0xC8 ENTER imm16, imm8 (80186+)
+	{Instruction: Leave, Addressing: ImpliedAddressing, Timing: 8, Size: 1},                               // 0xC9 LEAVE (80186+)
+	{Instruction: RetFar, Addressing: ImmediateAddressing, Timing: 25, Size: 3},                           // 0xCA RETF imm16
+	{Instruction: RetFar, Addressing: ImpliedAddressing, Timing: 34, Size: 1},                             // 0xCB RETF
+	{Instruction: Int, Addressing: ImmediateAddressing, Timing: 52, Size: 2, Register: RegImm8},           // 0xCC INT 3
+	{Instruction: Int, Addressing: ImmediateAddressing, Timing: 51, Size: 2},                              // 0xCD INT imm8
+	{Instruction: Into, Addressing: ImpliedAddressing, Timing: 53, Size: 1},                               // 0xCE INTO
+	{Instruction: Iret, Addressing: ImpliedAddressing, Timing: 32, Size: 1},                               // 0xCF IRET
 
 	// 0xD0-0xDF: Shift/rotate, AAM/AAD, XLAT
 	{Instruction: Rol, Addressing: ModRMRegisterAddressing, Timing: 2, Size: 2, HasModRM: true}, // 0xD0 Group 2 - ROL/ROR/RCL/RCR/SHL/SHR/SAR r/m8, 1

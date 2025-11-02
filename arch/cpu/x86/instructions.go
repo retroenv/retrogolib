@@ -1110,6 +1110,202 @@ var (
 		},
 	}
 
+	// 80186/80188 Instructions (introduced 1982)
+	Pusha = &Instruction{ // Push all general registers
+		Name: "pusha",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x60, Size: 1, Cycles: 36, HasModRM: false},
+		},
+	}
+	Popa = &Instruction{ // Pop all general registers
+		Name: "popa",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x61, Size: 1, Cycles: 51, HasModRM: false},
+		},
+	}
+	Bound = &Instruction{ // Check array bounds
+		Name: "bound",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x62, Size: 2, Cycles: 33, HasModRM: true},
+		},
+	}
+	Enter = &Instruction{ // Make stack frame
+		Name: "enter",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0xC8, Size: 4, Cycles: 25, HasModRM: false},
+		},
+	}
+	Leave = &Instruction{ // High level procedure leave
+		Name: "leave",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0xC9, Size: 1, Cycles: 8, HasModRM: false},
+		},
+	}
+	Insb = &Instruction{ // Input byte from port to ES:[DI]
+		Name: "insb",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x6C, Size: 1, Cycles: 14, HasModRM: false},
+		},
+	}
+	Insw = &Instruction{ // Input word from port to ES:[DI]
+		Name: "insw",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x6D, Size: 1, Cycles: 14, HasModRM: false},
+		},
+	}
+	Outsb = &Instruction{ // Output byte from DS:[SI] to port
+		Name: "outsb",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x6E, Size: 1, Cycles: 14, HasModRM: false},
+		},
+	}
+	Outsw = &Instruction{ // Output word from DS:[SI] to port
+		Name: "outsw",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x6F, Size: 1, Cycles: 14, HasModRM: false},
+		},
+	}
+	PushImm16 = &Instruction{ // Push immediate word
+		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0x68, Size: 3, Cycles: 3, HasModRM: false},
+		},
+	}
+	PushImm8 = &Instruction{ // Push immediate byte (sign-extended)
+		Name: "push",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImmediateAddressing: {Opcode: 0x6A, Size: 2, Cycles: 3, HasModRM: false},
+		},
+	}
+	ImulRegRMImm16 = &Instruction{ // Signed multiply register with r/m and immediate word
+		Name: "imul",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x69, Size: 4, Cycles: 22, HasModRM: true},
+		},
+	}
+	ImulRegRMImm8 = &Instruction{ // Signed multiply register with r/m and immediate byte
+		Name: "imul",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x6B, Size: 3, Cycles: 22, HasModRM: true},
+		},
+	}
+
+	// 80286 Real Mode Instructions (introduced 1982)
+	// Note: Most 80286 additions are for protected mode.
+	// The following are usable in real mode:
+	Smsw = &Instruction{ // Store Machine Status Word
+		Name: "smsw",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0F01, Size: 3, Cycles: 2, HasModRM: true}, // 0x0F 0x01 /4
+		},
+	}
+	Lmsw = &Instruction{ // Load Machine Status Word
+		Name: "lmsw",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0F01, Size: 3, Cycles: 6, HasModRM: true}, // 0x0F 0x01 /6
+		},
+	}
+
+	// 80386 Instructions (introduced 1985)
+	Bsf = &Instruction{ // Bit scan forward
+		Name: "bsf",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FBC, Size: 3, Cycles: 10, HasModRM: true},
+		},
+	}
+	Bsr = &Instruction{ // Bit scan reverse
+		Name: "bsr",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FBD, Size: 3, Cycles: 10, HasModRM: true},
+		},
+	}
+	Bt = &Instruction{ // Bit test
+		Name: "bt",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FA3, Size: 3, Cycles: 3, HasModRM: true},
+		},
+	}
+	Btc = &Instruction{ // Bit test and complement
+		Name: "btc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FBB, Size: 3, Cycles: 6, HasModRM: true},
+		},
+	}
+	Btr = &Instruction{ // Bit test and reset
+		Name: "btr",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FB3, Size: 3, Cycles: 6, HasModRM: true},
+		},
+	}
+	Bts = &Instruction{ // Bit test and set
+		Name: "bts",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FAB, Size: 3, Cycles: 6, HasModRM: true},
+		},
+	}
+	Movzx = &Instruction{ // Move with zero extension
+		Name: "movzx",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FB6, Size: 3, Cycles: 3, HasModRM: true}, // MOVZX r16, r/m8
+		},
+	}
+	Movsx = &Instruction{ // Move with sign extension
+		Name: "movsx",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FBE, Size: 3, Cycles: 3, HasModRM: true}, // MOVSX r16, r/m8
+		},
+	}
+	Shld = &Instruction{ // Double precision shift left
+		Name: "shld",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FA4, Size: 4, Cycles: 3, HasModRM: true},
+		},
+	}
+	Shrd = &Instruction{ // Double precision shift right
+		Name: "shrd",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FAC, Size: 4, Cycles: 3, HasModRM: true},
+		},
+	}
+	Setcc = &Instruction{ // Set byte on condition (generic - specific conditions use 0x0F 0x90-0x9F)
+		Name: "setcc",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0F90, Size: 3, Cycles: 4, HasModRM: true},
+		},
+	}
+
+	// 80486 Instructions (introduced 1989)
+	Bswap = &Instruction{ // Byte swap register (EAX-EDI: 0x0F 0xC8-0xCF)
+		Name: "bswap",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x0FC8, Size: 2, Cycles: 1, HasModRM: false}, // BSWAP EAX
+		},
+	}
+	Cmpxchg = &Instruction{ // Compare and exchange
+		Name: "cmpxchg",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FB0, Size: 3, Cycles: 6, HasModRM: true}, // CMPXCHG r/m8, r8
+		},
+	}
+	Xadd = &Instruction{ // Exchange and add
+		Name: "xadd",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ModRMRegisterAddressing: {Opcode: 0x0FC0, Size: 3, Cycles: 3, HasModRM: true}, // XADD r/m8, r8
+		},
+	}
+	Invd = &Instruction{ // Invalidate cache
+		Name: "invd",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x0F08, Size: 2, Cycles: 15, HasModRM: false},
+		},
+	}
+	Wbinvd = &Instruction{ // Write back and invalidate cache
+		Name: "wbinvd",
+		Addressing: map[AddressingMode]OpcodeInfo{
+			ImpliedAddressing: {Opcode: 0x0F09, Size: 2, Cycles: 255, HasModRM: false}, // Varies greatly (typically 2000+)
+		},
+	}
+
 	// Undefined/Reserved
 	Undefined = &Instruction{ // Placeholder for undefined opcodes
 		Name: "undefined",

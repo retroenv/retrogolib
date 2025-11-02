@@ -1,19 +1,30 @@
-// Package x86 provides Intel x86 (8086/8088) CPU support for DOS development tooling.
+// Package x86 provides Intel x86 real mode CPU support for retro computing tooling.
 //
-// This package implements the Intel 8086/8088 CPU architecture commonly used
-// in DOS development, including register management and instruction definitions
-// for retro computing applications.
+// This package implements the Intel x86 CPU architecture in real mode,
+// covering instruction sets from 8086/8088 through 80486, including register
+// management and comprehensive instruction definitions for static analysis,
+// disassembly, and assembler development.
 //
-// Features:
-//   - Complete 8086/8088 CPU state management
-//   - Real mode memory addressing (segmented memory)
-//   - Interrupt handling support
-//   - Flag register management
+// # Supported CPU Generations
+//
+//   - 8086/8088 (1978): Base instruction set, segmented memory, 16-bit operations
+//   - 80186/80188 (1982): Enhanced instructions (PUSHA/POPA, ENTER/LEAVE, BOUND, string I/O)
+//   - 80286 (1982): Real mode enhancements (SMSW/LMSW for machine status)
+//   - 80386 (1985): Bit manipulation (BSF/BSR/BT/BTC/BTR/BTS), move extensions (MOVZX/MOVSX), double-precision shifts
+//   - 80486 (1989): Atomic operations (CMPXCHG/XADD), byte swap (BSWAP), cache control
+//
+// # Architecture Features
+//
+//   - Complete real mode instruction set (256 single-byte + two-byte opcodes with 0x0F prefix)
+//   - Real mode memory addressing (segmented memory, 1MB address space)
+//   - Comprehensive opcode tables with timing and size information
+//   - ModR/M byte support for complex addressing modes
+//   - Interrupt and flag register management
 //   - Thread-safe CPU state access
 //   - State serialization for save/restore
 //
-// The implementation focuses on DOS-era compatibility for static analysis,
-// disassembly, and development tooling applications.
+// The implementation focuses on static analysis and tooling rather than runtime
+// emulation, making it ideal for assemblers, disassemblers, and code analysis tools.
 //
 // Example usage:
 //
