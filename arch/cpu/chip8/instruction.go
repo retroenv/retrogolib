@@ -1,18 +1,22 @@
 // Package chip8 provides support for the virtual Chip-8 CPU.
 package chip8
 
-// Instruction contains information about a CPU instruction.
+// Instruction defines a Chip-8 instruction with its opcodes and execution logic.
+// Instructions support multiple addressing modes through the Addressing map that
+// enables opcode lookup for disassembly and code generation.
 type Instruction struct {
-	Name string // lowercased instruction name
+	Name string // Instruction mnemonic (lowercase)
 
-	Addressing map[Mode]OpcodeInfo
+	// Opcode lookup map for addressing mode to opcode mapping
+	Addressing map[Mode]OpcodeInfo // Maps addressing mode to opcode info
 
-	Emulation func(c *CPU, param uint16) error // emulation function to execute
+	// Execution handler - receives CPU state and 16-bit opcode parameter
+	Emulation func(c *CPU, param uint16) error // Handler for instruction execution
 }
 
 // Standard Chip-8 Instructions
 
-// Add - adds a value/register to a register.
+// Add adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
 var Add = &Instruction{
 	Name:      "add",
 	Emulation: add,
@@ -23,7 +27,7 @@ var Add = &Instruction{
 	},
 }
 
-// And - performs a bitwise AND operation on two registers.
+// And performs bitwise AND on two registers (AND Vx, Vy).
 var And = &Instruction{
 	Name:      "and",
 	Emulation: and,
@@ -32,7 +36,7 @@ var And = &Instruction{
 	},
 }
 
-// Call - Call subroutine.
+// Call calls a subroutine at address (CALL addr).
 var Call = &Instruction{
 	Name:      "call",
 	Emulation: call,
@@ -41,7 +45,7 @@ var Call = &Instruction{
 	},
 }
 
-// Cls - Clear screen.
+// Cls clears the display screen (CLS).
 var Cls = &Instruction{
 	Name:      "cls",
 	Emulation: cls,
@@ -50,7 +54,7 @@ var Cls = &Instruction{
 	},
 }
 
-// Drw - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+// Drw draws n-byte sprite from memory location I at (Vx, Vy), sets VF on collision (DRW Vx, Vy, nibble).
 var Drw = &Instruction{
 	Name:      "drw",
 	Emulation: drw,
@@ -59,7 +63,7 @@ var Drw = &Instruction{
 	},
 }
 
-// Jp - jumps to an address and optionally adds V0 to the address.
+// Jp jumps to address, optionally adding V0 to the address (JP addr / JP V0, addr).
 var Jp = &Instruction{
 	Name:      "jp",
 	Emulation: jp,
@@ -69,7 +73,7 @@ var Jp = &Instruction{
 	},
 }
 
-// Ld - Set Vx = kk.
+// Ld loads values into registers, timers, or memory (LD Vx, byte / LD I, addr / LD DT, Vx).
 var Ld = &Instruction{
 	Name:      "ld",
 	Emulation: ld,
@@ -88,7 +92,7 @@ var Ld = &Instruction{
 	},
 }
 
-// Or - performs a bitwise OR operation on two registers.
+// Or performs bitwise OR on two registers (OR Vx, Vy).
 var Or = &Instruction{
 	Name:      "or",
 	Emulation: or,
@@ -97,7 +101,7 @@ var Or = &Instruction{
 	},
 }
 
-// Ret - Return from a subroutine.
+// Ret returns from a subroutine (RET).
 var Ret = &Instruction{
 	Name:      "ret",
 	Emulation: ret,
@@ -106,7 +110,7 @@ var Ret = &Instruction{
 	},
 }
 
-// Rnd - Set Vx = random byte AND kk.
+// Rnd sets Vx to random byte AND immediate value (RND Vx, byte).
 var Rnd = &Instruction{
 	Name:      "rnd",
 	Emulation: rnd,
@@ -115,7 +119,7 @@ var Rnd = &Instruction{
 	},
 }
 
-// Se - Skip next instruction if the register equals a value/register.
+// Se skips next instruction if register equals value or register (SE Vx, byte / SE Vx, Vy).
 var Se = &Instruction{
 	Name:      "se",
 	Emulation: se,
@@ -125,7 +129,7 @@ var Se = &Instruction{
 	},
 }
 
-// Shl - Set Vx = Vx SHL 1.
+// Shl shifts Vx left by 1, stores MSB in VF (SHL Vx).
 var Shl = &Instruction{
 	Name:      "shl",
 	Emulation: shl,
@@ -134,7 +138,7 @@ var Shl = &Instruction{
 	},
 }
 
-// Shr - Set Vx = Vx SHR 1.
+// Shr shifts Vx right by 1, stores LSB in VF (SHR Vx).
 var Shr = &Instruction{
 	Name:      "shr",
 	Emulation: shr,
@@ -143,7 +147,7 @@ var Shr = &Instruction{
 	},
 }
 
-// Skp - Skip next instruction if key with the value of Vx is pressed.
+// Skp skips next instruction if key with value of Vx is pressed (SKP Vx).
 var Skp = &Instruction{
 	Name:      "skp",
 	Emulation: skp,
@@ -152,7 +156,7 @@ var Skp = &Instruction{
 	},
 }
 
-// Sknp - Skip next instruction if key with the value of Vx is not pressed.
+// Sknp skips next instruction if key with value of Vx is not pressed (SKNP Vx).
 var Sknp = &Instruction{
 	Name:      "sknp",
 	Emulation: sknp,
@@ -161,7 +165,7 @@ var Sknp = &Instruction{
 	},
 }
 
-// Sne - Skip next instruction if the register does not equal a value/register.
+// Sne skips next instruction if register does not equal value or register (SNE Vx, byte / SNE Vx, Vy).
 var Sne = &Instruction{
 	Name:      "sne",
 	Emulation: sne,
@@ -171,7 +175,7 @@ var Sne = &Instruction{
 	},
 }
 
-// Sub - Set Vx = Vx - Vy, set VF = NOT borrow.
+// Sub subtracts Vy from Vx, sets VF = NOT borrow (SUB Vx, Vy).
 var Sub = &Instruction{
 	Name:      "sub",
 	Emulation: sub,
@@ -180,7 +184,7 @@ var Sub = &Instruction{
 	},
 }
 
-// Subn - Set Vx = Vy - Vx, set VF = NOT borrow.
+// Subn subtracts Vx from Vy, stores result in Vx, sets VF = NOT borrow (SUBN Vx, Vy).
 var Subn = &Instruction{
 	Name:      "subn",
 	Emulation: subn,
@@ -189,7 +193,7 @@ var Subn = &Instruction{
 	},
 }
 
-// Xor - performs a bitwise XOR operation on two registers.
+// Xor performs bitwise XOR on two registers (XOR Vx, Vy).
 var Xor = &Instruction{
 	Name:      "xor",
 	Emulation: xor,

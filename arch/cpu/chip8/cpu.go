@@ -5,25 +5,30 @@ import (
 	"sync"
 )
 
+// CPU represents a thread-safe Chip-8 virtual machine with full instruction set emulation.
 type CPU struct {
-	Memory [4096]byte // 4KB of memory
+	// Memory and registers
+	Memory [4096]byte // 4KB memory ($000-$FFF)
+	V      [16]byte   // 16 general-purpose registers (V0-VF, VF used as flag)
+	I      uint16     // Index register (12-bit address pointer)
+	PC     uint16     // Program counter
 
-	V  [16]byte // 16 general-purpose registers V0-VF
-	I  uint16   // Index register
-	PC uint16   // Program counter
-
-	Stack [16]uint16 // Call stack
+	// Stack for subroutine calls
+	Stack [16]uint16 // Call stack (16 levels deep)
 	SP    uint8      // Stack pointer
 
-	DelayTimer byte // Delay timer
-	SoundTimer byte // Sound timer
+	// Timers (count down at 60Hz when non-zero)
+	DelayTimer byte // Delay timer for timing events
+	SoundTimer byte // Sound timer (beep when non-zero)
 
-	Key [16]bool // Hexadecimal keypad state
+	// Input
+	Key [16]bool // Hexadecimal keypad state (0-F)
 
-	Display      [displayWidth * displayHeight]byte // Monochrome display (64x32)
-	RedrawScreen bool                               // Indicates if the screen needs to be redrawn
+	// Display
+	Display      [displayWidth * displayHeight]byte // 64x32 monochrome display
+	RedrawScreen bool                               // Set when screen needs redraw
 
-	mu sync.RWMutex // Mutex for thread-safe access
+	mu sync.RWMutex // Thread-safe access protection
 }
 
 const (
@@ -167,17 +172,17 @@ func (c *CPU) SetState(state CPUState) {
 	c.RedrawScreen = state.RedrawScreen
 }
 
-// CPUState represents a snapshot of the CPU state.
+// CPUState represents complete Chip-8 VM state for save/load and debugging.
 type CPUState struct {
-	Memory       [4096]byte
-	V            [16]byte
-	Stack        [16]uint16
-	Display      [displayWidth * displayHeight]byte
-	Key          [16]bool
-	I            uint16
-	PC           uint16
-	SP           uint8
-	DelayTimer   byte
-	SoundTimer   byte
-	RedrawScreen bool
+	Memory       [4096]byte                         // Full 4KB memory
+	V            [16]byte                           // General-purpose registers V0-VF
+	Stack        [16]uint16                         // Call stack
+	Display      [displayWidth * displayHeight]byte // Display buffer
+	Key          [16]bool                           // Keypad state
+	I            uint16                             // Index register
+	PC           uint16                             // Program counter
+	SP           uint8                              // Stack pointer
+	DelayTimer   byte                               // Delay timer value
+	SoundTimer   byte                               // Sound timer value
+	RedrawScreen bool                               // Screen redraw flag
 }
