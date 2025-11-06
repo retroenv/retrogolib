@@ -1,4 +1,3 @@
-// Package chip8 provides support for the virtual Chip-8 CPU.
 package chip8
 
 // Instruction defines a Chip-8 instruction with its opcodes and execution logic.

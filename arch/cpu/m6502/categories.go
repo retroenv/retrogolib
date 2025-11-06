@@ -1,4 +1,3 @@
-// Package m6502 provides support for the MOS Technology 6502 CPU.
 package m6502
 
 import "github.com/retroenv/retrogolib/set"

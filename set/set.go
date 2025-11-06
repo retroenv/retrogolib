@@ -1,4 +1,3 @@
-// Package set provides a generic set data structure implementation.
 package set
 
 // Set represents a generic set data structure using a map with struct{} values.

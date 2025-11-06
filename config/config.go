@@ -1,18 +1,3 @@
-// Package config provides configuration file parsing and struct marshaling capabilities.
-//
-// The config package supports INI-style configuration files with sections, key-value pairs,
-// and comments. It provides automatic marshaling and unmarshalling between configuration
-// files and Go structs using struct tags.
-//
-// Basic usage:
-//
-//	type Config struct {
-//		Name string `config:"general.name"`
-//		Port int    `config:"server.port,default=8080"`
-//	}
-//
-//	var cfg Config
-//	err := config.Load("config.ini", &cfg)
 package config
 
 // valueType represents the type of configuration value.

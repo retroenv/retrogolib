@@ -1,4 +1,3 @@
-// Package gui implements different GUIs renderers.
 package gui
 
 import (
