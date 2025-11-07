@@ -200,3 +200,26 @@ var Xor = &Instruction{
 		RegisterRegisterAddressing: Opcode8003,
 	},
 }
+
+// Instructions maps instruction names to their information struct.
+var Instructions = map[string]*Instruction{
+	"add":  Add,
+	"and":  And,
+	"call": Call,
+	"cls":  Cls,
+	"drw":  Drw,
+	"jp":   Jp,
+	"ld":   Ld,
+	"or":   Or,
+	"ret":  Ret,
+	"rnd":  Rnd,
+	"se":   Se,
+	"shl":  Shl,
+	"shr":  Shr,
+	"skp":  Skp,
+	"sknp": Sknp,
+	"sne":  Sne,
+	"sub":  Sub,
+	"subn": Subn,
+	"xor":  Xor,
+}
