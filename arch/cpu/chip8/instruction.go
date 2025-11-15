@@ -13,11 +13,34 @@ type Instruction struct {
 	Emulation func(c *CPU, param uint16) error // Handler for instruction execution
 }
 
+// Instruction name constants for easy access by external packages.
+const (
+	AddName  = "add"
+	AndName  = "and"
+	CallName = "call"
+	ClsName  = "cls"
+	DrwName  = "drw"
+	JpName   = "jp"
+	LdName   = "ld"
+	OrName   = "or"
+	RetName  = "ret"
+	RndName  = "rnd"
+	SeName   = "se"
+	ShlName  = "shl"
+	ShrName  = "shr"
+	SkpName  = "skp"
+	SknpName = "sknp"
+	SneName  = "sne"
+	SubName  = "sub"
+	SubnName = "subn"
+	XorName  = "xor"
+)
+
 // Standard Chip-8 Instructions
 
 // Add adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
 var Add = &Instruction{
-	Name:      "add",
+	Name:      AddName,
 	Emulation: add,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode7000,
@@ -28,7 +51,7 @@ var Add = &Instruction{
 
 // And performs bitwise AND on two registers (AND Vx, Vy).
 var And = &Instruction{
-	Name:      "and",
+	Name:      AndName,
 	Emulation: and,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8002,
@@ -37,7 +60,7 @@ var And = &Instruction{
 
 // Call calls a subroutine at address (CALL addr).
 var Call = &Instruction{
-	Name:      "call",
+	Name:      CallName,
 	Emulation: call,
 	Addressing: map[Mode]OpcodeInfo{
 		AbsoluteAddressing: Opcode2000,
@@ -46,7 +69,7 @@ var Call = &Instruction{
 
 // Cls clears the display screen (CLS).
 var Cls = &Instruction{
-	Name:      "cls",
+	Name:      ClsName,
 	Emulation: cls,
 	Addressing: map[Mode]OpcodeInfo{
 		ImpliedAddressing: Opcode00E0,
@@ -55,7 +78,7 @@ var Cls = &Instruction{
 
 // Drw draws n-byte sprite from memory location I at (Vx, Vy), sets VF on collision (DRW Vx, Vy, nibble).
 var Drw = &Instruction{
-	Name:      "drw",
+	Name:      DrwName,
 	Emulation: drw,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterNibbleAddressing: OpcodeD000,
@@ -64,7 +87,7 @@ var Drw = &Instruction{
 
 // Jp jumps to address, optionally adding V0 to the address (JP addr / JP V0, addr).
 var Jp = &Instruction{
-	Name:      "jp",
+	Name:      JpName,
 	Emulation: jp,
 	Addressing: map[Mode]OpcodeInfo{
 		AbsoluteAddressing:   Opcode1000,
@@ -74,7 +97,7 @@ var Jp = &Instruction{
 
 // Ld loads values into registers, timers, or memory (LD Vx, byte / LD I, addr / LD DT, Vx).
 var Ld = &Instruction{
-	Name:      "ld",
+	Name:      LdName,
 	Emulation: ld,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:     Opcode6000,
@@ -93,7 +116,7 @@ var Ld = &Instruction{
 
 // Or performs bitwise OR on two registers (OR Vx, Vy).
 var Or = &Instruction{
-	Name:      "or",
+	Name:      OrName,
 	Emulation: or,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8001,
@@ -102,7 +125,7 @@ var Or = &Instruction{
 
 // Ret returns from a subroutine (RET).
 var Ret = &Instruction{
-	Name:      "ret",
+	Name:      RetName,
 	Emulation: ret,
 	Addressing: map[Mode]OpcodeInfo{
 		ImpliedAddressing: Opcode00EE,
@@ -111,7 +134,7 @@ var Ret = &Instruction{
 
 // Rnd sets Vx to random byte AND immediate value (RND Vx, byte).
 var Rnd = &Instruction{
-	Name:      "rnd",
+	Name:      RndName,
 	Emulation: rnd,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeC000,
@@ -120,7 +143,7 @@ var Rnd = &Instruction{
 
 // Se skips next instruction if register equals value or register (SE Vx, byte / SE Vx, Vy).
 var Se = &Instruction{
-	Name:      "se",
+	Name:      SeName,
 	Emulation: se,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode3000,
@@ -130,7 +153,7 @@ var Se = &Instruction{
 
 // Shl shifts Vx left by 1, stores MSB in VF (SHL Vx).
 var Shl = &Instruction{
-	Name:      "shl",
+	Name:      ShlName,
 	Emulation: shl,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode800E,
@@ -139,7 +162,7 @@ var Shl = &Instruction{
 
 // Shr shifts Vx right by 1, stores LSB in VF (SHR Vx).
 var Shr = &Instruction{
-	Name:      "shr",
+	Name:      ShrName,
 	Emulation: shr,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8006,
@@ -148,7 +171,7 @@ var Shr = &Instruction{
 
 // Skp skips next instruction if key with value of Vx is pressed (SKP Vx).
 var Skp = &Instruction{
-	Name:      "skp",
+	Name:      SkpName,
 	Emulation: skp,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeE09E,
@@ -157,7 +180,7 @@ var Skp = &Instruction{
 
 // Sknp skips next instruction if key with value of Vx is not pressed (SKNP Vx).
 var Sknp = &Instruction{
-	Name:      "sknp",
+	Name:      SknpName,
 	Emulation: sknp,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeE0A1,
@@ -166,7 +189,7 @@ var Sknp = &Instruction{
 
 // Sne skips next instruction if register does not equal value or register (SNE Vx, byte / SNE Vx, Vy).
 var Sne = &Instruction{
-	Name:      "sne",
+	Name:      SneName,
 	Emulation: sne,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode4000,
@@ -176,7 +199,7 @@ var Sne = &Instruction{
 
 // Sub subtracts Vy from Vx, sets VF = NOT borrow (SUB Vx, Vy).
 var Sub = &Instruction{
-	Name:      "sub",
+	Name:      SubName,
 	Emulation: sub,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8005,
@@ -185,7 +208,7 @@ var Sub = &Instruction{
 
 // Subn subtracts Vx from Vy, stores result in Vx, sets VF = NOT borrow (SUBN Vx, Vy).
 var Subn = &Instruction{
-	Name:      "subn",
+	Name:      SubnName,
 	Emulation: subn,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8007,
@@ -194,7 +217,7 @@ var Subn = &Instruction{
 
 // Xor performs bitwise XOR on two registers (XOR Vx, Vy).
 var Xor = &Instruction{
-	Name:      "xor",
+	Name:      XorName,
 	Emulation: xor,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8003,
@@ -203,23 +226,23 @@ var Xor = &Instruction{
 
 // Instructions maps instruction names to their information struct.
 var Instructions = map[string]*Instruction{
-	"add":  Add,
-	"and":  And,
-	"call": Call,
-	"cls":  Cls,
-	"drw":  Drw,
-	"jp":   Jp,
-	"ld":   Ld,
-	"or":   Or,
-	"ret":  Ret,
-	"rnd":  Rnd,
-	"se":   Se,
-	"shl":  Shl,
-	"shr":  Shr,
-	"skp":  Skp,
-	"sknp": Sknp,
-	"sne":  Sne,
-	"sub":  Sub,
-	"subn": Subn,
-	"xor":  Xor,
+	AddName:  Add,
+	AndName:  And,
+	CallName: Call,
+	ClsName:  Cls,
+	DrwName:  Drw,
+	JpName:   Jp,
+	LdName:   Ld,
+	OrName:   Or,
+	RetName:  Ret,
+	RndName:  Rnd,
+	SeName:   Se,
+	ShlName:  Shl,
+	ShrName:  Shr,
+	SkpName:  Skp,
+	SknpName: Sknp,
+	SneName:  Sne,
+	SubName:  Sub,
+	SubnName: Subn,
+	XorName:  Xor,
 }

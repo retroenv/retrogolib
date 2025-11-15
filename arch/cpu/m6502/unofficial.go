@@ -5,7 +5,7 @@ package m6502
 
 // Dcp ...
 var Dcp = &Instruction{
-	Name:       "dcp",
+	Name:       DcpName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xc7},
@@ -21,7 +21,7 @@ var Dcp = &Instruction{
 
 // Isc ...
 var Isc = &Instruction{
-	Name:       "isc",
+	Name:       IscName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xe7},
@@ -37,7 +37,7 @@ var Isc = &Instruction{
 
 // Lax ...
 var Lax = &Instruction{
-	Name:       "lax",
+	Name:       LaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0xa7},
@@ -52,7 +52,7 @@ var Lax = &Instruction{
 
 // NopUnofficial ...
 var NopUnofficial = &Instruction{
-	Name:       "nop",
+	Name:       NopName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing:   {Opcode: 0x1a},
@@ -67,7 +67,7 @@ var NopUnofficial = &Instruction{
 
 // Rla ...
 var Rla = &Instruction{
-	Name:       "rla",
+	Name:       RlaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x27},
@@ -83,7 +83,7 @@ var Rla = &Instruction{
 
 // Rra ...
 var Rra = &Instruction{
-	Name:       "rra",
+	Name:       RraName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x67},
@@ -99,7 +99,7 @@ var Rra = &Instruction{
 
 // Sax ...
 var Sax = &Instruction{
-	Name:       "sax",
+	Name:       SaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x87},
@@ -112,7 +112,7 @@ var Sax = &Instruction{
 
 // SbcUnofficial ...
 var SbcUnofficial = &Instruction{
-	Name:       "sbc",
+	Name:       SbcName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing: {Opcode: 0xeb},
@@ -122,7 +122,7 @@ var SbcUnofficial = &Instruction{
 
 // Slo ...
 var Slo = &Instruction{
-	Name:       "slo",
+	Name:       SloName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x07},
@@ -138,7 +138,7 @@ var Slo = &Instruction{
 
 // Sre ...
 var Sre = &Instruction{
-	Name:       "sre",
+	Name:       SreName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x47},
