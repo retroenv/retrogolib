@@ -33,6 +33,7 @@ retro console utilities, all while maintaining minimal dependencies and focusing
 ### CPUs
 - **6502**: Full instruction set with accurate timing
 - **Chip-8**: Complete virtual machine implementation
+- **Z80**: Complete Z80 CPU emulation with array-based opcode tables
 
 ### Consoles
 - **NES (Nintendo Entertainment System)**: Cartridge formats, memory mapping
@@ -42,6 +43,7 @@ retro console utilities, all while maintaining minimal dependencies and focusing
 ### CPU Emulation
 - **6502 CPU**: Full instruction set with memory management, stack operations, and interrupt support
 - **Chip-8 Virtual CPU**: Complete virtual machine with display, timers, and input handling
+- **Z80 CPU**: Complete Z80 instruction set with 16-bit registers, prefix instructions (ED/DD/FD), and interrupts
 
 ### System Support
 - **NES (Nintendo Entertainment System)**: Cartridge handling, memory mapping, and parameter conversion
@@ -51,6 +53,7 @@ retro console utilities, all while maintaining minimal dependencies and focusing
     ├─ app              common application/service helpers
     ├─ arch/cpu/chip8   Chip-8 virtual CPU support
     ├─ arch/cpu/m6502   6502 CPU support
+    ├─ arch/cpu/z80     Z80 CPU support
     ├─ arch/system/nes  NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
