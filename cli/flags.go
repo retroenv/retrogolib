@@ -2,7 +2,6 @@
 package cli
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -83,19 +82,19 @@ type FlagSet struct {
 // NewFlagSet creates a new FlagSet with the given program name.
 // The usage line is auto-generated based on registered flags and positional arguments.
 func NewFlagSet(name string) *FlagSet {
-	fs := &FlagSet{
+	flagSet := &FlagSet{
 		flags: flag.NewFlagSet(name, flag.ContinueOnError),
 		name:  name,
 	}
-	fs.flags.Usage = fs.showUsage
-	return fs
+	flagSet.flags.Usage = flagSet.showUsage
+	return flagSet
 }
 
 // AddSection adds a named section with flags parsed from struct tags.
 // The struct fields should have tags: `flag:"name" usage:"description"`.
 // Short flags: `flag:"v,verbose"` creates both -v and -verbose.
 // Optional tags: `default:"value"`, `env:"VAR_NAME"`, `required:"true"`.
-func (f *FlagSet) AddSection(name string, opts any) {
+func (fs *FlagSet) AddSection(name string, opts any) {
 	section := Section{Name: name}
 
 	v := reflect.ValueOf(opts)
@@ -116,25 +115,25 @@ func (f *FlagSet) AddSection(name string, opts any) {
 			continue
 		}
 
-		info := f.parseFlagField(field, fieldVal)
+		info := fs.parseFlagField(field, fieldVal)
 		if info == nil {
 			continue
 		}
 
 		if info.Required {
-			f.required = append(f.required, requiredFlag{name: info.Name, ptr: fieldVal.Addr().Interface()})
+			fs.required = append(fs.required, requiredFlag{name: info.Name, ptr: fieldVal.Addr().Interface()})
 		}
 
 		section.Flags = append(section.Flags, *info)
 	}
 
-	f.sections = append(f.sections, section)
+	fs.sections = append(fs.sections, section)
 }
 
 // AddPositional registers positional arguments from struct tags.
 // Fields should have tag: `arg:"positional" usage:"description"`.
 // Optional: `required:"true"`. The last field can be []string for variadic args.
-func (f *FlagSet) AddPositional(opts any) {
+func (fs *FlagSet) AddPositional(opts any) {
 	v := reflect.ValueOf(opts)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -169,21 +168,21 @@ func (f *FlagSet) AddPositional(opts any) {
 			continue
 		}
 
-		f.positional = append(f.positional, positionalArg{info: info, ptr: ptr})
+		fs.positional = append(fs.positional, positionalArg{info: info, ptr: ptr})
 	}
 }
 
 // Parse parses command-line arguments and assigns positional arguments.
-func (f *FlagSet) Parse(args []string) ([]string, error) {
-	if err := f.flags.Parse(args); err != nil {
+func (fs *FlagSet) Parse(args []string) ([]string, error) {
+	if err := fs.flags.Parse(args); err != nil {
 		return nil, fmt.Errorf("parsing flags: %w", err)
 	}
-	if err := f.validateRequired(); err != nil {
+	if err := fs.validateRequired(); err != nil {
 		return nil, err
 	}
 
-	remaining := f.flags.Args()
-	remaining, err := f.assignPositional(remaining)
+	remaining := fs.flags.Args()
+	remaining, err := fs.assignPositional(remaining)
 	if err != nil {
 		return nil, err
 	}
@@ -191,11 +190,11 @@ func (f *FlagSet) Parse(args []string) ([]string, error) {
 }
 
 // ShowUsage prints the usage message with sections.
-func (f *FlagSet) ShowUsage() {
-	f.showUsage()
+func (fs *FlagSet) ShowUsage() {
+	fs.showUsage()
 }
 
-func (f *FlagSet) parseFlagField(field reflect.StructField, fieldVal reflect.Value) *FlagInfo {
+func (fs *FlagSet) parseFlagField(field reflect.StructField, fieldVal reflect.Value) *FlagInfo {
 	flagTag := field.Tag.Get(tagFlag)
 
 	// Parse short,long format (e.g., "v,verbose").
@@ -224,41 +223,46 @@ func (f *FlagSet) parseFlagField(field reflect.StructField, fieldVal reflect.Val
 	}
 
 	ptr := fieldVal.Addr().Interface()
-	if !f.registerFlag(info, ptr) {
+	if !fs.registerFlag(info, ptr) {
 		return nil
 	}
 	return info
 }
 
-func (f *FlagSet) registerFlag(info *FlagInfo, ptr any) bool {
+func (fs *FlagSet) registerFlag(info *FlagInfo, ptr any) bool {
 	// Collect names to register (long and optionally short).
-	names := []string{info.Name}
+	capacity := 1
+	if info.Short != "" {
+		capacity = 2
+	}
+	names := make([]string, 0, capacity)
+	names = append(names, info.Name)
 	if info.Short != "" {
 		names = append(names, info.Short)
 	}
 
 	switch p := ptr.(type) {
 	case *string:
-		f.registerString(info, p, names)
+		fs.registerString(info, p, names)
 	case *bool:
-		f.registerBool(info, p, names)
+		fs.registerBool(info, p, names)
 	case *int:
-		f.registerInt(info, p, names)
+		fs.registerInt(info, p, names)
 	case *int64:
-		f.registerInt64(info, p, names)
+		fs.registerInt64(info, p, names)
 	case *uint:
-		f.registerUint(info, p, names)
+		fs.registerUint(info, p, names)
 	case *uint64:
-		f.registerUint64(info, p, names)
+		fs.registerUint64(info, p, names)
 	case *float64:
-		f.registerFloat64(info, p, names)
+		fs.registerFloat64(info, p, names)
 	default:
 		return false
 	}
 	return true
 }
 
-func (f *FlagSet) registerString(info *FlagInfo, p *string, names []string) {
+func (fs *FlagSet) registerString(info *FlagInfo, p *string, names []string) {
 	info.Type = typeString
 	defaultVal := info.Default
 	if defaultVal == "" {
@@ -266,75 +270,75 @@ func (f *FlagSet) registerString(info *FlagInfo, p *string, names []string) {
 		info.Default = defaultVal
 	}
 	for _, name := range names {
-		f.flags.StringVar(p, name, defaultVal, info.Usage)
+		fs.flags.StringVar(p, name, defaultVal, info.Usage)
 	}
 }
 
-func (f *FlagSet) registerBool(info *FlagInfo, p *bool, names []string) {
+func (fs *FlagSet) registerBool(info *FlagInfo, p *bool, names []string) {
 	info.Type = typeBool
 	def := info.Default == tagTrue
 	for _, name := range names {
-		f.flags.BoolVar(p, name, def, info.Usage)
+		fs.flags.BoolVar(p, name, def, info.Usage)
 	}
 }
 
-func (f *FlagSet) registerInt(info *FlagInfo, p *int, names []string) {
+func (fs *FlagSet) registerInt(info *FlagInfo, p *int, names []string) {
 	info.Type = typeInt
 	def, _ := strconv.Atoi(info.Default)
 	for _, name := range names {
-		f.flags.IntVar(p, name, def, info.Usage)
+		fs.flags.IntVar(p, name, def, info.Usage)
 	}
 }
 
-func (f *FlagSet) registerInt64(info *FlagInfo, p *int64, names []string) {
+func (fs *FlagSet) registerInt64(info *FlagInfo, p *int64, names []string) {
 	info.Type = typeInt64
 	def, _ := strconv.ParseInt(info.Default, 10, 64)
 	for _, name := range names {
-		f.flags.Int64Var(p, name, def, info.Usage)
+		fs.flags.Int64Var(p, name, def, info.Usage)
 	}
 }
 
-func (f *FlagSet) registerUint(info *FlagInfo, p *uint, names []string) {
+func (fs *FlagSet) registerUint(info *FlagInfo, p *uint, names []string) {
 	info.Type = typeUint
 	def, _ := strconv.ParseUint(info.Default, 10, 64)
 	for _, name := range names {
-		f.flags.UintVar(p, name, uint(def), info.Usage)
+		fs.flags.UintVar(p, name, uint(def), info.Usage)
 	}
 }
 
-func (f *FlagSet) registerUint64(info *FlagInfo, p *uint64, names []string) {
+func (fs *FlagSet) registerUint64(info *FlagInfo, p *uint64, names []string) {
 	info.Type = typeUint64
 	def, _ := strconv.ParseUint(info.Default, 10, 64)
 	for _, name := range names {
-		f.flags.Uint64Var(p, name, def, info.Usage)
+		fs.flags.Uint64Var(p, name, def, info.Usage)
 	}
 }
 
-func (f *FlagSet) registerFloat64(info *FlagInfo, p *float64, names []string) {
+func (fs *FlagSet) registerFloat64(info *FlagInfo, p *float64, names []string) {
 	info.Type = typeFloat64
 	def, _ := strconv.ParseFloat(info.Default, 64)
 	for _, name := range names {
-		f.flags.Float64Var(p, name, def, info.Usage)
+		fs.flags.Float64Var(p, name, def, info.Usage)
 	}
 }
 
-func (f *FlagSet) validateRequired() error {
+func (fs *FlagSet) validateRequired() error {
 	var missing []string
-	for _, req := range f.required {
+	for _, req := range fs.required {
 		if isZeroValue(req.ptr) {
 			missing = append(missing, req.name)
 		}
 	}
 	if len(missing) > 0 {
-		return errors.New("missing required flag(s): " + strings.Join(missing, ", "))
+		return &MissingFlagsError{Flags: missing}
 	}
 	return nil
 }
 
-func (f *FlagSet) assignPositional(args []string) ([]string, error) {
+func (fs *FlagSet) assignPositional(args []string) ([]string, error) {
 	var missing []string
 
-	for i, pos := range f.positional {
+	for i, pos := range fs.positional {
 		if pos.info.Variadic {
 			// Variadic argument consumes all remaining args.
 			if p, ok := pos.ptr.(*[]string); ok {
@@ -360,68 +364,57 @@ func (f *FlagSet) assignPositional(args []string) ([]string, error) {
 
 		// Check remaining required positional args.
 		if len(args) == 0 {
-			for j := i + 1; j < len(f.positional); j++ {
-				if f.positional[j].info.Required && !f.positional[j].info.Variadic {
-					missing = append(missing, f.positional[j].info.Name)
+			for j := i + 1; j < len(fs.positional); j++ {
+				if fs.positional[j].info.Required && !fs.positional[j].info.Variadic {
+					missing = append(missing, fs.positional[j].info.Name)
 				}
 			}
 		}
 	}
 
 	if len(missing) > 0 {
-		return nil, errors.New("missing required argument(s): " + strings.Join(missing, ", "))
+		return nil, &MissingArgsError{Args: missing}
 	}
 	return args, nil
 }
 
-func (f *FlagSet) showUsage() {
-	fmt.Println(f.buildUsageLine())
+func (fs *FlagSet) showUsage() {
+	fmt.Println(fs.buildUsageLine())
 	fmt.Println()
 
-	for _, section := range f.sections {
+	for _, section := range fs.sections {
 		fmt.Printf("%s:\n", section.Name)
 		for _, fl := range section.Flags {
-			f.printFlag(fl)
+			fs.printFlag(fl)
 		}
 		fmt.Println()
 	}
 
-	if len(f.positional) > 0 {
+	if len(fs.positional) > 0 {
 		fmt.Println("Positional arguments:")
-		for _, pos := range f.positional {
-			f.printPositional(pos.info)
+		for _, pos := range fs.positional {
+			fs.printPositional(pos.info)
 		}
 		fmt.Println()
 	}
 }
 
-func (f *FlagSet) buildUsageLine() string {
+func (fs *FlagSet) buildUsageLine() string {
 	var sb strings.Builder
 	sb.WriteString("usage: ")
-	sb.WriteString(f.name)
+	sb.WriteString(fs.name)
 
-	if len(f.sections) > 0 {
+	if len(fs.sections) > 0 {
 		sb.WriteString(" [options]")
 	}
-	for _, pos := range f.positional {
+	for _, pos := range fs.positional {
 		sb.WriteByte(' ')
 		sb.WriteString(formatPositionalUsage(pos.info))
 	}
 	return sb.String()
 }
 
-func formatPositionalUsage(pos PositionalInfo) string {
-	name := pos.Name
-	if pos.Variadic {
-		name += "..."
-	}
-	if pos.Required {
-		return name
-	}
-	return "[" + name + "]"
-}
-
-func (f *FlagSet) printPositional(pos PositionalInfo) {
+func (fs *FlagSet) printPositional(pos PositionalInfo) {
 	name := pos.Name
 	if pos.Variadic {
 		name += "..."
@@ -435,7 +428,7 @@ func (f *FlagSet) printPositional(pos PositionalInfo) {
 	fmt.Printf("    \t%s\n", usage)
 }
 
-func (f *FlagSet) printFlag(fl FlagInfo) {
+func (fs *FlagSet) printFlag(fl FlagInfo) {
 	// Build flag name display (e.g., "-v, -verbose" or just "-verbose").
 	var flagDisplay string
 	if fl.Short != "" {
@@ -462,6 +455,17 @@ func (f *FlagSet) printFlag(fl FlagInfo) {
 		usage += " (default: " + fl.Default + ")"
 	}
 	fmt.Printf("    \t%s\n", usage)
+}
+
+func formatPositionalUsage(pos PositionalInfo) string {
+	name := pos.Name
+	if pos.Variadic {
+		name += "..."
+	}
+	if pos.Required {
+		return name
+	}
+	return "[" + name + "]"
 }
 
 func isZeroValue(ptr any) bool {
