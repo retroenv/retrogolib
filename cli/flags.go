@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -175,6 +176,10 @@ func (fs *FlagSet) AddPositional(opts any) {
 // Parse parses command-line arguments and assigns positional arguments.
 func (fs *FlagSet) Parse(args []string) ([]string, error) {
 	if err := fs.flags.Parse(args); err != nil {
+		// Return ErrHelpRequested directly for help requests (don't wrap).
+		if errors.Is(err, flag.ErrHelp) {
+			return nil, ErrHelpRequested
+		}
 		return nil, fmt.Errorf("parsing flags: %w", err)
 	}
 	if err := fs.validateRequired(); err != nil {

@@ -419,6 +419,32 @@ func TestFlagSet_ParseError(t *testing.T) {
 	assert.Contains(t, err.Error(), "parsing flags")
 }
 
+func TestFlagSet_HelpRequested(t *testing.T) {
+	type options struct {
+		Verbose bool `flag:"v" usage:"verbose output"`
+	}
+
+	t.Run("short_help", func(t *testing.T) {
+		var o options
+		fs := NewFlagSet("test")
+		fs.AddSection("Options", &o)
+
+		_, err := fs.Parse([]string{"-h"})
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, ErrHelpRequested))
+	})
+
+	t.Run("long_help", func(t *testing.T) {
+		var o options
+		fs := NewFlagSet("test")
+		fs.AddSection("Options", &o)
+
+		_, err := fs.Parse([]string{"-help"})
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, ErrHelpRequested))
+	})
+}
+
 func TestFlagSet_MultipleRequiredFlags(t *testing.T) {
 	type options struct {
 		Input  string `flag:"i" usage:"input file" required:"true"`

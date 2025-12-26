@@ -1,6 +1,12 @@
 package cli
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
+
+// ErrHelpRequested is returned when the user requests help via --help or -h.
+var ErrHelpRequested = errors.New("help requested")
 
 // MissingFlagsError contains details about which required flags are missing.
 type MissingFlagsError struct {
