@@ -1,41 +1,27 @@
-// Package x86 provides Intel x86 real mode CPU support for retro computing tooling.
+// Package x86 provides Intel x86 instruction definitions for static analysis.
 //
-// This package implements the Intel x86 CPU architecture in real mode,
-// covering instruction sets from 8086/8088 through 80486, including register
-// management and comprehensive instruction definitions for static analysis,
-// disassembly, and assembler development.
+// This package provides instruction set definitions from 8086 through 80486,
+// with opcode tables, addressing modes, and instruction metadata for
+// disassemblers and assemblers.
 //
-// # Supported CPU Generations
+// # Supported Generations
 //
-//   - 8086/8088 (1978): Base instruction set, segmented memory, 16-bit operations
-//   - 80186/80188 (1982): Enhanced instructions (PUSHA/POPA, ENTER/LEAVE, BOUND, string I/O)
-//   - 80286 (1982): Real mode enhancements (SMSW/LMSW for machine status)
-//   - 80386 (1985): Bit manipulation (BSF/BSR/BT/BTC/BTR/BTS), move extensions (MOVZX/MOVSX), double-precision shifts
-//   - 80486 (1989): Atomic operations (CMPXCHG/XADD), byte swap (BSWAP), cache control
+//   - 8086/8088 (1978): Base 16-bit instruction set
+//   - 80186 (1982): PUSHA/POPA, ENTER/LEAVE, BOUND, INS/OUTS
+//   - 80286 (1982): SMSW/LMSW
+//   - 80386 (1985): BSF/BSR, BT/BTC/BTR/BTS, MOVZX/MOVSX, SHLD/SHRD
+//   - 80486 (1989): CMPXCHG, XADD, BSWAP, INVD/WBINVD
 //
-// # Architecture Features
+// # Usage
 //
-//   - Complete real mode instruction set (256 single-byte + two-byte opcodes with 0x0F prefix)
-//   - Real mode memory addressing (segmented memory, 1MB address space)
-//   - Comprehensive opcode tables with timing and size information
-//   - ModR/M byte support for complex addressing modes
-//   - Interrupt and flag register management
-//   - Thread-safe CPU state access
-//   - State serialization for save/restore
+//	// Look up by opcode
+//	op := x86.Opcodes[0x90]
+//	fmt.Println(op.Instruction.Name) // "nop"
 //
-// The implementation focuses on static analysis and tooling rather than runtime
-// emulation, making it ideal for assemblers, disassemblers, and code analysis tools.
+//	// Look up by name
+//	inst := x86.Instructions["mov"]
 //
-// Example usage:
-//
-//	memory := x86.NewMemory(1024 * 1024) // 1MB memory
-//	cpu, err := x86.New(memory)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//
-//	// Configure CPU state for analysis
-//	cpu.SetCS(0x1000)
-//	cpu.SetIP(0x0000)
-//	state := cpu.State()
+//	// Parse ModR/M byte
+//	var modrm x86.ModRM
+//	modrm.FromByte(0xC0)
 package x86
