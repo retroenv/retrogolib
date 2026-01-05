@@ -207,3 +207,28 @@ func formatHex(val any) string {
 		return fmt.Sprintf("0x%X", val)
 	}
 }
+
+// typeOf implements slog.LogValuer for lazy type name formatting.
+type typeOf struct {
+	val any
+}
+
+// LogValue implements slog.LogValuer, ensuring the type reflection is only performed
+// when the log record is actually processed.
+func (tf typeOf) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("%T", tf.val))
+}
+
+// Type constructs a Field with the given key and formats the value's type name.
+// The type reflection is evaluated lazily - only when the log level is enabled and the
+// handler processes the record. This provides significant performance benefits by
+// avoiding reflection overhead when logging is disabled.
+//
+// Examples:
+//
+//	log.Type("addr_type", typedInstr.Addr)  // "addr_type": "*nes.IndirectX"
+//	log.Type("value_type", myVar)           // "value_type": "int"
+//	log.Type("handler_type", handler)       // "handler_type": "*http.Handler"
+func Type(key string, val any) Field {
+	return slog.Any(key, typeOf{val: val})
+}
