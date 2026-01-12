@@ -479,47 +479,178 @@ func isGreater(first, second any) bool {
 	}
 }
 
-// isLess checks if first value is less than second, with optimized type checking.
-func isLess(first, second any) bool {
-	// Fast path for common numeric types
+// tryFastPathLess attempts a fast-path comparison for common types.
+// Returns (result, true) if comparison was possible, (false, false) otherwise.
+func tryFastPathLess(first, second any) (result, ok bool) {
 	switch f := first.(type) {
 	case int:
 		if s, ok := second.(int); ok {
-			return f < s
+			return f < s, true
 		}
 	case int64:
 		if s, ok := second.(int64); ok {
-			return f < s
+			return f < s, true
+		}
+	case uint64:
+		if s, ok := second.(uint64); ok {
+			return f < s, true
 		}
 	case float64:
 		if s, ok := second.(float64); ok {
-			return f < s
+			return f < s, true
 		}
 	case string:
 		if s, ok := second.(string); ok {
-			return f < s
+			return f < s, true
 		}
+	}
+	return false, false
+}
+
+// isLess checks if first value is less than second, with optimized type checking.
+func isLess(first, second any) bool {
+	// Fast path for common numeric types with same type
+	if result, ok := tryFastPathLess(first, second); ok {
+		return result
 	}
 
 	// Fallback to reflection for other types
 	fv := reflect.ValueOf(first)
 	sv := reflect.ValueOf(second)
 
-	// Type compatibility check
+	// Handle numeric comparisons across different types
+	if isNumericKind(fv.Kind()) && isNumericKind(sv.Kind()) {
+		return compareNumeric(fv, sv) < 0
+	}
+
+	// Type compatibility check for non-numeric types
 	if fv.Kind() != sv.Kind() {
 		return false
 	}
 
 	switch fv.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return fv.Int() < sv.Int()
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return fv.Uint() < sv.Uint()
-	case reflect.Float32, reflect.Float64:
-		return fv.Float() < sv.Float()
 	case reflect.String:
 		return fv.String() < sv.String()
 	default:
 		return false
 	}
+}
+
+// isNumericKind returns true if the kind is a numeric type.
+func isNumericKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
+}
+
+// compareFloat64 compares two float64 values.
+func compareFloat64(f, s float64) int {
+	if f < s {
+		return -1
+	} else if f > s {
+		return 1
+	}
+	return 0
+}
+
+// compareInt64 compares two int64 values.
+func compareInt64(f, s int64) int {
+	if f < s {
+		return -1
+	} else if f > s {
+		return 1
+	}
+	return 0
+}
+
+// compareUint64 compares two uint64 values.
+func compareUint64(f, s uint64) int {
+	if f < s {
+		return -1
+	} else if f > s {
+		return 1
+	}
+	return 0
+}
+
+// compareMixedSignedUnsigned compares a signed int64 with an unsigned uint64.
+func compareMixedSignedUnsigned(signed int64, unsigned uint64) int {
+	if signed < 0 {
+		return -1 // negative is always less than unsigned
+	}
+	// signed >= 0, safe to compare as uint64
+	return compareUint64(uint64(signed), unsigned)
+}
+
+// compareMixedUnsignedSigned compares an unsigned uint64 with a signed int64.
+func compareMixedUnsignedSigned(unsigned uint64, signed int64) int {
+	if signed < 0 {
+		return 1 // unsigned is always greater than negative
+	}
+	// signed >= 0, safe to compare as uint64
+	return compareUint64(unsigned, uint64(signed))
+}
+
+// toFloat64 converts a reflect.Value to float64.
+func toFloat64(v reflect.Value, isFloat, isSigned bool) float64 {
+	switch {
+	case isFloat:
+		return v.Float()
+	case isSigned:
+		return float64(v.Int())
+	default:
+		return float64(v.Uint())
+	}
+}
+
+// compareNumeric compares two numeric values, returning -1, 0, or 1.
+// Handles cross-type comparisons between signed, unsigned, and float types.
+func compareNumeric(fv, sv reflect.Value) int {
+	fk, sk := fv.Kind(), sv.Kind()
+	fSigned := isSignedKind(fk)
+	sSigned := isSignedKind(sk)
+	fFloat := isFloatKind(fk)
+	sFloat := isFloatKind(sk)
+
+	// If either is float, compare as float64
+	if fFloat || sFloat {
+		f := toFloat64(fv, fFloat, fSigned)
+		s := toFloat64(sv, sFloat, sSigned)
+		return compareFloat64(f, s)
+	}
+
+	// Both are integers (signed or unsigned)
+	if fSigned && sSigned {
+		return compareInt64(fv.Int(), sv.Int())
+	}
+
+	if !fSigned && !sSigned {
+		return compareUint64(fv.Uint(), sv.Uint())
+	}
+
+	// Mixed signed/unsigned - need careful handling
+	if fSigned {
+		return compareMixedSignedUnsigned(fv.Int(), sv.Uint())
+	}
+	return compareMixedUnsignedSigned(fv.Uint(), sv.Int())
+}
+
+// isSignedKind returns true if the kind is a signed integer type.
+func isSignedKind(k reflect.Kind) bool {
+	switch k {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	default:
+		return false
+	}
+}
+
+// isFloatKind returns true if the kind is a floating point type.
+func isFloatKind(k reflect.Kind) bool {
+	return k == reflect.Float32 || k == reflect.Float64
 }

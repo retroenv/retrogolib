@@ -440,6 +440,55 @@ func TestLessOrEqual(t *testing.T) {
 	}
 }
 
+func TestLessOrEqualCrossType(t *testing.T) {
+	// Test uint64 vs int (common case from benchmark tests)
+	tst := &errorCapture{}
+	LessOrEqual(tst, uint64(162), int(165))
+	if tst.failed {
+		t.Error("LessOrEqual failed for uint64(162) <= int(165)")
+	}
+
+	tst = &errorCapture{}
+	LessOrEqual(tst, uint64(165), int(165))
+	if tst.failed {
+		t.Error("LessOrEqual failed for uint64(165) <= int(165)")
+	}
+
+	tst = &errorCapture{}
+	LessOrEqual(tst, uint64(166), int(165))
+	if !tst.failed {
+		t.Error("LessOrEqual should fail for uint64(166) <= int(165)")
+	}
+
+	// Test int vs uint64
+	tst = &errorCapture{}
+	LessOrEqual(tst, int(100), uint64(200))
+	if tst.failed {
+		t.Error("LessOrEqual failed for int(100) <= uint64(200)")
+	}
+
+	// Test negative int vs uint64
+	tst = &errorCapture{}
+	LessOrEqual(tst, int(-1), uint64(0))
+	if tst.failed {
+		t.Error("LessOrEqual failed for int(-1) <= uint64(0)")
+	}
+
+	// Test int vs float64
+	tst = &errorCapture{}
+	LessOrEqual(tst, int(10), float64(10.5))
+	if tst.failed {
+		t.Error("LessOrEqual failed for int(10) <= float64(10.5)")
+	}
+
+	// Test uint64 vs float64
+	tst = &errorCapture{}
+	LessOrEqual(tst, uint64(100), float64(100.0))
+	if tst.failed {
+		t.Error("LessOrEqual failed for uint64(100) <= float64(100.0)")
+	}
+}
+
 func TestErrorContains(t *testing.T) {
 	tst := &errorCapture{}
 	ErrorContains(tst, errors.New("this is an error message"), "error message")
