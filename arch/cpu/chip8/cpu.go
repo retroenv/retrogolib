@@ -71,15 +71,6 @@ func (c *CPU) Step() error {
 	return fmt.Errorf("unknown opcode: %04X", w)
 }
 
-// updatePC increments the program counter to the next instruction and optionally skips the following instruction.
-func (c *CPU) updatePC(skipInstruction bool) {
-	if skipInstruction {
-		c.PC += 4
-	} else {
-		c.PC += 2
-	}
-}
-
 // UpdateTimers decrements the delay and sound timers.
 func (c *CPU) UpdateTimers() {
 	c.mu.Lock()
@@ -170,6 +161,15 @@ func (c *CPU) SetState(state CPUState) {
 	c.DelayTimer = state.DelayTimer
 	c.SoundTimer = state.SoundTimer
 	c.RedrawScreen = state.RedrawScreen
+}
+
+// updatePC increments the program counter to the next instruction and optionally skips the following instruction.
+func (c *CPU) updatePC(skipInstruction bool) {
+	if skipInstruction {
+		c.PC += 4
+	} else {
+		c.PC += 2
+	}
 }
 
 // CPUState represents complete Chip-8 VM state for save/load and debugging.

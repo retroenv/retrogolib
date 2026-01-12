@@ -18,6 +18,7 @@ linters:
     - errcheck # checking for unchecked errors
     - errname # Checks that errors are prefixed with the `Err` and error types are suffixed with the `Error`
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
+    - funcorder # Checks the order of functions, methods, and constructors
     - funlen # Tool for detection of long functions
     - gocheckcompilerdirectives # Checks that go compiler directive comments (//go:) are valid
     - gocognit # Computes and checks the cognitive complexity of functions

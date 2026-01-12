@@ -8,16 +8,17 @@ import (
 )
 
 func testRom() []byte {
-	b := []byte{iNESFileMagic[0], iNESFileMagic[1], iNESFileMagic[2], iNESFileMagic[3]}
-	b = append(b, []byte{2, 1, 1, 0, 0}...)       // prg, chr, control 1, control 2, ram
-	b = append(b, []byte{0, 0, 0, 0, 0, 0, 0}...) // reserved/padding
-
 	prg := make([]byte, 2*16384)
 	prg[0] = 0x80 // marker
-	b = append(b, prg...)
 
 	chr := make([]byte, 8192)
 	chr[0] = 0x81 // marker
+
+	b := make([]byte, 0, 16+len(prg)+len(chr))
+	b = append(b, iNESFileMagic[:]...)
+	b = append(b, []byte{2, 1, 1, 0, 0}...)       // prg, chr, control 1, control 2, ram
+	b = append(b, []byte{0, 0, 0, 0, 0, 0, 0}...) // reserved/padding
+	b = append(b, prg...)
 	b = append(b, chr...)
 
 	return b
@@ -78,7 +79,8 @@ func TestInvalidROM(t *testing.T) {
 	assert.ErrorContains(t, err, "reading header")
 
 	// Test invalid magic
-	invalidRom := []byte{0x4E, 0x45, 0x53, 0x00} // Invalid magic
+	invalidRom := make([]byte, 0, 16)
+	invalidRom = append(invalidRom, []byte{0x4E, 0x45, 0x53, 0x00}...) // Invalid magic
 	invalidRom = append(invalidRom, []byte{2, 1, 1, 0, 0}...)
 	invalidRom = append(invalidRom, make([]byte, 7)...) // padding
 
@@ -91,7 +93,8 @@ func TestCartridgeProperties(t *testing.T) {
 	t.Parallel()
 
 	// Test cartridge with different properties
-	rom := []byte{iNESFileMagic[0], iNESFileMagic[1], iNESFileMagic[2], iNESFileMagic[3]}
+	rom := make([]byte, 0, 4+5+7+16384)
+	rom = append(rom, iNESFileMagic[:]...)
 	rom = append(rom, []byte{1, 0, 0x02, 0x08, 0}...) // prg=1, chr=0, mapper=0, mirror=vertical, battery=1
 	rom = append(rom, make([]byte, 7)...)             // padding
 	rom = append(rom, make([]byte, 16384)...)         // PRG ROM
