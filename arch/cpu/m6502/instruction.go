@@ -29,8 +29,12 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 // Instruction name constants for easy access by external packages.
 const (
 	AdcName = "adc"
+	AlrName = "alr" // Unofficial
+	AncName = "anc" // Unofficial
 	AndName = "and"
+	ArrName = "arr" // Unofficial
 	AslName = "asl"
+	AxsName = "axs" // Unofficial
 	BccName = "bcc"
 	BcsName = "bcs"
 	BeqName = "beq"

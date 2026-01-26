@@ -25,15 +25,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: Brk, Addressing: ImpliedAddressing, Timing: 7},   // 0x00
 	{Instruction: Ora, Addressing: IndirectXAddressing, Timing: 6}, // 0x01
 	{}, // 0x02
-	{Instruction: Slo, Addressing: IndirectXAddressing, Timing: 8},          // 0x03
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3}, // 0x04
-	{Instruction: Ora, Addressing: ZeroPageAddressing, Timing: 3},           // 0x05
-	{Instruction: Asl, Addressing: ZeroPageAddressing, Timing: 5},           // 0x06
-	{Instruction: Slo, Addressing: ZeroPageAddressing, Timing: 5},           // 0x07
-	{Instruction: Php, Addressing: ImpliedAddressing, Timing: 3},            // 0x08
-	{Instruction: Ora, Addressing: ImmediateAddressing, Timing: 2},          // 0x09
-	{Instruction: Asl, Addressing: AccumulatorAddressing, Timing: 2},        // 0x0a
-	{}, // 0x0b
+	{Instruction: Slo, Addressing: IndirectXAddressing, Timing: 8},                       // 0x03
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x04
+	{Instruction: Ora, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x05
+	{Instruction: Asl, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x06
+	{Instruction: Slo, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x07
+	{Instruction: Php, Addressing: ImpliedAddressing, Timing: 3},                         // 0x08
+	{Instruction: Ora, Addressing: ImmediateAddressing, Timing: 2},                       // 0x09
+	{Instruction: Asl, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x0a
+	{Instruction: Anc, Addressing: ImmediateAddressing, Timing: 2},                       // 0x0b
 	{Instruction: NopUnofficial, Addressing: AbsoluteAddressing, Timing: 4},              // 0x0c
 	{Instruction: Ora, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x0d
 	{Instruction: Asl, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x0e
@@ -57,15 +57,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: Jsr, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x20
 	{Instruction: And, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x21
 	{}, // 0x22
-	{Instruction: Rla, Addressing: IndirectXAddressing, Timing: 8},   // 0x23
-	{Instruction: Bit, Addressing: ZeroPageAddressing, Timing: 3},    // 0x24
-	{Instruction: And, Addressing: ZeroPageAddressing, Timing: 3},    // 0x25
-	{Instruction: Rol, Addressing: ZeroPageAddressing, Timing: 5},    // 0x26
-	{Instruction: Rla, Addressing: ZeroPageAddressing, Timing: 5},    // 0x27
-	{Instruction: Plp, Addressing: ImpliedAddressing, Timing: 4},     // 0x28
-	{Instruction: And, Addressing: ImmediateAddressing, Timing: 2},   // 0x29
-	{Instruction: Rol, Addressing: AccumulatorAddressing, Timing: 2}, // 0x2a
-	{}, // 0x2b
+	{Instruction: Rla, Addressing: IndirectXAddressing, Timing: 8},                       // 0x23
+	{Instruction: Bit, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x24
+	{Instruction: And, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x25
+	{Instruction: Rol, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x26
+	{Instruction: Rla, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x27
+	{Instruction: Plp, Addressing: ImpliedAddressing, Timing: 4},                         // 0x28
+	{Instruction: And, Addressing: ImmediateAddressing, Timing: 2},                       // 0x29
+	{Instruction: Rol, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x2a
+	{Instruction: AncUnofficial, Addressing: ImmediateAddressing, Timing: 2},             // 0x2b (alternate)
 	{Instruction: Bit, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x2c
 	{Instruction: And, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x2d
 	{Instruction: Rol, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x2e
@@ -89,15 +89,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: Rti, Addressing: ImpliedAddressing, Timing: 6},                                   // 0x40
 	{Instruction: Eor, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x41
 	{}, // 0x42
-	{Instruction: Sre, Addressing: IndirectXAddressing, Timing: 8},          // 0x43
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3}, // 0x44
-	{Instruction: Eor, Addressing: ZeroPageAddressing, Timing: 3},           // 0x45
-	{Instruction: Lsr, Addressing: ZeroPageAddressing, Timing: 5},           // 0x46
-	{Instruction: Sre, Addressing: ZeroPageAddressing, Timing: 5},           // 0x47
-	{Instruction: Pha, Addressing: ImpliedAddressing, Timing: 3},            // 0x48
-	{Instruction: Eor, Addressing: ImmediateAddressing, Timing: 2},          // 0x49
-	{Instruction: Lsr, Addressing: AccumulatorAddressing, Timing: 2},        // 0x4a
-	{}, // 0x4b
+	{Instruction: Sre, Addressing: IndirectXAddressing, Timing: 8},                       // 0x43
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x44
+	{Instruction: Eor, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x45
+	{Instruction: Lsr, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x46
+	{Instruction: Sre, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x47
+	{Instruction: Pha, Addressing: ImpliedAddressing, Timing: 3},                         // 0x48
+	{Instruction: Eor, Addressing: ImmediateAddressing, Timing: 2},                       // 0x49
+	{Instruction: Lsr, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x4a
+	{Instruction: Alr, Addressing: ImmediateAddressing, Timing: 2},                       // 0x4b
 	{Instruction: Jmp, Addressing: AbsoluteAddressing, Timing: 3},                        // 0x4c
 	{Instruction: Eor, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x4d
 	{Instruction: Lsr, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x4e
@@ -121,15 +121,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: Rts, Addressing: ImpliedAddressing, Timing: 6},                                   // 0x60
 	{Instruction: Adc, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x61
 	{}, // 0x62
-	{Instruction: Rra, Addressing: IndirectXAddressing, Timing: 8},          // 0x63
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3}, // 0x64
-	{Instruction: Adc, Addressing: ZeroPageAddressing, Timing: 3},           // 0x65
-	{Instruction: Ror, Addressing: ZeroPageAddressing, Timing: 5},           // 0x66
-	{Instruction: Rra, Addressing: ZeroPageAddressing, Timing: 5},           // 0x67
-	{Instruction: Pla, Addressing: ImpliedAddressing, Timing: 4},            // 0x68
-	{Instruction: Adc, Addressing: ImmediateAddressing, Timing: 2},          // 0x69
-	{Instruction: Ror, Addressing: AccumulatorAddressing, Timing: 2},        // 0x6a
-	{}, // 0x6b
+	{Instruction: Rra, Addressing: IndirectXAddressing, Timing: 8},                       // 0x63
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x64
+	{Instruction: Adc, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x65
+	{Instruction: Ror, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x66
+	{Instruction: Rra, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x67
+	{Instruction: Pla, Addressing: ImpliedAddressing, Timing: 4},                         // 0x68
+	{Instruction: Adc, Addressing: ImmediateAddressing, Timing: 2},                       // 0x69
+	{Instruction: Ror, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x6a
+	{Instruction: Arr, Addressing: ImmediateAddressing, Timing: 2},                       // 0x6b
 	{Instruction: Jmp, Addressing: IndirectAddressing, Timing: 5},                        // 0x6c
 	{Instruction: Adc, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x6d
 	{Instruction: Ror, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x6e
@@ -225,7 +225,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Iny, Addressing: ImpliedAddressing, Timing: 2},                         // 0xc8
 	{Instruction: Cmp, Addressing: ImmediateAddressing, Timing: 2},                       // 0xc9
 	{Instruction: Dex, Addressing: ImpliedAddressing, Timing: 2},                         // 0xca
-	{}, // 0xcb
+	{Instruction: Axs, Addressing: ImmediateAddressing, Timing: 2},                       // 0xcb
 	{Instruction: Cpy, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xcc
 	{Instruction: Cmp, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xcd
 	{Instruction: Dec, Addressing: AbsoluteAddressing, Timing: 6},                        // 0xce

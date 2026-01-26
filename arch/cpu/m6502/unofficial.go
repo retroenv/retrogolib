@@ -151,3 +151,53 @@ var Sre = &Instruction{
 	},
 	ParamFunc: sre,
 }
+
+// Alr - AND with accumulator, then LSR.
+var Alr = &Instruction{
+	Name:       AlrName,
+	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImmediateAddressing: {Opcode: 0x4b},
+	},
+	ParamFunc: alr,
+}
+
+// Anc - AND with accumulator, copy N flag to C flag.
+var Anc = &Instruction{
+	Name:       AncName,
+	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImmediateAddressing: {Opcode: 0x0b},
+	},
+	ParamFunc: anc,
+}
+
+// AncUnofficial - Alternate opcode for ANC (same behavior as Anc).
+var AncUnofficial = &Instruction{
+	Name:       AncName,
+	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImmediateAddressing: {Opcode: 0x2b},
+	},
+	ParamFunc: anc,
+}
+
+// Arr - AND with accumulator, then ROR.
+var Arr = &Instruction{
+	Name:       ArrName,
+	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImmediateAddressing: {Opcode: 0x6b},
+	},
+	ParamFunc: arr,
+}
+
+// Axs - (A AND X) minus immediate, store in X.
+var Axs = &Instruction{
+	Name:       AxsName,
+	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImmediateAddressing: {Opcode: 0xcb},
+	},
+	ParamFunc: axs,
+}
