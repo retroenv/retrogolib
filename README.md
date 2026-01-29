@@ -33,6 +33,8 @@ retro console utilities, all while maintaining minimal dependencies and focusing
 ### CPUs
 - **6502**: Full instruction set with accurate timing
 - **Chip-8**: Complete virtual machine implementation
+- **Z80**: Complete Z80 CPU emulation with array-based opcode tables
+- **x86**: Real mode instruction set (8086 through 80486)
 
 ### Consoles
 - **NES (Nintendo Entertainment System)**: Cartridge formats, memory mapping
@@ -42,6 +44,8 @@ retro console utilities, all while maintaining minimal dependencies and focusing
 ### CPU Emulation
 - **6502 CPU**: Full instruction set with memory management, stack operations, and interrupt support
 - **Chip-8 Virtual CPU**: Complete virtual machine with display, timers, and input handling
+- **Z80 CPU**: Complete Z80 instruction set with 16-bit registers, prefix instructions (ED/DD/FD), and interrupts
+- **x86 CPU**: Real mode instruction set for static analysis (8086, 80186, 80286, 80386, 80486)
 
 ### System Support
 - **NES (Nintendo Entertainment System)**: Cartridge handling, memory mapping, and parameter conversion
@@ -51,9 +55,12 @@ retro console utilities, all while maintaining minimal dependencies and focusing
     ├─ app              common application/service helpers
     ├─ arch/cpu/chip8   Chip-8 virtual CPU support
     ├─ arch/cpu/m6502   6502 CPU support
+    ├─ arch/cpu/x86     x86 real mode CPU support (8086-486)
+    ├─ arch/cpu/z80     Z80 CPU support
     ├─ arch/system/nes  NES common types and helpers
     ├─ assert           test assertion helpers
     ├─ buildinfo        show version info that is embedded in the binary
+    ├─ cli              command-line interface utilities with section-based flag parsing
     ├─ config           configuration management
     ├─ gui              GUI support - SDL without need for CGO
     ├─ input            hardware controller/keyboard helpers
@@ -66,4 +73,4 @@ For detailed API documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Apache License Version 2.0 - see the LICENSE file for details.

@@ -611,3 +611,67 @@ func sre(c *CPU, params ...any) error {
 	}
 	return eor(c, params...)
 }
+
+// alr - AND with accumulator, then LSR.
+func alr(c *CPU, params ...any) error {
+	if err := and(c, params...); err != nil {
+		return err
+	}
+	// LSR on accumulator
+	c.Flags.C = c.A & 1
+	c.A >>= 1
+	c.setZN(c.A)
+	return nil
+}
+
+// anc - AND with accumulator, copy N flag to C flag.
+func anc(c *CPU, params ...any) error {
+	if err := and(c, params...); err != nil {
+		return err
+	}
+	// Copy N flag to C flag
+	c.Flags.C = c.Flags.N
+	return nil
+}
+
+// arr - AND with accumulator, then ROR.
+func arr(c *CPU, params ...any) error {
+	if err := and(c, params...); err != nil {
+		return err
+	}
+	// ROR on accumulator
+	oldCarry := c.Flags.C
+	c.Flags.C = c.A & 1
+	c.A = (c.A >> 1) | (oldCarry << 7)
+	c.setZN(c.A)
+
+	// Set V flag based on bits 6 and 5 XOR
+	bit6 := (c.A >> 6) & 1
+	bit5 := (c.A >> 5) & 1
+	c.Flags.V = bit6 ^ bit5
+	return nil
+}
+
+// axs - (A AND X) minus immediate, store in X.
+func axs(c *CPU, params ...any) error {
+	value, err := c.memory.ReadAddressModes(true, params...)
+	if err != nil {
+		return err
+	}
+
+	// Calculate (A AND X) - immediate
+	val := c.A & c.X
+	result := int(val) - int(value)
+
+	// Set carry if no borrow (result >= 0)
+	if result >= 0 {
+		c.Flags.C = 1
+	} else {
+		c.Flags.C = 0
+	}
+
+	// Store result in X
+	c.X = uint8(result)
+	c.setZN(c.X)
+	return nil
+}

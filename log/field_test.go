@@ -958,3 +958,122 @@ func TestFormatHex(t *testing.T) {
 		})
 	}
 }
+
+// TestType_BasicTypes tests the Type field function with basic types.
+func TestType_BasicTypes(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    any
+		expected string
+	}{
+		{
+			name:     "int type",
+			key:      "value_type",
+			value:    42,
+			expected: "int",
+		},
+		{
+			name:     "string type",
+			key:      "text_type",
+			value:    "hello",
+			expected: "string",
+		},
+		{
+			name:     "pointer to int",
+			key:      "ptr_type",
+			value:    new(int),
+			expected: "*int",
+		},
+		{
+			name:     "slice of strings",
+			key:      "slice_type",
+			value:    []string{"a", "b"},
+			expected: "[]string",
+		},
+		{
+			name:     "nil value",
+			key:      "nil_type",
+			value:    nil,
+			expected: "<nil>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field := Type(tt.key, tt.value)
+			assert.Equal(t, tt.key, field.Key)
+
+			// Force evaluation by accessing the LogValue
+			typeValue := field.Value.Any().(typeOf).LogValue()
+			actual := typeValue.String()
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+// TestType_ComplexTypes tests the Type field function with complex types.
+func TestType_ComplexTypes(t *testing.T) {
+	type customStruct struct {
+		Name string
+	}
+
+	tests := []struct {
+		name     string
+		key      string
+		value    any
+		expected string
+	}{
+		{
+			name:     "custom struct",
+			key:      "struct_type",
+			value:    customStruct{Name: "test"},
+			expected: "log.customStruct",
+		},
+		{
+			name:     "pointer to struct",
+			key:      "struct_ptr_type",
+			value:    &customStruct{Name: "test"},
+			expected: "*log.customStruct",
+		},
+		{
+			name:     "error interface",
+			key:      "error_type",
+			value:    errors.New("test error"),
+			expected: "*errors.errorString",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			field := Type(tt.key, tt.value)
+			assert.Equal(t, tt.key, field.Key)
+
+			// Force evaluation by accessing the LogValue
+			typeValue := field.Value.Any().(typeOf).LogValue()
+			actual := typeValue.String()
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+// TestType_LazyEvaluation tests that Type uses lazy evaluation.
+func TestType_LazyEvaluation(t *testing.T) {
+	// This test verifies that the type reflection is lazy
+	type testStruct struct {
+		Value int
+	}
+	ts := testStruct{Value: 123}
+
+	field := Type("test", ts)
+	assert.Equal(t, "test", field.Key)
+
+	// The value should be stored as a typeOf struct, not the formatted string
+	typeStruct, ok := field.Value.Any().(typeOf)
+	assert.True(t, ok, "Expected typeOf struct")
+	assert.Equal(t, ts, typeStruct.val)
+
+	// Only when we call LogValue should it format the type
+	logValue := typeStruct.LogValue()
+	assert.Equal(t, "log.testStruct", logValue.String())
+}

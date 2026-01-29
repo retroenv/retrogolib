@@ -143,8 +143,17 @@ func TestDrw(t *testing.T) {
 
 func TestRnd(t *testing.T) {
 	c := New()
-	assert.NoError(t, rnd(c, 0x00ff))
-	assert.NotEqual(t, uint8(0), c.V[0])
+
+	// Run multiple times to ensure randomness produces non-zero values
+	foundNonZero := false
+	for range 100 {
+		assert.NoError(t, rnd(c, 0x00ff))
+		if c.V[0] != 0 {
+			foundNonZero = true
+			break
+		}
+	}
+	assert.True(t, foundNonZero)
 }
 
 func TestShl(t *testing.T) {

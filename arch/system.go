@@ -1,4 +1,3 @@
-// Package arch provides system constants and types.
 package arch
 
 import (

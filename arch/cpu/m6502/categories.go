@@ -1,4 +1,3 @@
-// Package m6502 provides support for the MOS Technology 6502 CPU.
 package m6502
 
 import "github.com/retroenv/retrogolib/set"
@@ -20,6 +19,7 @@ var BranchingInstructions = set.NewFromSlice([]string{
 // NotExecutingFollowingOpcodeInstructions contains all instructions that jump
 // to a different address and do not return to execute the following opcode.
 var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
+	Brk.Name, // BRK jumps to IRQ handler, doesn't continue to next instruction
 	Jmp.Name,
 	Rti.Name,
 	Rts.Name,

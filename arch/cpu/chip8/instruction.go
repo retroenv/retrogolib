@@ -1,20 +1,46 @@
-// Package chip8 provides support for the virtual Chip-8 CPU.
 package chip8
 
-// Instruction contains information about a CPU instruction.
+// Instruction defines a Chip-8 instruction with its opcodes and execution logic.
+// Instructions support multiple addressing modes through the Addressing map that
+// enables opcode lookup for disassembly and code generation.
 type Instruction struct {
-	Name string // lowercased instruction name
+	Name string // Instruction mnemonic (lowercase)
 
-	Addressing map[Mode]OpcodeInfo
+	// Opcode lookup map for addressing mode to opcode mapping
+	Addressing map[Mode]OpcodeInfo // Maps addressing mode to opcode info
 
-	Emulation func(c *CPU, param uint16) error // emulation function to execute
+	// Execution handler - receives CPU state and 16-bit opcode parameter
+	Emulation func(c *CPU, param uint16) error // Handler for instruction execution
 }
+
+// Instruction name constants for easy access by external packages.
+const (
+	AddName  = "add"
+	AndName  = "and"
+	CallName = "call"
+	ClsName  = "cls"
+	DrwName  = "drw"
+	JpName   = "jp"
+	LdName   = "ld"
+	OrName   = "or"
+	RetName  = "ret"
+	RndName  = "rnd"
+	SeName   = "se"
+	ShlName  = "shl"
+	ShrName  = "shr"
+	SkpName  = "skp"
+	SknpName = "sknp"
+	SneName  = "sne"
+	SubName  = "sub"
+	SubnName = "subn"
+	XorName  = "xor"
+)
 
 // Standard Chip-8 Instructions
 
-// Add - adds a value/register to a register.
+// Add adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
 var Add = &Instruction{
-	Name:      "add",
+	Name:      AddName,
 	Emulation: add,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode7000,
@@ -23,45 +49,45 @@ var Add = &Instruction{
 	},
 }
 
-// And - performs a bitwise AND operation on two registers.
+// And performs bitwise AND on two registers (AND Vx, Vy).
 var And = &Instruction{
-	Name:      "and",
+	Name:      AndName,
 	Emulation: and,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8002,
 	},
 }
 
-// Call - Call subroutine.
+// Call calls a subroutine at address (CALL addr).
 var Call = &Instruction{
-	Name:      "call",
+	Name:      CallName,
 	Emulation: call,
 	Addressing: map[Mode]OpcodeInfo{
 		AbsoluteAddressing: Opcode2000,
 	},
 }
 
-// Cls - Clear screen.
+// Cls clears the display screen (CLS).
 var Cls = &Instruction{
-	Name:      "cls",
+	Name:      ClsName,
 	Emulation: cls,
 	Addressing: map[Mode]OpcodeInfo{
 		ImpliedAddressing: Opcode00E0,
 	},
 }
 
-// Drw - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+// Drw draws n-byte sprite from memory location I at (Vx, Vy), sets VF on collision (DRW Vx, Vy, nibble).
 var Drw = &Instruction{
-	Name:      "drw",
+	Name:      DrwName,
 	Emulation: drw,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterNibbleAddressing: OpcodeD000,
 	},
 }
 
-// Jp - jumps to an address and optionally adds V0 to the address.
+// Jp jumps to address, optionally adding V0 to the address (JP addr / JP V0, addr).
 var Jp = &Instruction{
-	Name:      "jp",
+	Name:      JpName,
 	Emulation: jp,
 	Addressing: map[Mode]OpcodeInfo{
 		AbsoluteAddressing:   Opcode1000,
@@ -69,9 +95,9 @@ var Jp = &Instruction{
 	},
 }
 
-// Ld - Set Vx = kk.
+// Ld loads values into registers, timers, or memory (LD Vx, byte / LD I, addr / LD DT, Vx).
 var Ld = &Instruction{
-	Name:      "ld",
+	Name:      LdName,
 	Emulation: ld,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:     Opcode6000,
@@ -88,36 +114,36 @@ var Ld = &Instruction{
 	},
 }
 
-// Or - performs a bitwise OR operation on two registers.
+// Or performs bitwise OR on two registers (OR Vx, Vy).
 var Or = &Instruction{
-	Name:      "or",
+	Name:      OrName,
 	Emulation: or,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8001,
 	},
 }
 
-// Ret - Return from a subroutine.
+// Ret returns from a subroutine (RET).
 var Ret = &Instruction{
-	Name:      "ret",
+	Name:      RetName,
 	Emulation: ret,
 	Addressing: map[Mode]OpcodeInfo{
 		ImpliedAddressing: Opcode00EE,
 	},
 }
 
-// Rnd - Set Vx = random byte AND kk.
+// Rnd sets Vx to random byte AND immediate value (RND Vx, byte).
 var Rnd = &Instruction{
-	Name:      "rnd",
+	Name:      RndName,
 	Emulation: rnd,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeC000,
 	},
 }
 
-// Se - Skip next instruction if the register equals a value/register.
+// Se skips next instruction if register equals value or register (SE Vx, byte / SE Vx, Vy).
 var Se = &Instruction{
-	Name:      "se",
+	Name:      SeName,
 	Emulation: se,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode3000,
@@ -125,45 +151,45 @@ var Se = &Instruction{
 	},
 }
 
-// Shl - Set Vx = Vx SHL 1.
+// Shl shifts Vx left by 1, stores MSB in VF (SHL Vx).
 var Shl = &Instruction{
-	Name:      "shl",
+	Name:      ShlName,
 	Emulation: shl,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode800E,
 	},
 }
 
-// Shr - Set Vx = Vx SHR 1.
+// Shr shifts Vx right by 1, stores LSB in VF (SHR Vx).
 var Shr = &Instruction{
-	Name:      "shr",
+	Name:      ShrName,
 	Emulation: shr,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8006,
 	},
 }
 
-// Skp - Skip next instruction if key with the value of Vx is pressed.
+// Skp skips next instruction if key with value of Vx is pressed (SKP Vx).
 var Skp = &Instruction{
-	Name:      "skp",
+	Name:      SkpName,
 	Emulation: skp,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeE09E,
 	},
 }
 
-// Sknp - Skip next instruction if key with the value of Vx is not pressed.
+// Sknp skips next instruction if key with value of Vx is not pressed (SKNP Vx).
 var Sknp = &Instruction{
-	Name:      "sknp",
+	Name:      SknpName,
 	Emulation: sknp,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing: OpcodeE0A1,
 	},
 }
 
-// Sne - Skip next instruction if the register does not equal a value/register.
+// Sne skips next instruction if register does not equal value or register (SNE Vx, byte / SNE Vx, Vy).
 var Sne = &Instruction{
-	Name:      "sne",
+	Name:      SneName,
 	Emulation: sne,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterValueAddressing:    Opcode4000,
@@ -171,29 +197,52 @@ var Sne = &Instruction{
 	},
 }
 
-// Sub - Set Vx = Vx - Vy, set VF = NOT borrow.
+// Sub subtracts Vy from Vx, sets VF = NOT borrow (SUB Vx, Vy).
 var Sub = &Instruction{
-	Name:      "sub",
+	Name:      SubName,
 	Emulation: sub,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8005,
 	},
 }
 
-// Subn - Set Vx = Vy - Vx, set VF = NOT borrow.
+// Subn subtracts Vx from Vy, stores result in Vx, sets VF = NOT borrow (SUBN Vx, Vy).
 var Subn = &Instruction{
-	Name:      "subn",
+	Name:      SubnName,
 	Emulation: subn,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8007,
 	},
 }
 
-// Xor - performs a bitwise XOR operation on two registers.
+// Xor performs bitwise XOR on two registers (XOR Vx, Vy).
 var Xor = &Instruction{
-	Name:      "xor",
+	Name:      XorName,
 	Emulation: xor,
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8003,
 	},
+}
+
+// Instructions maps instruction names to their information struct.
+var Instructions = map[string]*Instruction{
+	AddName:  Add,
+	AndName:  And,
+	CallName: Call,
+	ClsName:  Cls,
+	DrwName:  Drw,
+	JpName:   Jp,
+	LdName:   Ld,
+	OrName:   Or,
+	RetName:  Ret,
+	RndName:  Rnd,
+	SeName:   Se,
+	ShlName:  Shl,
+	ShrName:  Shr,
+	SkpName:  Skp,
+	SknpName: Sknp,
+	SneName:  Sne,
+	SubName:  Sub,
+	SubnName: Subn,
+	XorName:  Xor,
 }

@@ -1,4 +1,3 @@
-// Package set provides a generic set data structure implementation.
 package set
 
 // Set represents a generic set data structure using a map with struct{} values.
@@ -183,4 +182,11 @@ func (s Set[T]) IsDisjoint(other Set[T]) bool {
 	}
 
 	return true
+}
+
+// ForEach applies a function to each element in the set.
+func (s Set[T]) ForEach(fn func(T)) {
+	for element := range s {
+		fn(element)
+	}
 }

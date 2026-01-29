@@ -27,7 +27,7 @@ var paramReader = map[AddressingMode]paramReaderFunc{
 func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, bool, error) {
 	fun, ok := paramReader[addressing]
 	if !ok {
-		return nil, nil, false, fmt.Errorf("%w: mode %00x", ErrUnsupportedAddressingMode, addressing)
+		return nil, nil, false, fmt.Errorf("%w: mode 0x%02x", ErrUnsupportedAddressingMode, addressing)
 	}
 
 	params, opcodes, pageCrossed := fun(c)
