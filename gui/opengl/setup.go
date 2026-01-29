@@ -4,7 +4,6 @@ package opengl
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/ebitengine/purego"
 )
@@ -20,14 +19,7 @@ func setupLibrary() error {
 		return fmt.Errorf("loading OpenGL library: %w", err)
 	}
 
-	names := make([]string, 0, len(importsGl))
-	for name := range importsGl {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	for name := range names {
-		ptr := importsGl[name]
+	for name, ptr := range importsGl {
 		if err := registerFunction(lib, name, ptr); err != nil {
 			return fmt.Errorf("registering OpenGL function '%s': %w", name, err)
 		}
@@ -43,14 +35,7 @@ func setupLibrary() error {
 		return fmt.Errorf("loading GLFW library: %w", err)
 	}
 
-	names = make([]string, 0, len(importsGlfw))
-	for name := range importsGlfw {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	for name := range names {
-		ptr := importsGlfw[name]
+	for name, ptr := range importsGlfw {
 		if err := registerFunction(lib, name, ptr); err != nil {
 			return fmt.Errorf("registering GLFW function '%s': %w", name, err)
 		}

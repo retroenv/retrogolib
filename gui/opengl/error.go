@@ -1,24 +1,22 @@
 package opengl
 
 import (
-	"errors"
+	"fmt"
 	"sync"
-	"unsafe"
+
+	"github.com/ebitengine/purego"
 )
 
 var errMu sync.RWMutex
 var lastErr error
 
-var errCallback = errorCallback
-
 func setErrorCallback() {
-	glfwSetErrorCallback(uintptr(unsafe.Pointer(&errCallback)))
-}
-
-func errorCallback(err string) {
-	errMu.Lock()
-	lastErr = errors.New(err)
-	errMu.Unlock()
+	cb := purego.NewCallback(func(code int, description string) {
+		errMu.Lock()
+		lastErr = fmt.Errorf("GLFW error %d: %s", code, description)
+		errMu.Unlock()
+	})
+	glfwSetErrorCallback(cb)
 }
 
 func getLastError() error {

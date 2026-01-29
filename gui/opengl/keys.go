@@ -1,6 +1,7 @@
 package opengl
 
 import (
+	"github.com/ebitengine/purego"
 	"github.com/retroenv/retrogolib/gui"
 	"github.com/retroenv/retrogolib/input"
 )
@@ -13,12 +14,8 @@ var keyMapping = map[int]input.Key{
 	GLFW_KEY_ESCAPE: input.Escape,
 }
 
-type keyCallbackFunc = func(window uintptr, key int, _ int, action int, _ int)
-
-var keyCallback keyCallbackFunc
-
-func onGLFWKey(backend gui.Backend) keyCallbackFunc {
-	return func(window uintptr, key, _, action, _ int) {
+func setupKeyCallback(window uintptr, backend gui.Backend) {
+	cb := purego.NewCallback(func(window uintptr, key, _ int, action, _ int) {
 		if action == GLFW_PRESS && key == GLFW_KEY_ESCAPE {
 			glfwSetWindowShouldClose(window, GLFW_TRUE)
 			return
@@ -33,8 +30,9 @@ func onGLFWKey(backend gui.Backend) keyCallbackFunc {
 		case GLFW_PRESS:
 			backend.KeyDown(controllerKey)
 
-		case GLFW_KEY_ESCAPE:
+		case GLFW_RELEASE:
 			backend.KeyUp(controllerKey)
 		}
-	}
+	})
+	glfwSetKeyCallback(window, cb)
 }

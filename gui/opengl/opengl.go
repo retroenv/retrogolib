@@ -24,8 +24,7 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	render := func() (bool, error) {
 		img := backend.Image()
 		renderOpenGL(dimensions, img, window, texture)
-		//return !window.ShouldClose(), nil
-		return false, nil
+		return glfwWindowShouldClose(window) == GLFW_FALSE, nil
 	}
 
 	cleanup := func() {
@@ -57,31 +56,30 @@ func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint3
 		return uintptr(0), 0, fmt.Errorf("creating GLFW window: %w", getLastError())
 	}
 
-	keyCallback = onGLFWKey(backend)
-	glfwSetKeyCallback(window, uintptr(unsafe.Pointer(&keyCallback)))
+	setupKeyCallback(window, backend)
 	glfwMakeContextCurrent(window)
 	glfwSwapInterval(1)
 
 	// setup OpenGL
-	glEnable(TEXTURE_2D)
+	glEnable(GL_TEXTURE_2D)
 	var texture uint32
 	glGenTextures(1, &texture)
-	glBindTexture(TEXTURE_2D, texture)
+	glBindTexture(GL_TEXTURE_2D, texture)
 	img := backend.Image()
-	glTexImage2D(TEXTURE_2D, 0, RGBA, int32(dimensions.Width), int32(dimensions.Height),
-		0, RGBA, UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, int32(dimensions.Width), int32(dimensions.Height),
+		0, GL_RGBA, GL_UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
 
 	return window, texture, nil
 }
 
 func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, texture uint32) {
-	glBindTexture(TEXTURE_2D, texture)
-	glTexSubImage2D(TEXTURE_2D, 0, 0, 0, int32(dimensions.Width),
-		int32(dimensions.Height), RGBA, UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
+	glBindTexture(GL_TEXTURE_2D, texture)
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, int32(dimensions.Width),
+		int32(dimensions.Height), GL_RGBA, GL_UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
 
 	// disable any filtering to avoid blurring the texture
-	glTexParameteri(TEXTURE_2D, TEXTURE_MAG_FILTER, GL_NEAREST)
-	glTexParameteri(TEXTURE_2D, TEXTURE_MIN_FILTER, GL_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
 	// set an orthogonal projection (2D) with the size of the screen
 	glMatrixMode(GL_PROJECTION)

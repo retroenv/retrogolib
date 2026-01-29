@@ -153,7 +153,7 @@ func getGlfwSystemLibrary() (string, error) {
 	case "linux":
 		return "libglfw.so.3", nil
 	case "windows":
-		return "glu32.dll", nil
+		return "glfw3.dll", nil
 	default:
 		return "", fmt.Errorf("GOOS=%s is not supported", runtime.GOOS)
 	}
