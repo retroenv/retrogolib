@@ -30,8 +30,11 @@ type Memory struct {
 }
 
 // NewMemory returns a new memory instance.
-func NewMemory(mem BasicMemory) *Memory {
-	return &Memory{BasicMemory: mem}
+func NewMemory(mem BasicMemory) (*Memory, error) {
+	if mem == nil {
+		return nil, errors.New("BasicMemory cannot be nil")
+	}
+	return &Memory{BasicMemory: mem}, nil
 }
 
 // ReadWord reads a word from a memory address.
@@ -85,82 +88,7 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 	case Indirect, IndirectResolved:
 		return m.writeMemoryIndirect(address, value, register)
 	default:
-		return fmt.Errorf("unsupported memory write addressing mode type %T", param)
-	}
-	return nil
-}
-
-func (m *Memory) writeMemoryIndirect(address any, value byte, register any) error {
-	pointer, err := m.indirectMemoryPointer(address, register)
-	if err != nil {
-		return err
-	}
-	m.Write(pointer, value)
-	return nil
-}
-
-func (m *Memory) writeMemoryAbsolute(address any, value byte, register any) error {
-	if register == nil {
-		return m.writeMemoryAbsoluteOffset(address, value, 0)
-	}
-
-	var offset uint16
-	switch val := register.(type) {
-	case *uint8: // X/Y register referenced in normal code
-		offset = uint16(*val)
-	case uint8: // X/Y register referenced in unit test as system.X
-		offset = uint16(val)
-	default:
-		return fmt.Errorf("unsupported extra parameter type %T for absolute memory write", register)
-	}
-
-	return m.writeMemoryAbsoluteOffset(address, value, offset)
-}
-
-// Support 6502 bug, index will not leave zeropage when page boundary is crossed.
-func (m *Memory) writeMemoryZeroPage(address ZeroPage, value byte, register any) error {
-	if register == nil {
-		return m.writeMemoryAbsoluteOffset(address, value, 0)
-	}
-
-	var offset byte
-	switch val := register.(type) {
-	case *uint8: // X/Y register referenced in normal code
-		offset = *val
-	case uint8: // X/Y register referenced in unit test as system.X
-		offset = val
-	default:
-		return fmt.Errorf("unsupported extra parameter type %T for zero page memory write", register)
-	}
-
-	addr := uint16(byte(address) + offset)
-	return m.writeMemoryAbsoluteOffset(addr, value, 0)
-}
-
-func (m *Memory) writeMemoryAbsoluteOffset(address any, value byte, offset uint16) error {
-	switch addr := address.(type) {
-	case int8:
-		m.Write(uint16(addr)+offset, value)
-	case uint8:
-		m.Write(uint16(addr)+offset, value)
-	case *uint8:
-		*addr = value
-	case uint16:
-		m.Write(addr+offset, value)
-	case *uint16:
-		*addr = uint16(value)
-	case int:
-		m.Write(uint16(addr)+offset, value)
-	case Absolute:
-		m.Write(uint16(addr)+offset, value)
-	case AbsoluteX:
-		m.Write(uint16(addr)+offset, value)
-	case AbsoluteY:
-		m.Write(uint16(addr)+offset, value)
-	case ZeroPage:
-		m.Write(uint16(addr)+offset, value)
-	default:
-		return fmt.Errorf("unsupported address type %T for absolute memory write with register", address)
+		return fmt.Errorf("%w: write mode type %T", ErrUnsupportedAddressingMode, param)
 	}
 	return nil
 }
@@ -197,7 +125,7 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 	case Indirect, IndirectResolved:
 		return m.readMemoryIndirect(address, register)
 	default:
-		return 0, fmt.Errorf("unsupported memory read addressing mode type %T", param)
+		return 0, fmt.Errorf("%w: read mode type %T", ErrUnsupportedAddressingMode, param)
 	}
 }
 
@@ -214,7 +142,7 @@ func (m *Memory) ReadAbsolute(address any, register any) (byte, error) {
 	case uint8: // X/Y register referenced in unit test as system.X
 		offset = uint16(val)
 	default:
-		return 0, fmt.Errorf("unsupported extra parameter type %T for absolute memory read", register)
+		return 0, fmt.Errorf("%w: absolute read register type %T", ErrInvalidParameterType, register)
 	}
 	return m.readAbsoluteOffset(address, offset)
 }
@@ -233,7 +161,7 @@ func (m *Memory) ReadMemoryZeroPage(address ZeroPage, register any) (byte, error
 	case uint8: // X/Y register referenced in unit test as system.X
 		offset = val
 	default:
-		return 0, fmt.Errorf("unsupported extra parameter type %T for zero page memory read", register)
+		return 0, fmt.Errorf("%w: zero page read register type %T", ErrInvalidParameterType, register)
 	}
 	addr := uint16(byte(address) + offset)
 	return m.readAbsoluteOffset(addr, 0)
@@ -243,7 +171,7 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 	switch addr := address.(type) {
 	case *uint8:
 		if offset != 0 {
-			return 0, errors.New("memory pointer read with offset is not supported")
+			return 0, fmt.Errorf("%w: memory pointer read with offset", ErrUnsupportedAddressingMode)
 		}
 		return *addr, nil
 	case uint16:
@@ -263,7 +191,7 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 	case ZeroPage:
 		return m.Read(uint16(addr) + offset), nil
 	default:
-		return 0, fmt.Errorf("unsupported address type %T for absolute memory write", address)
+		return 0, fmt.Errorf("%w: absolute write address type %T", ErrUnsupportedAddressingMode, address)
 	}
 }
 
@@ -277,14 +205,93 @@ func (m *Memory) readMemoryIndirect(address any, register any) (byte, error) {
 
 func (m *Memory) indirectMemoryPointer(addressParam any, register any) (uint16, error) {
 	if register == nil {
-		return 0, errors.New("register parameter missing for indirect memory addressing")
+		return 0, fmt.Errorf("%w: indirect memory addressing", ErrMissingParameter)
 	}
 
 	_, ok := register.(*uint8)
 	if !ok {
-		return 0, fmt.Errorf("unsupported extra parameter type %T for indirect memory addressing", register)
+		return 0, fmt.Errorf("%w: indirect addressing register type %T", ErrInvalidRegisterType, register)
 	}
 
-	address := uint16(addressParam.(IndirectResolved))
-	return address, nil
+	indirectAddr, ok := addressParam.(IndirectResolved)
+	if !ok {
+		return 0, fmt.Errorf("%w: indirect addressing parameter type %T", ErrInvalidParameterType, addressParam)
+	}
+
+	return uint16(indirectAddr), nil
+}
+
+func (m *Memory) writeMemoryIndirect(address any, value byte, register any) error {
+	pointer, err := m.indirectMemoryPointer(address, register)
+	if err != nil {
+		return err
+	}
+	m.Write(pointer, value)
+	return nil
+}
+
+func (m *Memory) writeMemoryAbsolute(address any, value byte, register any) error {
+	if register == nil {
+		return m.writeMemoryAbsoluteOffset(address, value, 0)
+	}
+
+	var offset uint16
+	switch val := register.(type) {
+	case *uint8: // X/Y register referenced in normal code
+		offset = uint16(*val)
+	case uint8: // X/Y register referenced in unit test as system.X
+		offset = uint16(val)
+	default:
+		return fmt.Errorf("%w: absolute write register type %T", ErrInvalidParameterType, register)
+	}
+
+	return m.writeMemoryAbsoluteOffset(address, value, offset)
+}
+
+// Support 6502 bug, index will not leave zeropage when page boundary is crossed.
+func (m *Memory) writeMemoryZeroPage(address ZeroPage, value byte, register any) error {
+	if register == nil {
+		return m.writeMemoryAbsoluteOffset(address, value, 0)
+	}
+
+	var offset byte
+	switch val := register.(type) {
+	case *uint8: // X/Y register referenced in normal code
+		offset = *val
+	case uint8: // X/Y register referenced in unit test as system.X
+		offset = val
+	default:
+		return fmt.Errorf("%w: zero page write register type %T", ErrInvalidParameterType, register)
+	}
+
+	addr := uint16(byte(address) + offset)
+	return m.writeMemoryAbsoluteOffset(addr, value, 0)
+}
+
+func (m *Memory) writeMemoryAbsoluteOffset(address any, value byte, offset uint16) error {
+	switch addr := address.(type) {
+	case int8:
+		m.Write(uint16(addr)+offset, value)
+	case uint8:
+		m.Write(uint16(addr)+offset, value)
+	case *uint8:
+		*addr = value
+	case uint16:
+		m.Write(addr+offset, value)
+	case *uint16:
+		*addr = uint16(value)
+	case int:
+		m.Write(uint16(addr)+offset, value)
+	case Absolute:
+		m.Write(uint16(addr)+offset, value)
+	case AbsoluteX:
+		m.Write(uint16(addr)+offset, value)
+	case AbsoluteY:
+		m.Write(uint16(addr)+offset, value)
+	case ZeroPage:
+		m.Write(uint16(addr)+offset, value)
+	default:
+		return fmt.Errorf("%w: absolute write address type %T", ErrUnsupportedAddressingMode, address)
+	}
+	return nil
 }

@@ -11,10 +11,10 @@ import (
 // *testing.B objects.
 type TestingT interface {
 	// Logf logs the given message without failing the test.
-	Logf(string, ...interface{})
+	Logf(string, ...any)
 
 	// Errorf logs the given message and marks the test as failed.
-	Errorf(string, ...interface{})
+	Errorf(string, ...any)
 
 	// FailNow marks the test as failed and stops execution of that test.
 	FailNow()
@@ -91,7 +91,9 @@ type testingWriter struct {
 
 func (w testingWriter) Write(p []byte) (int, error) {
 	n := len(p)
-	p = bytes.TrimRight(p, "\n") // strip trailing newline because t.Log always adds one
+	// Strip trailing newline because t.Log always adds one
+	// Use TrimRight for better performance with multiple trailing newlines
+	p = bytes.TrimRight(p, "\n")
 
 	w.t.Logf("%s", p)
 	return n, nil

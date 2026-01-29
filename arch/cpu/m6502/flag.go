@@ -16,16 +16,14 @@ type Flags struct {
 
 // GetFlags returns the current state of flags as byte.
 func (c *CPU) GetFlags() uint8 {
-	var f byte
-	f |= c.Flags.C << 0
-	f |= c.Flags.Z << 1
-	f |= c.Flags.I << 2
-	f |= c.Flags.D << 3
-	f |= c.Flags.B << 4
-	f |= c.Flags.U << 5
-	f |= c.Flags.V << 6
-	f |= c.Flags.N << 7
-	return f
+	return c.Flags.C |
+		(c.Flags.Z << 1) |
+		(c.Flags.I << 2) |
+		(c.Flags.D << 3) |
+		(c.Flags.B << 4) |
+		(c.Flags.U << 5) |
+		(c.Flags.V << 6) |
+		(c.Flags.N << 7)
 }
 
 // setFlags sets the flags from the given byte.
@@ -42,29 +40,17 @@ func (c *CPU) setFlags(flags uint8) {
 
 // setZ - set the zero flag if the argument is zero.
 func (c *CPU) setZ(value uint8) {
-	if value == 0 {
-		c.Flags.Z = 1
-	} else {
-		c.Flags.Z = 0
-	}
+	setFlag(&c.Flags.Z, value == 0)
 }
 
 // setN - set the negative flag if the argument is negative (high bit is set).
 func (c *CPU) setN(value uint8) {
-	if value&0x80 != 0 {
-		c.Flags.N = 1
-	} else {
-		c.Flags.N = 0
-	}
+	setFlag(&c.Flags.N, value&0x80 != 0)
 }
 
 // setV - set the overflow flag.
 func (c *CPU) setV(set bool) {
-	if set {
-		c.Flags.V = 1
-	} else {
-		c.Flags.V = 0
-	}
+	setFlag(&c.Flags.V, set)
 }
 
 // setZN - set the zero and negative flags.
@@ -76,9 +62,14 @@ func (c *CPU) setZN(value uint8) {
 // compare - compare two values and set the zero and negative flags.
 func (c *CPU) compare(a, b byte) {
 	c.setZN(a - b)
-	if a >= b {
-		c.Flags.C = 1
+	setFlag(&c.Flags.C, a >= b)
+}
+
+// setFlag sets a flag to 1 if condition is true, 0 otherwise.
+func setFlag(flag *uint8, condition bool) {
+	if condition {
+		*flag = 1
 	} else {
-		c.Flags.C = 0
+		*flag = 0
 	}
 }

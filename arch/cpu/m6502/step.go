@@ -36,7 +36,14 @@ func (c *CPU) Step() error {
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
-		c.updatePC(ins, oldPC, 1)
+
+		// Get the correct instruction size from the opcode info
+		size := 1
+		for _, info := range ins.Addressing {
+			size = int(info.Size)
+			break
+		}
+		c.updatePC(ins, oldPC, size)
 		return nil
 	}
 
@@ -70,7 +77,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
 	opcode := Opcodes[b]
 	if opcode.Instruction == nil {
-		return Opcode{}, fmt.Errorf("unsupported opcode %00x", b)
+		return Opcode{}, fmt.Errorf("%w: 0x%02x at PC=0x%04x", ErrUnknownOpcode, b, c.PC)
 	}
 
 	if c.opts.tracing {
