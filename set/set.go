@@ -100,12 +100,12 @@ func (s Set[T]) Union(other Set[T]) Set[T] {
 
 // Intersection returns a new set containing elements that exist in both sets.
 func (s Set[T]) Intersection(other Set[T]) Set[T] {
-	result := make(Set[T])
-
 	smaller, larger := s, other
 	if len(other) < len(s) {
 		smaller, larger = other, s
 	}
+
+	result := make(Set[T], len(smaller))
 
 	for element := range smaller {
 		if larger.Contains(element) {
@@ -118,7 +118,7 @@ func (s Set[T]) Intersection(other Set[T]) Set[T] {
 
 // Difference returns a new set containing elements that are in this set but not in the other.
 func (s Set[T]) Difference(other Set[T]) Set[T] {
-	result := make(Set[T])
+	result := make(Set[T], len(s))
 
 	for element := range s {
 		if !other.Contains(element) {
@@ -131,7 +131,7 @@ func (s Set[T]) Difference(other Set[T]) Set[T] {
 
 // SymmetricDifference returns a new set containing elements that are in either set but not in both.
 func (s Set[T]) SymmetricDifference(other Set[T]) Set[T] {
-	result := make(Set[T])
+	result := make(Set[T], len(s)+len(other))
 
 	for element := range s {
 		if !other.Contains(element) {
