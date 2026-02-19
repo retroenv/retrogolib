@@ -2,20 +2,6 @@ package z80
 
 // CB prefix instruction implementations - Bit operations
 
-// getCBTiming calculates timing for CB-prefixed instructions based on operation and register.
-func getCBTiming(opcodeByte, reg uint8) byte {
-	switch {
-	case opcodeByte <= 0x3F && reg == 6: // Rotate/shift (HL)
-		return 15
-	case opcodeByte <= 0x7F && reg == 6: // BIT n,(HL)
-		return 12
-	case opcodeByte >= 0x80 && reg == 6: // RES/SET n,(HL)
-		return 15
-	default:
-		return 8
-	}
-}
-
 // cbRlc implements CB 00-07: RLC r.
 func cbRlc(c *CPU, _ ...any) error {
 	c.applyCBOperation(c.rlc)

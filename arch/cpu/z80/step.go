@@ -146,13 +146,9 @@ func isJumpInstruction(ins *Instruction) bool {
 func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual CB instruction
 
-	instruction, timing := c.decodeCBInstructionType(opcodeByte)
-
-	opcode := Opcode{
-		Instruction: instruction,
-		Addressing:  ImpliedAddressing,
-		Size:        2,
-		Timing:      timing,
+	opcode := CBOpcodes[opcodeByte]
+	if opcode.Instruction == nil {
+		return Opcode{}, PrefixCB, fmt.Errorf("%w: opcode CB %02X", ErrUnsupportedOpcode, opcodeByte)
 	}
 
 	if c.opts.tracing {
@@ -164,82 +160,6 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 	}
 
 	return opcode, PrefixCB, nil
-}
-
-// decodeCBInstructionType determines the instruction and timing for CB-prefixed opcodes.
-func (c *CPU) decodeCBInstructionType(opcodeByte uint8) (*Instruction, byte) {
-	// CB instructions follow a pattern:
-	// 00-07: RLC r    08-0F: RRC r    10-17: RL r     18-1F: RR r
-	// 20-27: SLA r    28-2F: SRA r    30-37: SLL r    38-3F: SRL r
-	// 40-7F: BIT n,r  80-BF: RES n,r  C0-FF: SET n,r
-
-	reg := opcodeByte & 0x07 // Lower 3 bits determine register
-
-	switch {
-	case opcodeByte <= 0x3F:
-		return c.decodeCBRotateShift(opcodeByte, reg)
-	case opcodeByte <= 0x7F:
-		return c.decodeCBBit(reg)
-	case opcodeByte <= 0xBF:
-		return c.decodeCBRes(reg)
-	default:
-		return c.decodeCBSet(reg)
-	}
-}
-
-// decodeCBRotateShift handles CB rotate/shift instructions (0x00-0x3F).
-func (c *CPU) decodeCBRotateShift(opcodeByte, reg uint8) (*Instruction, byte) {
-	var instruction *Instruction
-
-	switch {
-	case opcodeByte <= 0x07: // RLC r
-		instruction = CBRlc
-	case opcodeByte <= 0x0F: // RRC r
-		instruction = CBRrc
-	case opcodeByte <= 0x17: // RL r
-		instruction = CBRl
-	case opcodeByte <= 0x1F: // RR r
-		instruction = CBRr
-	case opcodeByte <= 0x27: // SLA r
-		instruction = CBSla
-	case opcodeByte <= 0x2F: // SRA r
-		instruction = CBSra
-	case opcodeByte <= 0x37: // SLL r (undocumented)
-		instruction = CBSll
-	default: // SRL r (0x38-0x3F)
-		instruction = CBSrl
-	}
-
-	// Use helper function for timing calculation
-	timing := getCBTiming(opcodeByte, reg)
-	return instruction, timing
-}
-
-// decodeCBBit handles CB BIT instructions (0x40-0x7F).
-func (c *CPU) decodeCBBit(reg uint8) (*Instruction, byte) {
-	timing := byte(8)
-	if reg == 6 { // BIT n,(HL)
-		timing = 12
-	}
-	return CBBit, timing
-}
-
-// decodeCBRes handles CB RES instructions (0x80-0xBF).
-func (c *CPU) decodeCBRes(reg uint8) (*Instruction, byte) {
-	timing := byte(8)
-	if reg == 6 { // RES n,(HL)
-		timing = 15
-	}
-	return CBRes, timing
-}
-
-// decodeCBSet handles CB SET instructions (0xC0-0xFF).
-func (c *CPU) decodeCBSet(reg uint8) (*Instruction, byte) {
-	timing := byte(8)
-	if reg == 6 { // SET n,(HL)
-		timing = 15
-	}
-	return CBSet, timing
 }
 
 // decodeEDInstruction decodes ED-prefixed instructions (extended operations).
