@@ -86,8 +86,90 @@ func TestOpcodeProperties(t *testing.T) {
 
 	verifyOpcodeProperties(Opcodes, "Opcode")
 	verifyOpcodeProperties(EDOpcodes, "ED")
+	verifyOpcodeProperties(CBOpcodes, "CB")
 	verifyOpcodeProperties(DDOpcodes, "DD")
 	verifyOpcodeProperties(FDOpcodes, "FD")
+}
+
+// TestCBOpcodeCoverage verifies all 256 CB-prefixed opcodes are defined.
+func TestCBOpcodeCoverage(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		assert.NotNil(t, opcode.Instruction,
+			"CB opcode 0x%02X should be defined", i)
+	}
+}
+
+// TestCBOpcodeMapping verifies CB opcodes map to the correct instructions.
+func TestCBOpcodeMapping(t *testing.T) {
+	t.Parallel()
+
+	ranges := []struct {
+		start, end  byte
+		instruction *Instruction
+		name        string
+	}{
+		{0x00, 0x07, CBRlc, "RLC"},
+		{0x08, 0x0F, CBRrc, "RRC"},
+		{0x10, 0x17, CBRl, "RL"},
+		{0x18, 0x1F, CBRr, "RR"},
+		{0x20, 0x27, CBSla, "SLA"},
+		{0x28, 0x2F, CBSra, "SRA"},
+		{0x30, 0x37, CBSll, "SLL"},
+		{0x38, 0x3F, CBSrl, "SRL"},
+		{0x40, 0x7F, CBBit, "BIT"},
+		{0x80, 0xBF, CBRes, "RES"},
+		{0xC0, 0xFF, CBSet, "SET"},
+	}
+
+	for _, r := range ranges {
+		for op := int(r.start); op <= int(r.end); op++ {
+			assert.Equal(t, r.instruction, CBOpcodes[op].Instruction,
+				"CB opcode 0x%02X should be %s", op, r.name)
+		}
+	}
+}
+
+// TestCBOpcodeTiming verifies CB opcode timing follows the Z80 pattern:
+// register operations use 8 T-states, (HL) operations use 12 (BIT) or 15 (others).
+func TestCBOpcodeTiming(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		if opcode.Instruction == nil {
+			continue
+		}
+
+		reg := i & 0x07
+		isHL := reg == 6
+
+		var expectedTiming byte
+		switch {
+		case !isHL:
+			expectedTiming = 8
+		case i >= 0x40 && i <= 0x7F: // BIT n,(HL)
+			expectedTiming = 12
+		default: // rotate/shift/RES/SET (HL)
+			expectedTiming = 15
+		}
+
+		assert.Equal(t, expectedTiming, opcode.Timing,
+			"CB opcode 0x%02X timing: got %d, want %d", i, opcode.Timing, expectedTiming)
+	}
+}
+
+// TestCBOpcodeSize verifies all CB opcodes have size 2.
+func TestCBOpcodeSize(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		if opcode.Instruction == nil {
+			continue
+		}
+		assert.Equal(t, byte(2), opcode.Size,
+			"CB opcode 0x%02X should have size 2", i)
+	}
 }
 
 // TestInstructionCoverage verifies essential Z80 instructions are present in opcode tables.
