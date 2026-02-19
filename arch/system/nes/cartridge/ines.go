@@ -35,7 +35,13 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		return nil, errors.New("invalid file header magic")
 	}
 
-	mapper := mergeNibbles(highNibble(header.Control2), highNibble(header.Control1))
+	mapper := uint16(mergeNibbles(highNibble(header.Control2), highNibble(header.Control1)))
+
+	// NES 2.0: if bits 2-3 of Control2 == 0b10, read extended mapper bits from byte 8.
+	if header.Control2&0x0C == 0x08 {
+		mapper |= uint16(header.NumRAM&0x0F) << 8
+		header.NumRAM = 0 // byte 8 is not RAM size in NES 2.0
+	}
 
 	mirror1 := header.Control1 & 1
 	mirror2 := (header.Control1 >> 3) & 1
