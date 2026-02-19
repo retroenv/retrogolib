@@ -110,6 +110,68 @@ func TestCartridgeProperties(t *testing.T) {
 	assert.Equal(t, 0, len(cart.CHR)) // No CHR ROM
 }
 
+func TestLoadFileNES2Mapper(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		control1   byte
+		control2   byte
+		numRAM     byte
+		wantMapper uint16
+	}{
+		{
+			name:       "nes 2 uses byte 8 low nibble as mapper bits 8-11",
+			control1:   0xA0,
+			control2:   0xB8,
+			numRAM:     0x0C,
+			wantMapper: 0xCBA,
+		},
+		{
+			name:       "ines ignores byte 8 low nibble for mapper",
+			control1:   0xA0,
+			control2:   0xB0,
+			numRAM:     0x0C,
+			wantMapper: 0x0BA,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			rom := make([]byte, 0, 16+16384)
+			rom = append(rom, iNESFileMagic[:]...)
+			rom = append(rom, []byte{1, 0, tt.control1, tt.control2, tt.numRAM}...)
+			rom = append(rom, make([]byte, 7)...)
+			rom = append(rom, make([]byte, 16384)...)
+
+			cart, err := LoadFile(bytes.NewReader(rom))
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantMapper, cart.Mapper)
+		})
+	}
+}
+
+func TestSaveLoadRoundtripNES2Mapper(t *testing.T) {
+	t.Parallel()
+
+	original := New()
+	original.Mapper = 0xCBA
+
+	var buf bytes.Buffer
+	assert.NoError(t, original.Save(&buf))
+
+	rom := buf.Bytes()
+	assert.Equal(t, byte(0x08), rom[7]&0x0C)
+	assert.Equal(t, byte(0x0C), rom[8]&0x0F)
+
+	loaded, err := LoadFile(bytes.NewReader(rom))
+	assert.NoError(t, err)
+	assert.Equal(t, original.Mapper, loaded.Mapper)
+	assert.Equal(t, byte(0), loaded.RAM, "RAM should not contain mapper bits")
+}
+
 func TestNewCartridge(t *testing.T) {
 	t.Parallel()
 
