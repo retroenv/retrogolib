@@ -16,7 +16,7 @@ const (
 // Unmarshal unmarshalls configuration data into a struct.
 func (c *Config) Unmarshal(v any) error {
 	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+	if rv.Kind() != reflect.Pointer || rv.Elem().Kind() != reflect.Struct {
 		return fmt.Errorf("%w: expected pointer to struct, got %T", ErrInvalidStruct, v)
 	}
 
@@ -26,7 +26,7 @@ func (c *Config) Unmarshal(v any) error {
 // Marshal marshals a struct into the configuration, preserving comments and structure.
 func (c *Config) Marshal(v any) error {
 	rv := reflect.ValueOf(v)
-	if rv.Kind() == reflect.Ptr {
+	if rv.Kind() == reflect.Pointer {
 		rv = rv.Elem()
 	}
 

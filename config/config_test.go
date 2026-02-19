@@ -384,13 +384,13 @@ func TestDefaultValueTypes(t *testing.T) {
 			var fieldType reflect.Type
 			switch {
 			case strings.Contains(tt.name, "string"):
-				fieldType = reflect.TypeOf("")
+				fieldType = reflect.TypeFor[string]()
 			case strings.Contains(tt.name, "int") || strings.Contains(tt.name, "hex"):
-				fieldType = reflect.TypeOf(0)
+				fieldType = reflect.TypeFor[int]()
 			case strings.Contains(tt.name, "bool"):
-				fieldType = reflect.TypeOf(true)
+				fieldType = reflect.TypeFor[bool]()
 			case strings.Contains(tt.name, "float"):
-				fieldType = reflect.TypeOf(0.0)
+				fieldType = reflect.TypeFor[float64]()
 			}
 
 			_, err := config.parseDefaultValue(tagInfo.DefaultValue, fieldType)
@@ -1058,7 +1058,7 @@ func TestSecurityValidation(t *testing.T) {
 		var buf strings.Builder
 		buf.WriteString("[section]\n")
 		for i := range maxLines + 100 {
-			buf.WriteString(fmt.Sprintf("key%d = value%d\n", i, i))
+			fmt.Fprintf(&buf, "key%d = value%d\n", i, i)
 		}
 
 		_, err := LoadConfigBytes([]byte(buf.String()))

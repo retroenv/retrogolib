@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"slices"
 	"syscall"
 )
 
@@ -127,10 +128,8 @@ func (l *Logger) shouldIgnoreCloseError(err error) bool {
 	var opErr *net.OpError
 	if errors.As(err, &opErr) && opErr.Err != nil {
 		errStr := opErr.Err.Error()
-		for _, expectedStr := range expectedCloseErrorStrings {
-			if errStr == expectedStr {
-				return true
-			}
+		if slices.Contains(expectedCloseErrorStrings, errStr) {
+			return true
 		}
 	}
 

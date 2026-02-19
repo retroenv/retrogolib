@@ -1,6 +1,7 @@
 package arch
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -140,25 +141,13 @@ func TestSupportedSystems(t *testing.T) {
 
 	// Check that all expected systems are present
 	for _, expectedSys := range expected {
-		found := false
-		for _, gotSys := range got {
-			if gotSys == expectedSys {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(got, expectedSys)
 		assert.True(t, found, "Expected system %s not found in supported systems", expectedSys)
 	}
 
 	// Verify no unexpected systems are present
 	for _, gotSys := range got {
-		found := false
-		for _, expectedSys := range expected {
-			if gotSys == expectedSys {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(expected, gotSys)
 		assert.True(t, found, "Unexpected system %s found in supported systems", gotSys)
 	}
 }

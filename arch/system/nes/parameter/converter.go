@@ -44,7 +44,7 @@ func (c Converter) Absolute(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute:
-		builder.WriteString(fmt.Sprintf("$%04X", val))
+		fmt.Fprintf(&builder, "$%04X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -61,7 +61,7 @@ func (c Converter) AbsoluteX(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute, m6502.AbsoluteX:
-		builder.WriteString(fmt.Sprintf("$%04X", val))
+		fmt.Fprintf(&builder, "$%04X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -79,7 +79,7 @@ func (c Converter) AbsoluteY(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute, m6502.AbsoluteY:
-		builder.WriteString(fmt.Sprintf("$%04X", val))
+		fmt.Fprintf(&builder, "$%04X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -97,7 +97,7 @@ func (c Converter) ZeroPage(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute, m6502.ZeroPage:
-		builder.WriteString(fmt.Sprintf("$%02X", val))
+		fmt.Fprintf(&builder, "$%02X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -114,7 +114,7 @@ func (c Converter) ZeroPageX(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute, m6502.ZeroPage, m6502.ZeroPageX:
-		builder.WriteString(fmt.Sprintf("$%02X", val))
+		fmt.Fprintf(&builder, "$%02X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -132,7 +132,7 @@ func (c Converter) ZeroPageY(param any) (string, error) {
 
 	switch val := param.(type) {
 	case int, m6502.Absolute, m6502.ZeroPage, m6502.ZeroPageY:
-		builder.WriteString(fmt.Sprintf("$%02X", val))
+		fmt.Fprintf(&builder, "$%02X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -158,7 +158,7 @@ func (c Converter) Indirect(param any) (string, error) {
 
 	address, ok := param.(m6502.Indirect)
 	if ok {
-		builder.WriteString(fmt.Sprintf("$%04X", address))
+		fmt.Fprintf(&builder, "$%04X", address)
 	} else {
 		alias, ok := param.(string)
 		if !ok {
@@ -178,7 +178,7 @@ func (c Converter) IndirectX(param any) (string, error) {
 
 	switch val := param.(type) {
 	case m6502.Indirect, m6502.IndirectX:
-		builder.WriteString(fmt.Sprintf("$%04X", val))
+		fmt.Fprintf(&builder, "$%04X", val)
 	case string:
 		builder.WriteString(val)
 	default:
@@ -197,7 +197,7 @@ func (c Converter) IndirectY(param any) (string, error) {
 
 	switch val := param.(type) {
 	case m6502.Indirect, m6502.IndirectY:
-		builder.WriteString(fmt.Sprintf("$%04X", val))
+		fmt.Fprintf(&builder, "$%04X", val)
 	case string:
 		builder.WriteString(val)
 	default:

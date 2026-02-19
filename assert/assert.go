@@ -23,7 +23,7 @@ func Fail(t Testing, message string, msgAndArgs ...any) {
 		var builder strings.Builder
 		builder.WriteString(message)
 		builder.WriteByte('\n')
-		builder.WriteString(fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...))
+		fmt.Fprintf(&builder, msgAndArgs[0].(string), msgAndArgs[1:]...)
 		message = builder.String()
 	}
 	t.Error(message)
@@ -413,7 +413,7 @@ func isNil(value any) bool {
 	}
 
 	switch reflect.TypeOf(value).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Chan, reflect.Slice, reflect.Interface, reflect.Func:
+	case reflect.Pointer, reflect.Map, reflect.Chan, reflect.Slice, reflect.Interface, reflect.Func:
 		return reflect.ValueOf(value).IsNil()
 	default:
 		return false
