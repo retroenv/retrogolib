@@ -32,6 +32,7 @@ const (
 	AlrName = "alr" // Unofficial
 	AncName = "anc" // Unofficial
 	AndName = "and"
+	AneName = "ane" // Unofficial - highly unstable (0x8B)
 	ArrName = "arr" // Unofficial
 	AslName = "asl"
 	AxsName = "axs" // Unofficial
@@ -63,11 +64,13 @@ const (
 	IscName = "isc" // Unofficial
 	JmpName = "jmp"
 	JsrName = "jsr"
+	LasName = "las" // Unofficial
 	LaxName = "lax" // Unofficial
 	LdaName = "lda"
 	LdxName = "ldx"
 	LdyName = "ldy"
 	LsrName = "lsr"
+	LxaName = "lxa" // Unofficial - highly unstable (0xAB)
 	NopName = "nop"
 	OraName = "ora"
 	PhaName = "pha"
@@ -85,11 +88,15 @@ const (
 	SecName = "sec"
 	SedName = "sed"
 	SeiName = "sei"
+	ShaName = "sha" // Unofficial - unstable (0x93, 0x9F)
+	ShxName = "shx" // Unofficial - unstable (0x9E)
+	ShyName = "shy" // Unofficial - unstable (0x9C)
 	SloName = "slo" // Unofficial
 	SreName = "sre" // Unofficial
 	StaName = "sta"
 	StxName = "stx"
 	StyName = "sty"
+	TasName = "tas" // Unofficial - unstable (0x9B)
 	TaxName = "tax"
 	TayName = "tay"
 	TsxName = "tsx"
@@ -701,6 +708,7 @@ var Tya = &Instruction{
 var Instructions = map[string]*Instruction{
 	AdcName: Adc,
 	AndName: And,
+	AneName: Ane,
 	AslName: Asl,
 	BccName: Bcc,
 	BcsName: Bcs,
@@ -730,11 +738,13 @@ var Instructions = map[string]*Instruction{
 	IscName: Isc,
 	JmpName: Jmp,
 	JsrName: Jsr,
+	LasName: Las,
 	LaxName: Lax,
 	LdaName: Lda,
 	LdxName: Ldx,
 	LdyName: Ldy,
 	LsrName: Lsr,
+	LxaName: Lxa,
 	NopName: Nop,
 	OraName: Ora,
 	PhaName: Pha,
@@ -752,11 +762,15 @@ var Instructions = map[string]*Instruction{
 	SecName: Sec,
 	SedName: Sed,
 	SeiName: Sei,
+	ShaName: Sha,
+	ShxName: Shx,
+	ShyName: Shy,
 	SloName: Slo,
 	SreName: Sre,
 	StaName: Sta,
 	StxName: Stx,
 	StyName: Sty,
+	TasName: Tas,
 	TaxName: Tax,
 	TayName: Tay,
 	TsxName: Tsx,

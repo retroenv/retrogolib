@@ -560,12 +560,41 @@ func isc(c *CPU, params ...any) error {
 	return sbc(c, params...)
 }
 
+// las implements LAS/LAR (0xBB): result = mem & SP; A = X = SP = result.
+func las(c *CPU, params ...any) error {
+	val, err := c.memory.ReadAddressModes(false, params...)
+	if err != nil {
+		return err
+	}
+	result := val & c.SP
+	c.A = result
+	c.X = result
+	c.SP = result
+	c.setZN(result)
+	return nil
+}
+
 func lax(c *CPU, params ...any) error {
 	val, err := c.memory.ReadAddressModes(false, params...)
 	if err != nil {
 		return err
 	}
 	c.A = val
+	c.X = c.A
+	c.setZN(c.A)
+	return nil
+}
+
+// lxa implements LXA (0xAB): A = X = (A | magic) & imm.
+// This is a highly unstable instruction; the magic constant varies by chip
+// (observed values: 0x00, 0xEE, 0xFF). Using 0xFF makes the result deterministic.
+func lxa(c *CPU, params ...any) error {
+	val, err := c.memory.ReadAddressModes(true, params...)
+	if err != nil {
+		return err
+	}
+	const magicConstant = 0xFF
+	c.A = (c.A | magicConstant) & val
 	c.X = c.A
 	c.setZN(c.A)
 	return nil
@@ -598,6 +627,61 @@ func sax(c *CPU, params ...any) error {
 	return c.memory.WriteAddressModes(val, params...)
 }
 
+// sha implements SHA/AHX: stores A & X & (base_addr_hi + 1).
+// Handles both AbsoluteY (0x9F) and IndirectY (0x93) addressing.
+// On page cross the write address high byte is replaced by the stored value.
+func sha(c *CPU, params ...any) error {
+	baseAddr, indexReg := shBaseAddr(c, params)
+	shWrite(c, c.A&c.X, baseAddr, indexReg)
+	return nil
+}
+
+// shBaseAddr extracts the base address (before indexing) and index register value
+// for SHA which supports both AbsoluteY and IndirectY addressing modes.
+// For IndirectY the PC is re-read because params already carry the resolved address.
+func shBaseAddr(c *CPU, params []any) (uint16, uint8) {
+	if _, ok := params[0].(Absolute); ok {
+		return uint16(params[0].(Absolute)), *params[1].(*uint8)
+	}
+	// IndirectY: params[0] is IndirectResolved (already has Y added), re-read base.
+	zp := c.memory.Read(c.PC + 1)
+	baseAddr := c.memory.ReadWordBug(uint16(zp))
+	return baseAddr, c.Y
+}
+
+// shWrite performs the "SH" store with page-crossing address corruption.
+// value is ANDed with (base_addr_hi + 1). On page cross the write address
+// high byte is replaced by the stored value (hardware bus conflict behavior).
+func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
+	andValue := value & (byte(baseAddr>>8) + 1)
+	effectiveAddr := baseAddr + uint16(indexReg)
+	pageCrossed := effectiveAddr&0xFF00 != baseAddr&0xFF00
+
+	var writeAddr uint16
+	if pageCrossed {
+		writeAddr = (uint16(andValue) << 8) | (effectiveAddr & 0xFF)
+	} else {
+		writeAddr = effectiveAddr
+	}
+	c.memory.Write(writeAddr, andValue)
+}
+
+// shx implements SHX/SXA (0x9E): stores X & (base_addr_hi + 1).
+func shx(c *CPU, params ...any) error {
+	baseAddr := uint16(params[0].(Absolute))
+	indexReg := *params[1].(*uint8) // Y
+	shWrite(c, c.X, baseAddr, indexReg)
+	return nil
+}
+
+// shy implements SHY/SYA (0x9C): stores Y & (base_addr_hi + 1).
+func shy(c *CPU, params ...any) error {
+	baseAddr := uint16(params[0].(Absolute))
+	indexReg := *params[1].(*uint8) // X
+	shWrite(c, c.Y, baseAddr, indexReg)
+	return nil
+}
+
 func slo(c *CPU, params ...any) error {
 	if err := asl(c, params...); err != nil {
 		return err
@@ -610,6 +694,15 @@ func sre(c *CPU, params ...any) error {
 		return err
 	}
 	return eor(c, params...)
+}
+
+// tas implements TAS/XAS (0x9B): SP = A & X, then stores SP & (base_addr_hi + 1).
+func tas(c *CPU, params ...any) error {
+	c.SP = c.A & c.X
+	baseAddr := uint16(params[0].(Absolute))
+	indexReg := *params[1].(*uint8) // Y
+	shWrite(c, c.SP, baseAddr, indexReg)
+	return nil
 }
 
 // alr - AND with accumulator, then LSR.
@@ -631,6 +724,20 @@ func anc(c *CPU, params ...any) error {
 	}
 	// Copy N flag to C flag
 	c.Flags.C = c.Flags.N
+	return nil
+}
+
+// ane implements ANE/XAA (0x8B): A = (A | magic) & X & imm.
+// This is a highly unstable instruction; the magic constant varies by chip
+// (observed values: 0x00, 0xEE, 0xFF). Using 0xFF makes the result deterministic.
+func ane(c *CPU, params ...any) error {
+	val, err := c.memory.ReadAddressModes(true, params...)
+	if err != nil {
+		return err
+	}
+	const magicConstant = 0xFF
+	c.A = (c.A | magicConstant) & c.X & val
+	c.setZN(c.A)
 	return nil
 }
 
