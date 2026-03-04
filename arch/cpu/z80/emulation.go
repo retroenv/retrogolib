@@ -129,6 +129,7 @@ func (c *CPU) rlca(value uint8) uint8 {
 	c.setC(carry != 0)
 	c.setH(false)
 	c.setN(false)
+	c.setXY(result)
 
 	return result
 }
@@ -141,6 +142,7 @@ func (c *CPU) rrca(value uint8) uint8 {
 	c.setC(carry != 0)
 	c.setH(false)
 	c.setN(false)
+	c.setXY(result)
 
 	return result
 }
@@ -250,17 +252,35 @@ func (c *CPU) srl(value uint8) uint8 {
 }
 
 // bit tests bit n of value and sets flags.
+// For BIT on register operands, X/Y come from the register value.
+// For BIT on (HL), X/Y come from MEMPTR high byte - caller must handle this.
 func (c *CPU) bit(n uint8, value uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
 	setFlag(&c.Flags.Z, bitIsZero)
 	setFlag(&c.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
-	c.setH(true)                   // Half carry is always set for BIT
-	c.setN(false)                  // Indicates logical (not arithmetic) operation
-	c.setXY(value)                 // X/Y from value being tested (not result)
+	c.setH(true)
+	c.setN(false)
+	c.setXY(value) // X/Y from value for register BIT ops
 
-	// S flag is affected differently for BIT instruction
+	if n == 7 {
+		setFlag(&c.Flags.S, bit != 0)
+	}
+}
+
+// bitMemptr tests bit n of value, setting X/Y from MEMPTR high byte.
+// Used for BIT n,(HL) and BIT n,(IX+d)/(IY+d).
+func (c *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
+	bit := (value >> n) & 1
+	bitIsZero := bit == 0
+
+	setFlag(&c.Flags.Z, bitIsZero)
+	setFlag(&c.Flags.P, bitIsZero)
+	c.setH(true)
+	c.setN(false)
+	c.setXY(memptrHigh)
+
 	if n == 7 {
 		setFlag(&c.Flags.S, bit != 0)
 	}
@@ -368,13 +388,14 @@ func ldImm8(c *CPU, params ...any) error {
 }
 
 // ldReg8 loads between 8-bit registers.
+// params[0] = Register(bits 0-2) = source, params[1] = Register(bits 3-5) = destination.
 func ldReg8(c *CPU, params ...any) error {
 	if len(params) < 2 {
 		return ErrMissingParameter
 	}
 
-	dst, ok1 := params[0].(Register)
-	src, ok2 := params[1].(Register)
+	src, ok1 := params[0].(Register)
+	dst, ok2 := params[1].(Register)
 
 	if !ok1 || !ok2 {
 		return ErrInvalidParameterType
@@ -559,6 +580,7 @@ func jpAbs(c *CPU, params ...any) error {
 	}
 
 	c.PC = uint16(addr)
+	c.MEMPTR = uint16(addr)
 	return nil
 }
 
@@ -575,6 +597,7 @@ func jrRel(c *CPU, params ...any) error {
 
 	// Calculate target address: PC after this 2-byte instruction + offset
 	c.PC = uint16(int32(c.PC) + 2 + int32(offset))
+	c.MEMPTR = c.PC
 	return nil
 }
 
@@ -591,9 +614,17 @@ func ldReg16(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	// For now, assume loading into BC (opcode 0x01)
-	// In a full implementation, we'd need to determine the target register from the opcode
-	c.setBC(uint16(imm))
+	value := uint16(imm)
+	switch (c.currentOpcode >> 4) & 0x03 {
+	case 0:
+		c.setBC(value)
+	case 1:
+		c.setDE(value)
+	case 2:
+		c.setHL(value)
+	case 3:
+		c.SP = value
+	}
 	return nil
 }
 
@@ -604,13 +635,21 @@ func ldIndirect(c *CPU, _ ...any) error {
 
 	switch opcode {
 	case 0x02: // LD (BC),A - store A at (BC)
-		c.memory.Write(c.bc(), c.A)
+		addr := c.bc()
+		c.memory.Write(addr, c.A)
+		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x0A: // LD A,(BC) - load A from (BC)
-		c.A = c.memory.Read(c.bc())
+		addr := c.bc()
+		c.A = c.memory.Read(addr)
+		c.MEMPTR = addr + 1
 	case 0x12: // LD (DE),A - store A at (DE)
-		c.memory.Write(c.de(), c.A)
+		addr := c.de()
+		c.memory.Write(addr, c.A)
+		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x1A: // LD A,(DE) - load A from (DE)
-		c.A = c.memory.Read(c.de())
+		addr := c.de()
+		c.A = c.memory.Read(addr)
+		c.MEMPTR = addr + 1
 	default:
 		return fmt.Errorf("unsupported indirect load opcode: 0x%02X", opcode)
 	}
@@ -667,7 +706,12 @@ func rrca(c *CPU) error {
 
 // rla performs rotate left accumulator through carry.
 func rla(c *CPU) error {
-	c.A = c.rl(c.A)
+	newCarry := c.A >> 7
+	c.A = (c.A << 1) | c.Flags.C
+	c.setC(newCarry != 0)
+	c.setH(false)
+	c.setN(false)
+	c.setXY(c.A)
 	return nil
 }
 
@@ -678,6 +722,7 @@ func rra(c *CPU) error {
 	c.setC(newCarry != 0)
 	c.setH(false)
 	c.setN(false)
+	c.setXY(c.A)
 	return nil
 }
 
@@ -695,9 +740,27 @@ func exAf(c *CPU) error {
 
 // addHl adds a 16-bit register pair to HL.
 func addHl(c *CPU, _ ...any) error {
-	// For opcode 0x09: ADD HL,BC - add BC to HL
-	// In a full implementation, we'd determine which register pair from the opcode
-	c.setHL(c.add16(c.hl(), c.bc()))
+	hl := c.hl()
+	c.MEMPTR = hl + 1
+
+	opcode := c.currentOpcode
+	var value uint16
+	switch opcode {
+	case 0x09: // ADD HL,BC
+		value = c.bc()
+	case 0x19: // ADD HL,DE
+		value = c.de()
+	case 0x29: // ADD HL,HL
+		value = hl
+	case 0x39: // ADD HL,SP
+		value = c.SP
+	default:
+		value = c.bc()
+	}
+
+	result := c.add16(hl, value)
+	c.setXY(uint8(result >> 8))
+	c.setHL(result)
 	return nil
 }
 
@@ -714,6 +777,7 @@ func djnz(c *CPU, params ...any) error {
 		}
 		// Calculate target address: PC after this 2-byte instruction + offset
 		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
+		c.MEMPTR = c.PC
 	}
 	return nil
 }
@@ -746,6 +810,7 @@ func jrCond(c *CPU, params ...any) error {
 	if shouldJump {
 		// Calculate target address: PC after this 2-byte instruction + offset
 		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
+		c.MEMPTR = c.PC
 		// Add extra cycles for taken branch (JR taken = 12 cycles, not taken = 7 cycles)
 		c.cycles += 5
 	}
@@ -762,18 +827,22 @@ func ldExtended(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
+	addr := uint16(address)
 	opcode := c.currentOpcode
 	switch opcode {
 	case 0x22: // LD (nn),HL - store HL to memory address nn
-		c.memory.WriteWord(uint16(address), c.hl())
+		c.memory.WriteWord(addr, c.hl())
+		c.MEMPTR = addr + 1
 	case 0x2A: // LD HL,(nn) - load HL from memory address nn
-		value := c.memory.ReadWord(uint16(address))
+		value := c.memory.ReadWord(addr)
 		c.setHL(value)
+		c.MEMPTR = addr + 1
 	case 0x32: // LD (nn),A - store A to memory address nn
-		c.memory.Write(uint16(address), c.A)
+		c.memory.Write(addr, c.A)
+		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x3A: // LD A,(nn) - load A from memory address nn
-		value := c.memory.Read(uint16(address))
-		c.A = value
+		c.A = c.memory.Read(addr)
+		c.MEMPTR = addr + 1
 	default:
 		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
 	}
@@ -798,14 +867,13 @@ func (c *CPU) daaAdditionMode() (uint8, bool) {
 // daaSubtractionMode calculates correction for DAA in subtraction mode.
 func (c *CPU) daaSubtractionMode() (uint8, bool) {
 	correction := uint8(0)
-	carrySet := false
+	carrySet := c.Flags.C != 0
 
-	if c.Flags.H != 0 || (c.A&0x0F) > 9 {
+	if c.Flags.H != 0 {
 		correction |= 0x06
 	}
-	if c.Flags.C != 0 {
+	if carrySet {
 		correction |= 0x60
-		carrySet = true
 	}
 	return correction, carrySet
 }
@@ -841,60 +909,32 @@ func cpl(c *CPU) error {
 	c.A = ^c.A
 	c.setH(true)
 	c.setN(true)
+	c.setXY(c.A)
 	return nil
 }
 
 // incIndirect increments memory location pointed to by register pair.
 func incIndirect(c *CPU, _ ...any) error {
-	// For opcode 0x34: INC (HL) - increment memory at HL
 	address := c.hl()
 	value := c.memory.Read(address)
-	newValue := value + 1
-	c.memory.Write(address, newValue)
-
-	// Set flags (S, Z, H, PV, N)
-	c.setS(newValue)
-	c.setZ(newValue)
-	c.setH((value & 0x0F) == 0x0F) // Half carry when low nibble overflows
-	c.setPOverflow(value == 0x7F)  // Overflow when 0x7F -> 0x80
-	c.setN(false)
+	result := c.inc8(value)
+	c.memory.Write(address, result)
 	return nil
 }
 
 // decIndirect decrements memory location pointed to by register pair.
 func decIndirect(c *CPU, _ ...any) error {
-	// For opcode 0x35: DEC (HL) - decrement memory at HL
 	address := c.hl()
 	value := c.memory.Read(address)
-	newValue := value - 1
-	c.memory.Write(address, newValue)
-
-	// Set flags (S, Z, H, PV, N)
-	c.setS(newValue)
-	c.setZ(newValue)
-	c.setH((value & 0x0F) == 0x00) // Half carry when low nibble underflows
-	c.setPOverflow(value == 0x80)  // Overflow when 0x80 -> 0x7F
-	c.setN(true)
+	result := c.dec8(value)
+	c.memory.Write(address, result)
 	return nil
 }
 
 // ldIndirectImm loads immediate value to indirect memory location.
-func ldIndirectImm(c *CPU, params ...any) error {
-	// For opcode 0x36: LD (HL),n - load immediate to memory at HL
-	if len(params) < 1 {
-		return ErrMissingParameter
-	}
-
-	var immediate uint8
-	switch v := params[0].(type) {
-	case Immediate8:
-		immediate = uint8(v)
-	case uint8:
-		immediate = v
-	default:
-		return ErrInvalidParameterType
-	}
-
+func ldIndirectImm(c *CPU, _ ...any) error {
+	// LD (HL),n - load immediate byte to memory at HL
+	immediate := c.memory.Read(c.PC + 1)
 	address := c.hl()
 	c.memory.Write(address, immediate)
 	return nil
@@ -902,6 +942,10 @@ func ldIndirectImm(c *CPU, params ...any) error {
 
 // scf sets the carry flag.
 func scf(c *CPU) error {
+	// X/Y from A OR current flags
+	xySource := c.A | c.GetFlags()
+	c.Flags.X = (xySource >> 3) & 1
+	c.Flags.Y = (xySource >> 5) & 1
 	c.setC(true)
 	c.setH(false)
 	c.setN(false)
@@ -910,8 +954,13 @@ func scf(c *CPU) error {
 
 // ccf complements the carry flag.
 func ccf(c *CPU) error {
-	c.setC(c.Flags.C == 0) // Complement carry flag
-	c.setH(false)
+	// X/Y from A OR current flags
+	xySource := c.A | c.GetFlags()
+	c.Flags.X = (xySource >> 3) & 1
+	c.Flags.Y = (xySource >> 5) & 1
+	oldCarry := c.Flags.C != 0
+	c.setC(c.Flags.C == 0)
+	c.setH(oldCarry) // H = old carry
 	c.setN(false)
 	return nil
 }
@@ -992,6 +1041,7 @@ func (c *CPU) checkCondition(opcode uint8) bool {
 func retCond(c *CPU) error {
 	if c.checkCondition(c.currentOpcode) {
 		c.PC = c.pop16()
+		c.MEMPTR = c.PC
 		// Add extra cycles for taken return (RET taken = 11 cycles, not taken = 5 cycles)
 		c.cycles += 6
 	}
@@ -1027,6 +1077,7 @@ func jpCond(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
+	c.MEMPTR = uint16(address)
 	if c.checkCondition(c.currentOpcode) {
 		c.PC = uint16(address)
 	}
@@ -1043,8 +1094,9 @@ func callCond(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
+	c.MEMPTR = uint16(address)
 	if c.checkCondition(c.currentOpcode) {
-		c.push16(c.PC)
+		c.push16(c.PC + 3) // Push return address (next instruction after 3-byte CALL)
 		c.PC = uint16(address)
 		// Add extra cycles for taken call (CALL taken = 17 cycles, not taken = 10 cycles)
 		c.cycles += 7
@@ -1102,13 +1154,14 @@ func rst(c *CPU, _ ...any) error {
 	}
 
 	c.PC = vector
+	c.MEMPTR = vector
 	return nil
 }
 
 // ret returns from subroutine.
 func ret(c *CPU) error {
-	// Pop return address from stack and jump to it
 	c.PC = c.pop16()
+	c.MEMPTR = c.PC
 	return nil
 }
 
@@ -1130,6 +1183,7 @@ func call(c *CPU, params ...any) error {
 
 	// Jump to the called address
 	c.PC = uint16(addr)
+	c.MEMPTR = uint16(addr)
 	return nil
 }
 
@@ -1151,6 +1205,7 @@ func outPort(c *CPU, params ...any) error {
 	if c.opts.ioHandler != nil {
 		c.opts.ioHandler.WritePort(portAddr, c.A)
 	}
+	c.MEMPTR = uint16(portAddr+1) | uint16(c.A)<<8
 
 	return nil
 }
@@ -1170,6 +1225,7 @@ func inPort(c *CPU, params ...any) error {
 	}
 
 	// IN A,(n) - Input from port to accumulator
+	c.MEMPTR = uint16(c.A)<<8 | uint16(portAddr) + 1
 	if c.opts.ioHandler != nil {
 		c.A = c.opts.ioHandler.ReadPort(portAddr)
 	} else {
@@ -1208,20 +1264,17 @@ func exx(c *CPU) error {
 // exSp exchanges top of stack with register pair.
 func exSp(c *CPU, _ ...any) error {
 	// EX (SP),HL - Exchange HL with word at top of stack
-	// Read word from stack (SP and SP+1)
 	low := c.memory.Read(c.SP)
 	high := c.memory.Read(c.SP + 1)
 	stackValue := uint16(high)<<8 | uint16(low)
 
-	// Get current HL value
 	hlValue := c.hl()
 
-	// Write HL to stack
 	c.memory.Write(c.SP, uint8(hlValue))
 	c.memory.Write(c.SP+1, uint8(hlValue>>8))
 
-	// Set HL to old stack value
 	c.setHL(stackValue)
+	c.MEMPTR = stackValue
 
 	return nil
 }

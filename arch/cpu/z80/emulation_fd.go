@@ -14,25 +14,47 @@ func fdLdIYnn(c *CPU, _ ...any) error {
 func fdIncIY(c *CPU) error { c.IY++; return nil }
 func fdDecIY(c *CPU) error { c.IY--; return nil }
 
-func fdAddIYBc(c *CPU, _ ...any) error { c.IY += uint16(c.B)<<8 | uint16(c.C); return nil }
-func fdAddIYDe(c *CPU, _ ...any) error { c.IY += uint16(c.D)<<8 | uint16(c.E); return nil }
-func fdAddIYIY(c *CPU, _ ...any) error { c.IY += c.IY; return nil }
-func fdAddIYSp(c *CPU, _ ...any) error { c.IY += c.SP; return nil }
+func fdAddIYBc(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IY + 1
+	c.IY = c.add16(c.IY, c.bc())
+	c.setXY(uint8(c.IY >> 8))
+	return nil
+}
+func fdAddIYDe(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IY + 1
+	c.IY = c.add16(c.IY, c.de())
+	c.setXY(uint8(c.IY >> 8))
+	return nil
+}
+func fdAddIYIY(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IY + 1
+	c.IY = c.add16(c.IY, c.IY)
+	c.setXY(uint8(c.IY >> 8))
+	return nil
+}
+func fdAddIYSp(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IY + 1
+	c.IY = c.add16(c.IY, c.SP)
+	c.setXY(uint8(c.IY >> 8))
+	return nil
+}
 
 // fdLdNnIY implements FD 22: LD (nn),IY.
-func fdLdNnIY(c *CPU, params ...any) error {
-	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+func fdLdNnIY(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.memory.Write(addr, uint8(c.IY))
 	c.memory.Write(addr+1, uint8(c.IY>>8))
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // fdLdIYNn implements FD 2A: LD IY,(nn).
-func fdLdIYNn(c *CPU, params ...any) error {
-	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+func fdLdIYNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	low := c.memory.Read(addr)
 	high := c.memory.Read(addr + 1)
 	c.IY = uint16(high)<<8 | uint16(low)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
@@ -139,9 +161,9 @@ func fdLdIYdA(c *CPU, params ...any) error {
 }
 
 // fdLdIYdN implements FD 36: LD (IY+d),n.
-func fdLdIYdN(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IY, params...)
-	value := params[1].(uint8)
+func fdLdIYdN(c *CPU, _ ...any) error {
+	addr := c.calculateIndexedAddress(c.IY)
+	value := c.memory.Read(c.PC + 3)
 	c.memory.Write(addr, value)
 	return nil
 }
@@ -288,7 +310,6 @@ func fdJpIY(c *CPU) error { c.PC = c.IY; return nil }
 
 // fdExSpIY implements FD E3: EX (SP),IY.
 func fdExSpIY(c *CPU) error {
-	// Exchange IY with the word at the top of the stack
 	low := c.memory.Read(c.SP)
 	high := c.memory.Read(c.SP + 1)
 
@@ -296,16 +317,18 @@ func fdExSpIY(c *CPU) error {
 	c.memory.Write(c.SP+1, uint8(c.IY>>8))
 
 	c.IY = uint16(high)<<8 | uint16(low)
+	c.MEMPTR = c.IY
 	return nil
 }
 func fdPushIY(c *CPU) error { c.push16(c.IY); return nil }
 func fdPopIY(c *CPU) error  { c.IY = c.pop16(); return nil }
+func fdLdSpIY(c *CPU) error { c.SP = c.IY; return nil }
 
 // FDCB operations - bit operations on (IY+d)
 
-func fdcbShift(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func fdcbShift(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
 	value := c.memory.Read(addr)
 
@@ -316,29 +339,21 @@ func fdcbShift(c *CPU, params ...any) error {
 	return nil
 }
 
-func fdcbBit(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func fdcbBit(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
+	c.MEMPTR = addr
 	value := c.memory.Read(addr)
 
-	bit := (opcode >> 3) & 0x07
-	result := value & (1 << bit)
-
-	c.setZ(result)
-	c.setH(true)
-	c.setN(false)
-	if bit == 7 {
-		c.setS(result)
-	} else {
-		c.setS(0)
-	}
+	bitNum := (opcode >> 3) & 0x07
+	c.bitMemptr(bitNum, value, uint8(addr>>8))
 	return nil
 }
 
-func fdcbRes(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func fdcbRes(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
 	value := c.memory.Read(addr)
 
@@ -348,9 +363,9 @@ func fdcbRes(c *CPU, params ...any) error {
 	return nil
 }
 
-func fdcbSet(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func fdcbSet(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
 	value := c.memory.Read(addr)
 

@@ -457,6 +457,18 @@ var DdPopIX = &Instruction{
 	NoParamFunc: ddPopIX,
 }
 
+// DdLdSpIX loads SP from IX (LD SP,IX, DD prefix).
+var DdLdSpIX = &Instruction{
+	Name: LdName,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {Prefix: 0xDD, Opcode: 0xF9, Size: 2, Cycles: 10},
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegIX: {Prefix: 0xDD, Opcode: 0xF9, Size: 2, Cycles: 10}, // LD SP,IX
+	},
+	NoParamFunc: ddLdSpIX,
+}
+
 // DdcbShift performs shift/rotate operations on IX indexed memory (DDCB prefix).
 var DdcbShift = &Instruction{
 	Name: DdcbShiftName,

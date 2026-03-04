@@ -15,25 +15,47 @@ func ddLdIXnn(c *CPU, _ ...any) error {
 func ddIncIX(c *CPU) error { c.IX++; return nil }
 func ddDecIX(c *CPU) error { c.IX--; return nil }
 
-func ddAddIXBc(c *CPU, _ ...any) error { c.IX += uint16(c.B)<<8 | uint16(c.C); return nil }
-func ddAddIXDe(c *CPU, _ ...any) error { c.IX += uint16(c.D)<<8 | uint16(c.E); return nil }
-func ddAddIXIX(c *CPU, _ ...any) error { c.IX += c.IX; return nil }
-func ddAddIXSp(c *CPU, _ ...any) error { c.IX += c.SP; return nil }
+func ddAddIXBc(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IX + 1
+	c.IX = c.add16(c.IX, c.bc())
+	c.setXY(uint8(c.IX >> 8))
+	return nil
+}
+func ddAddIXDe(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IX + 1
+	c.IX = c.add16(c.IX, c.de())
+	c.setXY(uint8(c.IX >> 8))
+	return nil
+}
+func ddAddIXIX(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IX + 1
+	c.IX = c.add16(c.IX, c.IX)
+	c.setXY(uint8(c.IX >> 8))
+	return nil
+}
+func ddAddIXSp(c *CPU, _ ...any) error {
+	c.MEMPTR = c.IX + 1
+	c.IX = c.add16(c.IX, c.SP)
+	c.setXY(uint8(c.IX >> 8))
+	return nil
+}
 
 // ddLdNnIX implements DD 22: LD (nn),IX.
-func ddLdNnIX(c *CPU, params ...any) error {
-	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+func ddLdNnIX(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.memory.Write(addr, uint8(c.IX))
 	c.memory.Write(addr+1, uint8(c.IX>>8))
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // ddLdIXNn implements DD 2A: LD IX,(nn).
-func ddLdIXNn(c *CPU, params ...any) error {
-	addr := uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+func ddLdIXNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	low := c.memory.Read(addr)
 	high := c.memory.Read(addr + 1)
 	c.IX = uint16(high)<<8 | uint16(low)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
@@ -140,9 +162,9 @@ func ddLdIXdA(c *CPU, params ...any) error {
 }
 
 // ddLdIXdN implements DD 36: LD (IX+d),n.
-func ddLdIXdN(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := params[1].(uint8)
+func ddLdIXdN(c *CPU, _ ...any) error {
+	addr := c.calculateIndexedAddress(c.IX)
+	value := c.memory.Read(c.PC + 3)
 	c.memory.Write(addr, value)
 	return nil
 }
@@ -289,7 +311,6 @@ func ddJpIX(c *CPU) error { c.PC = c.IX; return nil }
 
 // ddExSpIX implements DD E3: EX (SP),IX.
 func ddExSpIX(c *CPU) error {
-	// Exchange IX with the word at the top of the stack
 	low := c.memory.Read(c.SP)
 	high := c.memory.Read(c.SP + 1)
 
@@ -297,16 +318,18 @@ func ddExSpIX(c *CPU) error {
 	c.memory.Write(c.SP+1, uint8(c.IX>>8))
 
 	c.IX = uint16(high)<<8 | uint16(low)
+	c.MEMPTR = c.IX
 	return nil
 }
 func ddPushIX(c *CPU) error { c.push16(c.IX); return nil }
 func ddPopIX(c *CPU) error  { c.IX = c.pop16(); return nil }
+func ddLdSpIX(c *CPU) error { c.SP = c.IX; return nil }
 
 // DDCB operations - bit operations on (IX+d)
 
-func ddcbShift(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func ddcbShift(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IX) + int32(displacement))
 	value := c.memory.Read(addr)
 
@@ -317,29 +340,21 @@ func ddcbShift(c *CPU, params ...any) error {
 	return nil
 }
 
-func ddcbBit(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func ddcbBit(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IX) + int32(displacement))
+	c.MEMPTR = addr
 	value := c.memory.Read(addr)
 
-	bit := (opcode >> 3) & 0x07
-	result := value & (1 << bit)
-
-	c.setZ(result)
-	c.setH(true)
-	c.setN(false)
-	if bit == 7 {
-		c.setS(result)
-	} else {
-		c.setS(0)
-	}
+	bitNum := (opcode >> 3) & 0x07
+	c.bitMemptr(bitNum, value, uint8(addr>>8))
 	return nil
 }
 
-func ddcbRes(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func ddcbRes(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IX) + int32(displacement))
 	value := c.memory.Read(addr)
 
@@ -349,9 +364,9 @@ func ddcbRes(c *CPU, params ...any) error {
 	return nil
 }
 
-func ddcbSet(c *CPU, params ...any) error {
-	displacement := int8(params[0].(uint8))
-	opcode := params[1].(uint8)
+func ddcbSet(c *CPU, _ ...any) error {
+	displacement := int8(c.memory.Read(c.PC + 2))
+	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IX) + int32(displacement))
 	value := c.memory.Read(addr)
 

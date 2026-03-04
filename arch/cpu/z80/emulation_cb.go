@@ -53,18 +53,19 @@ func cbSrl(c *CPU, _ ...any) error {
 // cbBit implements CB 40-7F: BIT n,r.
 func cbBit(c *CPU, _ ...any) error {
 	opcodeByte := c.memory.Read(c.PC + 1)
-	bit := (opcodeByte >> 3) & 0x07
+	bitNum := (opcodeByte >> 3) & 0x07
 	reg := opcodeByte & 0x07
 
-	var value uint8
 	if reg == 6 { // BIT n,(HL)
 		addr := c.hl()
-		value = c.memory.Read(addr)
+		c.MEMPTR = addr + 1
+		value := c.memory.Read(addr)
+		c.bitMemptr(bitNum, value, uint8(c.MEMPTR>>8))
 	} else {
-		value = c.GetRegisterValue(reg)
+		value := c.GetRegisterValue(reg)
+		c.bit(bitNum, value)
 	}
 
-	c.bit(bit, value)
 	return nil
 }
 

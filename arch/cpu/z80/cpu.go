@@ -31,10 +31,11 @@ type State struct {
 	IY uint16
 
 	// Program flow and memory
-	SP uint16 // Stack pointer
-	PC uint16 // Program counter
-	I  uint8  // Interrupt vector base
-	R  uint8  // Memory refresh counter
+	SP     uint16 // Stack pointer
+	PC     uint16 // Program counter
+	I      uint8  // Interrupt vector base
+	R      uint8  // Memory refresh counter
+	MEMPTR uint16 // Internal WZ register (undocumented)
 
 	Cycles     uint64
 	Flags      Flags
@@ -71,10 +72,11 @@ type CPU struct {
 	IY uint16
 
 	// Program control registers
-	SP uint16 // Stack pointer
-	PC uint16 // Program counter
-	I  uint8  // Interrupt vector base register
-	R  uint8  // Memory refresh register (auto-incremented)
+	SP     uint16 // Stack pointer
+	PC     uint16 // Program counter
+	I      uint8  // Interrupt vector base register
+	R      uint8  // Memory refresh register (auto-incremented)
+	MEMPTR uint16 // Internal WZ register (undocumented, affects flag bits 3/5)
 
 	Flags    Flags // Main flag register
 	AltFlags Flags // Shadow flag register
@@ -194,9 +196,10 @@ func (c *CPU) State() State {
 		IY:       c.IY,
 		SP:       c.SP,
 		PC:       c.PC,
-		I:        c.I,
-		R:        c.R,
-		Cycles:   c.cycles,
+		I:      c.I,
+		R:      c.R,
+		MEMPTR: c.MEMPTR,
+		Cycles: c.cycles,
 		Flags:    c.Flags,
 		AltFlags: c.AltFlags,
 		Interrupts: Interrupts{
@@ -335,6 +338,7 @@ func (c *CPU) push16(value uint16) {
 
 // inPortToRegister reads from port C to a register and sets flags.
 func (c *CPU) inPortToRegister(regPtr *uint8) {
+	c.MEMPTR = c.bc() + 1
 	value := c.readPort(c.C)
 	*regPtr = value
 	c.setSZP(value)
@@ -360,10 +364,10 @@ func (c *CPU) applyCBOperation(operation func(uint8) uint8) {
 	}
 }
 
-// calculateIndexedAddress extracts displacement from params and calculates indexed address.
-// Used by DD (IX) and FD (IY) prefix instructions.
-func (c *CPU) calculateIndexedAddress(indexReg uint16, params ...any) uint16 {
-	displacement := int8(params[0].(uint8))
+// calculateIndexedAddress reads displacement byte from memory at PC+2 and calculates indexed address.
+// Used by DD (IX) and FD (IY) prefix instructions where PC points to the prefix byte.
+func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
+	displacement := int8(c.memory.Read(c.PC + 2))
 	return uint16(int32(indexReg) + int32(displacement))
 }
 

@@ -5,31 +5,39 @@ package z80
 // 16-bit ADC/SBC HL helper methods
 func (c *CPU) adcHL(value uint16) {
 	hl := uint16(c.H)<<8 | uint16(c.L)
+	c.MEMPTR = hl + 1
 	carry := uint32(c.Flags.C)
 	result := uint32(hl) + uint32(value) + carry
 
 	c.H = uint8(result >> 8)
 	c.L = uint8(result)
 
-	c.setSZ(uint8(result >> 8))
+	r16 := uint16(result)
+	c.setS(uint8(r16 >> 8))
+	setFlag(&c.Flags.Z, r16 == 0)
+	c.setXY(uint8(r16 >> 8))
 	c.setC(result > 0xFFFF)
 	c.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
-	c.setPOverflow(((hl ^ value ^ 0x8000) & (uint16(result) ^ hl) & 0x8000) != 0)
+	c.setPOverflow(((hl ^ value ^ 0x8000) & (r16 ^ hl) & 0x8000) != 0)
 	c.setN(false)
 }
 
 func (c *CPU) sbcHL(value uint16) {
 	hl := uint16(c.H)<<8 | uint16(c.L)
+	c.MEMPTR = hl + 1
 	carry := uint32(c.Flags.C)
 	result := uint32(hl) - uint32(value) - carry
 
 	c.H = uint8(result >> 8)
 	c.L = uint8(result)
 
-	c.setSZ(uint8(result >> 8))
+	r16 := uint16(result)
+	c.setS(uint8(r16 >> 8))
+	setFlag(&c.Flags.Z, r16 == 0)
+	c.setXY(uint8(r16 >> 8))
 	c.setC(result > 0xFFFF)
 	c.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
-	c.setPOverflow(((hl ^ value) & (hl ^ uint16(result)) & 0x8000) != 0)
+	c.setPOverflow(((hl ^ value) & (hl ^ r16) & 0x8000) != 0)
 	c.setN(true)
 }
 
@@ -87,62 +95,70 @@ func edLdAR(c *CPU) error {
 // ED instruction implementations for 16-bit memory operations
 
 // edLdNnBc implements ED 43: LD (nn),BC.
-func edLdNnBc(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdNnBc(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.C, c.B)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdNnDe implements ED 53: LD (nn),DE.
-func edLdNnDe(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdNnDe(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.E, c.D)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdNnHl implements ED 63: LD (nn),HL.
-func edLdNnHl(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdNnHl(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.L, c.H)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdNnSp implements ED 73: LD (nn),SP.
-func edLdNnSp(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdNnSp(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.memory.Write(addr, uint8(c.SP))
 	c.memory.Write(addr+1, uint8(c.SP>>8))
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdBcNn implements ED 4B: LD BC,(nn).
-func edLdBcNn(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdBcNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	value := c.read16(addr)
 	c.setBC(value)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdDeNn implements ED 5B: LD DE,(nn).
-func edLdDeNn(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdDeNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	value := c.read16(addr)
 	c.setDE(value)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdHlNn implements ED 6B: LD HL,(nn).
-func edLdHlNn(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdHlNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	value := c.read16(addr)
 	c.setHL(value)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
 // edLdSpNn implements ED 7B: LD SP,(nn).
-func edLdSpNn(c *CPU, params ...any) error {
-	addr := extractExtendedAddress(params...)
+func edLdSpNn(c *CPU, _ ...any) error {
+	addr := c.read16(c.PC + 2)
 	c.SP = c.read16(addr)
+	c.MEMPTR = addr + 1
 	return nil
 }
 
@@ -163,14 +179,20 @@ func edLdi(c *CPU) error {
 	de := c.de()
 	bc := c.bc()
 
-	c.memory.Write(de, c.memory.Read(hl))
+	transferred := c.memory.Read(hl)
+	c.memory.Write(de, transferred)
 	c.setHL(hl + 1)
 	c.setDE(de + 1)
 	c.setBC(bc - 1)
 
 	c.setH(false)
 	c.setN(false)
-	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	c.setPOverflow(bc != 1)
+
+	// Undocumented: X/Y from (transferred + A)
+	n := transferred + c.A
+	c.Flags.X = (n >> 3) & 1 // bit 3
+	c.Flags.Y = (n >> 1) & 1 // bit 1 → Y (bit 5 position)
 	return nil
 }
 
@@ -180,14 +202,19 @@ func edLdd(c *CPU) error {
 	de := c.de()
 	bc := c.bc()
 
-	c.memory.Write(de, c.memory.Read(hl))
+	transferred := c.memory.Read(hl)
+	c.memory.Write(de, transferred)
 	c.setHL(hl - 1)
 	c.setDE(de - 1)
 	c.setBC(bc - 1)
 
 	c.setH(false)
 	c.setN(false)
-	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	c.setPOverflow(bc != 1)
+
+	n := transferred + c.A
+	c.Flags.X = (n >> 3) & 1
+	c.Flags.Y = (n >> 1) & 1
 	return nil
 }
 
@@ -220,11 +247,22 @@ func edCpi(c *CPU) error {
 	result := c.A - memValue
 	c.setHL(hl + 1)
 	c.setBC(bc - 1)
+	c.MEMPTR++
 
-	c.setSZ(result)
-	c.setH((c.A & 0x0F) < (memValue & 0x0F))
-	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	hf := (c.A & 0x0F) < (memValue & 0x0F)
+	c.setS(result)
+	c.setZ(result)
+	c.setH(hf)
+	c.setPOverflow(bc != 1)
 	c.setN(true)
+
+	// Undocumented: X/Y from (A - operand - HF)
+	n := result
+	if hf {
+		n--
+	}
+	c.Flags.X = (n >> 3) & 1
+	c.Flags.Y = (n >> 1) & 1
 	return nil
 }
 
@@ -237,22 +275,36 @@ func edCpd(c *CPU) error {
 	result := c.A - memValue
 	c.setHL(hl - 1)
 	c.setBC(bc - 1)
+	c.MEMPTR--
 
-	c.setSZ(result)
-	c.setH((c.A & 0x0F) < (memValue & 0x0F))
-	c.setPOverflow(bc != 1) // P/V flag set if BC != 0 after decrement
+	hf := (c.A & 0x0F) < (memValue & 0x0F)
+	c.setS(result)
+	c.setZ(result)
+	c.setH(hf)
+	c.setPOverflow(bc != 1)
 	c.setN(true)
+
+	n := result
+	if hf {
+		n--
+	}
+	c.Flags.X = (n >> 3) & 1
+	c.Flags.Y = (n >> 1) & 1
 	return nil
 }
 
 // edCpir implements ED B1: CPIR - Repeat CPI until BC=0 or match found.
 func edCpir(c *CPU) error {
+	c.MEMPTR = c.PC + 1
 	for c.bc() != 0 {
 		if err := edCpi(c); err != nil {
 			return err
 		}
 		if c.Flags.Z != 0 {
-			break // Match found
+			break
+		}
+		if c.bc() != 0 {
+			c.MEMPTR = c.PC + 1
 		}
 	}
 	return nil
@@ -260,12 +312,16 @@ func edCpir(c *CPU) error {
 
 // edCpdr implements ED B9: CPDR - Repeat CPD until BC=0 or match found.
 func edCpdr(c *CPU) error {
+	c.MEMPTR = c.PC + 1
 	for c.bc() != 0 {
 		if err := edCpd(c); err != nil {
 			return err
 		}
 		if c.Flags.Z != 0 {
-			break // Match found
+			break
+		}
+		if c.bc() != 0 {
+			c.MEMPTR = c.PC + 1
 		}
 	}
 	return nil
@@ -419,42 +475,49 @@ func edInAC(c *CPU, _ ...any) error {
 
 // edOutCB implements ED 41: OUT (C),B.
 func edOutCB(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.B)
 	return nil
 }
 
 // edOutCC implements ED 49: OUT (C),C.
 func edOutCC(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.C)
 	return nil
 }
 
 // edOutCD implements ED 51: OUT (C),D.
 func edOutCD(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.D)
 	return nil
 }
 
 // edOutCE implements ED 59: OUT (C),E.
 func edOutCE(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.E)
 	return nil
 }
 
 // edOutCH implements ED 61: OUT (C),H.
 func edOutCH(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.H)
 	return nil
 }
 
 // edOutCL implements ED 69: OUT (C),L.
 func edOutCL(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.L)
 	return nil
 }
 
 // edOutCA implements ED 79: OUT (C),A.
 func edOutCA(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
 	c.writePort(c.C, c.A)
 	return nil
 }
@@ -463,24 +526,24 @@ func edOutCA(c *CPU, _ ...any) error {
 func edRetn(c *CPU) error {
 	c.iff1 = c.iff2
 	c.PC = c.pop16()
+	c.MEMPTR = c.PC
 	return nil
 }
 
 func edReti(c *CPU) error {
 	c.iff1 = c.iff2
 	c.PC = c.pop16()
+	c.MEMPTR = c.PC
 	return nil
 }
 
 // edRrd implements ED 67: RRD - Rotate Right Decimal.
-// The contents of A and (HL) are rotated right 4 bits.
 func edRrd(c *CPU) error {
 	hl := c.hl()
+	c.MEMPTR = hl + 1
 	memValue := c.memory.Read(hl)
 
-	// Rotate A and (HL) right 4 bits
 	lowNibbleA := c.A & 0x0F
-
 	c.A = (c.A & 0xF0) | (memValue & 0x0F)
 	c.memory.Write(hl, (lowNibbleA<<4)|(memValue>>4))
 
@@ -491,15 +554,13 @@ func edRrd(c *CPU) error {
 }
 
 // edRld implements ED 6F: RLD - Rotate Left Decimal.
-// The contents of A and (HL) are rotated left 4 bits.
 func edRld(c *CPU) error {
 	hl := c.hl()
+	c.MEMPTR = hl + 1
 	memValue := c.memory.Read(hl)
 
-	// Rotate A and (HL) left 4 bits
 	lowNibbleA := c.A & 0x0F
 	highNibbleMem := memValue >> 4
-
 	c.A = (c.A & 0xF0) | highNibbleMem
 	c.memory.Write(hl, ((memValue&0x0F)<<4)|lowNibbleA)
 

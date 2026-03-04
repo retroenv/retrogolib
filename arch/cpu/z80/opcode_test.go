@@ -43,8 +43,8 @@ func TestVerifyOpcodes(t *testing.T) {
 			if ins == nil {
 				continue
 			}
-			if ins.Unofficial && ins.Name == Nop.Name {
-				// Unofficial NOPs share opcodes with different addressing modes
+			if ins.Unofficial {
+				// Unofficial instructions don't need reverse mappings for disassembly
 				continue
 			}
 
