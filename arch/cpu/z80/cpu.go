@@ -386,12 +386,6 @@ func (c *CPU) read16(addr uint16) uint16 {
 	return uint16(high)<<8 | uint16(low)
 }
 
-// extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).
-// Used by instructions that take a 16-bit address operand.
-func extractExtendedAddress(params ...any) uint16 {
-	return uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
-}
-
 // writeRegisterPair writes a register pair to memory at addr (little-endian).
 func (c *CPU) writeRegisterPair(addr uint16, low, high uint8) {
 	c.memory.Write(addr, low)

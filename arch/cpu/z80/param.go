@@ -4,20 +4,6 @@ import (
 	"fmt"
 )
 
-type paramReaderFunc func(c *CPU) ([]any, []byte)
-
-// paramReader maps addressing modes to their parameter reading functions.
-var paramReader = map[AddressingMode]paramReaderFunc{
-	ImpliedAddressing:          paramReaderImplied,
-	RegisterAddressing:         paramReaderRegister,
-	ImmediateAddressing:        paramReaderImmediate,
-	ExtendedAddressing:         paramReaderExtended,
-	RegisterIndirectAddressing: paramReaderRegisterIndirect,
-	RelativeAddressing:         paramReaderRelative,
-	BitAddressing:              paramReaderBit,
-	PortAddressing:             paramReaderPort,
-}
-
 // GetRegisterValue returns the value of a register by its encoding number (0-7).
 // Register 6 accesses memory at (HL) instead of a direct register.
 // Returns 0 for invalid register numbers.
@@ -66,6 +52,20 @@ func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
 	case 7:
 		c.A = value
 	}
+}
+
+type paramReaderFunc func(c *CPU) ([]any, []byte)
+
+// paramReader maps addressing modes to their parameter reading functions.
+var paramReader = map[AddressingMode]paramReaderFunc{
+	ImpliedAddressing:          paramReaderImplied,
+	RegisterAddressing:         paramReaderRegister,
+	ImmediateAddressing:        paramReaderImmediate,
+	ExtendedAddressing:         paramReaderExtended,
+	RegisterIndirectAddressing: paramReaderRegisterIndirect,
+	RelativeAddressing:         paramReaderRelative,
+	BitAddressing:              paramReaderBit,
+	PortAddressing:             paramReaderPort,
 }
 
 // readOpParams reads the opcode parameters after the first opcode byte

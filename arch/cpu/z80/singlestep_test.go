@@ -11,6 +11,44 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+func newTestIOHandler(ports []singleStepPort) *testIOHandler {
+	h := &testIOHandler{
+		reads:  make(map[uint8]uint8),
+		writes: make(map[uint8]uint8),
+	}
+	for _, p := range ports {
+		port := uint8(p.Address)
+		if p.IsRead {
+			h.reads[port] = p.Value
+		}
+	}
+	return h
+}
+
+// TestSingleStep runs the SingleStepTests Z80 test suite.
+// Each JSON file contains 1000 test cases that verify single-instruction execution
+// against known-correct hardware traces.
+func TestSingleStep(t *testing.T) {
+	t.Parallel()
+
+	if testing.Short() {
+		t.Skip("skipping SingleStepTests in short mode")
+	}
+
+	cloneSingleStepTests(t)
+
+	files, err := filepath.Glob(filepath.Join(singleStepDir, "v1", "*.json"))
+	assert.NoError(t, err, "globbing test files")
+	assert.NotEqual(t, 0, len(files), "no SingleStepTests JSON files found")
+
+	for _, file := range files {
+		t.Run(filepath.Base(file), func(t *testing.T) {
+			t.Parallel()
+			runSingleStepFile(t, file)
+		})
+	}
+}
+
 // singleStepState represents the CPU state in a SingleStepTests JSON test case.
 type singleStepState struct {
 	PC   uint16   `json:"pc"`
@@ -61,29 +99,6 @@ type testIOHandler struct {
 	writes map[uint8]uint8
 }
 
-func newTestIOHandler(ports []singleStepPort) *testIOHandler {
-	h := &testIOHandler{
-		reads:  make(map[uint8]uint8),
-		writes: make(map[uint8]uint8),
-	}
-	for _, p := range ports {
-		port := uint8(p.Address)
-		if p.IsRead {
-			h.reads[port] = p.Value
-		}
-	}
-	return h
-}
-
-func (h *testIOHandler) ReadPort(port uint8) uint8 {
-	if val, ok := h.reads[port]; ok {
-		return val
-	}
-	return 0xFF
-}
-
-func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
-
 // UnmarshalJSON handles the ports field which is an array of [addr, val, "r"|"w"].
 func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 	type alias singleStepTest
@@ -125,31 +140,16 @@ func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-const singleStepDir = "testdata/singlestep"
-
-// TestSingleStep runs the SingleStepTests Z80 test suite.
-// Each JSON file contains 1000 test cases that verify single-instruction execution
-// against known-correct hardware traces.
-func TestSingleStep(t *testing.T) {
-	t.Parallel()
-
-	if testing.Short() {
-		t.Skip("skipping SingleStepTests in short mode")
+func (h *testIOHandler) ReadPort(port uint8) uint8 {
+	if val, ok := h.reads[port]; ok {
+		return val
 	}
-
-	cloneSingleStepTests(t)
-
-	files, err := filepath.Glob(filepath.Join(singleStepDir, "v1", "*.json"))
-	assert.NoError(t, err, "globbing test files")
-	assert.NotEqual(t, 0, len(files), "no SingleStepTests JSON files found")
-
-	for _, file := range files {
-		t.Run(filepath.Base(file), func(t *testing.T) {
-			t.Parallel()
-			runSingleStepFile(t, file)
-		})
-	}
+	return 0xFF
 }
+
+func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
+
+const singleStepDir = "testdata/singlestep"
 
 // cloneSingleStepTests clones the SingleStepTests z80 repo if not already present.
 func cloneSingleStepTests(t *testing.T) {

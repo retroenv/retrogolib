@@ -10,6 +10,24 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+// TestZexdoc runs the ZEXDOC Z80 instruction exerciser (documented flags only).
+func TestZexdoc(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping ZEXDOC in short mode")
+	}
+
+	runZex(t, "testdata/zexdoc.com")
+}
+
+// TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
+func TestZexall(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping ZEXALL in short mode")
+	}
+
+	runZex(t, "testdata/zexall.com")
+}
+
 // zexOutput tracks output buffering and error counting for ZEX tests.
 type zexOutput struct {
 	buf       bytes.Buffer
@@ -41,24 +59,6 @@ func (z *zexOutput) flush() {
 	if z.buf.Len() > 0 {
 		z.flushLine()
 	}
-}
-
-// TestZexdoc runs the ZEXDOC Z80 instruction exerciser (documented flags only).
-func TestZexdoc(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping ZEXDOC in short mode")
-	}
-
-	runZex(t, "testdata/zexdoc.com")
-}
-
-// TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
-func TestZexall(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping ZEXALL in short mode")
-	}
-
-	runZex(t, "testdata/zexall.com")
 }
 
 // handleBDOS processes CP/M BDOS calls intercepted at address 0x0005.
