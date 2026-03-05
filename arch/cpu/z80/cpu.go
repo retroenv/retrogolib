@@ -35,7 +35,7 @@ type State struct {
 	PC     uint16 // Program counter
 	I      uint8  // Interrupt vector base
 	R      uint8  // Memory refresh counter
-	MEMPTR uint16 // Internal WZ register (undocumented)
+	MEMPTR uint16 // Internal WZ register, its high byte provides the X/Y flag bits for BIT n,(HL) and indexed BIT instructions
 
 	Cycles     uint64
 	Flags      Flags
@@ -76,7 +76,7 @@ type CPU struct {
 	PC     uint16 // Program counter
 	I      uint8  // Interrupt vector base register
 	R      uint8  // Memory refresh register (auto-incremented)
-	MEMPTR uint16 // Internal WZ register (undocumented, affects flag bits 3/5)
+	MEMPTR uint16 // Internal WZ register, its high byte provides the X/Y flag bits for BIT n,(HL) and indexed BIT instructions
 
 	Flags    Flags // Main flag register
 	AltFlags Flags // Shadow flag register
@@ -97,9 +97,10 @@ type CPU struct {
 
 	currentOpcode uint8 // opcode being executed (for instruction functions to access)
 
-	// Q register: internal flag tracking for SCF/CCF X/Y flag behavior.
-	// Stores the F register value after the last flag-modifying instruction.
-	// SCF/CCF use: XY bits = (A | (F & ~Q)) & 0x28
+	// Q register: tracks previous flag state so SCF/CCF can set the
+	// undocumented X/Y flag bits (bits 3 and 5) correctly.
+	// After each instruction, Q captures the flags byte. SCF/CCF then
+	// compute X/Y as: (A | (F & ~Q)) & 0x28.
 	q uint8
 
 	memory Memory
