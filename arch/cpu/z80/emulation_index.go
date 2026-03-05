@@ -5,8 +5,8 @@ package z80
 
 // indexedLdRegNn loads a 16-bit immediate value into an index register.
 func indexedLdRegNn(c *CPU, reg *uint16, _ ...any) error {
-	low := c.memory.Read(c.PC + 2)
-	high := c.memory.Read(c.PC + 3)
+	low := c.bus.Read(c.PC + 2)
+	high := c.bus.Read(c.PC + 3)
 	*reg = uint16(high)<<8 | uint16(low)
 	return nil
 }
@@ -22,8 +22,8 @@ func indexedAddRegPair(c *CPU, reg *uint16, value uint16, _ ...any) error {
 // indexedLdNnReg stores an index register to a memory address.
 func indexedLdNnReg(c *CPU, reg uint16, _ ...any) error {
 	addr := c.read16(c.PC + 2)
-	c.memory.Write(addr, uint8(reg))
-	c.memory.Write(addr+1, uint8(reg>>8))
+	c.bus.Write(addr, uint8(reg))
+	c.bus.Write(addr+1, uint8(reg>>8))
 	c.MEMPTR = addr + 1
 	return nil
 }
@@ -31,8 +31,8 @@ func indexedLdNnReg(c *CPU, reg uint16, _ ...any) error {
 // indexedLdRegFromNn loads an index register from a memory address.
 func indexedLdRegFromNn(c *CPU, reg *uint16, _ ...any) error {
 	addr := c.read16(c.PC + 2)
-	low := c.memory.Read(addr)
-	high := c.memory.Read(addr + 1)
+	low := c.bus.Read(addr)
+	high := c.bus.Read(addr + 1)
 	*reg = uint16(high)<<8 | uint16(low)
 	c.MEMPTR = addr + 1
 	return nil
@@ -41,31 +41,31 @@ func indexedLdRegFromNn(c *CPU, reg *uint16, _ ...any) error {
 // indexedLdRegFromMem loads a register from indexed memory (IX/IY+d).
 func indexedLdRegFromMem(c *CPU, dst *uint8, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	*dst = c.memory.Read(addr)
+	*dst = c.bus.Read(addr)
 	return nil
 }
 
 // indexedLdMemFromReg stores a register to indexed memory (IX/IY+d).
 func indexedLdMemFromReg(c *CPU, src uint8, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	c.memory.Write(addr, src)
+	c.bus.Write(addr, src)
 	return nil
 }
 
 // indexedLdMemN loads an immediate value to indexed memory (IX/IY+d).
 func indexedLdMemN(c *CPU, reg uint16, _ ...any) error {
 	addr := c.calculateIndexedAddress(reg)
-	value := c.memory.Read(c.PC + 3)
-	c.memory.Write(addr, value)
+	value := c.bus.Read(c.PC + 3)
+	c.bus.Write(addr, value)
 	return nil
 }
 
 // indexedIncMem increments the value at indexed memory (IX/IY+d).
 func indexedIncMem(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	result := value + 1
-	c.memory.Write(addr, result)
+	c.bus.Write(addr, result)
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x0F)
 	c.setPOverflow(value == 0x7F)
@@ -76,9 +76,9 @@ func indexedIncMem(c *CPU, reg uint16, params ...any) error {
 // indexedDecMem decrements the value at indexed memory (IX/IY+d).
 func indexedDecMem(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	result := value - 1
-	c.memory.Write(addr, result)
+	c.bus.Write(addr, result)
 	c.setSZ(result)
 	c.setH((value & 0x0F) == 0x00)
 	c.setPOverflow(value == 0x80)
@@ -89,7 +89,7 @@ func indexedDecMem(c *CPU, reg uint16, params ...any) error {
 // indexedAddA adds indexed memory value to accumulator.
 func indexedAddA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	result := uint16(c.A) + uint16(value)
 
 	c.setC(result > 0xFF)
@@ -104,7 +104,7 @@ func indexedAddA(c *CPU, reg uint16, params ...any) error {
 // indexedAdcA adds indexed memory value with carry to accumulator.
 func indexedAdcA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	carry := uint16(0)
 	if c.Flags.C != 0 {
 		carry = 1
@@ -123,7 +123,7 @@ func indexedAdcA(c *CPU, reg uint16, params ...any) error {
 // indexedSubA subtracts indexed memory value from accumulator.
 func indexedSubA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	result := c.A - value
 
 	c.setC(c.A < value)
@@ -138,7 +138,7 @@ func indexedSubA(c *CPU, reg uint16, params ...any) error {
 // indexedSbcA subtracts indexed memory value with carry from accumulator.
 func indexedSbcA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	carry := uint8(0)
 	if c.Flags.C != 0 {
 		carry = 1
@@ -157,7 +157,7 @@ func indexedSbcA(c *CPU, reg uint16, params ...any) error {
 // indexedAndA performs AND of indexed memory value with accumulator.
 func indexedAndA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	c.A &= value
 	c.setLogicalFlags(c.A, true)
 	return nil
@@ -166,7 +166,7 @@ func indexedAndA(c *CPU, reg uint16, params ...any) error {
 // indexedXorA performs XOR of indexed memory value with accumulator.
 func indexedXorA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	c.A ^= value
 	c.setLogicalFlags(c.A, false)
 	return nil
@@ -175,7 +175,7 @@ func indexedXorA(c *CPU, reg uint16, params ...any) error {
 // indexedOrA performs OR of indexed memory value with accumulator.
 func indexedOrA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	c.A |= value
 	c.setLogicalFlags(c.A, false)
 	return nil
@@ -184,18 +184,18 @@ func indexedOrA(c *CPU, reg uint16, params ...any) error {
 // indexedCpA compares indexed memory value with accumulator.
 func indexedCpA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 	c.cp(c.A, value)
 	return nil
 }
 
 // indexedExSp exchanges top of stack with an index register.
 func indexedExSp(c *CPU, reg *uint16) error {
-	low := c.memory.Read(c.SP)
-	high := c.memory.Read(c.SP + 1)
+	low := c.bus.Read(c.SP)
+	high := c.bus.Read(c.SP + 1)
 
-	c.memory.Write(c.SP, uint8(*reg))
-	c.memory.Write(c.SP+1, uint8(*reg>>8))
+	c.bus.Write(c.SP, uint8(*reg))
+	c.bus.Write(c.SP+1, uint8(*reg>>8))
 
 	*reg = uint16(high)<<8 | uint16(low)
 	c.MEMPTR = *reg
@@ -204,14 +204,14 @@ func indexedExSp(c *CPU, reg *uint16) error {
 
 // indexedCBShift performs a CB-prefixed shift/rotate on indexed memory.
 func indexedCBShift(c *CPU, reg uint16, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
+	displacement := int8(c.bus.Read(c.PC + 2))
+	opcode := c.bus.Read(c.PC + 3)
 	addr := uint16(int32(reg) + int32(displacement))
 	c.MEMPTR = addr
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 
 	result, carry := performShiftRotateOperation(value, opcode, c.Flags.C)
-	c.memory.Write(addr, result)
+	c.bus.Write(addr, result)
 	setShiftRotateFlags(c, result, carry)
 
 	// Undocumented: copy result to register if low 3 bits != 6
@@ -224,11 +224,11 @@ func indexedCBShift(c *CPU, reg uint16, _ ...any) error {
 
 // indexedCBBit performs a CB-prefixed BIT test on indexed memory.
 func indexedCBBit(c *CPU, reg uint16, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
+	displacement := int8(c.bus.Read(c.PC + 2))
+	opcode := c.bus.Read(c.PC + 3)
 	addr := uint16(int32(reg) + int32(displacement))
 	c.MEMPTR = addr
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 
 	bitNum := (opcode >> 3) & 0x07
 	c.bitMemptr(bitNum, value, uint8(addr>>8))
@@ -237,15 +237,15 @@ func indexedCBBit(c *CPU, reg uint16, _ ...any) error {
 
 // indexedCBRes performs a CB-prefixed RES on indexed memory.
 func indexedCBRes(c *CPU, reg uint16, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
+	displacement := int8(c.bus.Read(c.PC + 2))
+	opcode := c.bus.Read(c.PC + 3)
 	addr := uint16(int32(reg) + int32(displacement))
 	c.MEMPTR = addr
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 
 	bit := (opcode >> 3) & 0x07
 	result := value & ^(1 << bit)
-	c.memory.Write(addr, result)
+	c.bus.Write(addr, result)
 
 	// Undocumented: copy result to register if low 3 bits != 6
 	if r := opcode & 0x07; r != 6 {
@@ -257,15 +257,15 @@ func indexedCBRes(c *CPU, reg uint16, _ ...any) error {
 
 // indexedCBSet performs a CB-prefixed SET on indexed memory.
 func indexedCBSet(c *CPU, reg uint16, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
+	displacement := int8(c.bus.Read(c.PC + 2))
+	opcode := c.bus.Read(c.PC + 3)
 	addr := uint16(int32(reg) + int32(displacement))
 	c.MEMPTR = addr
-	value := c.memory.Read(addr)
+	value := c.bus.Read(addr)
 
 	bit := (opcode >> 3) & 0x07
 	result := value | (1 << bit)
-	c.memory.Write(addr, result)
+	c.bus.Write(addr, result)
 
 	// Undocumented: copy result to register if low 3 bits != 6
 	if r := opcode & 0x07; r != 6 {

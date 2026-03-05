@@ -24,12 +24,12 @@ func fdDecIYL(c *CPU) error { c.SetIYL(c.dec8(c.IYL())); return nil }
 // LD IYH/IYL,n
 
 func fdLdIYHn(c *CPU, _ ...any) error {
-	c.SetIYH(c.memory.Read(c.PC + 2))
+	c.SetIYH(c.bus.Read(c.PC + 2))
 	return nil
 }
 
 func fdLdIYLn(c *CPU, _ ...any) error {
-	c.SetIYL(c.memory.Read(c.PC + 2))
+	c.SetIYL(c.bus.Read(c.PC + 2))
 	return nil
 }
 

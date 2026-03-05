@@ -118,6 +118,7 @@ func edLdAI(c *CPU) error {
 	c.setH(false)
 	c.setN(false)
 	c.setPOverflow(c.iff2)
+	c.lastWasLdAIR = true
 	return nil
 }
 
@@ -127,6 +128,7 @@ func edLdAR(c *CPU) error {
 	c.setH(false)
 	c.setN(false)
 	c.setPOverflow(c.iff2)
+	c.lastWasLdAIR = true
 	return nil
 }
 
@@ -159,8 +161,8 @@ func edLdNnHl(c *CPU, _ ...any) error {
 // edLdNnSp implements ED 73: LD (nn),SP.
 func edLdNnSp(c *CPU, _ ...any) error {
 	addr := c.read16(c.PC + 2)
-	c.memory.Write(addr, uint8(c.SP))
-	c.memory.Write(addr+1, uint8(c.SP>>8))
+	c.bus.Write(addr, uint8(c.SP))
+	c.bus.Write(addr+1, uint8(c.SP>>8))
 	c.MEMPTR = addr + 1
 	return nil
 }
@@ -217,8 +219,8 @@ func edLdi(c *CPU) error {
 	de := c.de()
 	bc := c.bc()
 
-	transferred := c.memory.Read(hl)
-	c.memory.Write(de, transferred)
+	transferred := c.bus.Read(hl)
+	c.bus.Write(de, transferred)
 	c.setHL(hl + 1)
 	c.setDE(de + 1)
 	c.setBC(bc - 1)
@@ -240,8 +242,8 @@ func edLdd(c *CPU) error {
 	de := c.de()
 	bc := c.bc()
 
-	transferred := c.memory.Read(hl)
-	c.memory.Write(de, transferred)
+	transferred := c.bus.Read(hl)
+	c.bus.Write(de, transferred)
 	c.setHL(hl - 1)
 	c.setDE(de - 1)
 	c.setBC(bc - 1)
@@ -292,7 +294,7 @@ func edLddr(c *CPU) error {
 func edCpi(c *CPU) error {
 	hl := c.hl()
 	bc := c.bc()
-	memValue := c.memory.Read(hl)
+	memValue := c.bus.Read(hl)
 
 	result := c.A - memValue
 	c.setHL(hl + 1)
@@ -320,7 +322,7 @@ func edCpi(c *CPU) error {
 func edCpd(c *CPU) error {
 	hl := c.hl()
 	bc := c.bc()
-	memValue := c.memory.Read(hl)
+	memValue := c.bus.Read(hl)
 
 	result := c.A - memValue
 	c.setHL(hl - 1)
@@ -389,9 +391,9 @@ func parityByte(v uint8) uint8 {
 func edIni(c *CPU) error {
 	c.MEMPTR = c.bc() + 1
 	hl := c.hl()
-	value := c.readPort(c.C)
+	value := c.readPort(c.bc())
 
-	c.memory.Write(hl, value)
+	c.bus.Write(hl, value)
 	c.setHL(hl + 1)
 	c.B--
 
@@ -404,9 +406,9 @@ func edIni(c *CPU) error {
 func edInd(c *CPU) error {
 	c.MEMPTR = c.bc() - 1
 	hl := c.hl()
-	value := c.readPort(c.C)
+	value := c.readPort(c.bc())
 
-	c.memory.Write(hl, value)
+	c.bus.Write(hl, value)
 	c.setHL(hl - 1)
 	c.B--
 
@@ -426,7 +428,7 @@ func edInir(c *CPU) error {
 		c.MEMPTR = c.PC + 1
 		c.setXY(uint8(c.PC >> 8))
 		// Reconstruct port value from memory (INI wrote it to HL-1 since HL was incremented).
-		portVal := c.memory.Read(c.hl() - 1)
+		portVal := c.bus.Read(c.hl() - 1)
 		k := uint16(portVal) + uint16((c.C+1)&0xFF)
 		c.adjustIORepeatFlags(portVal, k)
 	} else {
@@ -446,7 +448,7 @@ func edIndr(c *CPU) error {
 		c.MEMPTR = c.PC + 1
 		c.setXY(uint8(c.PC >> 8))
 		// Reconstruct port value from memory (IND wrote it to HL+1 since HL was decremented).
-		portVal := c.memory.Read(c.hl() + 1)
+		portVal := c.bus.Read(c.hl() + 1)
 		k := uint16(portVal) + uint16((c.C-1)&0xFF)
 		c.adjustIORepeatFlags(portVal, k)
 	} else {
@@ -458,9 +460,9 @@ func edIndr(c *CPU) error {
 // edOuti implements ED A3: OUTI - OUT (C),(HL), INC HL, DEC B.
 func edOuti(c *CPU) error {
 	hl := c.hl()
-	value := c.memory.Read(hl)
+	value := c.bus.Read(hl)
 
-	c.writePort(c.C, value)
+	c.writePort(c.bc(), value)
 	c.setHL(hl + 1)
 	c.B--
 
@@ -474,9 +476,9 @@ func edOuti(c *CPU) error {
 // edOutd implements ED AB: OUTD - OUT (C),(HL), DEC HL, DEC B.
 func edOutd(c *CPU) error {
 	hl := c.hl()
-	value := c.memory.Read(hl)
+	value := c.bus.Read(hl)
 
-	c.writePort(c.C, value)
+	c.writePort(c.bc(), value)
 	c.setHL(hl - 1)
 	c.B--
 
@@ -498,7 +500,7 @@ func edOtir(c *CPU) error {
 		c.MEMPTR = c.PC + 1
 		c.setXY(uint8(c.PC >> 8))
 		// Reconstruct: OUTI read from (HL-1) since HL was incremented.
-		value := c.memory.Read(c.hl() - 1)
+		value := c.bus.Read(c.hl() - 1)
 		lAfter := uint8(c.hl()) // L after OUTI incremented HL
 		k := uint16(value) + uint16(lAfter)
 		c.adjustIORepeatFlags(value, k)
@@ -519,7 +521,7 @@ func edOtdr(c *CPU) error {
 		c.MEMPTR = c.PC + 1
 		c.setXY(uint8(c.PC >> 8))
 		// Reconstruct: OUTD read from (HL+1) since HL was decremented.
-		value := c.memory.Read(c.hl() + 1)
+		value := c.bus.Read(c.hl() + 1)
 		lAfter := uint8(c.hl()) // L after OUTD decremented HL
 		k := uint16(value) + uint16(lAfter)
 		c.adjustIORepeatFlags(value, k)
@@ -535,7 +537,7 @@ func edOtdr(c *CPU) error {
 // Reads port C, sets flags from result, discards the value.
 func edInFC(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	value := c.readPort(c.C)
+	value := c.readPort(c.bc())
 	c.setSZP(value)
 	c.setH(false)
 	c.setN(false)
@@ -546,7 +548,7 @@ func edInFC(c *CPU, _ ...any) error {
 // Outputs 0 to port C.
 func edOut0C(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, 0)
+	c.writePort(c.bc(), 0)
 	return nil
 }
 
@@ -600,49 +602,49 @@ func edInAC(c *CPU, _ ...any) error {
 // edOutCB implements ED 41: OUT (C),B.
 func edOutCB(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.B)
+	c.writePort(c.bc(), c.B)
 	return nil
 }
 
 // edOutCC implements ED 49: OUT (C),C.
 func edOutCC(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.C)
+	c.writePort(c.bc(), c.C)
 	return nil
 }
 
 // edOutCD implements ED 51: OUT (C),D.
 func edOutCD(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.D)
+	c.writePort(c.bc(), c.D)
 	return nil
 }
 
 // edOutCE implements ED 59: OUT (C),E.
 func edOutCE(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.E)
+	c.writePort(c.bc(), c.E)
 	return nil
 }
 
 // edOutCH implements ED 61: OUT (C),H.
 func edOutCH(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.H)
+	c.writePort(c.bc(), c.H)
 	return nil
 }
 
 // edOutCL implements ED 69: OUT (C),L.
 func edOutCL(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.L)
+	c.writePort(c.bc(), c.L)
 	return nil
 }
 
 // edOutCA implements ED 79: OUT (C),A.
 func edOutCA(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.C, c.A)
+	c.writePort(c.bc(), c.A)
 	return nil
 }
 
@@ -658,6 +660,7 @@ func edReti(c *CPU) error {
 	c.iff1 = c.iff2
 	c.PC = c.pop16()
 	c.MEMPTR = c.PC
+	c.bus.OnRETI()
 	return nil
 }
 
@@ -665,11 +668,11 @@ func edReti(c *CPU) error {
 func edRrd(c *CPU) error {
 	hl := c.hl()
 	c.MEMPTR = hl + 1
-	memValue := c.memory.Read(hl)
+	memValue := c.bus.Read(hl)
 
 	lowNibbleA := c.A & 0x0F
 	c.A = (c.A & 0xF0) | (memValue & 0x0F)
-	c.memory.Write(hl, (lowNibbleA<<4)|(memValue>>4))
+	c.bus.Write(hl, (lowNibbleA<<4)|(memValue>>4))
 
 	c.setSZP(c.A)
 	c.setH(false)
@@ -681,12 +684,12 @@ func edRrd(c *CPU) error {
 func edRld(c *CPU) error {
 	hl := c.hl()
 	c.MEMPTR = hl + 1
-	memValue := c.memory.Read(hl)
+	memValue := c.bus.Read(hl)
 
 	lowNibbleA := c.A & 0x0F
 	highNibbleMem := memValue >> 4
 	c.A = (c.A & 0xF0) | highNibbleMem
-	c.memory.Write(hl, ((memValue&0x0F)<<4)|lowNibbleA)
+	c.bus.Write(hl, ((memValue&0x0F)<<4)|lowNibbleA)
 
 	c.setSZP(c.A)
 	c.setH(false)

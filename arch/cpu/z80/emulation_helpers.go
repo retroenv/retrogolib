@@ -9,8 +9,8 @@ func (c *CPU) ldi() {
 	bc := c.bc()
 
 	// Copy byte from (HL) to (DE)
-	value := c.memory.Read(hl)
-	c.memory.Write(de, value)
+	value := c.bus.Read(hl)
+	c.bus.Write(de, value)
 
 	// Increment HL and DE, decrement BC
 	c.setHL(hl + 1)
@@ -30,8 +30,8 @@ func (c *CPU) ldd() {
 	bc := c.bc()
 
 	// Copy byte from (HL) to (DE)
-	value := c.memory.Read(hl)
-	c.memory.Write(de, value)
+	value := c.bus.Read(hl)
+	c.bus.Write(de, value)
 
 	// Decrement HL, DE, and BC
 	c.setHL(hl - 1)

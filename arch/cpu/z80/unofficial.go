@@ -3,18 +3,14 @@
 
 package z80
 
-// Port I/O helper methods
-func (c *CPU) readPort(port uint8) uint8 {
-	if c.opts.ioHandler != nil {
-		return c.opts.ioHandler.ReadPort(port)
-	}
-	return 0xFF
+// readPort reads from an I/O port using the full 16-bit bus address.
+func (c *CPU) readPort(address uint16) uint8 {
+	return c.bus.ReadPort(address)
 }
 
-func (c *CPU) writePort(port uint8, value uint8) {
-	if c.opts.ioHandler != nil {
-		c.opts.ioHandler.WritePort(port, value)
-	}
+// writePort writes to an I/O port using the full 16-bit bus address.
+func (c *CPU) writePort(address uint16, value uint8) {
+	c.bus.WritePort(address, value)
 }
 
 // SLL - Shift Left Logical (undocumented)
@@ -145,9 +141,9 @@ func sll(c *CPU, params ...any) error {
 // inf performs input and decrement (undocumented port instruction)
 func inf(c *CPU) error {
 	// Read from port C into memory location (HL)
-	value := c.readPort(c.C)
+	value := c.readPort(c.bc())
 	address := uint16(c.H)<<8 | uint16(c.L)
-	c.memory.Write(address, value)
+	c.bus.Write(address, value)
 
 	// Decrement HL
 	hl := address - 1
@@ -168,10 +164,10 @@ func inf(c *CPU) error {
 func outf(c *CPU) error {
 	// Read from memory location (HL)
 	address := uint16(c.H)<<8 | uint16(c.L)
-	value := c.memory.Read(address)
+	value := c.bus.Read(address)
 
 	// Output to port C
-	c.writePort(c.C, value)
+	c.writePort(c.bc(), value)
 
 	// Decrement HL
 	hl := address - 1

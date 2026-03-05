@@ -561,18 +561,18 @@ func decReg8(c *CPU, params ...any) error {
 // incIndirect increments memory location pointed to by register pair.
 func incIndirect(c *CPU, _ ...any) error {
 	address := c.hl()
-	value := c.memory.Read(address)
+	value := c.bus.Read(address)
 	result := c.inc8(value)
-	c.memory.Write(address, result)
+	c.bus.Write(address, result)
 	return nil
 }
 
 // decIndirect decrements memory location pointed to by register pair.
 func decIndirect(c *CPU, _ ...any) error {
 	address := c.hl()
-	value := c.memory.Read(address)
+	value := c.bus.Read(address)
 	result := c.dec8(value)
-	c.memory.Write(address, result)
+	c.bus.Write(address, result)
 	return nil
 }
 
@@ -692,10 +692,9 @@ func outPort(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	// OUT (n),A - Output accumulator to port
-	if c.opts.ioHandler != nil {
-		c.opts.ioHandler.WritePort(portAddr, c.A)
-	}
+	// OUT (n),A - Output accumulator to port, address = A<<8 | n
+	address := uint16(c.A)<<8 | uint16(portAddr)
+	c.writePort(address, c.A)
 	c.MEMPTR = uint16(portAddr+1) | uint16(c.A)<<8
 
 	return nil
@@ -715,13 +714,10 @@ func inPort(c *CPU, params ...any) error {
 		return ErrInvalidParameterType
 	}
 
-	// IN A,(n) - Input from port to accumulator
-	c.MEMPTR = uint16(c.A)<<8 | uint16(portAddr) + 1
-	if c.opts.ioHandler != nil {
-		c.A = c.opts.ioHandler.ReadPort(portAddr)
-	} else {
-		c.A = 0xFF
-	}
+	// IN A,(n) - Input from port to accumulator, address = A<<8 | n
+	address := uint16(c.A)<<8 | uint16(portAddr)
+	c.MEMPTR = address + 1
+	c.A = c.readPort(address)
 
 	return nil
 }

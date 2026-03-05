@@ -84,10 +84,41 @@ func TestMemoryAccess(t *testing.T) {
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
-	// Test that CPU has access to memory
-	assert.Equal(t, memory, cpu.Memory(), "CPU should return the same memory instance")
-
-	// Test memory operations through CPU
+	// Test memory operations through CPU's memory interface
 	memory.Write(0x1000, 0x42)
-	assert.Equal(t, uint8(0x42), memory.Read(0x1000), "Memory read should return written value")
+	assert.Equal(t, uint8(0x42), cpu.Memory().Read(0x1000), "CPU memory should read value written to underlying memory")
+
+	// Test that writes through CPU memory interface are visible
+	cpu.Memory().Write(0x2000, 0x55)
+	assert.Equal(t, uint8(0x55), memory.Read(0x2000), "Underlying memory should see value written through CPU")
 }
+
+func TestNewWithBus(t *testing.T) {
+	memory := NewBasicMemory()
+	bus := &testBus{Memory: memory}
+
+	cpu, err := NewWithBus(bus)
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(0x0000), cpu.PC)
+	assert.Equal(t, uint16(0xFFFF), cpu.SP)
+
+	// Verify bus is accessible
+	assert.Equal(t, bus, cpu.Bus())
+
+	// Test nil bus error
+	cpu, err = NewWithBus(nil)
+	assert.Nil(t, cpu)
+	assert.ErrorIs(t, err, ErrNilMemory)
+}
+
+// testBus implements the Bus interface for testing.
+type testBus struct {
+	Memory
+	irqData   uint8
+	retiCalls int
+}
+
+func (b *testBus) ReadPort(_ uint16) uint8   { return 0xFF }
+func (b *testBus) WritePort(_ uint16, _ uint8) {}
+func (b *testBus) IRQData() uint8             { return b.irqData }
+func (b *testBus) OnRETI()                     { b.retiCalls++ }

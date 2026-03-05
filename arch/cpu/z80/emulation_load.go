@@ -89,19 +89,19 @@ func ldIndirect(c *CPU, _ ...any) error {
 	switch opcode {
 	case 0x02: // LD (BC),A - store A at (BC)
 		addr := c.bc()
-		c.memory.Write(addr, c.A)
+		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x0A: // LD A,(BC) - load A from (BC)
 		addr := c.bc()
-		c.A = c.memory.Read(addr)
+		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
 	case 0x12: // LD (DE),A - store A at (DE)
 		addr := c.de()
-		c.memory.Write(addr, c.A)
+		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x1A: // LD A,(DE) - load A from (DE)
 		addr := c.de()
-		c.A = c.memory.Read(addr)
+		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
 	default:
 		return fmt.Errorf("unsupported indirect load opcode: 0x%02X", opcode)
@@ -123,17 +123,17 @@ func ldExtended(c *CPU, params ...any) error {
 	opcode := c.currentOpcode
 	switch opcode {
 	case 0x22: // LD (nn),HL - store HL to memory address nn
-		c.memory.WriteWord(addr, c.hl())
+		c.bus.WriteWord(addr, c.hl())
 		c.MEMPTR = addr + 1
 	case 0x2A: // LD HL,(nn) - load HL from memory address nn
-		value := c.memory.ReadWord(addr)
+		value := c.bus.ReadWord(addr)
 		c.setHL(value)
 		c.MEMPTR = addr + 1
 	case 0x32: // LD (nn),A - store A to memory address nn
-		c.memory.Write(addr, c.A)
+		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
 	case 0x3A: // LD A,(nn) - load A from memory address nn
-		c.A = c.memory.Read(addr)
+		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
 	default:
 		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
@@ -144,9 +144,9 @@ func ldExtended(c *CPU, params ...any) error {
 // ldIndirectImm loads immediate value to indirect memory location.
 func ldIndirectImm(c *CPU, _ ...any) error {
 	// LD (HL),n - load immediate byte to memory at HL
-	immediate := c.memory.Read(c.PC + 1)
+	immediate := c.bus.Read(c.PC + 1)
 	address := c.hl()
-	c.memory.Write(address, immediate)
+	c.bus.Write(address, immediate)
 	return nil
 }
 
@@ -216,14 +216,14 @@ func exx(c *CPU) error {
 // exSp exchanges top of stack with register pair.
 func exSp(c *CPU, _ ...any) error {
 	// EX (SP),HL - Exchange HL with word at top of stack
-	low := c.memory.Read(c.SP)
-	high := c.memory.Read(c.SP + 1)
+	low := c.bus.Read(c.SP)
+	high := c.bus.Read(c.SP + 1)
 	stackValue := uint16(high)<<8 | uint16(low)
 
 	hlValue := c.hl()
 
-	c.memory.Write(c.SP, uint8(hlValue))
-	c.memory.Write(c.SP+1, uint8(hlValue>>8))
+	c.bus.Write(c.SP, uint8(hlValue))
+	c.bus.Write(c.SP+1, uint8(hlValue>>8))
 
 	c.setHL(stackValue)
 	c.MEMPTR = stackValue

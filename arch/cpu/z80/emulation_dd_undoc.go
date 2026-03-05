@@ -24,12 +24,12 @@ func ddDecIXL(c *CPU) error { c.SetIXL(c.dec8(c.IXL())); return nil }
 // LD IXH/IXL,n
 
 func ddLdIXHn(c *CPU, _ ...any) error {
-	c.SetIXH(c.memory.Read(c.PC + 2))
+	c.SetIXH(c.bus.Read(c.PC + 2))
 	return nil
 }
 
 func ddLdIXLn(c *CPU, _ ...any) error {
-	c.SetIXL(c.memory.Read(c.PC + 2))
+	c.SetIXL(c.bus.Read(c.PC + 2))
 	return nil
 }
 
