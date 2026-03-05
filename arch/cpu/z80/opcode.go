@@ -327,6 +327,7 @@ var EDOpcodes = [256]Opcode{
 	0x4B: {Instruction: EdLdBcNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD BC,(nn)
 	0x4C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
 	0x4D: {Instruction: EdReti, Addressing: ImpliedAddressing, Timing: 14, Size: 2},    // RETI
+	0x4E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2},  // IM 0 (undocumented alias)
 	0x4F: {Instruction: EdLdRA, Addressing: ImpliedAddressing, Timing: 9, Size: 2},     // LD R,A
 
 	// 0x50-0x5F
@@ -343,6 +344,7 @@ var EDOpcodes = [256]Opcode{
 	0x5A: {Instruction: EdAdcHlDe, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,DE
 	0x5B: {Instruction: EdLdDeNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD DE,(nn)
 	0x5C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x5D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
 	0x5E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 2
 	0x5F: {Instruction: EdLdAR, Addressing: ImpliedAddressing, Timing: 9, Size: 2},     // LD A,R
 
@@ -360,9 +362,13 @@ var EDOpcodes = [256]Opcode{
 	0x6A: {Instruction: EdAdcHlHl, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,HL
 	0x6B: {Instruction: EdLdHlNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD HL,(nn)
 	0x6C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x6D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
+	0x6E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2},  // IM 0 (undocumented alias)
 	0x6F: {Instruction: EdRld, Addressing: ImpliedAddressing, Timing: 18, Size: 2},     // RLD
 
 	// 0x70-0x7F
+	0x70: {Instruction: EdInFC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN F,(C) (undocumented)
+	0x71: {Instruction: EdOut0C, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),0 (undocumented)
 	0x72: {Instruction: EdSbcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // SBC HL,SP
 	0x73: {Instruction: EdLdNnSp, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD (nn),SP
 	0x74: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
@@ -373,7 +379,10 @@ var EDOpcodes = [256]Opcode{
 	0x7A: {Instruction: EdAdcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,SP
 	0x7B: {Instruction: EdLdSpNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD SP,(nn)
 	0x7C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x7D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
 	0x7E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 2 (undocumented)
+	0x77: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NOP (undocumented)
+	0x7F: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NOP (undocumented)
 
 	// 0xA0-0xBF: Block operations
 	0xA0: {Instruction: EdLdi, Addressing: ImpliedAddressing, Timing: 16, Size: 2},  // LDI

@@ -97,6 +97,11 @@ type CPU struct {
 
 	currentOpcode uint8 // opcode being executed (for instruction functions to access)
 
+	// Q register: internal flag tracking for SCF/CCF X/Y flag behavior.
+	// Stores the F register value after the last flag-modifying instruction.
+	// SCF/CCF use: XY bits = (A | (F & ~Q)) & 0x28
+	q uint8
+
 	memory Memory
 }
 
@@ -366,9 +371,12 @@ func (c *CPU) applyCBOperation(operation func(uint8) uint8) {
 
 // calculateIndexedAddress reads displacement byte from memory at PC+2 and calculates indexed address.
 // Used by DD (IX) and FD (IY) prefix instructions where PC points to the prefix byte.
+// Also sets MEMPTR to the calculated address.
 func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
 	displacement := int8(c.memory.Read(c.PC + 2))
-	return uint16(int32(indexReg) + int32(displacement))
+	addr := uint16(int32(indexReg) + int32(displacement))
+	c.MEMPTR = addr
+	return addr
 }
 
 // extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).

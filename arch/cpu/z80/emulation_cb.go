@@ -58,7 +58,6 @@ func cbBit(c *CPU, _ ...any) error {
 
 	if reg == 6 { // BIT n,(HL)
 		addr := c.hl()
-		c.MEMPTR = addr + 1
 		value := c.memory.Read(addr)
 		c.bitMemptr(bitNum, value, uint8(c.MEMPTR>>8))
 	} else {

@@ -25,19 +25,32 @@ func (c *CPU) Step() error {
 	// Handle interrupts first
 	c.handleInterrupts()
 
-	oldPC := c.PC
+	pcBeforeDecode := c.PC
 	opcode, opcodeByte, err := c.decodeNextInstruction()
 	if err != nil {
 		return err
 	}
+	// Capture oldPC after decode: decode may advance PC past DD/FD prefix
+	// when falling through to unprefixed instruction execution.
+	oldPC := c.PC
 
 	c.cycles += uint64(opcode.Timing)
 
 	// Store current opcode for instruction functions to access
 	c.currentOpcode = opcodeByte
 
-	// Increment refresh register
-	c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
+	// Increment refresh register.
+	// Prefixed instructions (CB, ED, DD, FD) increment R twice:
+	// once for the prefix byte fetch and once for the opcode byte fetch.
+	// DD/FD passthrough (prefix consumed + unprefixed executed) also needs R+2.
+	prefixed := opcodeByte == PrefixCB || opcodeByte == PrefixED ||
+		opcodeByte == PrefixDD || opcodeByte == PrefixFD ||
+		c.PC != pcBeforeDecode // DD/FD passthrough advanced PC
+	if prefixed {
+		c.R = (c.R & 0x80) | ((c.R + 2) & 0x7F)
+	} else {
+		c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
+	}
 
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
@@ -49,6 +62,7 @@ func (c *CPU) Step() error {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
 		c.updatePC(ins, oldPC, int(opcode.Size))
+		c.q = c.GetFlags()
 		return nil
 	}
 
@@ -69,6 +83,7 @@ func (c *CPU) Step() error {
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
 	c.updatePC(ins, oldPC, opcodeLen)
+	c.q = c.GetFlags()
 	return nil
 }
 
@@ -137,9 +152,12 @@ func isJumpInstruction(ins *Instruction) bool {
 	}
 	// Check for specific unconditional jump instructions by comparing pointers
 	// This is the most precise approach since conditional and unconditional variants have same names
-	return ins == JpAbs || ins == JrRel || ins == Call || ins == Ret || ins == EdReti || ins == EdRetn ||
-		ins == Rst || ins == JpIndirect ||
-		ins == DdJpIX || ins == FdJpIY
+	return ins == JpAbs || ins == JpCond || ins == JrRel || ins == JrCond ||
+		ins == Call || ins == CallCond || ins == Ret || ins == RetCond ||
+		ins == EdReti || ins == EdRetn || ins == edRetnAlias || ins == Rst || ins == JpIndirect ||
+		ins == DdJpIX || ins == FdJpIY || ins == Djnz ||
+		ins == EdLdir || ins == EdLddr || ins == EdCpir || ins == EdCpdr ||
+		ins == EdInir || ins == EdIndr || ins == EdOtir || ins == EdOtdr
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
@@ -193,16 +211,16 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 
 	opcode := DDOpcodes[opcodeByte]
 	if opcode.Instruction == nil {
-		// Handle undocumented behavior: DD prefix alone acts as 4-cycle NOP
-		// This occurs when DD is followed by an invalid IX instruction
-		opcode = Opcode{
-			Instruction: Nop,
-			Addressing:  ImpliedAddressing,
-			Timing:      4,
-			Size:        1,
+		// Undocumented behavior: DD prefix with no IX-specific instruction
+		// executes the unprefixed instruction with 4 extra T-states.
+		// Advance PC past the DD prefix so param readers see the correct offsets.
+		c.PC++
+		unprefixed := Opcodes[opcodeByte]
+		if unprefixed.Instruction == nil {
+			return Opcode{}, PrefixDD, fmt.Errorf("%w: opcode DD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
-		// Return nil error since we're handling it as undocumented NOP
-		return opcode, PrefixDD, nil
+		unprefixed.Timing += 4
+		return unprefixed, opcodeByte, nil
 	}
 
 	if c.opts.tracing {
@@ -264,16 +282,16 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 
 	opcode := FDOpcodes[opcodeByte]
 	if opcode.Instruction == nil {
-		// Handle undocumented behavior: FD prefix alone acts as 4-cycle NOP
-		// This occurs when FD is followed by an invalid IY instruction
-		opcode = Opcode{
-			Instruction: Nop,
-			Addressing:  ImpliedAddressing,
-			Timing:      4,
-			Size:        1,
+		// Undocumented behavior: FD prefix with no IY-specific instruction
+		// executes the unprefixed instruction with 4 extra T-states.
+		// Advance PC past the FD prefix so param readers see the correct offsets.
+		c.PC++
+		unprefixed := Opcodes[opcodeByte]
+		if unprefixed.Instruction == nil {
+			return Opcode{}, PrefixFD, fmt.Errorf("%w: opcode FD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
-		// Return nil error since we're handling it as undocumented NOP
-		return opcode, PrefixFD, nil
+		unprefixed.Timing += 4
+		return unprefixed, opcodeByte, nil
 	}
 
 	if c.opts.tracing {

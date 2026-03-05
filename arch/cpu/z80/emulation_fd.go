@@ -295,13 +295,7 @@ func fdOrAIYd(c *CPU, params ...any) error {
 func fdCpAIYd(c *CPU, params ...any) error {
 	addr := c.calculateIndexedAddress(c.IY, params...)
 	value := c.memory.Read(addr)
-	result := c.A - value
-
-	c.setSZ(result)
-	c.setC(c.A < value)
-	c.setH((c.A & 0x0F) < (value & 0x0F))
-	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
-	c.setN(true)
+	c.cp(c.A, value)
 	return nil
 }
 
@@ -330,11 +324,17 @@ func fdcbShift(c *CPU, _ ...any) error {
 	displacement := int8(c.memory.Read(c.PC + 2))
 	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
+	c.MEMPTR = addr
 	value := c.memory.Read(addr)
 
 	result, carry := performShiftRotateOperation(value, opcode, c.Flags.C)
 	c.memory.Write(addr, result)
 	setShiftRotateFlags(c, result, carry)
+
+	// Undocumented: copy result to register if low 3 bits != 6
+	if reg := opcode & 0x07; reg != 6 {
+		c.SetRegisterValue(reg, result)
+	}
 
 	return nil
 }
@@ -355,11 +355,18 @@ func fdcbRes(c *CPU, _ ...any) error {
 	displacement := int8(c.memory.Read(c.PC + 2))
 	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
+	c.MEMPTR = addr
 	value := c.memory.Read(addr)
 
 	bit := (opcode >> 3) & 0x07
 	result := value & ^(1 << bit)
 	c.memory.Write(addr, result)
+
+	// Undocumented: copy result to register if low 3 bits != 6
+	if reg := opcode & 0x07; reg != 6 {
+		c.SetRegisterValue(reg, result)
+	}
+
 	return nil
 }
 
@@ -367,10 +374,17 @@ func fdcbSet(c *CPU, _ ...any) error {
 	displacement := int8(c.memory.Read(c.PC + 2))
 	opcode := c.memory.Read(c.PC + 3)
 	addr := uint16(int32(c.IY) + int32(displacement))
+	c.MEMPTR = addr
 	value := c.memory.Read(addr)
 
 	bit := (opcode >> 3) & 0x07
 	result := value | (1 << bit)
 	c.memory.Write(addr, result)
+
+	// Undocumented: copy result to register if low 3 bits != 6
+	if reg := opcode & 0x07; reg != 6 {
+		c.SetRegisterValue(reg, result)
+	}
+
 	return nil
 }

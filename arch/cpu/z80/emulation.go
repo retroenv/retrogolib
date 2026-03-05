@@ -260,13 +260,10 @@ func (c *CPU) bit(n uint8, value uint8) {
 
 	setFlag(&c.Flags.Z, bitIsZero)
 	setFlag(&c.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
+	setFlag(&c.Flags.S, n == 7 && bit != 0)
 	c.setH(true)
 	c.setN(false)
 	c.setXY(value) // X/Y from value for register BIT ops
-
-	if n == 7 {
-		setFlag(&c.Flags.S, bit != 0)
-	}
 }
 
 // bitMemptr tests bit n of value, setting X/Y from MEMPTR high byte.
@@ -277,13 +274,10 @@ func (c *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
 
 	setFlag(&c.Flags.Z, bitIsZero)
 	setFlag(&c.Flags.P, bitIsZero)
+	setFlag(&c.Flags.S, n == 7 && bit != 0)
 	c.setH(true)
 	c.setN(false)
 	c.setXY(memptrHigh)
-
-	if n == 7 {
-		setFlag(&c.Flags.S, bit != 0)
-	}
 }
 
 // set sets bit n of value.
@@ -766,18 +760,22 @@ func addHl(c *CPU, _ ...any) error {
 
 // djnz decrements B and jumps if not zero.
 func djnz(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	offset, ok := params[0].(Relative)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
 	c.B--
 	if c.B != 0 {
-		if len(params) < 1 {
-			return ErrMissingParameter
-		}
-		offset, ok := params[0].(Relative)
-		if !ok {
-			return ErrInvalidParameterType
-		}
 		// Calculate target address: PC after this 2-byte instruction + offset
 		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
 		c.MEMPTR = c.PC
+		c.cycles += 5 // Extra cycles for taken branch (13 total vs 8 not taken)
+	} else {
+		c.PC += 2 // Advance past the 2-byte instruction
 	}
 	return nil
 }
@@ -813,6 +811,8 @@ func jrCond(c *CPU, params ...any) error {
 		c.MEMPTR = c.PC
 		// Add extra cycles for taken branch (JR taken = 12 cycles, not taken = 7 cycles)
 		c.cycles += 5
+	} else {
+		c.PC += 2 // Advance past the 2-byte instruction
 	}
 	return nil
 }
@@ -849,56 +849,33 @@ func ldExtended(c *CPU, params ...any) error {
 	return nil
 }
 
-// daaAdditionMode calculates correction for DAA in addition mode.
-func (c *CPU) daaAdditionMode() (uint8, bool) {
+// daa performs decimal adjust accumulator (MAME-verified algorithm).
+func daa(c *CPU) error {
+	originalA := c.A
 	correction := uint8(0)
-	carrySet := false
+	carry := c.Flags.C != 0
 
 	if c.Flags.H != 0 || (c.A&0x0F) > 9 {
 		correction |= 0x06
 	}
-	if c.Flags.C != 0 || c.A > 0x99 {
+	if carry || c.A > 0x99 {
 		correction |= 0x60
-		carrySet = true
+		carry = true
 	}
-	return correction, carrySet
-}
 
-// daaSubtractionMode calculates correction for DAA in subtraction mode.
-func (c *CPU) daaSubtractionMode() (uint8, bool) {
-	correction := uint8(0)
-	carrySet := c.Flags.C != 0
-
-	if c.Flags.H != 0 {
-		correction |= 0x06
-	}
-	if carrySet {
-		correction |= 0x60
-	}
-	return correction, carrySet
-}
-
-// daa performs decimal adjust accumulator.
-func daa(c *CPU) error {
-	originalA := c.A // Save original value for H flag calculation
-	var correction uint8
-	var carrySet bool
-
-	if c.Flags.N == 0 {
-		correction, carrySet = c.daaAdditionMode()
-		c.A += correction
-	} else {
-		correction, carrySet = c.daaSubtractionMode()
+	if c.Flags.N != 0 {
 		c.A -= correction
+	} else {
+		c.A += correction
 	}
 
 	// Set flags
 	c.setS(c.A)
 	c.setZ(c.A)
-	c.setP(c.A)  // Parity flag
-	c.setXY(c.A) // Set undocumented X and Y flags
-	c.setC(carrySet)
-	c.setH((originalA^c.A)&0x10 != 0) // H = XOR of original and result (bit 4)
+	c.setP(c.A)
+	c.setXY(c.A)
+	c.setC(carry)
+	c.setH((originalA^c.A)&0x10 != 0)
 	// N flag remains unchanged
 
 	return nil
@@ -942,10 +919,7 @@ func ldIndirectImm(c *CPU, _ ...any) error {
 
 // scf sets the carry flag.
 func scf(c *CPU) error {
-	// X/Y from A OR current flags
-	xySource := c.A | c.GetFlags()
-	c.Flags.X = (xySource >> 3) & 1
-	c.Flags.Y = (xySource >> 5) & 1
+	c.setXY(c.A | (c.GetFlags() & ^c.q))
 	c.setC(true)
 	c.setH(false)
 	c.setN(false)
@@ -954,10 +928,7 @@ func scf(c *CPU) error {
 
 // ccf complements the carry flag.
 func ccf(c *CPU) error {
-	// X/Y from A OR current flags
-	xySource := c.A | c.GetFlags()
-	c.Flags.X = (xySource >> 3) & 1
-	c.Flags.Y = (xySource >> 5) & 1
+	c.setXY(c.A | (c.GetFlags() & ^c.q))
 	oldCarry := c.Flags.C != 0
 	c.setC(c.Flags.C == 0)
 	c.setH(oldCarry) // H = old carry
@@ -1044,6 +1015,8 @@ func retCond(c *CPU) error {
 		c.MEMPTR = c.PC
 		// Add extra cycles for taken return (RET taken = 11 cycles, not taken = 5 cycles)
 		c.cycles += 6
+	} else {
+		c.PC++ // Advance past the 1-byte instruction
 	}
 	return nil
 }
@@ -1080,6 +1053,8 @@ func jpCond(c *CPU, params ...any) error {
 	c.MEMPTR = uint16(address)
 	if c.checkCondition(c.currentOpcode) {
 		c.PC = uint16(address)
+	} else {
+		c.PC += 3 // Advance past the 3-byte instruction
 	}
 	return nil
 }
@@ -1100,6 +1075,8 @@ func callCond(c *CPU, params ...any) error {
 		c.PC = uint16(address)
 		// Add extra cycles for taken call (CALL taken = 17 cycles, not taken = 10 cycles)
 		c.cycles += 7
+	} else {
+		c.PC += 3 // Advance past the 3-byte instruction
 	}
 	return nil
 }
@@ -1126,8 +1103,8 @@ func pushReg16(c *CPU, _ ...any) error {
 
 // rst performs restart (call to fixed address).
 func rst(c *CPU, _ ...any) error {
-	// RST pushes current PC to stack and jumps to fixed address
-	c.push16(c.PC)
+	// RST pushes return address (next instruction) to stack and jumps to fixed address
+	c.push16(c.PC + 1)
 
 	// Calculate restart vector from opcode
 	opcode := c.currentOpcode

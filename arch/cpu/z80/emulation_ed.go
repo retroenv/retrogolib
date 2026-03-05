@@ -1,5 +1,7 @@
 package z80
 
+import "math/bits"
+
 // ED prefix instruction implementations - Extended instructions
 
 // 16-bit ADC/SBC HL helper methods
@@ -218,22 +220,34 @@ func edLdd(c *CPU) error {
 	return nil
 }
 
-// edLdir implements ED B0: LDIR - Repeat LDI until BC=0.
+// edLdir implements ED B0: LDIR - Execute one LDI iteration.
+// If BC != 0 after, PC stays at LDIR for the next Step to repeat.
 func edLdir(c *CPU) error {
-	for c.bc() != 0 {
-		if err := edLdi(c); err != nil {
-			return err
-		}
+	if err := edLdi(c); err != nil {
+		return err
+	}
+	if c.bc() != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
-// edLddr implements ED B8: LDDR - Repeat LDD until BC=0.
+// edLddr implements ED B8: LDDR - Execute one LDD iteration.
+// If BC != 0 after, PC stays at LDDR for the next Step to repeat.
 func edLddr(c *CPU) error {
-	for c.bc() != 0 {
-		if err := edLdd(c); err != nil {
-			return err
-		}
+	if err := edLdd(c); err != nil {
+		return err
+	}
+	if c.bc() != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
@@ -293,88 +307,149 @@ func edCpd(c *CPU) error {
 	return nil
 }
 
-// edCpir implements ED B1: CPIR - Repeat CPI until BC=0 or match found.
+// edCpir implements ED B1: CPIR - Execute one CPI iteration.
+// If BC != 0 and no match, PC stays at CPIR for the next Step to repeat.
 func edCpir(c *CPU) error {
-	c.MEMPTR = c.PC + 1
-	for c.bc() != 0 {
-		if err := edCpi(c); err != nil {
-			return err
-		}
-		if c.Flags.Z != 0 {
-			break
-		}
-		if c.bc() != 0 {
-			c.MEMPTR = c.PC + 1
-		}
+	if err := edCpi(c); err != nil {
+		return err
+	}
+	if c.bc() != 0 && c.Flags.Z == 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
-// edCpdr implements ED B9: CPDR - Repeat CPD until BC=0 or match found.
+// edCpdr implements ED B9: CPDR - Execute one CPD iteration.
+// If BC != 0 and no match, PC stays at CPDR for the next Step to repeat.
 func edCpdr(c *CPU) error {
-	c.MEMPTR = c.PC + 1
-	for c.bc() != 0 {
-		if err := edCpd(c); err != nil {
-			return err
-		}
-		if c.Flags.Z != 0 {
-			break
-		}
-		if c.bc() != 0 {
-			c.MEMPTR = c.PC + 1
-		}
+	if err := edCpd(c); err != nil {
+		return err
+	}
+	if c.bc() != 0 && c.Flags.Z == 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
 // ED I/O block operations
 
+// setIOBlockFlags sets the full undocumented flag behavior for INI/IND/OUTI/OUTD.
+// value is the byte transferred, k is value + secondary (where secondary depends on instruction).
+func (c *CPU) setIOBlockFlags(value uint8, k uint16) {
+	c.setS(c.B)
+	c.setZ(c.B)
+	c.setXY(c.B)
+	setFlag(&c.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
+	carry := k > 255
+	c.setH(carry)
+	c.setC(carry)
+	// P/V = parity of ((k & 7) ^ B)
+	c.setP(uint8(k&7) ^ c.B)
+}
+
+// adjustIORepeatFlags applies additional flag modifications for repeat I/O instructions
+// (INIR/INDR/OTIR/OTDR) when the instruction will repeat (B != 0).
+// The flags PF and HF undergo additional transformations based on carry and data bit 7.
+func (c *CPU) adjustIORepeatFlags(value uint8, k uint16) {
+	carry := k > 255
+	dataBit7 := value&0x80 != 0
+
+	if carry && dataBit7 {
+		c.Flags.P ^= parityByte((c.B - 1) & 0x07)
+		c.Flags.P ^= 1
+		setFlag(&c.Flags.H, (c.B&0x0F) == 0x00)
+	} else if carry {
+		c.Flags.P ^= parityByte((c.B + 1) & 0x07)
+		c.Flags.P ^= 1
+		setFlag(&c.Flags.H, (c.B&0x0F) == 0x0F)
+	} else {
+		c.Flags.P ^= parityByte(c.B & 0x07)
+		c.Flags.P ^= 1
+	}
+}
+
+// parityByte returns 1 for even parity, 0 for odd parity.
+func parityByte(v uint8) uint8 {
+	if bits.OnesCount8(v)%2 == 0 {
+		return 1
+	}
+	return 0
+}
+
 // edIni implements ED A2: INI - IN (HL),(C), INC HL, DEC B.
 func edIni(c *CPU) error {
+	c.MEMPTR = c.bc() + 1
 	hl := c.hl()
-	port := c.C
-	value := c.readPort(port)
+	value := c.readPort(c.C)
 
 	c.memory.Write(hl, value)
 	c.setHL(hl + 1)
 	c.B--
 
-	c.setZ(c.B)
-	c.setN(true)
+	k := uint16(value) + uint16((c.C+1)&0xFF)
+	c.setIOBlockFlags(value, k)
 	return nil
 }
 
 // edInd implements ED AA: IND - IN (HL),(C), DEC HL, DEC B.
 func edInd(c *CPU) error {
+	c.MEMPTR = c.bc() - 1
 	hl := c.hl()
-	port := c.C
-	value := c.readPort(port)
+	value := c.readPort(c.C)
 
 	c.memory.Write(hl, value)
 	c.setHL(hl - 1)
 	c.B--
 
-	c.setZ(c.B)
-	c.setN(true)
+	k := uint16(value) + uint16((c.C-1)&0xFF)
+	c.setIOBlockFlags(value, k)
 	return nil
 }
 
-// edInir implements ED B2: INIR - Repeat INI until B=0.
+// edInir implements ED B2: INIR - Execute one INI iteration.
+// If B != 0 after, PC stays at INIR for the next Step to repeat.
 func edInir(c *CPU) error {
-	for c.B != 0 {
-		if err := edIni(c); err != nil {
-			return err
-		}
+	if err := edIni(c); err != nil {
+		return err
+	}
+	if c.B != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+		// Reconstruct port value from memory (INI wrote it to HL-1 since HL was incremented).
+		portVal := c.memory.Read(c.hl() - 1)
+		k := uint16(portVal) + uint16((c.C+1)&0xFF)
+		c.adjustIORepeatFlags(portVal, k)
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
-// edIndr implements ED BA: INDR - Repeat IND until B=0.
+// edIndr implements ED BA: INDR - Execute one IND iteration.
+// If B != 0 after, PC stays at INDR for the next Step to repeat.
 func edIndr(c *CPU) error {
-	for c.B != 0 {
-		if err := edInd(c); err != nil {
-			return err
-		}
+	if err := edInd(c); err != nil {
+		return err
+	}
+	if c.B != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+		// Reconstruct port value from memory (IND wrote it to HL+1 since HL was decremented).
+		portVal := c.memory.Read(c.hl() + 1)
+		k := uint16(portVal) + uint16((c.C-1)&0xFF)
+		c.adjustIORepeatFlags(portVal, k)
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
@@ -382,54 +457,102 @@ func edIndr(c *CPU) error {
 // edOuti implements ED A3: OUTI - OUT (C),(HL), INC HL, DEC B.
 func edOuti(c *CPU) error {
 	hl := c.hl()
-	port := c.C
 	value := c.memory.Read(hl)
 
-	c.writePort(port, value)
+	c.writePort(c.C, value)
 	c.setHL(hl + 1)
 	c.B--
 
-	c.setZ(c.B)
-	c.setN(true)
+	c.MEMPTR = c.bc() + 1
+	lAfter := uint8(hl + 1) // L after increment
+	k := uint16(value) + uint16(lAfter)
+	c.setIOBlockFlags(value, k)
 	return nil
 }
 
 // edOutd implements ED AB: OUTD - OUT (C),(HL), DEC HL, DEC B.
 func edOutd(c *CPU) error {
 	hl := c.hl()
-	port := c.C
 	value := c.memory.Read(hl)
 
-	c.writePort(port, value)
+	c.writePort(c.C, value)
 	c.setHL(hl - 1)
 	c.B--
 
-	c.setZ(c.B)
-	c.setN(true)
+	c.MEMPTR = c.bc() - 1
+	lAfter := uint8(hl - 1) // L after decrement
+	k := uint16(value) + uint16(lAfter)
+	c.setIOBlockFlags(value, k)
 	return nil
 }
 
-// edOtir implements ED B3: OTIR - Repeat OUTI until B=0.
+// edOtir implements ED B3: OTIR - Execute one OUTI iteration.
+// If B != 0 after, PC stays at OTIR for the next Step to repeat.
 func edOtir(c *CPU) error {
-	for c.B != 0 {
-		if err := edOuti(c); err != nil {
-			return err
-		}
+	if err := edOuti(c); err != nil {
+		return err
+	}
+	if c.B != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+		// Reconstruct: OUTI read from (HL-1) since HL was incremented.
+		value := c.memory.Read(c.hl() - 1)
+		lAfter := uint8(c.hl()) // L after OUTI incremented HL
+		k := uint16(value) + uint16(lAfter)
+		c.adjustIORepeatFlags(value, k)
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
-// edOtdr implements ED BB: OTDR - Repeat OUTD until B=0.
+// edOtdr implements ED BB: OTDR - Execute one OUTD iteration.
+// If B != 0 after, PC stays at OTDR for the next Step to repeat.
 func edOtdr(c *CPU) error {
-	for c.B != 0 {
-		if err := edOutd(c); err != nil {
-			return err
-		}
+	if err := edOutd(c); err != nil {
+		return err
+	}
+	if c.B != 0 {
+		c.cycles += 5
+		c.MEMPTR = c.PC + 1
+		c.setXY(uint8(c.PC >> 8))
+		// Reconstruct: OUTD read from (HL+1) since HL was decremented.
+		value := c.memory.Read(c.hl() + 1)
+		lAfter := uint8(c.hl()) // L after OUTD decremented HL
+		k := uint16(value) + uint16(lAfter)
+		c.adjustIORepeatFlags(value, k)
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
 
 // ED I/O operations with C register
+
+// edInFC implements ED 70: IN F,(C) - undocumented.
+// Reads port C, sets flags from result, discards the value.
+func edInFC(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
+	value := c.readPort(c.C)
+	c.setSZP(value)
+	c.setH(false)
+	c.setN(false)
+	return nil
+}
+
+// edOut0C implements ED 71: OUT (C),0 - undocumented.
+// Outputs 0 to port C.
+func edOut0C(c *CPU, _ ...any) error {
+	c.MEMPTR = c.bc() + 1
+	c.writePort(c.C, 0)
+	return nil
+}
+
+// edNop implements undocumented ED NOP instructions (ED 77, ED 7F).
+func edNop(_ *CPU, _ ...any) error {
+	return nil
+}
 
 // edInBC implements ED 40: IN B,(C).
 func edInBC(c *CPU, _ ...any) error {
