@@ -10,10 +10,13 @@ build: ## build code
 	CGO_ENABLED=0 go build ./...
 
 test: ## run tests
-	go test -timeout 10s -race ./...
+	go test -short -timeout 10s -race ./...
+
+test-integration: ## run long-running integration tests (SingleStepTests, ZEXDOC, ZEXALL)
+	go test -v -run 'TestSingleStep|TestZexdoc|TestZexall' -timeout 0 -race ./arch/cpu/z80/
 
 test-coverage: ## run unit tests and create test coverage
-	go test -timeout 10s ./... -coverprofile coverage.txt
+	go test -short -timeout 10s ./... -coverprofile coverage.txt
 
 test-coverage-web: test-coverage ## run unit tests and show test coverage in browser
 	go tool cover -func coverage.txt | grep total | awk '{print "Total coverage: "$$3}'

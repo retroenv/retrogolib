@@ -201,10 +201,10 @@ func (c *CPU) State() State {
 		IY:       c.IY,
 		SP:       c.SP,
 		PC:       c.PC,
-		I:      c.I,
-		R:      c.R,
-		MEMPTR: c.MEMPTR,
-		Cycles: c.cycles,
+		I:        c.I,
+		R:        c.R,
+		MEMPTR:   c.MEMPTR,
+		Cycles:   c.cycles,
 		Flags:    c.Flags,
 		AltFlags: c.AltFlags,
 		Interrupts: Interrupts{
@@ -377,12 +377,6 @@ func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
 	addr := uint16(int32(indexReg) + int32(displacement))
 	c.MEMPTR = addr
 	return addr
-}
-
-// extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).
-// Used by instructions that take a 16-bit address operand.
-func extractExtendedAddress(params ...any) uint16 {
-	return uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
 }
 
 // read16 reads a 16-bit value from memory at addr (little-endian).

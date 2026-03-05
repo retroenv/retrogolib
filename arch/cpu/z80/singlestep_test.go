@@ -26,10 +26,10 @@ type singleStepState struct {
 	WZ   uint16   `json:"wz"`
 	IX   uint16   `json:"ix"`
 	IY   uint16   `json:"iy"`
-	AF_  uint16   `json:"af_"`  //nolint:revive,stylecheck // matches JSON field name
-	BC_  uint16   `json:"bc_"`  //nolint:revive,stylecheck // matches JSON field name
-	DE_  uint16   `json:"de_"`  //nolint:revive,stylecheck // matches JSON field name
-	HL_  uint16   `json:"hl_"`  //nolint:revive,stylecheck // matches JSON field name
+	AF_  uint16   `json:"af_"` //nolint:revive // matches JSON field name
+	BC_  uint16   `json:"bc_"` //nolint:revive // matches JSON field name
+	DE_  uint16   `json:"de_"` //nolint:revive // matches JSON field name
+	HL_  uint16   `json:"hl_"` //nolint:revive // matches JSON field name
 	IM   uint8    `json:"im"`
 	IFF1 uint8    `json:"iff1"`
 	IFF2 uint8    `json:"iff2"`
@@ -61,7 +61,7 @@ func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 		RawPorts []json.RawMessage `json:"ports"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
+		return fmt.Errorf("unmarshaling test: %w", err)
 	}
 	*t = singleStepTest(raw.alias)
 
@@ -76,9 +76,15 @@ func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 		var addr float64
 		var val float64
 		var dir string
-		json.Unmarshal(arr[0], &addr)
-		json.Unmarshal(arr[1], &val)
-		json.Unmarshal(arr[2], &dir)
+		if err := json.Unmarshal(arr[0], &addr); err != nil {
+			continue
+		}
+		if err := json.Unmarshal(arr[1], &val); err != nil {
+			continue
+		}
+		if err := json.Unmarshal(arr[2], &dir); err != nil {
+			continue
+		}
 		t.Ports = append(t.Ports, singleStepPort{
 			Address: uint16(addr),
 			Value:   uint8(val),
@@ -123,6 +129,8 @@ const singleStepDir = "testdata/singlestep"
 // Each JSON file contains 1000 test cases that verify single-instruction execution
 // against known-correct hardware traces.
 func TestSingleStep(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("skipping SingleStepTests in short mode")
 	}
@@ -262,97 +270,106 @@ func setSingleStepState(cpu *CPU, s *singleStepState) {
 	cpu.q = s.Q
 }
 
+// compareReg8 compares an 8-bit register value against expected.
+func compareReg8(name string, got, want uint8) error {
+	if got != want {
+		return fmt.Errorf("%s: got 0x%02X, want 0x%02X", name, got, want)
+	}
+	return nil
+}
+
+// compareReg16 compares a 16-bit register value against expected.
+func compareReg16(name string, got, want uint16) error {
+	if got != want {
+		return fmt.Errorf("%s: got 0x%04X, want 0x%04X", name, got, want)
+	}
+	return nil
+}
+
 // compareSingleStepState compares the CPU state against expected final state.
 // Returns an error describing the first mismatch found.
 func compareSingleStepState(cpu *CPU, mem *BasicMemory, expected *singleStepState) error {
-	// Main registers.
-	if cpu.A != expected.A {
-		return fmt.Errorf("A: got 0x%02X, want 0x%02X", cpu.A, expected.A)
+	if err := compareSingleStepRegisters(cpu, expected); err != nil {
+		return err
 	}
-	if cpu.B != expected.B {
-		return fmt.Errorf("B: got 0x%02X, want 0x%02X", cpu.B, expected.B)
+	if err := compareSingleStepShadow(cpu, expected); err != nil {
+		return err
 	}
-	if cpu.C != expected.C {
-		return fmt.Errorf("C: got 0x%02X, want 0x%02X", cpu.C, expected.C)
+	if err := compareSingleStepInterrupts(cpu, expected); err != nil {
+		return err
 	}
-	if cpu.D != expected.D {
-		return fmt.Errorf("D: got 0x%02X, want 0x%02X", cpu.D, expected.D)
+	return compareSingleStepRAM(mem, expected)
+}
+
+// compareSingleStepRegisters compares main registers, flags, and special registers.
+func compareSingleStepRegisters(cpu *CPU, expected *singleStepState) error {
+	checks := []struct {
+		name string
+		got  uint8
+		want uint8
+	}{
+		{"A", cpu.A, expected.A}, {"B", cpu.B, expected.B},
+		{"C", cpu.C, expected.C}, {"D", cpu.D, expected.D},
+		{"E", cpu.E, expected.E}, {"H", cpu.H, expected.H},
+		{"L", cpu.L, expected.L}, {"F", cpu.GetFlags(), expected.F},
+		{"I", cpu.I, expected.I}, {"R", cpu.R, expected.R},
 	}
-	if cpu.E != expected.E {
-		return fmt.Errorf("E: got 0x%02X, want 0x%02X", cpu.E, expected.E)
-	}
-	if cpu.H != expected.H {
-		return fmt.Errorf("H: got 0x%02X, want 0x%02X", cpu.H, expected.H)
-	}
-	if cpu.L != expected.L {
-		return fmt.Errorf("L: got 0x%02X, want 0x%02X", cpu.L, expected.L)
+	for _, c := range checks {
+		if err := compareReg8(c.name, c.got, c.want); err != nil {
+			return err
+		}
 	}
 
-	// Flags.
-	gotF := cpu.GetFlags()
-	if gotF != expected.F {
-		return fmt.Errorf("F: got 0x%02X, want 0x%02X", gotF, expected.F)
+	checks16 := []struct {
+		name string
+		got  uint16
+		want uint16
+	}{
+		{"PC", cpu.PC, expected.PC}, {"SP", cpu.SP, expected.SP},
+		{"IX", cpu.IX, expected.IX}, {"IY", cpu.IY, expected.IY},
+		{"MEMPTR", cpu.MEMPTR, expected.WZ},
 	}
+	for _, c := range checks16 {
+		if err := compareReg16(c.name, c.got, c.want); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	// Program control.
-	if cpu.PC != expected.PC {
-		return fmt.Errorf("PC: got 0x%04X, want 0x%04X", cpu.PC, expected.PC)
+// compareSingleStepShadow compares shadow register pairs.
+func compareSingleStepShadow(cpu *CPU, expected *singleStepState) error {
+	checks := []struct {
+		name string
+		got  uint16
+		want uint16
+	}{
+		{"AF'", uint16(cpu.AltA)<<8 | uint16(cpu.getFlagsAsUint8(cpu.AltFlags)), expected.AF_},
+		{"BC'", uint16(cpu.AltB)<<8 | uint16(cpu.AltC), expected.BC_},
+		{"DE'", uint16(cpu.AltD)<<8 | uint16(cpu.AltE), expected.DE_},
+		{"HL'", uint16(cpu.AltH)<<8 | uint16(cpu.AltL), expected.HL_},
 	}
-	if cpu.SP != expected.SP {
-		return fmt.Errorf("SP: got 0x%04X, want 0x%04X", cpu.SP, expected.SP)
+	for _, c := range checks {
+		if err := compareReg16(c.name, c.got, c.want); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
-	// Index registers.
-	if cpu.IX != expected.IX {
-		return fmt.Errorf("IX: got 0x%04X, want 0x%04X", cpu.IX, expected.IX)
+// compareSingleStepInterrupts compares interrupt state.
+func compareSingleStepInterrupts(cpu *CPU, expected *singleStepState) error {
+	if err := compareReg8("IFF1", boolToUint8(cpu.iff1), expected.IFF1); err != nil {
+		return err
 	}
-	if cpu.IY != expected.IY {
-		return fmt.Errorf("IY: got 0x%04X, want 0x%04X", cpu.IY, expected.IY)
+	if err := compareReg8("IFF2", boolToUint8(cpu.iff2), expected.IFF2); err != nil {
+		return err
 	}
+	return compareReg8("IM", cpu.im, expected.IM)
+}
 
-	// Special registers.
-	if cpu.I != expected.I {
-		return fmt.Errorf("I: got 0x%02X, want 0x%02X", cpu.I, expected.I)
-	}
-	if cpu.R != expected.R {
-		return fmt.Errorf("R: got 0x%02X, want 0x%02X", cpu.R, expected.R)
-	}
-	if cpu.MEMPTR != expected.WZ {
-		return fmt.Errorf("MEMPTR: got 0x%04X, want 0x%04X", cpu.MEMPTR, expected.WZ)
-	}
-
-	// Shadow registers.
-	gotAF_ := uint16(cpu.AltA)<<8 | uint16(cpu.getFlagsAsUint8(cpu.AltFlags))
-	if gotAF_ != expected.AF_ {
-		return fmt.Errorf("AF': got 0x%04X, want 0x%04X", gotAF_, expected.AF_)
-	}
-	gotBC_ := uint16(cpu.AltB)<<8 | uint16(cpu.AltC)
-	if gotBC_ != expected.BC_ {
-		return fmt.Errorf("BC': got 0x%04X, want 0x%04X", gotBC_, expected.BC_)
-	}
-	gotDE_ := uint16(cpu.AltD)<<8 | uint16(cpu.AltE)
-	if gotDE_ != expected.DE_ {
-		return fmt.Errorf("DE': got 0x%04X, want 0x%04X", gotDE_, expected.DE_)
-	}
-	gotHL_ := uint16(cpu.AltH)<<8 | uint16(cpu.AltL)
-	if gotHL_ != expected.HL_ {
-		return fmt.Errorf("HL': got 0x%04X, want 0x%04X", gotHL_, expected.HL_)
-	}
-
-	// Interrupt state.
-	gotIFF1 := boolToUint8(cpu.iff1)
-	if gotIFF1 != expected.IFF1 {
-		return fmt.Errorf("IFF1: got %d, want %d", gotIFF1, expected.IFF1)
-	}
-	gotIFF2 := boolToUint8(cpu.iff2)
-	if gotIFF2 != expected.IFF2 {
-		return fmt.Errorf("IFF2: got %d, want %d", gotIFF2, expected.IFF2)
-	}
-	if cpu.im != expected.IM {
-		return fmt.Errorf("IM: got %d, want %d", cpu.im, expected.IM)
-	}
-
-	// RAM.
+// compareSingleStepRAM compares memory contents.
+func compareSingleStepRAM(mem *BasicMemory, expected *singleStepState) error {
 	for _, entry := range expected.RAM {
 		addr := uint16(entry[0])
 		want := uint8(entry[1])
@@ -361,6 +378,5 @@ func compareSingleStepState(cpu *CPU, mem *BasicMemory, expected *singleStepStat
 			return fmt.Errorf("RAM[0x%04X]: got 0x%02X, want 0x%02X", addr, got, want)
 		}
 	}
-
 	return nil
 }

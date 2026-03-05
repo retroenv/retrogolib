@@ -26,6 +26,58 @@ func TestZexall(t *testing.T) {
 	runZex(t, "testdata/zexall.com")
 }
 
+// zexOutput tracks output buffering and error counting for ZEX tests.
+type zexOutput struct {
+	buf       bytes.Buffer
+	failCount int
+}
+
+// flushLine processes a completed line of output, checking for errors.
+func (z *zexOutput) flushLine() {
+	line := strings.TrimRight(z.buf.String(), "\r\n")
+	if len(line) > 0 {
+		if strings.Contains(line, "ERROR") {
+			z.failCount++
+		}
+		fmt.Println(line)
+	}
+	z.buf.Reset()
+}
+
+// writeByte writes a byte to the buffer, flushing on newline.
+func (z *zexOutput) writeByte(ch byte) {
+	z.buf.WriteByte(ch)
+	if ch == '\n' {
+		z.flushLine()
+	}
+}
+
+// flush processes any remaining buffered output.
+func (z *zexOutput) flush() {
+	if z.buf.Len() > 0 {
+		z.flushLine()
+	}
+}
+
+// handleBDOS processes CP/M BDOS calls intercepted at address 0x0005.
+func handleBDOS(cpu *CPU, mem *BasicMemory, out *zexOutput) {
+	switch cpu.C {
+	case 0x02: // C_WRITE: output character in E
+		out.writeByte(cpu.E)
+
+	case 0x09: // C_WRITESTR: output $ terminated string at DE
+		addr := cpu.de()
+		for {
+			ch := mem.Read(addr)
+			if ch == '$' {
+				break
+			}
+			out.writeByte(ch)
+			addr++
+		}
+	}
+}
+
 // runZex loads and runs a ZEXALL/ZEXDOC .com binary under a minimal CP/M harness.
 func runZex(t *testing.T, path string) {
 	t.Helper()
@@ -54,52 +106,12 @@ func runZex(t *testing.T, path string) {
 	mem.data[0x0006] = 0x00
 	mem.data[0x0007] = 0xFE // TPA top at 0xFE00
 
-	var output bytes.Buffer
-	var failCount int
+	var out zexOutput
 
 	// Hook BDOS calls at 0x0005
-	bdosHook := func(cpu *CPU, opcode uint8, params ...any) {
-		if cpu.PC != 0x0005 {
-			return
-		}
-
-		switch cpu.C {
-		case 0x02: // C_WRITE: output character in E
-			ch := cpu.E
-			output.WriteByte(ch)
-
-			// Flush on newline
-			if ch == '\n' {
-				line := strings.TrimRight(output.String(), "\r\n")
-				if len(line) > 0 {
-					if strings.Contains(line, "ERROR") {
-						failCount++
-					}
-					fmt.Println(line)
-				}
-				output.Reset()
-			}
-
-		case 0x09: // C_WRITESTR: output $ terminated string at DE
-			addr := cpu.de()
-			for {
-				ch := mem.Read(addr)
-				if ch == '$' {
-					break
-				}
-				output.WriteByte(ch)
-				if ch == '\n' {
-					line := strings.TrimRight(output.String(), "\r\n")
-					if len(line) > 0 {
-						if strings.Contains(line, "ERROR") {
-							failCount++
-						}
-						fmt.Println(line)
-					}
-					output.Reset()
-				}
-				addr++
-			}
+	bdosHook := func(cpu *CPU, _ uint8, _ ...any) {
+		if cpu.PC == 0x0005 {
+			handleBDOS(cpu, mem, &out)
 		}
 	}
 
@@ -118,9 +130,7 @@ func runZex(t *testing.T, path string) {
 		pc := cpu.PC
 		opByte := mem.Read(pc)
 		if err := cpu.Step(); err != nil {
-			if output.Len() > 0 {
-				fmt.Println(output.String())
-			}
+			out.flush()
 			context := make([]byte, 6)
 			for i := range context {
 				context[i] = mem.Read(pc + uint16(i))
@@ -131,21 +141,13 @@ func runZex(t *testing.T, path string) {
 	}
 
 	// Flush remaining output
-	if output.Len() > 0 {
-		remaining := strings.TrimRight(output.String(), "\r\n")
-		if len(remaining) > 0 {
-			fmt.Println(remaining)
-			if strings.Contains(remaining, "ERROR") {
-				failCount++
-			}
-		}
-	}
+	out.flush()
 
 	if cpu.cycles >= maxCycles {
 		t.Fatal("exceeded maximum cycle count")
 	}
 
-	if failCount > 0 {
-		t.Fatalf("%d tests failed", failCount)
+	if out.failCount > 0 {
+		t.Fatalf("%d tests failed", out.failCount)
 	}
 }

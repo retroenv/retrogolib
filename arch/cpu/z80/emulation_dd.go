@@ -1,391 +1,60 @@
 package z80
 
-// DD prefix instruction implementations - IX register operations
+// DD prefix instruction implementations - IX register operations.
+// These are thin wrappers around shared indexed register operations.
 
-// ddLdIXnn implements DD 21: LD IX,nn.
-func ddLdIXnn(c *CPU, _ ...any) error {
-	// Read 16-bit immediate value from memory at PC+2 and PC+3
-	low := c.memory.Read(c.PC + 2)
-	high := c.memory.Read(c.PC + 3)
-	c.IX = uint16(high)<<8 | uint16(low)
-	return nil
-}
-
-// IX register operations
-func ddIncIX(c *CPU) error { c.IX++; return nil }
-func ddDecIX(c *CPU) error { c.IX--; return nil }
-
-func ddAddIXBc(c *CPU, _ ...any) error {
-	c.MEMPTR = c.IX + 1
-	c.IX = c.add16(c.IX, c.bc())
-	c.setXY(uint8(c.IX >> 8))
-	return nil
-}
-func ddAddIXDe(c *CPU, _ ...any) error {
-	c.MEMPTR = c.IX + 1
-	c.IX = c.add16(c.IX, c.de())
-	c.setXY(uint8(c.IX >> 8))
-	return nil
-}
-func ddAddIXIX(c *CPU, _ ...any) error {
-	c.MEMPTR = c.IX + 1
-	c.IX = c.add16(c.IX, c.IX)
-	c.setXY(uint8(c.IX >> 8))
-	return nil
-}
-func ddAddIXSp(c *CPU, _ ...any) error {
-	c.MEMPTR = c.IX + 1
-	c.IX = c.add16(c.IX, c.SP)
-	c.setXY(uint8(c.IX >> 8))
-	return nil
-}
-
-// ddLdNnIX implements DD 22: LD (nn),IX.
-func ddLdNnIX(c *CPU, _ ...any) error {
-	addr := c.read16(c.PC + 2)
-	c.memory.Write(addr, uint8(c.IX))
-	c.memory.Write(addr+1, uint8(c.IX>>8))
-	c.MEMPTR = addr + 1
-	return nil
-}
-
-// ddLdIXNn implements DD 2A: LD IX,(nn).
-func ddLdIXNn(c *CPU, _ ...any) error {
-	addr := c.read16(c.PC + 2)
-	low := c.memory.Read(addr)
-	high := c.memory.Read(addr + 1)
-	c.IX = uint16(high)<<8 | uint16(low)
-	c.MEMPTR = addr + 1
-	return nil
-}
+func ddLdIXnn(c *CPU, p ...any) error  { return indexedLdRegNn(c, &c.IX, p...) }
+func ddIncIX(c *CPU) error             { c.IX++; return nil }
+func ddDecIX(c *CPU) error             { c.IX--; return nil }
+func ddAddIXBc(c *CPU, p ...any) error { return indexedAddRegPair(c, &c.IX, c.bc(), p...) }
+func ddAddIXDe(c *CPU, p ...any) error { return indexedAddRegPair(c, &c.IX, c.de(), p...) }
+func ddAddIXIX(c *CPU, p ...any) error { return indexedAddRegPair(c, &c.IX, c.IX, p...) }
+func ddAddIXSp(c *CPU, p ...any) error { return indexedAddRegPair(c, &c.IX, c.SP, p...) }
+func ddLdNnIX(c *CPU, p ...any) error  { return indexedLdNnReg(c, c.IX, p...) }
+func ddLdIXNn(c *CPU, p ...any) error  { return indexedLdRegFromNn(c, &c.IX, p...) }
 
 // IX indexed load operations - Load register from (IX+d)
-
-// ddLdBIXd implements DD 46: LD B,(IX+d).
-func ddLdBIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.B = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdCIXd implements DD 4E: LD C,(IX+d).
-func ddLdCIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.C = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdDIXd implements DD 56: LD D,(IX+d).
-func ddLdDIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.D = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdEIXd implements DD 5E: LD E,(IX+d).
-func ddLdEIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.E = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdHIXd implements DD 66: LD H,(IX+d).
-func ddLdHIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.H = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdLIXd implements DD 6E: LD L,(IX+d).
-func ddLdLIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.L = c.memory.Read(addr)
-	return nil
-}
-
-// ddLdAIXd implements DD 7E: LD A,(IX+d).
-func ddLdAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.A = c.memory.Read(addr)
-	return nil
-}
+func ddLdBIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.B, c.IX, p...) }
+func ddLdCIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.C, c.IX, p...) }
+func ddLdDIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.D, c.IX, p...) }
+func ddLdEIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.E, c.IX, p...) }
+func ddLdHIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.H, c.IX, p...) }
+func ddLdLIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.L, c.IX, p...) }
+func ddLdAIXd(c *CPU, p ...any) error { return indexedLdRegFromMem(c, &c.A, c.IX, p...) }
 
 // IX indexed store operations - Store register to (IX+d)
+func ddLdIXdB(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.B, c.IX, p...) }
+func ddLdIXdC(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.C, c.IX, p...) }
+func ddLdIXdD(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.D, c.IX, p...) }
+func ddLdIXdE(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.E, c.IX, p...) }
+func ddLdIXdH(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.H, c.IX, p...) }
+func ddLdIXdL(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.L, c.IX, p...) }
+func ddLdIXdA(c *CPU, p ...any) error { return indexedLdMemFromReg(c, c.A, c.IX, p...) }
+func ddLdIXdN(c *CPU, p ...any) error { return indexedLdMemN(c, c.IX, p...) }
 
-// ddLdIXdB implements DD 70: LD (IX+d),B.
-func ddLdIXdB(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.B)
-	return nil
-}
-
-// ddLdIXdC implements DD 71: LD (IX+d),C.
-func ddLdIXdC(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.C)
-	return nil
-}
-
-// ddLdIXdD implements DD 72: LD (IX+d),D.
-func ddLdIXdD(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.D)
-	return nil
-}
-
-// ddLdIXdE implements DD 73: LD (IX+d),E.
-func ddLdIXdE(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.E)
-	return nil
-}
-
-// ddLdIXdH implements DD 74: LD (IX+d),H.
-func ddLdIXdH(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.H)
-	return nil
-}
-
-// ddLdIXdL implements DD 75: LD (IX+d),L.
-func ddLdIXdL(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.L)
-	return nil
-}
-
-// ddLdIXdA implements DD 77: LD (IX+d),A.
-func ddLdIXdA(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	c.memory.Write(addr, c.A)
-	return nil
-}
-
-// ddLdIXdN implements DD 36: LD (IX+d),n.
-func ddLdIXdN(c *CPU, _ ...any) error {
-	addr := c.calculateIndexedAddress(c.IX)
-	value := c.memory.Read(c.PC + 3)
-	c.memory.Write(addr, value)
-	return nil
-}
-
-// ddIncIXd implements DD 34: INC (IX+d).
-func ddIncIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	result := value + 1
-	c.memory.Write(addr, result)
-	c.setSZ(result)
-	c.setH((value & 0x0F) == 0x0F)
-	c.setPOverflow(value == 0x7F)
-	c.setN(false)
-	return nil
-}
-
-// ddDecIXd implements DD 35: DEC (IX+d).
-func ddDecIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	result := value - 1
-	c.memory.Write(addr, result)
-	c.setSZ(result)
-	c.setH((value & 0x0F) == 0x00)
-	c.setPOverflow(value == 0x80)
-	c.setN(true)
-	return nil
-}
+// IX indexed INC/DEC
+func ddIncIXd(c *CPU, p ...any) error { return indexedIncMem(c, c.IX, p...) }
+func ddDecIXd(c *CPU, p ...any) error { return indexedDecMem(c, c.IX, p...) }
 
 // IX arithmetic operations with accumulator
-
-// ddAddAIXd implements DD 86: ADD A,(IX+d).
-func ddAddAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	result := uint16(c.A) + uint16(value)
-
-	c.setC(result > 0xFF)
-	c.setH((c.A&0x0F)+(value&0x0F) > 0x0F)
-	c.setPOverflow(((c.A ^ value ^ 0x80) & (value ^ uint8(result)) & 0x80) != 0)
-	c.setN(false)
-	c.A = uint8(result)
-	c.setSZ(c.A)
-	return nil
-}
-
-// ddAdcAIXd implements DD 8E: ADC A,(IX+d).
-func ddAdcAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	carry := uint16(0)
-	if c.Flags.C != 0 {
-		carry = 1
-	}
-	result := uint16(c.A) + uint16(value) + carry
-
-	c.setC(result > 0xFF)
-	c.setH((c.A&0x0F)+(value&0x0F)+uint8(carry) > 0x0F)
-	c.setPOverflow(((c.A ^ value ^ 0x80) & (value ^ uint8(result)) & 0x80) != 0)
-	c.setN(false)
-	c.A = uint8(result)
-	c.setSZ(c.A)
-	return nil
-}
-
-// ddSubAIXd implements DD 96: SUB (IX+d).
-func ddSubAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	result := c.A - value
-
-	c.setC(c.A < value)
-	c.setH((c.A & 0x0F) < (value & 0x0F))
-	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
-	c.setN(true)
-	c.A = result
-	c.setSZ(c.A)
-	return nil
-}
-
-// ddSbcAIXd implements DD 9E: SBC A,(IX+d).
-func ddSbcAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	carry := uint8(0)
-	if c.Flags.C != 0 {
-		carry = 1
-	}
-	result := c.A - value - carry
-
-	c.setC(uint16(c.A) < uint16(value)+uint16(carry))
-	c.setH((c.A & 0x0F) < (value&0x0F)+carry)
-	c.setPOverflow(((c.A ^ value) & (c.A ^ result) & 0x80) != 0)
-	c.setN(true)
-	c.A = result
-	c.setSZ(c.A)
-	return nil
-}
-
-// ddAndAIXd implements DD A6: AND (IX+d).
-func ddAndAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	c.A &= value
-	c.setLogicalFlags(c.A, true)
-	return nil
-}
-
-// ddXorAIXd implements DD AE: XOR (IX+d).
-func ddXorAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	c.A ^= value
-	c.setLogicalFlags(c.A, false)
-	return nil
-}
-
-// ddOrAIXd implements DD B6: OR (IX+d).
-func ddOrAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	c.A |= value
-	c.setLogicalFlags(c.A, false)
-	return nil
-}
-
-// ddCpAIXd implements DD BE: CP (IX+d).
-func ddCpAIXd(c *CPU, params ...any) error {
-	addr := c.calculateIndexedAddress(c.IX, params...)
-	value := c.memory.Read(addr)
-	c.cp(c.A, value)
-	return nil
-}
+func ddAddAIXd(c *CPU, p ...any) error { return indexedAddA(c, c.IX, p...) }
+func ddAdcAIXd(c *CPU, p ...any) error { return indexedAdcA(c, c.IX, p...) }
+func ddSubAIXd(c *CPU, p ...any) error { return indexedSubA(c, c.IX, p...) }
+func ddSbcAIXd(c *CPU, p ...any) error { return indexedSbcA(c, c.IX, p...) }
+func ddAndAIXd(c *CPU, p ...any) error { return indexedAndA(c, c.IX, p...) }
+func ddXorAIXd(c *CPU, p ...any) error { return indexedXorA(c, c.IX, p...) }
+func ddOrAIXd(c *CPU, p ...any) error  { return indexedOrA(c, c.IX, p...) }
+func ddCpAIXd(c *CPU, p ...any) error  { return indexedCpA(c, c.IX, p...) }
 
 // IX stack and jump operations
-func ddJpIX(c *CPU) error { c.PC = c.IX; return nil }
-
-// ddExSpIX implements DD E3: EX (SP),IX.
-func ddExSpIX(c *CPU) error {
-	low := c.memory.Read(c.SP)
-	high := c.memory.Read(c.SP + 1)
-
-	c.memory.Write(c.SP, uint8(c.IX))
-	c.memory.Write(c.SP+1, uint8(c.IX>>8))
-
-	c.IX = uint16(high)<<8 | uint16(low)
-	c.MEMPTR = c.IX
-	return nil
-}
+func ddJpIX(c *CPU) error   { c.PC = c.IX; return nil }
+func ddExSpIX(c *CPU) error { return indexedExSp(c, &c.IX) }
 func ddPushIX(c *CPU) error { c.push16(c.IX); return nil }
 func ddPopIX(c *CPU) error  { c.IX = c.pop16(); return nil }
 func ddLdSpIX(c *CPU) error { c.SP = c.IX; return nil }
 
 // DDCB operations - bit operations on (IX+d)
-
-func ddcbShift(c *CPU, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
-	addr := uint16(int32(c.IX) + int32(displacement))
-	c.MEMPTR = addr
-	value := c.memory.Read(addr)
-
-	result, carry := performShiftRotateOperation(value, opcode, c.Flags.C)
-	c.memory.Write(addr, result)
-	setShiftRotateFlags(c, result, carry)
-
-	// Undocumented: copy result to register if low 3 bits != 6
-	if reg := opcode & 0x07; reg != 6 {
-		c.SetRegisterValue(reg, result)
-	}
-
-	return nil
-}
-
-func ddcbBit(c *CPU, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
-	addr := uint16(int32(c.IX) + int32(displacement))
-	c.MEMPTR = addr
-	value := c.memory.Read(addr)
-
-	bitNum := (opcode >> 3) & 0x07
-	c.bitMemptr(bitNum, value, uint8(addr>>8))
-	return nil
-}
-
-func ddcbRes(c *CPU, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
-	addr := uint16(int32(c.IX) + int32(displacement))
-	c.MEMPTR = addr
-	value := c.memory.Read(addr)
-
-	bit := (opcode >> 3) & 0x07
-	result := value & ^(1 << bit)
-	c.memory.Write(addr, result)
-
-	// Undocumented: copy result to register if low 3 bits != 6
-	if reg := opcode & 0x07; reg != 6 {
-		c.SetRegisterValue(reg, result)
-	}
-
-	return nil
-}
-
-func ddcbSet(c *CPU, _ ...any) error {
-	displacement := int8(c.memory.Read(c.PC + 2))
-	opcode := c.memory.Read(c.PC + 3)
-	addr := uint16(int32(c.IX) + int32(displacement))
-	c.MEMPTR = addr
-	value := c.memory.Read(addr)
-
-	bit := (opcode >> 3) & 0x07
-	result := value | (1 << bit)
-	c.memory.Write(addr, result)
-
-	// Undocumented: copy result to register if low 3 bits != 6
-	if reg := opcode & 0x07; reg != 6 {
-		c.SetRegisterValue(reg, result)
-	}
-
-	return nil
-}
+func ddcbShift(c *CPU, p ...any) error { return indexedCBShift(c, c.IX, p...) }
+func ddcbBit(c *CPU, p ...any) error   { return indexedCBBit(c, c.IX, p...) }
+func ddcbRes(c *CPU, p ...any) error   { return indexedCBRes(c, c.IX, p...) }
+func ddcbSet(c *CPU, p ...any) error   { return indexedCBSet(c, c.IX, p...) }

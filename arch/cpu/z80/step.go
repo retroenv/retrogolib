@@ -39,18 +39,11 @@ func (c *CPU) Step() error {
 	// Store current opcode for instruction functions to access
 	c.currentOpcode = opcodeByte
 
-	// Increment refresh register.
-	// Prefixed instructions (CB, ED, DD, FD) increment R twice:
-	// once for the prefix byte fetch and once for the opcode byte fetch.
-	// DD/FD passthrough (prefix consumed + unprefixed executed) also needs R+2.
+	// Prefixed instructions (CB, ED, DD, FD) and DD/FD passthrough increment R twice.
 	prefixed := opcodeByte == PrefixCB || opcodeByte == PrefixED ||
 		opcodeByte == PrefixDD || opcodeByte == PrefixFD ||
-		c.PC != pcBeforeDecode // DD/FD passthrough advanced PC
-	if prefixed {
-		c.R = (c.R & 0x80) | ((c.R + 2) & 0x7F)
-	} else {
-		c.R = (c.R & 0x80) | ((c.R + 1) & 0x7F)
-	}
+		c.PC != pcBeforeDecode
+	c.incrementRefresh(prefixed)
 
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
@@ -85,6 +78,16 @@ func (c *CPU) Step() error {
 	c.updatePC(ins, oldPC, opcodeLen)
 	c.q = c.GetFlags()
 	return nil
+}
+
+// incrementRefresh increments the memory refresh register R.
+// Preserves bit 7 and increments the lower 7 bits. Prefixed instructions increment by 2.
+func (c *CPU) incrementRefresh(prefixed bool) {
+	inc := uint8(1)
+	if prefixed {
+		inc = 2
+	}
+	c.R = (c.R & 0x80) | ((c.R + inc) & 0x7F)
 }
 
 // decodeNextInstruction decodes the current instruction at the program counter.
@@ -144,20 +147,20 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// PC was changed by the instruction (e.g., conditional jump taken), don't modify it further
 }
 
-// isJumpInstruction checks if an instruction is an unconditional jump/branch instruction that always modifies PC.
-// Conditional jumps (like DJNZ, conditional JR/JP) are not included since they may or may not change PC.
+// jumpInstructions is a lookup set of instructions that always modify PC.
+// These include all jump, call, return, and repeat block instructions.
+var jumpInstructions = map[*Instruction]bool{
+	JpAbs: true, JpCond: true, JrRel: true, JrCond: true,
+	Call: true, CallCond: true, Ret: true, RetCond: true,
+	EdReti: true, EdRetn: true, edRetnAlias: true, Rst: true, JpIndirect: true,
+	DdJpIX: true, FdJpIY: true, Djnz: true,
+	EdLdir: true, EdLddr: true, EdCpir: true, EdCpdr: true,
+	EdInir: true, EdIndr: true, EdOtir: true, EdOtdr: true,
+}
+
+// isJumpInstruction checks if an instruction is a jump/branch instruction that always modifies PC.
 func isJumpInstruction(ins *Instruction) bool {
-	if ins == nil {
-		return false
-	}
-	// Check for specific unconditional jump instructions by comparing pointers
-	// This is the most precise approach since conditional and unconditional variants have same names
-	return ins == JpAbs || ins == JpCond || ins == JrRel || ins == JrCond ||
-		ins == Call || ins == CallCond || ins == Ret || ins == RetCond ||
-		ins == EdReti || ins == EdRetn || ins == edRetnAlias || ins == Rst || ins == JpIndirect ||
-		ins == DdJpIX || ins == FdJpIY || ins == Djnz ||
-		ins == EdLdir || ins == EdLddr || ins == EdCpir || ins == EdCpdr ||
-		ins == EdInir || ins == EdIndr || ins == EdOtir || ins == EdOtdr
+	return ins != nil && jumpInstructions[ins]
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).

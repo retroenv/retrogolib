@@ -101,56 +101,56 @@ var Opcodes = [256]Opcode{
 	{Instruction: Ccf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                     // 0x3F CCF
 
 	// 0x40-0x7F: LD r,r instructions (register to register)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x40 LD B,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x41 LD B,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x42 LD B,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x43 LD B,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x44 LD B,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x45 LD B,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x40 LD B,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x41 LD B,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x42 LD B,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x43 LD B,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x44 LD B,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x45 LD B,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x46 LD B,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x47 LD B,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x48 LD C,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x49 LD C,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4A LD C,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4B LD C,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4C LD C,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4D LD C,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x47 LD B,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x48 LD C,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x49 LD C,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x4A LD C,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x4B LD C,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x4C LD C,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x4D LD C,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x4E LD C,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x4F LD C,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x4F LD C,A
 
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x50 LD D,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x51 LD D,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x52 LD D,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x53 LD D,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x54 LD D,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x55 LD D,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x50 LD D,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x51 LD D,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x52 LD D,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x53 LD D,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x54 LD D,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x55 LD D,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x56 LD D,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x57 LD D,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x58 LD E,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x59 LD E,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5A LD E,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5B LD E,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5C LD E,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5D LD E,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x57 LD D,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x58 LD E,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x59 LD E,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x5A LD E,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x5B LD E,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x5C LD E,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x5D LD E,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x5E LD E,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x5F LD E,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x5F LD E,A
 
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x60 LD H,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x61 LD H,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x62 LD H,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x63 LD H,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x64 LD H,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x65 LD H,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x60 LD H,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x61 LD H,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x62 LD H,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x63 LD H,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x64 LD H,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x65 LD H,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x66 LD H,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x67 LD H,A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x68 LD L,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x69 LD L,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6A LD L,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6B LD L,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6C LD L,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6D LD L,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x67 LD H,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x68 LD L,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x69 LD L,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6A LD L,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6B LD L,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6C LD L,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6D LD L,L
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x6E LD L,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x6F LD L,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6F LD L,A
 
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x70 LD (HL),B
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x71 LD (HL),C
@@ -170,73 +170,73 @@ var Opcodes = [256]Opcode{
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7F LD A,A
 
 	// 0x80-0xBF: ALU operations
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x80 ADD A,B
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x81 ADD A,C
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x82 ADD A,D
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x83 ADD A,E
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x84 ADD A,H
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x85 ADD A,L
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x80 ADD A,B
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x81 ADD A,C
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x82 ADD A,D
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x83 ADD A,E
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x84 ADD A,H
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x85 ADD A,L
 	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x86 ADD A,(HL)
-	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x87 ADD A,A
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x88 ADC A,B
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x89 ADC A,C
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8A ADC A,D
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8B ADC A,E
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8C ADC A,H
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8D ADC A,L
+	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x87 ADD A,A
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x88 ADC A,B
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x89 ADC A,C
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x8A ADC A,D
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x8B ADC A,E
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x8C ADC A,H
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x8D ADC A,L
 	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x8E ADC A,(HL)
-	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x8F ADC A,A
+	{Instruction: AdcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x8F ADC A,A
 
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x90 SUB B
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x91 SUB C
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x92 SUB D
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x93 SUB E
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x94 SUB H
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x95 SUB L
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x90 SUB B
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x91 SUB C
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x92 SUB D
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x93 SUB E
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x94 SUB H
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x95 SUB L
 	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x96 SUB (HL)
-	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x97 SUB A
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x98 SBC A,B
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x99 SBC A,C
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9A SBC A,D
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9B SBC A,E
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9C SBC A,H
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9D SBC A,L
+	{Instruction: SubA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x97 SUB A
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x98 SBC A,B
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x99 SBC A,C
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x9A SBC A,D
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x9B SBC A,E
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x9C SBC A,H
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x9D SBC A,L
 	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x9E SBC A,(HL)
-	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0x9F SBC A,A
+	{Instruction: SbcA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x9F SBC A,A
 
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA0 AND B
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA1 AND C
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA2 AND D
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA3 AND E
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA4 AND H
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA5 AND L
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA0 AND B
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA1 AND C
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA2 AND D
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA3 AND E
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA4 AND H
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA5 AND L
 	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0xA6 AND (HL)
-	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA7 AND A
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA8 XOR B
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xA9 XOR C
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAA XOR D
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAB XOR E
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAC XOR H
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAD XOR L
+	{Instruction: AndA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA7 AND A
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA8 XOR B
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xA9 XOR C
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xAA XOR D
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xAB XOR E
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xAC XOR H
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xAD XOR L
 	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0xAE XOR (HL)
-	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xAF XOR A
+	{Instruction: XorA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xAF XOR A
 
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB0 OR B
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB1 OR C
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB2 OR D
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB3 OR E
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB4 OR H
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB5 OR L
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB0 OR B
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB1 OR C
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB2 OR D
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB3 OR E
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB4 OR H
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB5 OR L
 	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0xB6 OR (HL)
-	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB7 OR A
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB8 CP B
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xB9 CP C
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBA CP D
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBB CP E
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBC CP H
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBD CP L
+	{Instruction: OrA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB7 OR A
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB8 CP B
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xB9 CP C
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xBA CP D
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xBB CP E
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xBC CP H
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xBD CP L
 	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0xBE CP (HL)
-	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1},         // 0xBF CP A
+	{Instruction: CpA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0xBF CP A
 
 	// 0xC0-0xFF: Conditional returns, jumps, calls, and immediate operations
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xC0 RET NZ (5 if not taken, 11 if taken)
@@ -327,62 +327,62 @@ var EDOpcodes = [256]Opcode{
 	0x4B: {Instruction: EdLdBcNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD BC,(nn)
 	0x4C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
 	0x4D: {Instruction: EdReti, Addressing: ImpliedAddressing, Timing: 14, Size: 2},    // RETI
-	0x4E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2},  // IM 0 (undocumented alias)
+	0x4E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2}, // IM 0 (undocumented alias)
 	0x4F: {Instruction: EdLdRA, Addressing: ImpliedAddressing, Timing: 9, Size: 2},     // LD R,A
 
 	// 0x50-0x5F
-	0x50: {Instruction: EdInDC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN D,(C)
-	0x51: {Instruction: EdOutCD, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),D
-	0x52: {Instruction: EdSbcHlDe, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // SBC HL,DE
-	0x53: {Instruction: EdLdNnDe, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD (nn),DE
-	0x54: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
-	0x55: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},    // RETN (undocumented)
-	0x56: {Instruction: EdIm1, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 1
-	0x57: {Instruction: EdLdAI, Addressing: ImpliedAddressing, Timing: 9, Size: 2},     // LD A,I
-	0x58: {Instruction: EdInEC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN E,(C)
-	0x59: {Instruction: EdOutCE, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),E
-	0x5A: {Instruction: EdAdcHlDe, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,DE
-	0x5B: {Instruction: EdLdDeNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD DE,(nn)
-	0x5C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x50: {Instruction: EdInDC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN D,(C)
+	0x51: {Instruction: EdOutCD, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),D
+	0x52: {Instruction: EdSbcHlDe, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // SBC HL,DE
+	0x53: {Instruction: EdLdNnDe, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD (nn),DE
+	0x54: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
+	0x55: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},      // RETN (undocumented)
+	0x56: {Instruction: EdIm1, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // IM 1
+	0x57: {Instruction: EdLdAI, Addressing: ImpliedAddressing, Timing: 9, Size: 2},       // LD A,I
+	0x58: {Instruction: EdInEC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN E,(C)
+	0x59: {Instruction: EdOutCE, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),E
+	0x5A: {Instruction: EdAdcHlDe, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // ADC HL,DE
+	0x5B: {Instruction: EdLdDeNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD DE,(nn)
+	0x5C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
 	0x5D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
-	0x5E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 2
-	0x5F: {Instruction: EdLdAR, Addressing: ImpliedAddressing, Timing: 9, Size: 2},     // LD A,R
+	0x5E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // IM 2
+	0x5F: {Instruction: EdLdAR, Addressing: ImpliedAddressing, Timing: 9, Size: 2},       // LD A,R
 
 	// 0x60-0x6F
-	0x60: {Instruction: EdInHC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN H,(C)
-	0x61: {Instruction: EdOutCH, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),H
-	0x62: {Instruction: EdSbcHlHl, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // SBC HL,HL
-	0x63: {Instruction: EdLdNnHl, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD (nn),HL
-	0x64: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
-	0x65: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},    // RETN (undocumented)
-	0x66: {Instruction: EdIm0, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 0 (undocumented)
-	0x67: {Instruction: EdRrd, Addressing: ImpliedAddressing, Timing: 18, Size: 2},     // RRD
-	0x68: {Instruction: EdInLC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN L,(C)
-	0x69: {Instruction: EdOutCL, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),L
-	0x6A: {Instruction: EdAdcHlHl, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,HL
-	0x6B: {Instruction: EdLdHlNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD HL,(nn)
-	0x6C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x60: {Instruction: EdInHC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN H,(C)
+	0x61: {Instruction: EdOutCH, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),H
+	0x62: {Instruction: EdSbcHlHl, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // SBC HL,HL
+	0x63: {Instruction: EdLdNnHl, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD (nn),HL
+	0x64: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
+	0x65: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},      // RETN (undocumented)
+	0x66: {Instruction: EdIm0, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // IM 0 (undocumented)
+	0x67: {Instruction: EdRrd, Addressing: ImpliedAddressing, Timing: 18, Size: 2},       // RRD
+	0x68: {Instruction: EdInLC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN L,(C)
+	0x69: {Instruction: EdOutCL, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),L
+	0x6A: {Instruction: EdAdcHlHl, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // ADC HL,HL
+	0x6B: {Instruction: EdLdHlNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD HL,(nn)
+	0x6C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
 	0x6D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
-	0x6E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2},  // IM 0 (undocumented alias)
-	0x6F: {Instruction: EdRld, Addressing: ImpliedAddressing, Timing: 18, Size: 2},     // RLD
+	0x6E: {Instruction: edIm0Alias, Addressing: ImpliedAddressing, Timing: 8, Size: 2},   // IM 0 (undocumented alias)
+	0x6F: {Instruction: EdRld, Addressing: ImpliedAddressing, Timing: 18, Size: 2},       // RLD
 
 	// 0x70-0x7F
-	0x70: {Instruction: EdInFC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN F,(C) (undocumented)
-	0x71: {Instruction: EdOut0C, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),0 (undocumented)
-	0x72: {Instruction: EdSbcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // SBC HL,SP
-	0x73: {Instruction: EdLdNnSp, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD (nn),SP
-	0x74: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
-	0x75: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},    // RETN (undocumented)
-	0x76: {Instruction: EdIm1, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 1 (undocumented)
-	0x78: {Instruction: EdInAC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},    // IN A,(C)
-	0x79: {Instruction: EdOutCA, Addressing: ImpliedAddressing, Timing: 12, Size: 2},   // OUT (C),A
-	0x7A: {Instruction: EdAdcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2}, // ADC HL,SP
-	0x7B: {Instruction: EdLdSpNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},  // LD SP,(nn)
-	0x7C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NEG (undocumented)
+	0x70: {Instruction: EdInFC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN F,(C) (undocumented)
+	0x71: {Instruction: EdOut0C, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),0 (undocumented)
+	0x72: {Instruction: EdSbcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // SBC HL,SP
+	0x73: {Instruction: EdLdNnSp, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD (nn),SP
+	0x74: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
+	0x75: {Instruction: EdRetn, Addressing: ImpliedAddressing, Timing: 14, Size: 2},      // RETN (undocumented)
+	0x76: {Instruction: EdIm1, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // IM 1 (undocumented)
+	0x78: {Instruction: EdInAC, Addressing: ImpliedAddressing, Timing: 12, Size: 2},      // IN A,(C)
+	0x79: {Instruction: EdOutCA, Addressing: ImpliedAddressing, Timing: 12, Size: 2},     // OUT (C),A
+	0x7A: {Instruction: EdAdcHlSp, Addressing: ImpliedAddressing, Timing: 15, Size: 2},   // ADC HL,SP
+	0x7B: {Instruction: EdLdSpNn, Addressing: ImpliedAddressing, Timing: 20, Size: 4},    // LD SP,(nn)
+	0x7C: {Instruction: EdNeg, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NEG (undocumented)
 	0x7D: {Instruction: edRetnAlias, Addressing: ImpliedAddressing, Timing: 14, Size: 2}, // RETN (undocumented alias)
-	0x7E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // IM 2 (undocumented)
-	0x77: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NOP (undocumented)
-	0x7F: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},      // NOP (undocumented)
+	0x7E: {Instruction: EdIm2, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // IM 2 (undocumented)
+	0x77: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NOP (undocumented)
+	0x7F: {Instruction: EdNop, Addressing: ImpliedAddressing, Timing: 8, Size: 2},        // NOP (undocumented)
 
 	// 0xA0-0xBF: Block operations
 	0xA0: {Instruction: EdLdi, Addressing: ImpliedAddressing, Timing: 16, Size: 2},  // LDI

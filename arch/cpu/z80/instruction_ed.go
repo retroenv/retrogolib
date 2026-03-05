@@ -515,8 +515,8 @@ var edIm0Alias = &Instruction{
 
 // Undocumented aliases for RETN (ED 5D, ED 6D, ED 7D).
 var edRetnAlias = &Instruction{
-	Name:       RetnName,
-	Unofficial: true,
+	Name:        RetnName,
+	Unofficial:  true,
 	NoParamFunc: edRetn,
 }
 
