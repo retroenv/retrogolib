@@ -115,6 +115,11 @@ func brk(c *CPU) error {
 	c.push(f)
 	c.Flags.I = 1 // Disable interrupts
 
+	// 65C02: Clear D flag after pushing status on BRK
+	if c.opts.variant >= Variant65C02 {
+		c.Flags.D = 0
+	}
+
 	c.PC = c.irqAddress
 
 	c.mu.Lock()

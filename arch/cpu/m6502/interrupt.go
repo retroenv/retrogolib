@@ -56,6 +56,10 @@ func (c *CPU) executeInterrupt(funAddress uint16) {
 
 	if funAddress != 0 {
 		c.Flags.I = 1
+		// 65C02: Clear D flag after pushing status on interrupt
+		if c.opts.variant >= Variant65C02 {
+			c.Flags.D = 0
+		}
 		c.cycles += 7
 		c.PC = funAddress
 	}

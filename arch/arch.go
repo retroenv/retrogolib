@@ -27,6 +27,12 @@ const (
 	// - Nintendo Entertainment System (NES/Famicom)
 	M6502 Architecture = "6502"
 
+	// M65C02 represents the WDC 65C02 processor used in:
+	// - Apple IIe/IIc
+	// - Atari Lynx
+	// - TurboGrafx-16/PC Engine
+	M65C02 Architecture = "65c02"
+
 	// X86 represents the Intel x86 processor family used in:
 	// - IBM PC and compatibles
 	// - MS-DOS and compatible operating systems
@@ -48,6 +54,7 @@ const (
 var allSupportedArchitectures = []Architecture{
 	CHIP8,
 	M6502,
+	M65C02,
 	X86,
 	Z80,
 }

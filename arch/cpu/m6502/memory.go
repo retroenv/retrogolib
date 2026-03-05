@@ -87,6 +87,17 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 		return m.writeMemoryZeroPage(address, value, register)
 	case Indirect, IndirectResolved:
 		return m.writeMemoryIndirect(address, value, register)
+	case ZeroPageIndirect:
+		// Zero page indirect: the resolved address is in the next param
+		if register == nil {
+			return fmt.Errorf("%w: zero page indirect write missing resolved address", ErrMissingParameter)
+		}
+		resolved, ok := register.(IndirectResolved)
+		if !ok {
+			return fmt.Errorf("%w: zero page indirect write type %T", ErrInvalidParameterType, register)
+		}
+		m.Write(uint16(resolved), value)
+		return nil
 	default:
 		return fmt.Errorf("%w: write mode type %T", ErrUnsupportedAddressingMode, param)
 	}
@@ -124,6 +135,16 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 		return m.ReadMemoryZeroPage(address, register)
 	case Indirect, IndirectResolved:
 		return m.readMemoryIndirect(address, register)
+	case ZeroPageIndirect:
+		// Zero page indirect: the resolved address is in the next param
+		if register == nil {
+			return 0, fmt.Errorf("%w: zero page indirect read missing resolved address", ErrMissingParameter)
+		}
+		resolved, ok := register.(IndirectResolved)
+		if !ok {
+			return 0, fmt.Errorf("%w: zero page indirect read type %T", ErrInvalidParameterType, register)
+		}
+		return m.Read(uint16(resolved)), nil
 	default:
 		return 0, fmt.Errorf("%w: read mode type %T", ErrUnsupportedAddressingMode, param)
 	}

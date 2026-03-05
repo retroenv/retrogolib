@@ -1,7 +1,16 @@
 package m6502
 
+// CPUVariant represents a CPU variant within the 6502 family.
+type CPUVariant int
+
+const (
+	VariantNMOS6502 CPUVariant = iota // Original NMOS 6502
+	Variant65C02                      // WDC 65C02 (base)
+)
+
 // Options contains options for the CPU.
 type Options struct {
+	variant          CPUVariant
 	tracing          bool
 	preExecutionHook preExecutionHook
 }
@@ -30,6 +39,13 @@ func WithTracing() func(*Options) {
 func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
 	return func(options *Options) {
 		options.preExecutionHook = hook
+	}
+}
+
+// WithVariant sets the CPU variant.
+func WithVariant(v CPUVariant) func(*Options) {
+	return func(options *Options) {
+		options.variant = v
 	}
 }
 

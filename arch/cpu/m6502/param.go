@@ -7,19 +7,21 @@ import (
 type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
 
 var paramReader = map[AddressingMode]paramReaderFunc{
-	ImpliedAddressing:     paramReaderImplied,
-	ImmediateAddressing:   paramReaderImmediate,
-	AccumulatorAddressing: paramReaderAccumulator,
-	AbsoluteAddressing:    paramReaderAbsolute,
-	AbsoluteXAddressing:   paramReaderAbsoluteX,
-	AbsoluteYAddressing:   paramReaderAbsoluteY,
-	ZeroPageAddressing:    paramReaderZeroPage,
-	ZeroPageXAddressing:   paramReaderZeroPageX,
-	ZeroPageYAddressing:   paramReaderZeroPageY,
-	RelativeAddressing:    paramReaderRelative,
-	IndirectAddressing:    paramReaderIndirect,
-	IndirectXAddressing:   paramReaderIndirectX,
-	IndirectYAddressing:   paramReaderIndirectY,
+	ImpliedAddressing:           paramReaderImplied,
+	ImmediateAddressing:         paramReaderImmediate,
+	AccumulatorAddressing:       paramReaderAccumulator,
+	AbsoluteAddressing:          paramReaderAbsolute,
+	AbsoluteXAddressing:         paramReaderAbsoluteX,
+	AbsoluteYAddressing:         paramReaderAbsoluteY,
+	ZeroPageAddressing:          paramReaderZeroPage,
+	ZeroPageXAddressing:         paramReaderZeroPageX,
+	ZeroPageYAddressing:         paramReaderZeroPageY,
+	RelativeAddressing:          paramReaderRelative,
+	IndirectAddressing:          paramReaderIndirect,
+	IndirectXAddressing:         paramReaderIndirectX,
+	IndirectYAddressing:         paramReaderIndirectY,
+	ZeroPageIndirectAddressing:  paramReaderZeroPageIndirect,
+	AbsoluteXIndirectAddressing: paramReaderAbsoluteXIndirect,
 }
 
 // readOpParams reads the opcode parameters after the first opcode byte
@@ -152,6 +154,29 @@ func paramReaderIndirectY(c *CPU) ([]any, []byte, bool) {
 
 	opcodes := []byte{b}
 	return params, opcodes, pageCrossed
+}
+
+// paramReaderZeroPageIndirect reads the zero page indirect addressing mode (zp).
+// Reads a zero-page address byte, then reads the 16-bit pointer at that zero-page location.
+func paramReaderZeroPageIndirect(c *CPU) ([]any, []byte, bool) {
+	b := c.memory.Read(c.PC + 1)
+	// Read 16-bit address from zero page (with page wrap bug fix on 65C02)
+	address := c.memory.ReadWord(uint16(b))
+	params := []any{ZeroPageIndirect(b), IndirectResolved(address)}
+	opcodes := []byte{b}
+	return params, opcodes, false
+}
+
+// paramReaderAbsoluteXIndirect reads the absolute indexed indirect addressing mode (abs,X).
+// Used by 65C02 JMP (abs,X): reads abs+X as a 16-bit pointer.
+func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
+	b1 := uint16(c.memory.Read(c.PC + 1))
+	b2 := uint16(c.memory.Read(c.PC + 2))
+	base := b2<<8 | b1
+	address := c.memory.ReadWord(base + uint16(c.X))
+	params := []any{AbsoluteXIndirect(base), Absolute(address)}
+	opcodes := []byte{byte(b1), byte(b2)}
+	return params, opcodes, false
 }
 
 // offsetAddress returns the offset address and whether it crosses a page boundary.

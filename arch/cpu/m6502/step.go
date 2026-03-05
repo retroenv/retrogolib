@@ -75,7 +75,13 @@ func (c *CPU) Step() error {
 // decodeNextInstruction decodes the current instruction at the program counter.
 func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
-	opcode := Opcodes[b]
+
+	var opcode Opcode
+	if c.opts.variant >= Variant65C02 {
+		opcode = Opcodes65C02[b]
+	} else {
+		opcode = Opcodes[b]
+	}
 	if opcode.Instruction == nil {
 		return Opcode{}, fmt.Errorf("%w: 0x%02x at PC=0x%04x", ErrUnknownOpcode, b, c.PC)
 	}
