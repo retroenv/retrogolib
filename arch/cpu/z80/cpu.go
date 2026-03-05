@@ -114,10 +114,6 @@ type Interrupts struct {
 	IrqTriggered bool
 }
 
-const (
-	initialCycles = 0
-)
-
 // New creates a new Z80 CPU with a memory controller.
 // This allows different hardware implementations (Game Boy, MSX, ZX Spectrum, etc.)
 // to provide their own memory mapping logic.
@@ -138,7 +134,7 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 	c := &CPU{
 		PC:     opts.initialPC,
 		SP:     opts.initialSP,
-		cycles: initialCycles,
+		cycles: 0,
 		opts:   opts,
 		memory: memory,
 		iff1:   false,
@@ -220,7 +216,7 @@ func (c *CPU) State() State {
 
 // Memory returns the attached memory controller.
 //
-//nolint:ireturn // Returning interface is intentional for flexibility
+//nolint:ireturn
 func (c *CPU) Memory() Memory {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

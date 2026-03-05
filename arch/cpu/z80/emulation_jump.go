@@ -221,30 +221,8 @@ func rst(c *CPU, _ ...any) error {
 	// RST pushes return address (next instruction) to stack and jumps to fixed address
 	c.push16(c.PC + 1)
 
-	// Calculate restart vector from opcode
-	opcode := c.currentOpcode
-	var vector uint16
-	switch opcode {
-	case 0xC7: // RST 00H
-		vector = 0x0000
-	case 0xCF: // RST 08H
-		vector = 0x0008
-	case 0xD7: // RST 10H
-		vector = 0x0010
-	case 0xDF: // RST 18H
-		vector = 0x0018
-	case 0xE7: // RST 20H
-		vector = 0x0020
-	case 0xEF: // RST 28H
-		vector = 0x0028
-	case 0xF7: // RST 30H
-		vector = 0x0030
-	case 0xFF: // RST 38H
-		vector = 0x0038
-	default:
-		return fmt.Errorf("unsupported rst opcode: 0x%02X", opcode)
-	}
-
+	// RST vector is encoded in bits 3-5 of the opcode: 0xC7/CF/D7/DF/E7/EF/F7/FF
+	vector := uint16(c.currentOpcode & 0x38)
 	c.PC = vector
 	c.MEMPTR = vector
 	return nil

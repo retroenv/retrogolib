@@ -237,7 +237,7 @@ func setSingleStepState(cpu *CPU, s *singleStepState) {
 
 	// Shadow registers: af_ is A'F', bc_ is B'C', etc.
 	cpu.AltA = uint8(s.AF_ >> 8)
-	cpu.setFlagsFromUint8(&cpu.AltFlags, uint8(s.AF_))
+	setAltFlags(&cpu.AltFlags, uint8(s.AF_))
 	cpu.AltB = uint8(s.BC_ >> 8)
 	cpu.AltC = uint8(s.BC_)
 	cpu.AltD = uint8(s.DE_ >> 8)
@@ -328,7 +328,7 @@ func compareSingleStepShadow(cpu *CPU, expected *singleStepState) error {
 		got  uint16
 		want uint16
 	}{
-		{"AF'", uint16(cpu.AltA)<<8 | uint16(cpu.getFlagsAsUint8(cpu.AltFlags)), expected.AF_},
+		{"AF'", uint16(cpu.AltA)<<8 | uint16(getAltFlagsAsUint8(cpu.AltFlags)), expected.AF_},
 		{"BC'", uint16(cpu.AltB)<<8 | uint16(cpu.AltC), expected.BC_},
 		{"DE'", uint16(cpu.AltD)<<8 | uint16(cpu.AltE), expected.DE_},
 		{"HL'", uint16(cpu.AltH)<<8 | uint16(cpu.AltL), expected.HL_},
@@ -350,6 +350,24 @@ func compareSingleStepInterrupts(cpu *CPU, expected *singleStepState) error {
 		return err
 	}
 	return compareReg8("IM", cpu.im, expected.IM)
+}
+
+// setAltFlags sets shadow flag register from a byte value.
+func setAltFlags(flags *Flags, value uint8) {
+	flags.C = value & 0x01
+	flags.N = (value >> 1) & 0x01
+	flags.P = (value >> 2) & 0x01
+	flags.X = (value >> 3) & 0x01
+	flags.H = (value >> 4) & 0x01
+	flags.Y = (value >> 5) & 0x01
+	flags.Z = (value >> 6) & 0x01
+	flags.S = (value >> 7) & 0x01
+}
+
+// getAltFlagsAsUint8 converts shadow flag register to a byte.
+func getAltFlagsAsUint8(flags Flags) uint8 {
+	return flags.C | (flags.N << 1) | (flags.P << 2) | (flags.X << 3) |
+		(flags.H << 4) | (flags.Y << 5) | (flags.Z << 6) | (flags.S << 7)
 }
 
 // compareSingleStepRAM compares memory contents.

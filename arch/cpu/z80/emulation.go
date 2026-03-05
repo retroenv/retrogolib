@@ -423,170 +423,99 @@ func cpl(c *CPU) error {
 	return nil
 }
 
+// resolveOperand extracts an 8-bit value from a Register or Immediate8 parameter.
+func resolveOperand(c *CPU, params ...any) (uint8, error) {
+	if len(params) < 1 {
+		return 0, ErrMissingParameter
+	}
+	switch param := params[0].(type) {
+	case Register:
+		return c.GetRegisterValue(uint8(param)), nil
+	case Immediate8:
+		return uint8(param), nil
+	default:
+		return 0, ErrInvalidParameterType
+	}
+}
+
 // Accumulator wrapper functions
 
 // addA adds a value to the accumulator.
 func addA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.add8(c.A, value)
 	return nil
 }
 
 // subA subtracts a value from the accumulator.
 func subA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.sub8(c.A, value)
 	return nil
 }
 
 // andA performs logical AND with the accumulator.
 func andA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.and8(c.A, value)
 	return nil
 }
 
 // orA performs logical OR with the accumulator.
 func orA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.or8(c.A, value)
 	return nil
 }
 
 // xorA performs logical XOR with the accumulator.
 func xorA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.xor8(c.A, value)
 	return nil
 }
 
 // cpA compares a value with the accumulator.
 func cpA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.cp(c.A, value)
 	return nil
 }
 
 // adcA adds with carry to accumulator.
 func adcA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.adc(c.A, value)
 	return nil
 }
 
 // sbcA subtracts with carry from accumulator.
 func sbcA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
+	value, err := resolveOperand(c, params...)
+	if err != nil {
+		return err
 	}
-
-	var value uint8
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
 	c.A = c.sbc(c.A, value)
 	return nil
 }

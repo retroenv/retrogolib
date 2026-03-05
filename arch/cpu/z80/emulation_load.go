@@ -197,39 +197,19 @@ func popReg16(c *CPU, _ ...any) error {
 
 // exAf exchanges AF with AF'.
 func exAf(c *CPU) error {
-	// Exchange AF with shadow AF'
-	tempA := c.A
-	tempF := c.Flags
-	c.A = c.AltA
-	c.Flags = c.AltFlags
-	c.AltA = tempA
-	c.AltFlags = tempF
+	c.A, c.AltA = c.AltA, c.A
+	c.Flags, c.AltFlags = c.AltFlags, c.Flags
 	return nil
 }
 
 // exx exchanges register pairs.
 func exx(c *CPU) error {
-	// Exchange BC, DE, HL with BC', DE', HL'
-	tempB := c.B
-	tempC := c.C
-	tempD := c.D
-	tempE := c.E
-	tempH := c.H
-	tempL := c.L
-
-	c.B = c.AltB
-	c.C = c.AltC
-	c.D = c.AltD
-	c.E = c.AltE
-	c.H = c.AltH
-	c.L = c.AltL
-
-	c.AltB = tempB
-	c.AltC = tempC
-	c.AltD = tempD
-	c.AltE = tempE
-	c.AltH = tempH
-	c.AltL = tempL
+	c.B, c.AltB = c.AltB, c.B
+	c.C, c.AltC = c.AltC, c.C
+	c.D, c.AltD = c.AltD, c.D
+	c.E, c.AltE = c.AltE, c.E
+	c.H, c.AltH = c.AltH, c.H
+	c.L, c.AltL = c.AltL, c.L
 	return nil
 }
 
@@ -253,11 +233,7 @@ func exSp(c *CPU, _ ...any) error {
 
 // exDeHl exchanges DE with HL.
 func exDeHl(c *CPU) error {
-	tempD := c.D
-	tempE := c.E
-	c.D = c.H
-	c.E = c.L
-	c.H = tempD
-	c.L = tempE
+	c.D, c.H = c.H, c.D
+	c.E, c.L = c.L, c.E
 	return nil
 }
