@@ -16,7 +16,7 @@ func TestZexdoc(t *testing.T) {
 		t.Skip("skipping ZEXDOC in short mode")
 	}
 
-	runZex(t, "testdata/zexdoc.com")
+	runZex(t, "testdata/zexdoc.com", 67)
 }
 
 // TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
@@ -25,13 +25,14 @@ func TestZexall(t *testing.T) {
 		t.Skip("skipping ZEXALL in short mode")
 	}
 
-	runZex(t, "testdata/zexall.com")
+	runZex(t, "testdata/zexall.com", 67)
 }
 
 // zexOutput tracks output buffering and error counting for ZEX tests.
 type zexOutput struct {
 	buf       bytes.Buffer
 	failCount int
+	okCount   int
 }
 
 // flushLine processes a completed line of output, checking for errors.
@@ -40,6 +41,9 @@ func (z *zexOutput) flushLine() {
 	if len(line) > 0 {
 		if strings.Contains(line, "ERROR") {
 			z.failCount++
+		}
+		if strings.HasSuffix(line, "OK") {
+			z.okCount++
 		}
 		fmt.Println(line)
 	}
@@ -81,7 +85,7 @@ func handleBDOS(cpu *CPU, mem *BasicMemory, out *zexOutput) {
 }
 
 // runZex loads and runs a ZEXALL/ZEXDOC .com binary under a minimal CP/M harness.
-func runZex(t *testing.T, path string) {
+func runZex(t *testing.T, path string, expectedTests int) {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
@@ -142,5 +146,6 @@ func runZex(t *testing.T, path string) {
 	out.flush()
 
 	assert.Less(t, cpu.cycles, maxCycles, "exceeded maximum cycle count")
-	assert.LessOrEqual(t, out.failCount, 0, "%d tests failed", out.failCount)
+	assert.Equal(t, 0, out.failCount, "%d test groups reported ERROR", out.failCount)
+	assert.Equal(t, expectedTests, out.okCount, "expected %d OK results, got %d", expectedTests, out.okCount)
 }
