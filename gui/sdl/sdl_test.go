@@ -11,6 +11,9 @@ import (
 	"github.com/retroenv/retrogolib/input"
 )
 
+const height = 240
+const width = 256
+
 func TestSetupGoSDL(t *testing.T) {
 	b := &backend{}
 	render, cleanup, err := Setup(b)
@@ -19,9 +22,6 @@ func TestSetupGoSDL(t *testing.T) {
 	assert.NoError(t, err)
 	cleanup()
 }
-
-const height = 240
-const width = 256
 
 type backend struct {
 	img *image.RGBA

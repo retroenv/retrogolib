@@ -33,6 +33,56 @@ type NetworkConfig struct {
 	Port    int     `config:"port"`
 }
 
+type DefaultTestConfig struct {
+	StringField  string  `config:"test.string_field,default=default_string"`
+	IntField     int     `config:"test.int_field,default=42"`
+	BoolField    bool    `config:"test.bool_field,default=true"`
+	FloatField   float64 `config:"test.float_field,default=3.14"`
+	HexField     int     `config:"test.hex_field,default=0xFF"`
+	NoDefaultStr string  `config:"test.no_default_str"`
+	NoDefaultInt int     `config:"test.no_default_int"`
+}
+
+type RequiredTestConfig struct {
+	DatabaseURL     string `config:"app.database_url,required"`
+	APIKey          string `config:"app.api_key,required"`
+	Port            int    `config:"app.port,required,default=8080"`
+	OptionalSetting string `config:"app.optional_setting"`
+}
+
+// OpenGLConfig represents OpenGL configuration with mixed tag types
+type OpenGLConfig struct {
+	Version     string `config:"version"`
+	CoreProfile bool   // Automatic: graphics.opengl.coreprofile
+}
+
+// GraphicsConfig represents graphics configuration with nested OpenGL
+type GraphicsConfig struct {
+	Width  int          `config:"width"`
+	Height int          `config:"height"`
+	VSync  bool         // Automatic: graphics.vsync
+	OpenGL OpenGLConfig `config:"opengl"`
+}
+
+// ChannelsConfig represents audio channels configuration
+type ChannelsConfig struct {
+	MasterVolume float64 `config:"mastervolume"`
+	SFXVolume    float64 // Automatic: audio.channels.sfxvolume
+}
+
+// AudioConfig represents audio configuration with nested channels
+type AudioConfig struct {
+	SampleRate int            `config:"sample_rate"`
+	BufferSize int            // Automatic: audio.buffersize
+	Channels   ChannelsConfig // Automatic: uses "channels" subsection
+}
+
+// AppConfig represents application configuration
+type AppConfig struct {
+	Name  string // Automatic: app.name
+	Debug bool   `config:"app.debug"` // Explicit tag
+}
+
 func TestLoad_Success(t *testing.T) {
 	data := `[emulation]
 cpu = "6502"
@@ -377,9 +427,7 @@ func TestDefaultValueTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tagInfo := config.parseTag(tt.fieldTag, "")
 
-			if !tagInfo.HasDefault {
-				t.Fatal("Expected tag to have default value")
-			}
+			assert.True(t, tagInfo.HasDefault)
 
 			var fieldType reflect.Type
 			switch {
@@ -525,16 +573,6 @@ func TestTagInfoParsing_EdgeCases(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
-}
-
-type DefaultTestConfig struct {
-	StringField  string  `config:"test.string_field,default=default_string"`
-	IntField     int     `config:"test.int_field,default=42"`
-	BoolField    bool    `config:"test.bool_field,default=true"`
-	FloatField   float64 `config:"test.float_field,default=3.14"`
-	HexField     int     `config:"test.hex_field,default=0xFF"`
-	NoDefaultStr string  `config:"test.no_default_str"`
-	NoDefaultInt int     `config:"test.no_default_int"`
 }
 
 func TestRequiredFields_Success(t *testing.T) {
@@ -696,13 +734,6 @@ func TestTagParsingRequired(t *testing.T) {
 	}
 }
 
-type RequiredTestConfig struct {
-	DatabaseURL     string `config:"app.database_url,required"`
-	APIKey          string `config:"app.api_key,required"`
-	Port            int    `config:"app.port,required,default=8080"`
-	OptionalSetting string `config:"app.optional_setting"`
-}
-
 func TestDuplicateSections_ErrorsBehavior(t *testing.T) {
 	data := `[database]
 host = "localhost"
@@ -778,7 +809,7 @@ port = 5432`
 
 	reloadedConfig, err := LoadConfigBytes(savedData)
 	assert.NoError(t, err)
-	assert.Equal(t, len(config.sections), len(reloadedConfig.sections))
+	assert.Len(t, config.sections, len(reloadedConfig.sections))
 }
 
 // TestDuplicateSection_Variations tests different patterns of duplicate sections.
@@ -1353,78 +1384,6 @@ func TestDeepNesting_FourLevels(t *testing.T) {
 	verifyFourLevelResults(t, cfg)
 }
 
-func getFourLevelTestData() string {
-	return `[emulator]
-name = "RetroGo"
-version = "1.0"
-
-[emulator.console]
-type = "nes"
-region = "ntsc"
-
-[emulator.console.cartridge]
-mapper = 0
-prg_banks = 2
-chr_banks = 1
-
-[emulator.console.cartridge.header]
-valid = true
-trainer = false
-battery = true
-fourscreen = false`
-}
-
-func getFourLevelConfig() *fourLevelConfig {
-	return &fourLevelConfig{}
-}
-
-func verifyFourLevelResults(t *testing.T, cfg *fourLevelConfig) {
-	t.Helper()
-	// Verify 4-level deep access
-	assert.Equal(t, "RetroGo", cfg.Emulator.Name)
-	assert.Equal(t, "1.0", cfg.Emulator.Version)
-	assert.Equal(t, "nes", cfg.Emulator.Console.Type)
-	assert.Equal(t, "ntsc", cfg.Emulator.Console.Region)
-	assert.Equal(t, 0, cfg.Emulator.Console.Cartridge.Mapper)
-	assert.Equal(t, 2, cfg.Emulator.Console.Cartridge.PRGBanks)
-	assert.Equal(t, 1, cfg.Emulator.Console.Cartridge.CHRBanks)
-	assert.True(t, cfg.Emulator.Console.Cartridge.Header.Valid)
-	assert.False(t, cfg.Emulator.Console.Cartridge.Header.Trainer)
-	assert.True(t, cfg.Emulator.Console.Cartridge.Header.Battery)
-	assert.False(t, cfg.Emulator.Console.Cartridge.Header.Fourscreen)
-}
-
-// Define 4-level nested structs
-type fourLevelHeaderConfig struct {
-	Valid      bool `config:"valid"`
-	Trainer    bool `config:"trainer"`
-	Battery    bool `config:"battery"`
-	Fourscreen bool `config:"fourscreen"`
-}
-
-type fourLevelCartridgeConfig struct {
-	Mapper   int                   `config:"mapper"`
-	PRGBanks int                   `config:"prg_banks"`
-	CHRBanks int                   `config:"chr_banks"`
-	Header   fourLevelHeaderConfig `config:"header"`
-}
-
-type fourLevelConsoleConfig struct {
-	Type      string                   `config:"type"`
-	Region    string                   `config:"region"`
-	Cartridge fourLevelCartridgeConfig `config:"cartridge"`
-}
-
-type fourLevelEmulatorConfig struct {
-	Name    string                 `config:"name"`
-	Version string                 `config:"version"`
-	Console fourLevelConsoleConfig `config:"console"`
-}
-
-type fourLevelConfig struct {
-	Emulator fourLevelEmulatorConfig `config:"emulator"`
-}
-
 // TestDeepNesting_AutomaticMapping tests automatic field mapping in deep nesting
 func TestDeepNesting_AutomaticMapping(t *testing.T) {
 	data := `[system]
@@ -1504,89 +1463,6 @@ func TestDeepNesting_MixedTagsAndAuto(t *testing.T) {
 	assert.NoError(t, err)
 
 	verifyMixedTagsResults(t, cfg)
-}
-
-// OpenGLConfig represents OpenGL configuration with mixed tag types
-type OpenGLConfig struct {
-	Version     string `config:"version"`
-	CoreProfile bool   // Automatic: graphics.opengl.coreprofile
-}
-
-// GraphicsConfig represents graphics configuration with nested OpenGL
-type GraphicsConfig struct {
-	Width  int          `config:"width"`
-	Height int          `config:"height"`
-	VSync  bool         // Automatic: graphics.vsync
-	OpenGL OpenGLConfig `config:"opengl"`
-}
-
-// ChannelsConfig represents audio channels configuration
-type ChannelsConfig struct {
-	MasterVolume float64 `config:"mastervolume"`
-	SFXVolume    float64 // Automatic: audio.channels.sfxvolume
-}
-
-// AudioConfig represents audio configuration with nested channels
-type AudioConfig struct {
-	SampleRate int            `config:"sample_rate"`
-	BufferSize int            // Automatic: audio.buffersize
-	Channels   ChannelsConfig // Automatic: uses "channels" subsection
-}
-
-// AppConfig represents application configuration
-type AppConfig struct {
-	Name  string // Automatic: app.name
-	Debug bool   `config:"app.debug"` // Explicit tag
-}
-
-// mixedTagsConfig represents configuration with mixed tagging approaches
-type mixedTagsConfig struct {
-	App      AppConfig      // Automatic: uses "app" section
-	Graphics GraphicsConfig `config:"graphics"`
-	Audio    AudioConfig    // Automatic: uses "audio" section
-}
-
-func getMixedTagsTestData() string {
-	return `[app]
-name = "RetroGoLib"
-debug = true
-
-[graphics]
-width = 256
-height = 240
-vsync = true
-
-[graphics.opengl]
-version = "3.3"
-coreprofile = true
-
-[audio]
-sample_rate = 44100
-buffersize = 1024
-
-[audio.channels]
-mastervolume = 0.8
-sfxvolume = 0.6`
-}
-
-func getMixedTagsConfig() *mixedTagsConfig {
-	return &mixedTagsConfig{}
-}
-
-func verifyMixedTagsResults(t *testing.T, cfg *mixedTagsConfig) {
-	t.Helper()
-	// Verify mixed mapping works correctly
-	assert.Equal(t, "RetroGoLib", cfg.App.Name)
-	assert.True(t, cfg.App.Debug)
-	assert.Equal(t, 256, cfg.Graphics.Width)
-	assert.Equal(t, 240, cfg.Graphics.Height)
-	assert.True(t, cfg.Graphics.VSync)
-	assert.Equal(t, "3.3", cfg.Graphics.OpenGL.Version)
-	assert.True(t, cfg.Graphics.OpenGL.CoreProfile)
-	assert.Equal(t, 44100, cfg.Audio.SampleRate)
-	assert.Equal(t, 1024, cfg.Audio.BufferSize)
-	assert.Equal(t, 0.8, cfg.Audio.Channels.MasterVolume)
-	assert.Equal(t, 0.6, cfg.Audio.Channels.SFXVolume)
 }
 
 // TestDeepNesting_WithDefaults tests deep nesting with default values
@@ -1905,22 +1781,42 @@ func TestRootLevelKeysIntegration(t *testing.T) {
 	testIntegrationMarshal(t, cfg)
 }
 
-func getIntegrationTestData() string {
-	return `# Configuration with root-level keys and sections
-app_name = "RetroGoLib"
-version = "1.0.0"
-debug = true
-max_connections = 100
-timeout = 30.5
+// Define 4-level nested structs
+type fourLevelHeaderConfig struct {
+	Valid      bool `config:"valid"`
+	Trainer    bool `config:"trainer"`
+	Battery    bool `config:"battery"`
+	Fourscreen bool `config:"fourscreen"`
+}
 
-[database]
-host = "localhost"
-port = 5432
-ssl = true
+type fourLevelCartridgeConfig struct {
+	Mapper   int                   `config:"mapper"`
+	PRGBanks int                   `config:"prg_banks"`
+	CHRBanks int                   `config:"chr_banks"`
+	Header   fourLevelHeaderConfig `config:"header"`
+}
 
-[cache]
-enabled = true
-ttl = 3600`
+type fourLevelConsoleConfig struct {
+	Type      string                   `config:"type"`
+	Region    string                   `config:"region"`
+	Cartridge fourLevelCartridgeConfig `config:"cartridge"`
+}
+
+type fourLevelEmulatorConfig struct {
+	Name    string                 `config:"name"`
+	Version string                 `config:"version"`
+	Console fourLevelConsoleConfig `config:"console"`
+}
+
+type fourLevelConfig struct {
+	Emulator fourLevelEmulatorConfig `config:"emulator"`
+}
+
+// mixedTagsConfig represents configuration with mixed tagging approaches
+type mixedTagsConfig struct {
+	App      AppConfig      // Automatic: uses "app" section
+	Graphics GraphicsConfig `config:"graphics"`
+	Audio    AudioConfig    // Automatic: uses "audio" section
 }
 
 type integrationDatabaseConfig struct {
@@ -1942,6 +1838,108 @@ type integrationConfig struct {
 	Timeout        float64                   `config:"timeout"`
 	Database       integrationDatabaseConfig `config:"database"`
 	Cache          integrationCacheConfig    `config:"cache"`
+}
+
+func getMixedTagsTestData() string {
+	return `[app]
+name = "RetroGoLib"
+debug = true
+
+[graphics]
+width = 256
+height = 240
+vsync = true
+
+[graphics.opengl]
+version = "3.3"
+coreprofile = true
+
+[audio]
+sample_rate = 44100
+buffersize = 1024
+
+[audio.channels]
+mastervolume = 0.8
+sfxvolume = 0.6`
+}
+
+func getMixedTagsConfig() *mixedTagsConfig {
+	return &mixedTagsConfig{}
+}
+
+func verifyMixedTagsResults(t *testing.T, cfg *mixedTagsConfig) {
+	t.Helper()
+	// Verify mixed mapping works correctly
+	assert.Equal(t, "RetroGoLib", cfg.App.Name)
+	assert.True(t, cfg.App.Debug)
+	assert.Equal(t, 256, cfg.Graphics.Width)
+	assert.Equal(t, 240, cfg.Graphics.Height)
+	assert.True(t, cfg.Graphics.VSync)
+	assert.Equal(t, "3.3", cfg.Graphics.OpenGL.Version)
+	assert.True(t, cfg.Graphics.OpenGL.CoreProfile)
+	assert.Equal(t, 44100, cfg.Audio.SampleRate)
+	assert.Equal(t, 1024, cfg.Audio.BufferSize)
+	assert.Equal(t, 0.8, cfg.Audio.Channels.MasterVolume)
+	assert.Equal(t, 0.6, cfg.Audio.Channels.SFXVolume)
+}
+
+func getFourLevelTestData() string {
+	return `[emulator]
+name = "RetroGo"
+version = "1.0"
+
+[emulator.console]
+type = "nes"
+region = "ntsc"
+
+[emulator.console.cartridge]
+mapper = 0
+prg_banks = 2
+chr_banks = 1
+
+[emulator.console.cartridge.header]
+valid = true
+trainer = false
+battery = true
+fourscreen = false`
+}
+
+func getFourLevelConfig() *fourLevelConfig {
+	return &fourLevelConfig{}
+}
+
+func verifyFourLevelResults(t *testing.T, cfg *fourLevelConfig) {
+	t.Helper()
+	// Verify 4-level deep access
+	assert.Equal(t, "RetroGo", cfg.Emulator.Name)
+	assert.Equal(t, "1.0", cfg.Emulator.Version)
+	assert.Equal(t, "nes", cfg.Emulator.Console.Type)
+	assert.Equal(t, "ntsc", cfg.Emulator.Console.Region)
+	assert.Equal(t, 0, cfg.Emulator.Console.Cartridge.Mapper)
+	assert.Equal(t, 2, cfg.Emulator.Console.Cartridge.PRGBanks)
+	assert.Equal(t, 1, cfg.Emulator.Console.Cartridge.CHRBanks)
+	assert.True(t, cfg.Emulator.Console.Cartridge.Header.Valid)
+	assert.False(t, cfg.Emulator.Console.Cartridge.Header.Trainer)
+	assert.True(t, cfg.Emulator.Console.Cartridge.Header.Battery)
+	assert.False(t, cfg.Emulator.Console.Cartridge.Header.Fourscreen)
+}
+
+func getIntegrationTestData() string {
+	return `# Configuration with root-level keys and sections
+app_name = "RetroGoLib"
+version = "1.0.0"
+debug = true
+max_connections = 100
+timeout = 30.5
+
+[database]
+host = "localhost"
+port = 5432
+ssl = true
+
+[cache]
+enabled = true
+ttl = 3600`
 }
 
 func getIntegrationConfig() *integrationConfig {

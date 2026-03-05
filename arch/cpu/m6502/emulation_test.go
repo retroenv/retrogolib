@@ -7,37 +7,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type cpuTest struct {
-	Name  string
-	Setup func(cpu *CPU)
-	Check func(cpu *CPU)
-}
-
-const testIrqAddress = 0x9000
-
-func cpuTestSetup(t *testing.T) *CPU {
-	t.Helper()
-	memory, err := NewMemory(&testMemory{})
-	assert.NoError(t, err)
-	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
-	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory)
-	return cpu
-}
-
-func runCPUTest(t *testing.T, tests []cpuTest) {
-	t.Helper()
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			t.Parallel()
-			cpu := cpuTestSetup(t)
-			test.Setup(cpu)
-			test.Check(cpu)
-		})
-	}
-}
-
 func TestAdc(t *testing.T) {
 	t.Parallel()
 	tests := []cpuTest{
@@ -1451,4 +1420,35 @@ func TestGetInstructionCount(t *testing.T) {
 	cpu.cycles = 100
 	count = cpu.GetInstructionCount()
 	assert.Equal(t, uint64(25), count)
+}
+
+type cpuTest struct {
+	Name  string
+	Setup func(cpu *CPU)
+	Check func(cpu *CPU)
+}
+
+const testIrqAddress = 0x9000
+
+func cpuTestSetup(t *testing.T) *CPU {
+	t.Helper()
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
+	memory.WriteWord(IrqAddress, testIrqAddress)
+	cpu := New(memory)
+	return cpu
+}
+
+func runCPUTest(t *testing.T, tests []cpuTest) {
+	t.Helper()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
+			cpu := cpuTestSetup(t)
+			test.Setup(cpu)
+			test.Check(cpu)
+		})
+	}
 }

@@ -137,7 +137,7 @@ func TestSupportedSystems(t *testing.T) {
 	got := SupportedSystems()
 	expected := []System{CHIP8System, DOS, GameBoy, Generic, NES, ZXSpectrum}
 
-	assert.Equal(t, len(expected), len(got))
+	assert.Len(t, expected, len(got))
 
 	// Check that all expected systems are present
 	for _, expectedSys := range expected {

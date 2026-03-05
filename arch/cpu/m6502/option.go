@@ -1,7 +1,5 @@
 package m6502
 
-type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
-
 // Options contains options for the CPU.
 type Options struct {
 	tracing          bool
@@ -34,3 +32,5 @@ func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
 		options.preExecutionHook = hook
 	}
 }
+
+type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)

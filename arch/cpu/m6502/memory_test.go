@@ -6,18 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type testMemory struct {
-	b [0x10000]byte
-}
-
-func (m *testMemory) Read(address uint16) uint8 {
-	return m.b[address]
-}
-
-func (m *testMemory) Write(address uint16, value uint8) {
-	m.b[address] = value
-}
-
 func TestMemoryImmediate(t *testing.T) {
 	t.Parallel()
 	m, err := NewMemory(&testMemory{})
@@ -92,4 +80,16 @@ func TestNewMemoryValidation(t *testing.T) {
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	assert.NotNil(t, memory)
+}
+
+type testMemory struct {
+	b [0x10000]byte
+}
+
+func (m *testMemory) Read(address uint16) uint8 {
+	return m.b[address]
+}
+
+func (m *testMemory) Write(address uint16, value uint8) {
+	m.b[address] = value
 }

@@ -2,7 +2,6 @@ package z80
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -55,8 +54,7 @@ func TestVerifyOpcodes(t *testing.T) {
 			}
 		}
 
-		assert.LessOrEqual(t, len(missingMappings), 0, "%s: Found %d opcodes with missing reverse mappings:\n  %s",
-			name, len(missingMappings), strings.Join(missingMappings, "\n  "))
+		assert.Empty(t, missingMappings, "%s", name)
 	}
 
 	verifyOpcodeArray("Opcodes", Opcodes)

@@ -7,23 +7,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func testRom() []byte {
-	prg := make([]byte, 2*16384)
-	prg[0] = 0x80 // marker
-
-	chr := make([]byte, 8192)
-	chr[0] = 0x81 // marker
-
-	b := make([]byte, 0, 16+len(prg)+len(chr))
-	b = append(b, iNESFileMagic[:]...)
-	b = append(b, []byte{2, 1, 1, 0, 0}...)       // prg, chr, control 1, control 2, ram
-	b = append(b, []byte{0, 0, 0, 0, 0, 0, 0}...) // reserved/padding
-	b = append(b, prg...)
-	b = append(b, chr...)
-
-	return b
-}
-
 func TestLoadFile(t *testing.T) {
 	rom := testRom()
 	reader := bytes.NewReader(rom)
@@ -106,8 +89,8 @@ func TestCartridgeProperties(t *testing.T) {
 	assert.Equal(t, 0, cart.Mapper)
 	assert.Equal(t, 0, cart.Mirror) // 0 means horizontal mirroring in the control byte
 	assert.Equal(t, 1, cart.Battery)
-	assert.Equal(t, 16384, len(cart.PRG))
-	assert.Equal(t, 0, len(cart.CHR)) // No CHR ROM
+	assert.Len(t, cart.PRG, 16384)
+	assert.Len(t, cart.CHR, 0) // No CHR ROM
 }
 
 func TestLoadFileNES2Mapper(t *testing.T) {
@@ -182,8 +165,8 @@ func TestNewCartridge(t *testing.T) {
 	assert.Equal(t, 0, cart.Battery)
 
 	// Check default sizes
-	assert.Equal(t, 32768, len(cart.PRG)) // Default PRG size
-	assert.Equal(t, 8192, len(cart.CHR))  // Default CHR size
+	assert.Len(t, cart.PRG, 32768) // Default PRG size
+	assert.Len(t, cart.CHR, 8192)  // Default CHR size
 }
 
 func TestSaveLoadRoundtrip(t *testing.T) {
@@ -220,4 +203,21 @@ func TestSaveLoadRoundtrip(t *testing.T) {
 	assert.Equal(t, original.PRG[100], loaded.PRG[100])
 	assert.Equal(t, original.CHR[0], loaded.CHR[0])
 	assert.Equal(t, original.CHR[50], loaded.CHR[50])
+}
+
+func testRom() []byte {
+	prg := make([]byte, 2*16384)
+	prg[0] = 0x80 // marker
+
+	chr := make([]byte, 8192)
+	chr[0] = 0x81 // marker
+
+	b := make([]byte, 0, 16+len(prg)+len(chr))
+	b = append(b, iNESFileMagic[:]...)
+	b = append(b, []byte{2, 1, 1, 0, 0}...)       // prg, chr, control 1, control 2, ram
+	b = append(b, []byte{0, 0, 0, 0, 0, 0, 0}...) // reserved/padding
+	b = append(b, prg...)
+	b = append(b, chr...)
+
+	return b
 }
