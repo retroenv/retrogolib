@@ -6,25 +6,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/retroenv/retrogolib/assert"
 )
-
-// TestZexdoc runs the ZEXDOC Z80 instruction exerciser (documented flags only).
-func TestZexdoc(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping ZEXDOC in short mode")
-	}
-
-	runZex(t, "testdata/zexdoc.com")
-}
-
-// TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
-func TestZexall(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping ZEXALL in short mode")
-	}
-
-	runZex(t, "testdata/zexall.com")
-}
 
 // zexOutput tracks output buffering and error counting for ZEX tests.
 type zexOutput struct {
@@ -59,6 +43,24 @@ func (z *zexOutput) flush() {
 	}
 }
 
+// TestZexdoc runs the ZEXDOC Z80 instruction exerciser (documented flags only).
+func TestZexdoc(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping ZEXDOC in short mode")
+	}
+
+	runZex(t, "testdata/zexdoc.com")
+}
+
+// TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
+func TestZexall(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping ZEXALL in short mode")
+	}
+
+	runZex(t, "testdata/zexall.com")
+}
+
 // handleBDOS processes CP/M BDOS calls intercepted at address 0x0005.
 func handleBDOS(cpu *CPU, mem *BasicMemory, out *zexOutput) {
 	switch cpu.C {
@@ -83,9 +85,7 @@ func runZex(t *testing.T, path string) {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("failed to read %s: %v", path, err)
-	}
+	assert.NoError(t, err, "failed to read %s", path)
 
 	mem := NewBasicMemory()
 
@@ -120,9 +120,7 @@ func runZex(t *testing.T, path string) {
 		WithInitialSP(0xFFFE),
 		WithPreExecutionHook(bdosHook),
 	)
-	if err != nil {
-		t.Fatalf("failed to create CPU: %v", err)
-	}
+	assert.NoError(t, err, "failed to create CPU")
 
 	// Run until PC reaches 0x0000 (warm boot = exit) or too many cycles
 	maxCycles := uint64(200_000_000_000) // ~200 billion cycles
@@ -143,11 +141,6 @@ func runZex(t *testing.T, path string) {
 	// Flush remaining output
 	out.flush()
 
-	if cpu.cycles >= maxCycles {
-		t.Fatal("exceeded maximum cycle count")
-	}
-
-	if out.failCount > 0 {
-		t.Fatalf("%d tests failed", out.failCount)
-	}
+	assert.Less(t, cpu.cycles, maxCycles, "exceeded maximum cycle count")
+	assert.LessOrEqual(t, out.failCount, 0, "%d tests failed", out.failCount)
 }

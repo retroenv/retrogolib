@@ -55,10 +55,8 @@ func TestVerifyOpcodes(t *testing.T) {
 			}
 		}
 
-		if len(missingMappings) > 0 {
-			t.Errorf("%s: Found %d opcodes with missing reverse mappings:\n  %s",
-				name, len(missingMappings), strings.Join(missingMappings, "\n  "))
-		}
+		assert.LessOrEqual(t, len(missingMappings), 0, "%s: Found %d opcodes with missing reverse mappings:\n  %s",
+			name, len(missingMappings), strings.Join(missingMappings, "\n  "))
 	}
 
 	verifyOpcodeArray("Opcodes", Opcodes)
@@ -268,6 +266,22 @@ func TestRegisterDecoding(t *testing.T) {
 // Instruction API Testing
 // =============================================================================
 
+func TestInstruction_GetOpcodeByRegister(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range getOpcodeByRegisterTests() {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			opcodeInfo, exists := tt.instruction.GetOpcodeByRegister(tt.register)
+
+			assert.Equal(t, tt.wantExists, exists)
+			if exists {
+				assert.Equal(t, tt.wantOpcode, opcodeInfo.Opcode)
+			}
+		})
+	}
+}
+
 type opcodeByRegisterTest struct {
 	name        string
 	instruction *Instruction
@@ -287,22 +301,6 @@ func getOpcodeByRegisterTests() []opcodeByRegisterTest {
 		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
 		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
 		{"Non-existent register", IncReg8, RegIX, 0x00, false},
-	}
-}
-
-func TestInstruction_GetOpcodeByRegister(t *testing.T) {
-	t.Parallel()
-
-	for _, tt := range getOpcodeByRegisterTests() {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			opcodeInfo, exists := tt.instruction.GetOpcodeByRegister(tt.register)
-
-			assert.Equal(t, tt.wantExists, exists)
-			if exists {
-				assert.Equal(t, tt.wantOpcode, opcodeInfo.Opcode)
-			}
-		})
 	}
 }
 

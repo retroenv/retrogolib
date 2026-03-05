@@ -1,6 +1,10 @@
 package z80
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/retroenv/retrogolib/set"
+)
 
 // TraceStep contains all info needed to print a trace step.
 type TraceStep struct {
@@ -145,22 +149,6 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// PC was changed by the instruction (e.g., conditional jump taken), don't modify it further
-}
-
-// jumpInstructions is a lookup set of instructions that always modify PC.
-// These include all jump, call, return, and repeat block instructions.
-var jumpInstructions = map[*Instruction]bool{
-	JpAbs: true, JpCond: true, JrRel: true, JrCond: true,
-	Call: true, CallCond: true, Ret: true, RetCond: true,
-	EdReti: true, EdRetn: true, edRetnAlias: true, Rst: true, JpIndirect: true,
-	DdJpIX: true, FdJpIY: true, Djnz: true,
-	EdLdir: true, EdLddr: true, EdCpir: true, EdCpdr: true,
-	EdInir: true, EdIndr: true, EdOtir: true, EdOtdr: true,
-}
-
-// isJumpInstruction checks if an instruction is a jump/branch instruction that always modifies PC.
-func isJumpInstruction(ins *Instruction) bool {
-	return ins != nil && jumpInstructions[ins]
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
@@ -394,4 +382,38 @@ func (c *CPU) handleInterrupts() {
 			c.cycles += 19
 		}
 	}
+}
+
+// jumpInstructions is a lookup set of instructions that always modify PC.
+// These include all jump, call, return, and repeat block instructions.
+var jumpInstructions = set.Set[*Instruction]{
+	Call:        {},
+	CallCond:    {},
+	DdJpIX:      {},
+	Djnz:        {},
+	EdCpdr:      {},
+	EdCpir:      {},
+	EdIndr:      {},
+	EdInir:      {},
+	EdLddr:      {},
+	EdLdir:      {},
+	EdOtdr:      {},
+	EdOtir:      {},
+	EdReti:      {},
+	EdRetn:      {},
+	FdJpIY:      {},
+	JpAbs:       {},
+	JpCond:      {},
+	JpIndirect:  {},
+	JrCond:      {},
+	JrRel:       {},
+	Ret:         {},
+	RetCond:     {},
+	Rst:         {},
+	edRetnAlias: {},
+}
+
+// isJumpInstruction checks if an instruction is a jump/branch instruction that always modifies PC.
+func isJumpInstruction(ins *Instruction) bool {
+	return ins != nil && jumpInstructions.Contains(ins)
 }

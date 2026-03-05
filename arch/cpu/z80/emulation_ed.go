@@ -43,6 +43,42 @@ func (c *CPU) sbcHL(value uint16) {
 	c.setN(true)
 }
 
+// setIOBlockFlags sets the full undocumented flag behavior for INI/IND/OUTI/OUTD.
+// value is the byte transferred, k is value + secondary (where secondary depends on instruction).
+func (c *CPU) setIOBlockFlags(value uint8, k uint16) {
+	c.setS(c.B)
+	c.setZ(c.B)
+	c.setXY(c.B)
+	setFlag(&c.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
+	carry := k > 255
+	c.setH(carry)
+	c.setC(carry)
+	// P/V = parity of ((k & 7) ^ B)
+	c.setP(uint8(k&7) ^ c.B)
+}
+
+// adjustIORepeatFlags applies additional flag modifications for repeat I/O instructions
+// (INIR/INDR/OTIR/OTDR) when the instruction will repeat (B != 0).
+// The flags PF and HF undergo additional transformations based on carry and data bit 7.
+func (c *CPU) adjustIORepeatFlags(value uint8, k uint16) {
+	carry := k > 255
+	dataBit7 := value&0x80 != 0
+
+	switch {
+	case carry && dataBit7:
+		c.Flags.P ^= parityByte((c.B - 1) & 0x07)
+		c.Flags.P ^= 1
+		setFlag(&c.Flags.H, (c.B&0x0F) == 0x00)
+	case carry:
+		c.Flags.P ^= parityByte((c.B + 1) & 0x07)
+		c.Flags.P ^= 1
+		setFlag(&c.Flags.H, (c.B&0x0F) == 0x0F)
+	default:
+		c.Flags.P ^= parityByte(c.B & 0x07)
+		c.Flags.P ^= 1
+	}
+}
+
 // edNeg implements ED 44: NEG.
 func edNeg(c *CPU) error {
 	c.A = c.neg(c.A)
@@ -340,42 +376,6 @@ func edCpdr(c *CPU) error {
 }
 
 // ED I/O block operations
-
-// setIOBlockFlags sets the full undocumented flag behavior for INI/IND/OUTI/OUTD.
-// value is the byte transferred, k is value + secondary (where secondary depends on instruction).
-func (c *CPU) setIOBlockFlags(value uint8, k uint16) {
-	c.setS(c.B)
-	c.setZ(c.B)
-	c.setXY(c.B)
-	setFlag(&c.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
-	carry := k > 255
-	c.setH(carry)
-	c.setC(carry)
-	// P/V = parity of ((k & 7) ^ B)
-	c.setP(uint8(k&7) ^ c.B)
-}
-
-// adjustIORepeatFlags applies additional flag modifications for repeat I/O instructions
-// (INIR/INDR/OTIR/OTDR) when the instruction will repeat (B != 0).
-// The flags PF and HF undergo additional transformations based on carry and data bit 7.
-func (c *CPU) adjustIORepeatFlags(value uint8, k uint16) {
-	carry := k > 255
-	dataBit7 := value&0x80 != 0
-
-	switch {
-	case carry && dataBit7:
-		c.Flags.P ^= parityByte((c.B - 1) & 0x07)
-		c.Flags.P ^= 1
-		setFlag(&c.Flags.H, (c.B&0x0F) == 0x00)
-	case carry:
-		c.Flags.P ^= parityByte((c.B + 1) & 0x07)
-		c.Flags.P ^= 1
-		setFlag(&c.Flags.H, (c.B&0x0F) == 0x0F)
-	default:
-		c.Flags.P ^= parityByte(c.B & 0x07)
-		c.Flags.P ^= 1
-	}
-}
 
 // parityByte returns 1 for even parity, 0 for odd parity.
 func parityByte(v uint8) uint8 {

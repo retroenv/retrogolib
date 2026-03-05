@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/retroenv/retrogolib/assert"
 )
 
 // singleStepState represents the CPU state in a SingleStepTests JSON test case.
@@ -53,6 +55,35 @@ type singleStepTest struct {
 	Ports   []singleStepPort
 }
 
+// testIOHandler provides port read/write values for test cases.
+type testIOHandler struct {
+	reads  map[uint8]uint8
+	writes map[uint8]uint8
+}
+
+func newTestIOHandler(ports []singleStepPort) *testIOHandler {
+	h := &testIOHandler{
+		reads:  make(map[uint8]uint8),
+		writes: make(map[uint8]uint8),
+	}
+	for _, p := range ports {
+		port := uint8(p.Address)
+		if p.IsRead {
+			h.reads[port] = p.Value
+		}
+	}
+	return h
+}
+
+func (h *testIOHandler) ReadPort(port uint8) uint8 {
+	if val, ok := h.reads[port]; ok {
+		return val
+	}
+	return 0xFF
+}
+
+func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
+
 // UnmarshalJSON handles the ports field which is an array of [addr, val, "r"|"w"].
 func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 	type alias singleStepTest
@@ -94,35 +125,6 @@ func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// testIOHandler provides port read/write values for test cases.
-type testIOHandler struct {
-	reads  map[uint8]uint8
-	writes map[uint8]uint8
-}
-
-func newTestIOHandler(ports []singleStepPort) *testIOHandler {
-	h := &testIOHandler{
-		reads:  make(map[uint8]uint8),
-		writes: make(map[uint8]uint8),
-	}
-	for _, p := range ports {
-		port := uint8(p.Address)
-		if p.IsRead {
-			h.reads[port] = p.Value
-		}
-	}
-	return h
-}
-
-func (h *testIOHandler) ReadPort(port uint8) uint8 {
-	if val, ok := h.reads[port]; ok {
-		return val
-	}
-	return 0xFF
-}
-
-func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
-
 const singleStepDir = "testdata/singlestep"
 
 // TestSingleStep runs the SingleStepTests Z80 test suite.
@@ -138,12 +140,8 @@ func TestSingleStep(t *testing.T) {
 	cloneSingleStepTests(t)
 
 	files, err := filepath.Glob(filepath.Join(singleStepDir, "v1", "*.json"))
-	if err != nil {
-		t.Fatalf("globbing test files: %v", err)
-	}
-	if len(files) == 0 {
-		t.Fatal("no SingleStepTests JSON files found")
-	}
+	assert.NoError(t, err, "globbing test files")
+	assert.NotEqual(t, 0, len(files), "no SingleStepTests JSON files found")
 
 	for _, file := range files {
 		t.Run(filepath.Base(file), func(t *testing.T) {
@@ -166,9 +164,8 @@ func cloneSingleStepTests(t *testing.T) {
 		"https://github.com/SingleStepTests/z80", singleStepDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("cloning SingleStepTests: %v", err)
-	}
+	err := cmd.Run()
+	assert.NoError(t, err, "cloning SingleStepTests")
 }
 
 // runSingleStepFile runs all test cases from a single JSON file.
@@ -176,29 +173,16 @@ func runSingleStepFile(t *testing.T, path string) {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("reading %s: %v", path, err)
-	}
+	assert.NoError(t, err, "reading %s", path)
 
 	var tests []singleStepTest
-	if err := json.Unmarshal(data, &tests); err != nil {
-		t.Fatalf("parsing %s: %v", path, err)
-	}
-
-	var passed, failed int
+	err = json.Unmarshal(data, &tests)
+	assert.NoError(t, err, "parsing %s", path)
 
 	for i := range tests {
 		tc := &tests[i]
-		if err := runSingleStepCase(tc); err != nil {
-			t.Errorf("%s: %s", tc.Name, err)
-			failed++
-		} else {
-			passed++
-		}
-	}
-
-	if failed > 0 {
-		t.Logf("%s: %d passed, %d failed", filepath.Base(path), passed, failed)
+		err = runSingleStepCase(tc)
+		assert.NoError(t, err, "%s", tc.Name)
 	}
 }
 

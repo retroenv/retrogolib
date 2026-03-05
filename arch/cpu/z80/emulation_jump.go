@@ -2,6 +2,38 @@ package z80
 
 import "fmt"
 
+// checkCondition returns true if the condition is met based on the opcode.
+func (c *CPU) checkCondition(opcode uint8) bool {
+	switch opcode {
+	// NZ (Not Zero) - Z flag clear
+	case 0xC0, 0xC2, 0xC4:
+		return c.Flags.Z == 0
+	// Z (Zero) - Z flag set
+	case 0xC8, 0xCA, 0xCC:
+		return c.Flags.Z != 0
+	// NC (Not Carry) - C flag clear
+	case 0xD0, 0xD2, 0xD4:
+		return c.Flags.C == 0
+	// C (Carry) - C flag set
+	case 0xD8, 0xDA, 0xDC:
+		return c.Flags.C != 0
+	// PO (Parity Odd) - P flag clear
+	case 0xE0, 0xE2, 0xE4:
+		return c.Flags.P == 0
+	// PE (Parity Even) - P flag set
+	case 0xE8, 0xEA, 0xEC:
+		return c.Flags.P != 0
+	// P (Plus/Positive) - S flag clear
+	case 0xF0, 0xF2, 0xF4:
+		return c.Flags.S == 0
+	// M (Minus/Negative) - S flag set
+	case 0xF8, 0xFA, 0xFC:
+		return c.Flags.S != 0
+	default:
+		return false
+	}
+}
+
 // jpAbs performs absolute jump.
 func jpAbs(c *CPU, params ...any) error {
 	if len(params) < 1 {
@@ -216,36 +248,4 @@ func rst(c *CPU, _ ...any) error {
 	c.PC = vector
 	c.MEMPTR = vector
 	return nil
-}
-
-// checkCondition returns true if the condition is met based on the opcode.
-func (c *CPU) checkCondition(opcode uint8) bool {
-	switch opcode {
-	// NZ (Not Zero) - Z flag clear
-	case 0xC0, 0xC2, 0xC4:
-		return c.Flags.Z == 0
-	// Z (Zero) - Z flag set
-	case 0xC8, 0xCA, 0xCC:
-		return c.Flags.Z != 0
-	// NC (Not Carry) - C flag clear
-	case 0xD0, 0xD2, 0xD4:
-		return c.Flags.C == 0
-	// C (Carry) - C flag set
-	case 0xD8, 0xDA, 0xDC:
-		return c.Flags.C != 0
-	// PO (Parity Odd) - P flag clear
-	case 0xE0, 0xE2, 0xE4:
-		return c.Flags.P == 0
-	// PE (Parity Even) - P flag set
-	case 0xE8, 0xEA, 0xEC:
-		return c.Flags.P != 0
-	// P (Plus/Positive) - S flag clear
-	case 0xF0, 0xF2, 0xF4:
-		return c.Flags.S == 0
-	// M (Minus/Negative) - S flag set
-	case 0xF8, 0xFA, 0xFC:
-		return c.Flags.S != 0
-	default:
-		return false
-	}
 }

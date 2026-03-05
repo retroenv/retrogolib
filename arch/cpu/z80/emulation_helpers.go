@@ -2,59 +2,6 @@ package z80
 
 import "math/bits"
 
-// boolToUint8 converts a boolean to 1 or 0 as uint8.
-func boolToUint8(b bool) uint8 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-// calculateParity calculates the parity of a byte (true if even parity).
-func calculateParity(value uint8) bool {
-	count := bits.OnesCount8(value)
-	return count%2 == 0
-}
-
-// performShiftRotateOperation performs shift/rotate operations based on opcode.
-func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
-	switch {
-	case opcode <= 0x07: // RLC
-		carry := (value & 0x80) != 0
-		return (value << 1) | boolToUint8(carry), carry
-	case opcode <= 0x0F: // RRC
-		carry := (value & 0x01) != 0
-		return (value >> 1) | (boolToUint8(carry) << 7), carry
-	case opcode <= 0x17: // RL
-		carry := (value & 0x80) != 0
-		return (value << 1) | oldCarry, carry
-	case opcode <= 0x1F: // RR
-		carry := (value & 0x01) != 0
-		return (value >> 1) | (oldCarry << 7), carry
-	case opcode <= 0x27: // SLA
-		carry := (value & 0x80) != 0
-		return value << 1, carry
-	case opcode <= 0x2F: // SRA
-		carry := (value & 0x01) != 0
-		return (value >> 1) | (value & 0x80), carry
-	case opcode <= 0x37: // SLL
-		carry := (value & 0x80) != 0
-		return (value << 1) | 0x01, carry
-	default: // SRL
-		carry := (value & 0x01) != 0
-		return value >> 1, carry
-	}
-}
-
-// setShiftRotateFlags sets flags for shift/rotate operations.
-func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
-	c.setSZ(result)
-	c.setPOverflow(calculateParity(result))
-	c.setH(false)
-	c.setN(false)
-	c.setC(carry)
-}
-
 // inc16 increments a 16-bit value.
 func (c *CPU) inc16(value uint16) uint16 {
 	return value + 1
@@ -210,4 +157,57 @@ func (c *CPU) setFlagsFromUint8(flags *Flags, value uint8) {
 func (c *CPU) getFlagsAsUint8(flags Flags) uint8 {
 	return flags.C | (flags.N << 1) | (flags.P << 2) | (flags.X << 3) |
 		(flags.H << 4) | (flags.Y << 5) | (flags.Z << 6) | (flags.S << 7)
+}
+
+// boolToUint8 converts a boolean to 1 or 0 as uint8.
+func boolToUint8(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// calculateParity calculates the parity of a byte (true if even parity).
+func calculateParity(value uint8) bool {
+	count := bits.OnesCount8(value)
+	return count%2 == 0
+}
+
+// performShiftRotateOperation performs shift/rotate operations based on opcode.
+func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
+	switch {
+	case opcode <= 0x07: // RLC
+		carry := (value & 0x80) != 0
+		return (value << 1) | boolToUint8(carry), carry
+	case opcode <= 0x0F: // RRC
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (boolToUint8(carry) << 7), carry
+	case opcode <= 0x17: // RL
+		carry := (value & 0x80) != 0
+		return (value << 1) | oldCarry, carry
+	case opcode <= 0x1F: // RR
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (oldCarry << 7), carry
+	case opcode <= 0x27: // SLA
+		carry := (value & 0x80) != 0
+		return value << 1, carry
+	case opcode <= 0x2F: // SRA
+		carry := (value & 0x01) != 0
+		return (value >> 1) | (value & 0x80), carry
+	case opcode <= 0x37: // SLL
+		carry := (value & 0x80) != 0
+		return (value << 1) | 0x01, carry
+	default: // SRL
+		carry := (value & 0x01) != 0
+		return value >> 1, carry
+	}
+}
+
+// setShiftRotateFlags sets flags for shift/rotate operations.
+func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
+	c.setSZ(result)
+	c.setPOverflow(calculateParity(result))
+	c.setH(false)
+	c.setN(false)
+	c.setC(carry)
 }

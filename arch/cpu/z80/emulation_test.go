@@ -6,33 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type cpuTest struct {
-	Name  string
-	Setup func(cpu *CPU)
-	Check func(cpu *CPU)
-}
-
-func cpuTestSetup(t *testing.T) *CPU {
-	t.Helper()
-	memory := NewBasicMemory()
-	cpu, err := New(memory)
-	assert.NoError(t, err)
-	return cpu
-}
-
-func runCPUTest(t *testing.T, tests []cpuTest) {
-	t.Helper()
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			t.Parallel()
-			cpu := cpuTestSetup(t)
-			test.Setup(cpu)
-			test.Check(cpu)
-		})
-	}
-}
-
 func TestInc8(t *testing.T) {
 	t.Parallel()
 	tests := []cpuTest{
@@ -828,4 +801,31 @@ func TestEndlessLoopDetection(t *testing.T) {
 	assert.NoError(t, err, "Step should not return error for JP")
 	assert.Equal(t, uint16(0x0200), cpu.PC, "PC should jump to same address (endless loop)")
 	assert.Greater(t, cpu.cycles, thirdCycles, "Cycles should have advanced for JP")
+}
+
+type cpuTest struct {
+	Name  string
+	Setup func(cpu *CPU)
+	Check func(cpu *CPU)
+}
+
+func cpuTestSetup(t *testing.T) *CPU {
+	t.Helper()
+	memory := NewBasicMemory()
+	cpu, err := New(memory)
+	assert.NoError(t, err)
+	return cpu
+}
+
+func runCPUTest(t *testing.T, tests []cpuTest) {
+	t.Helper()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
+			cpu := cpuTestSetup(t)
+			test.Setup(cpu)
+			test.Check(cpu)
+		})
+	}
 }
