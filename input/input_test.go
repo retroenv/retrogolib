@@ -5,6 +5,7 @@ import (
 
 	"github.com/retroenv/retrogolib/assert"
 	"github.com/retroenv/retrogolib/input"
+	"github.com/retroenv/retrogolib/set"
 )
 
 func TestKey_Constants(t *testing.T) {
@@ -169,9 +170,9 @@ func TestKey_String(t *testing.T) {
 	key := input.A
 
 	// Should be able to use in maps, comparisons, etc.
-	keyMap := make(map[input.Key]bool)
-	keyMap[key] = true
-	assert.True(t, keyMap[input.A], "Key should work as map key")
+	keyMap := set.New[input.Key]()
+	keyMap.Add(key)
+	assert.True(t, keyMap.Contains(input.A), "Key should work as map key")
 
 	// Should be able to compare
 	assert.Equal(t, input.A, key, "Key comparison should work")

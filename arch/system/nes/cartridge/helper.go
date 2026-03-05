@@ -1,13 +1,5 @@
 package cartridge
 
-func highNibble(b byte) byte {
-	return b >> 4
-}
-
-func mergeNibbles(highNibble byte, lowNibble byte) byte {
-	return highNibble<<4 | lowNibble
-}
-
 // ControlBytes returns the 2 control bytes of the iNES header based on the cartridge configuration.
 func ControlBytes(battery, mirror byte, mapper uint16, hasTrainer bool) (byte, byte) {
 	mapper8 := byte(mapper)
@@ -25,4 +17,12 @@ func ControlBytes(battery, mirror byte, mapper uint16, hasTrainer bool) (byte, b
 		control1 |= trainerFlag
 	}
 	return control1, control2
+}
+
+func highNibble(b byte) byte {
+	return b >> 4
+}
+
+func mergeNibbles(highNibble byte, lowNibble byte) byte {
+	return highNibble<<4 | lowNibble
 }

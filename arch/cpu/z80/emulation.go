@@ -752,34 +752,6 @@ func jrCond(c *CPU, params ...any) error {
 	return nil
 }
 
-// ldExtended loads using extended addressing.
-func ldExtended(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
-	}
-	address, ok := params[0].(Extended)
-	if !ok {
-		return ErrInvalidParameterType
-	}
-
-	opcode := c.currentOpcode
-	switch opcode {
-	case 0x22: // LD (nn),HL - store HL to memory address nn
-		c.memory.WriteWord(uint16(address), c.hl())
-	case 0x2A: // LD HL,(nn) - load HL from memory address nn
-		value := c.memory.ReadWord(uint16(address))
-		c.setHL(value)
-	case 0x32: // LD (nn),A - store A to memory address nn
-		c.memory.Write(uint16(address), c.A)
-	case 0x3A: // LD A,(nn) - load A from memory address nn
-		value := c.memory.Read(uint16(address))
-		c.A = value
-	default:
-		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
-	}
-	return nil
-}
-
 // daaAdditionMode calculates correction for DAA in addition mode.
 func (c *CPU) daaAdditionMode() (uint8, bool) {
 	correction := uint8(0)
@@ -808,6 +780,34 @@ func (c *CPU) daaSubtractionMode() (uint8, bool) {
 		carrySet = true
 	}
 	return correction, carrySet
+}
+
+// ldExtended loads using extended addressing.
+func ldExtended(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+	address, ok := params[0].(Extended)
+	if !ok {
+		return ErrInvalidParameterType
+	}
+
+	opcode := c.currentOpcode
+	switch opcode {
+	case 0x22: // LD (nn),HL - store HL to memory address nn
+		c.memory.WriteWord(uint16(address), c.hl())
+	case 0x2A: // LD HL,(nn) - load HL from memory address nn
+		value := c.memory.ReadWord(uint16(address))
+		c.setHL(value)
+	case 0x32: // LD (nn),A - store A to memory address nn
+		c.memory.Write(uint16(address), c.A)
+	case 0x3A: // LD A,(nn) - load A from memory address nn
+		value := c.memory.Read(uint16(address))
+		c.A = value
+	default:
+		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
+	}
+	return nil
 }
 
 // daa performs decimal adjust accumulator.
@@ -936,26 +936,6 @@ func adcA(c *CPU, params ...any) error {
 	return nil
 }
 
-// sbcA subtracts with carry from accumulator.
-func sbcA(c *CPU, params ...any) error {
-	if len(params) < 1 {
-		return ErrMissingParameter
-	}
-
-	var value uint8
-	switch param := params[0].(type) {
-	case Register:
-		value = c.GetRegisterValue(uint8(param))
-	case Immediate8:
-		value = uint8(param)
-	default:
-		return ErrInvalidParameterType
-	}
-
-	c.A = c.sbc(c.A, value)
-	return nil
-}
-
 // checkCondition returns true if the condition is met based on the opcode.
 func (c *CPU) checkCondition(opcode uint8) bool {
 	switch opcode {
@@ -986,6 +966,26 @@ func (c *CPU) checkCondition(opcode uint8) bool {
 	default:
 		return false
 	}
+}
+
+// sbcA subtracts with carry from accumulator.
+func sbcA(c *CPU, params ...any) error {
+	if len(params) < 1 {
+		return ErrMissingParameter
+	}
+
+	var value uint8
+	switch param := params[0].(type) {
+	case Register:
+		value = c.GetRegisterValue(uint8(param))
+	case Immediate8:
+		value = uint8(param)
+	default:
+		return ErrInvalidParameterType
+	}
+
+	c.A = c.sbc(c.A, value)
+	return nil
 }
 
 // retCond performs conditional return.
@@ -1308,15 +1308,6 @@ func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
 	}
 }
 
-// setShiftRotateFlags sets flags for shift/rotate operations.
-func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
-	c.setSZ(result)
-	c.setPOverflow(calculateParity(result))
-	c.setH(false)
-	c.setN(false)
-	c.setC(carry)
-}
-
 // Helper methods for emulation tests
 
 // inc16 increments a 16-bit value.
@@ -1341,6 +1332,15 @@ func (c *CPU) addHL(hl, value uint16) uint16 {
 	// Note: Z and S flags are not affected by ADD HL
 
 	return result
+}
+
+// setShiftRotateFlags sets flags for shift/rotate operations.
+func setShiftRotateFlags(c *CPU, result uint8, carry bool) {
+	c.setSZ(result)
+	c.setPOverflow(calculateParity(result))
+	c.setH(false)
+	c.setN(false)
+	c.setC(carry)
 }
 
 // Helper methods for load operations

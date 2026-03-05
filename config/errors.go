@@ -28,14 +28,6 @@ type MarshalError struct {
 	Err     error
 }
 
-func (e *MarshalError) Error() string {
-	return fmt.Sprintf("marshal field %s (%s.%s): %v", e.Field, e.Section, e.Key, e.Err)
-}
-
-func (e *MarshalError) Unwrap() error {
-	return e.Err
-}
-
 // UnmarshalError represents errors during struct unmarshalling.
 type UnmarshalError struct {
 	Field   string
@@ -44,20 +36,28 @@ type UnmarshalError struct {
 	Err     error
 }
 
-func (e *UnmarshalError) Error() string {
-	return fmt.Sprintf("unmarshal field %s (%s.%s): %v", e.Field, e.Section, e.Key, e.Err)
-}
-
-func (e *UnmarshalError) Unwrap() error {
-	return e.Err
-}
-
 // ParseError represents parsing errors with location information.
 type ParseError struct {
 	Line int
 	Pos  int
 	Msg  string
 	Err  error
+}
+
+func (e *MarshalError) Error() string {
+	return fmt.Sprintf("marshal field %s (%s.%s): %v", e.Field, e.Section, e.Key, e.Err)
+}
+
+func (e *MarshalError) Unwrap() error {
+	return e.Err
+}
+
+func (e *UnmarshalError) Error() string {
+	return fmt.Sprintf("unmarshal field %s (%s.%s): %v", e.Field, e.Section, e.Key, e.Err)
+}
+
+func (e *UnmarshalError) Unwrap() error {
+	return e.Err
 }
 
 func (e *ParseError) Error() string {

@@ -127,15 +127,6 @@ func TestStrings(t *testing.T) {
 	}
 }
 
-// testStringer implements fmt.Stringer for testing.
-type testStringer struct {
-	value string
-}
-
-func (ts testStringer) String() string {
-	return ts.value
-}
-
 // TestStringer tests the Stringer field function.
 func TestStringer(t *testing.T) {
 	tests := []struct {
@@ -202,7 +193,7 @@ func TestStringFunc(t *testing.T) {
 
 		// Verify the function produces expected result
 		value := field.Value.Any().(stringFunc).LogValue()
-		assert.Equal(t, 1000, len(value.String()))
+		assert.Len(t, value.String(), 1000)
 		assert.True(t, strings.HasPrefix(value.String(), "xxx"))
 	})
 }
@@ -1076,4 +1067,13 @@ func TestType_LazyEvaluation(t *testing.T) {
 	// Only when we call LogValue should it format the type
 	logValue := typeStruct.LogValue()
 	assert.Equal(t, "log.testStruct", logValue.String())
+}
+
+// testStringer implements fmt.Stringer for testing.
+type testStringer struct {
+	value string
+}
+
+func (ts testStringer) String() string {
+	return ts.value
 }

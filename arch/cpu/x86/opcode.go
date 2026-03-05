@@ -331,15 +331,6 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncRM16, Addressing: ModRMRegisterAddressing, Timing: 3, Size: 2, HasModRM: true}, // 0xFF Group 5 - INC/DEC/CALL/JMP r/m16
 }
 
-// GetOpcodeInfo returns the opcode information for a given opcode byte.
-func GetOpcodeInfo(opcode uint8) (Opcode, bool) {
-	opcodeInfo := Opcodes[opcode]
-	if opcodeInfo.Instruction == nil {
-		return Opcode{}, false
-	}
-	return opcodeInfo, true
-}
-
 // ReadsMemory returns whether the instruction reads from memory.
 // Pass MemoryReadInstructions or a custom set for the check.
 func (opcode Opcode) ReadsMemory(memoryReadInstructions set.Set[string]) bool {
@@ -401,4 +392,13 @@ func (opcode Opcode) IsUnconditionalBranch(unconditionalInstructions set.Set[str
 		return false
 	}
 	return unconditionalInstructions.Contains(opcode.Instruction.Name)
+}
+
+// GetOpcodeInfo returns the opcode information for a given opcode byte.
+func GetOpcodeInfo(opcode uint8) (Opcode, bool) {
+	opcodeInfo := Opcodes[opcode]
+	if opcodeInfo.Instruction == nil {
+		return Opcode{}, false
+	}
+	return opcodeInfo, true
 }

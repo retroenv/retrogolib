@@ -129,19 +129,6 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// PC was changed by the instruction (e.g., conditional jump taken), don't modify it further
 }
 
-// isJumpInstruction checks if an instruction is an unconditional jump/branch instruction that always modifies PC.
-// Conditional jumps (like DJNZ, conditional JR/JP) are not included since they may or may not change PC.
-func isJumpInstruction(ins *Instruction) bool {
-	if ins == nil {
-		return false
-	}
-	// Check for specific unconditional jump instructions by comparing pointers
-	// This is the most precise approach since conditional and unconditional variants have same names
-	return ins == JpAbs || ins == JrRel || ins == Call || ins == Ret || ins == EdReti || ins == EdRetn ||
-		ins == Rst || ins == JpIndirect ||
-		ins == DdJpIX || ins == FdJpIY
-}
-
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
 func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC + 1) // Get the actual CB instruction
@@ -160,6 +147,19 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 	}
 
 	return opcode, PrefixCB, nil
+}
+
+// isJumpInstruction checks if an instruction is an unconditional jump/branch instruction that always modifies PC.
+// Conditional jumps (like DJNZ, conditional JR/JP) are not included since they may or may not change PC.
+func isJumpInstruction(ins *Instruction) bool {
+	if ins == nil {
+		return false
+	}
+	// Check for specific unconditional jump instructions by comparing pointers
+	// This is the most precise approach since conditional and unconditional variants have same names
+	return ins == JpAbs || ins == JrRel || ins == Call || ins == Ret || ins == EdReti || ins == EdRetn ||
+		ins == Rst || ins == JpIndirect ||
+		ins == DdJpIX || ins == FdJpIY
 }
 
 // decodeEDInstruction decodes ED-prefixed instructions (extended operations).

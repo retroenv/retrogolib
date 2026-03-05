@@ -23,11 +23,6 @@ func (l *Logger) Closer(closer io.Closer, msg string) {
 	l.Error(msg, Err(err))
 }
 
-// closerCtx is the interface that wraps the extended Close method.
-type closerCtx interface {
-	Close(ctx context.Context) error
-}
-
 // CloserCtx calls the closer function and if an error gets returned it logs an error.
 // It respects context deadlines and cancellation, logging timeout errors appropriately.
 func (l *Logger) CloserCtx(ctx context.Context, closer closerCtx, msg string) {
@@ -92,24 +87,6 @@ func (l *Logger) MultiCloserCtx(ctx context.Context, msg string, closers ...clos
 	}
 }
 
-// expectedCloseErrors contains error types that are expected during normal close operations.
-// Pre-allocated as package-level variable for performance.
-var expectedCloseErrors = []error{
-	os.ErrClosed,
-	net.ErrClosed,
-	io.EOF,
-	syscall.EBADF,
-	syscall.EINVAL,
-}
-
-// expectedCloseErrorStrings contains error strings that indicate expected close conditions.
-// Pre-allocated as package-level variable for performance.
-var expectedCloseErrorStrings = []string{
-	"use of closed network connection",
-	"broken pipe",
-	"connection reset by peer",
-}
-
 // shouldIgnoreCloseError returns true for errors that are expected and should not be logged.
 func (l *Logger) shouldIgnoreCloseError(err error) bool {
 	if err == nil {
@@ -134,4 +111,27 @@ func (l *Logger) shouldIgnoreCloseError(err error) bool {
 	}
 
 	return false
+}
+
+// closerCtx is the interface that wraps the extended Close method.
+type closerCtx interface {
+	Close(ctx context.Context) error
+}
+
+// expectedCloseErrors contains error types that are expected during normal close operations.
+// Pre-allocated as package-level variable for performance.
+var expectedCloseErrors = []error{
+	os.ErrClosed,
+	net.ErrClosed,
+	io.EOF,
+	syscall.EBADF,
+	syscall.EINVAL,
+}
+
+// expectedCloseErrorStrings contains error strings that indicate expected close conditions.
+// Pre-allocated as package-level variable for performance.
+var expectedCloseErrorStrings = []string{
+	"use of closed network connection",
+	"broken pipe",
+	"connection reset by peer",
 }

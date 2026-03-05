@@ -6,18 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type errorTestMemory struct {
-	b [0x10000]byte
-}
-
-func (m *errorTestMemory) Read(address uint16) uint8 {
-	return m.b[address]
-}
-
-func (m *errorTestMemory) Write(address uint16, value uint8) {
-	m.b[address] = value
-}
-
 func TestErrorConstants(t *testing.T) {
 	basicMem := &errorTestMemory{}
 	memory, err := NewMemory(basicMem)
@@ -64,4 +52,16 @@ func TestUnsupportedAddressingModeError(t *testing.T) {
 	assert.Nil(t, params, "Params should be nil on error")
 	assert.Nil(t, opcodes, "Opcodes should be nil on error")
 	assert.False(t, pageCrossed, "PageCrossed should be false on error")
+}
+
+type errorTestMemory struct {
+	b [0x10000]byte
+}
+
+func (m *errorTestMemory) Read(address uint16) uint8 {
+	return m.b[address]
+}
+
+func (m *errorTestMemory) Write(address uint16, value uint8) {
+	m.b[address] = value
 }

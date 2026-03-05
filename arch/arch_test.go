@@ -124,7 +124,7 @@ func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
 	expected := []Architecture{CHIP8, M6502, Z80, X86}
 
-	assert.Equal(t, len(expected), len(got))
+	assert.Len(t, expected, len(got))
 
 	// Check that all expected architectures are present
 	for _, expectedArch := range expected {

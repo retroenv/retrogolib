@@ -367,17 +367,17 @@ func (c *CPU) calculateIndexedAddress(indexReg uint16, params ...any) uint16 {
 	return uint16(int32(indexReg) + int32(displacement))
 }
 
-// extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).
-// Used by instructions that take a 16-bit address operand.
-func extractExtendedAddress(params ...any) uint16 {
-	return uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
-}
-
 // read16 reads a 16-bit value from memory at addr (little-endian).
 func (c *CPU) read16(addr uint16) uint16 {
 	low := c.memory.Read(addr)
 	high := c.memory.Read(addr + 1)
 	return uint16(high)<<8 | uint16(low)
+}
+
+// extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).
+// Used by instructions that take a 16-bit address operand.
+func extractExtendedAddress(params ...any) uint16 {
+	return uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
 }
 
 // writeRegisterPair writes a register pair to memory at addr (little-endian).

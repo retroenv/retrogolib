@@ -2,7 +2,6 @@ package z80
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -55,10 +54,7 @@ func TestVerifyOpcodes(t *testing.T) {
 			}
 		}
 
-		if len(missingMappings) > 0 {
-			t.Errorf("%s: Found %d opcodes with missing reverse mappings:\n  %s",
-				name, len(missingMappings), strings.Join(missingMappings, "\n  "))
-		}
+		assert.Empty(t, missingMappings, "%s", name)
 	}
 
 	verifyOpcodeArray("Opcodes", Opcodes)
@@ -276,20 +272,6 @@ type opcodeByRegisterTest struct {
 	wantExists  bool
 }
 
-func getOpcodeByRegisterTests() []opcodeByRegisterTest {
-	return []opcodeByRegisterTest{
-		{"IncReg8 - INC B", IncReg8, RegB, 0x04, true},
-		{"IncReg8 - INC A", IncReg8, RegA, 0x3C, true},
-		{"DecReg8 - DEC C", DecReg8, RegC, 0x0D, true},
-		{"LdReg16 - LD HL,nn", LdReg16, RegHL, 0x21, true},
-		{"IncReg16 - INC SP", IncReg16, RegSP, 0x33, true},
-		{"Rst - RST 08H", Rst, RegRst08, 0xCF, true},
-		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
-		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
-		{"Non-existent register", IncReg8, RegIX, 0x00, false},
-	}
-}
-
 func TestInstruction_GetOpcodeByRegister(t *testing.T) {
 	t.Parallel()
 
@@ -436,5 +418,19 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 					"Opcode for %s should match expected value", tc.name)
 			}
 		})
+	}
+}
+
+func getOpcodeByRegisterTests() []opcodeByRegisterTest {
+	return []opcodeByRegisterTest{
+		{"IncReg8 - INC B", IncReg8, RegB, 0x04, true},
+		{"IncReg8 - INC A", IncReg8, RegA, 0x3C, true},
+		{"DecReg8 - DEC C", DecReg8, RegC, 0x0D, true},
+		{"LdReg16 - LD HL,nn", LdReg16, RegHL, 0x21, true},
+		{"IncReg16 - INC SP", IncReg16, RegSP, 0x33, true},
+		{"Rst - RST 08H", Rst, RegRst08, 0xCF, true},
+		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
+		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
+		{"Non-existent register", IncReg8, RegIX, 0x00, false},
 	}
 }

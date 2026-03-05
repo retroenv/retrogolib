@@ -575,22 +575,6 @@ func TestEqual_EdgeCases(t *testing.T) {
 	}
 }
 
-func TestErrorAs_EdgeCases(t *testing.T) {
-	tst := &errorCapture{}
-	var pathErr *AssertTestError
-	ErrorAs(tst, &AssertTestError{msg: "test"}, &pathErr)
-	if tst.failed {
-		t.Error("ErrorAs should pass for matching error type")
-	}
-
-	tst = &errorCapture{}
-	var wrongType *AssertTestSecondError
-	ErrorAs(tst, &AssertTestError{msg: "test"}, &wrongType)
-	if !tst.failed {
-		t.Error("ErrorAs should fail for non-matching error type")
-	}
-}
-
 type AssertTestError struct {
 	msg string
 }
@@ -605,4 +589,20 @@ type AssertTestSecondError struct {
 
 func (e *AssertTestSecondError) Error() string {
 	return e.msg
+}
+
+func TestErrorAs_EdgeCases(t *testing.T) {
+	tst := &errorCapture{}
+	var pathErr *AssertTestError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &pathErr)
+	if tst.failed {
+		t.Error("ErrorAs should pass for matching error type")
+	}
+
+	tst = &errorCapture{}
+	var wrongType *AssertTestSecondError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &wrongType)
+	if !tst.failed {
+		t.Error("ErrorAs should fail for non-matching error type")
+	}
 }
