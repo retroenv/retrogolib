@@ -51,17 +51,24 @@ func (c *CPU) Step() error {
 		c.PC != pcBeforeDecode
 	c.incrementRefresh(prefixed)
 
+	if err := c.executeInstruction(opcode, opcodeByte, oldPC); err != nil {
+		return err
+	}
+	c.q = c.GetFlags()
+	return nil
+}
+
+// executeInstruction runs the decoded instruction and updates the program counter.
+func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) error {
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
 		if c.opts.preExecutionHook != nil {
 			c.opts.preExecutionHook(c, opcodeByte)
 		}
-
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
 		c.updatePC(ins, oldPC, int(opcode.Size))
-		c.q = c.GetFlags()
 		return nil
 	}
 
@@ -76,13 +83,10 @@ func (c *CPU) Step() error {
 		c.opts.preExecutionHook(c, opcodeByte, params...)
 	}
 
-	opcodeLen := int(opcode.Size)
-
 	if err := ins.ParamFunc(c, params...); err != nil {
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
-	c.updatePC(ins, oldPC, opcodeLen)
-	c.q = c.GetFlags()
+	c.updatePC(ins, oldPC, int(opcode.Size))
 	return nil
 }
 
