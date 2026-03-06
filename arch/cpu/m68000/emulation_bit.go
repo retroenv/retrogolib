@@ -3,10 +3,7 @@ package m68000
 // Bit manipulation instructions: BTST, BSET, BCLR, BCHG.
 
 func (c *CPU) execBTST(d DecodedOpcode) error {
-	bitNum, err := c.getBitNumber(d)
-	if err != nil {
-		return err
-	}
+	bitNum := c.getBitNumber(d)
 
 	// For register operands, bit number modulo 32. For memory, modulo 8.
 	if d.DstMode == 0 {
@@ -31,10 +28,7 @@ func (c *CPU) execBTST(d DecodedOpcode) error {
 }
 
 func (c *CPU) execBSET(d DecodedOpcode) error {
-	bitNum, err := c.getBitNumber(d)
-	if err != nil {
-		return err
-	}
+	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {
 		bitNum %= 32
@@ -59,10 +53,7 @@ func (c *CPU) execBSET(d DecodedOpcode) error {
 }
 
 func (c *CPU) execBCLR(d DecodedOpcode) error {
-	bitNum, err := c.getBitNumber(d)
-	if err != nil {
-		return err
-	}
+	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {
 		bitNum %= 32
@@ -87,10 +78,7 @@ func (c *CPU) execBCLR(d DecodedOpcode) error {
 }
 
 func (c *CPU) execBCHG(d DecodedOpcode) error {
-	bitNum, err := c.getBitNumber(d)
-	if err != nil {
-		return err
-	}
+	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {
 		bitNum %= 32
@@ -115,11 +103,11 @@ func (c *CPU) execBCHG(d DecodedOpcode) error {
 }
 
 // getBitNumber returns the bit number from the source operand.
-func (c *CPU) getBitNumber(d DecodedOpcode) (uint32, error) {
+func (c *CPU) getBitNumber(d DecodedOpcode) uint32 {
 	if d.SrcMode == 7 && d.SrcReg == 4 {
 		// Immediate bit number.
-		return c.readImmediate(SizeByte), nil
+		return c.readImmediate(SizeByte)
 	}
 	// Register bit number.
-	return c.D[d.SrcReg], nil
+	return c.D[d.SrcReg]
 }

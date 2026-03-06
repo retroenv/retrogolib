@@ -83,7 +83,7 @@ func (c *CPU) A7() uint32 {
 
 // Bus returns the attached bus interface.
 //
-//nolint:ireturn
+//nolint:ireturn // intentional: Bus is the public API interface
 func (c *CPU) Bus() Bus {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

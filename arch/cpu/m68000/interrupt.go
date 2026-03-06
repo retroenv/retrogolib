@@ -56,7 +56,7 @@ func (c *CPU) processException(vector int) error {
 }
 
 // processInterruptException processes an interrupt exception for the given level.
-func (c *CPU) processInterruptException(level uint8) error {
+func (c *CPU) processInterruptException(level uint8) {
 	// Save current SR.
 	oldSR := c.GetSR()
 
@@ -84,8 +84,6 @@ func (c *CPU) processInterruptException(level uint8) error {
 
 	c.stopped = false
 	c.cycles += 44
-
-	return nil
 }
 
 // TriggerIRQ triggers a maskable interrupt at the given level (1-7).
@@ -108,9 +106,6 @@ func (c *CPU) checkInterrupts() bool {
 		return false
 	}
 
-	if err := c.processInterruptException(level); err != nil {
-		return false
-	}
-
+	c.processInterruptException(level)
 	return true
 }

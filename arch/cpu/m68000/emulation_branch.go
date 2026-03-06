@@ -5,41 +5,63 @@ package m68000
 // Condition code evaluation for Bcc/Scc/DBcc.
 // Conditions are encoded in bits 11-8 of the opcode word.
 func (c *CPU) evaluateCondition(cond uint16) bool {
-	switch cond {
-	case 0: // T (true)
+	switch {
+	case cond == 0: // T (true)
 		return true
-	case 1: // F (false)
+	case cond == 1: // F (false)
 		return false
-	case 2: // HI (higher): !C && !Z
-		return c.Flags.C == 0 && c.Flags.Z == 0
-	case 3: // LS (lower or same): C || Z
-		return c.Flags.C != 0 || c.Flags.Z != 0
-	case 4: // CC (carry clear): !C
-		return c.Flags.C == 0
-	case 5: // CS (carry set): C
-		return c.Flags.C != 0
-	case 6: // NE (not equal): !Z
-		return c.Flags.Z == 0
-	case 7: // EQ (equal): Z
-		return c.Flags.Z != 0
-	case 8: // VC (overflow clear): !V
-		return c.Flags.V == 0
-	case 9: // VS (overflow set): V
-		return c.Flags.V != 0
-	case 10: // PL (plus): !N
-		return c.Flags.N == 0
-	case 11: // MI (minus): N
-		return c.Flags.N != 0
-	case 12: // GE (greater or equal): (N && V) || (!N && !V)
-		return c.Flags.N == c.Flags.V
-	case 13: // LT (less than): (N && !V) || (!N && V)
-		return c.Flags.N != c.Flags.V
-	case 14: // GT (greater than): (N && V && !Z) || (!N && !V && !Z)
-		return c.Flags.Z == 0 && c.Flags.N == c.Flags.V
-	case 15: // LE (less or equal): Z || (N && !V) || (!N && V)
-		return c.Flags.Z != 0 || c.Flags.N != c.Flags.V
+	case cond <= 5:
+		return c.evaluateConditionCarryZero(cond)
+	case cond <= 11:
+		return c.evaluateConditionSingle(cond)
 	default:
-		return false
+		return c.evaluateConditionCompound(cond)
+	}
+}
+
+// evaluateConditionCarryZero evaluates C/Z flag conditions (2-5).
+func (c *CPU) evaluateConditionCarryZero(cond uint16) bool {
+	switch cond {
+	case 2: // HI: !C && !Z
+		return c.Flags.C == 0 && c.Flags.Z == 0
+	case 3: // LS: C || Z
+		return c.Flags.C != 0 || c.Flags.Z != 0
+	case 4: // CC: !C
+		return c.Flags.C == 0
+	default: // 5: CS: C
+		return c.Flags.C != 0
+	}
+}
+
+// evaluateConditionSingle evaluates single-flag conditions (6-11).
+func (c *CPU) evaluateConditionSingle(cond uint16) bool {
+	switch cond {
+	case 6: // NE: !Z
+		return c.Flags.Z == 0
+	case 7: // EQ: Z
+		return c.Flags.Z != 0
+	case 8: // VC: !V
+		return c.Flags.V == 0
+	case 9: // VS: V
+		return c.Flags.V != 0
+	case 10: // PL: !N
+		return c.Flags.N == 0
+	default: // 11: MI: N
+		return c.Flags.N != 0
+	}
+}
+
+// evaluateConditionCompound evaluates compound N/V/Z conditions (12-15).
+func (c *CPU) evaluateConditionCompound(cond uint16) bool {
+	switch cond {
+	case 12: // GE: N == V
+		return c.Flags.N == c.Flags.V
+	case 13: // LT: N != V
+		return c.Flags.N != c.Flags.V
+	case 14: // GT: !Z && N == V
+		return c.Flags.Z == 0 && c.Flags.N == c.Flags.V
+	default: // 15: LE: Z || N != V
+		return c.Flags.Z != 0 || c.Flags.N != c.Flags.V
 	}
 }
 

@@ -4,7 +4,31 @@ package m68000
 // LINK, UNLK, SWAP.
 
 func (c *CPU) execMOVE(d DecodedOpcode) error {
-	// Handle special MOVE to/from SR/CCR/USP.
+	if d.Extra != 0 {
+		return c.execMOVESpecial(d)
+	}
+
+	// Regular MOVE.
+	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
+	if err != nil {
+		return err
+	}
+	src, err := c.readEA(srcEA)
+	if err != nil {
+		return err
+	}
+
+	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
+	if err != nil {
+		return err
+	}
+
+	c.setLogicFlags(src, d.Size)
+	return c.writeEA(dstEA, src)
+}
+
+// execMOVESpecial handles MOVE to/from SR/CCR/USP.
+func (c *CPU) execMOVESpecial(d DecodedOpcode) error {
 	switch d.Extra {
 	case 1: // MOVE An,USP
 		if !c.IsSupervisor() {
@@ -54,25 +78,10 @@ func (c *CPU) execMOVE(d DecodedOpcode) error {
 		}
 		c.SetSR(uint16(src))
 		return nil
-	}
 
-	// Regular MOVE.
-	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
-	if err != nil {
-		return err
+	default:
+		return nil
 	}
-	src, err := c.readEA(srcEA)
-	if err != nil {
-		return err
-	}
-
-	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
-	if err != nil {
-		return err
-	}
-
-	c.setLogicFlags(src, d.Size)
-	return c.writeEA(dstEA, src)
 }
 
 func (c *CPU) execMOVEA(d DecodedOpcode) error {

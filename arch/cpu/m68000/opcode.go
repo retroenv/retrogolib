@@ -266,83 +266,41 @@ func decodeLine4(opcode uint16) (DecodedOpcode, error) {
 	switch {
 	case opcode&0xFFF8 == 0x4E70:
 		return decodeLine4Special(opcode)
-
 	case opcode == 0x4AFC:
-		return DecodedOpcode{
-			Instruction: insILLEGAL,
-			Timing:      34,
-		}, nil
-
+		return DecodedOpcode{Instruction: insILLEGAL, Timing: 34}, nil
 	case opcode&0xFFF0 == 0x4E40:
-		// TRAP #vector
-		return DecodedOpcode{
-			Instruction: insTRAP,
-			Extra:       opcode & 0x0F,
-			Timing:      34,
-		}, nil
-
+		return DecodedOpcode{Instruction: insTRAP, Extra: opcode & 0x0F, Timing: 34}, nil
 	case opcode&0xFFF8 == 0x4E50:
-		// LINK An,#displacement
-		return DecodedOpcode{
-			Instruction: insLINK,
-			DstReg:      uint8(reg),
-			Timing:      16,
-		}, nil
-
+		return DecodedOpcode{Instruction: insLINK, DstReg: uint8(reg), Timing: 16}, nil
 	case opcode&0xFFF8 == 0x4E58:
-		// UNLK An
-		return DecodedOpcode{
-			Instruction: insUNLK,
-			DstReg:      uint8(reg),
-			Timing:      12,
-		}, nil
-
+		return DecodedOpcode{Instruction: insUNLK, DstReg: uint8(reg), Timing: 12}, nil
 	case opcode&0xFFF8 == 0x4E60:
-		// MOVE An,USP
-		return DecodedOpcode{
-			Instruction: insMOVE,
-			Size:        SizeLong,
-			SrcMode:     1,
-			SrcReg:      uint8(reg),
-			DstMode:     7, // USP
-			DstReg:      5,
-			Extra:       1, // Direction: to USP
-			Timing:      4,
-		}, nil
-
+		return decodeLine4MoveUSP(reg, true)
 	case opcode&0xFFF8 == 0x4E68:
-		// MOVE USP,An
-		return DecodedOpcode{
-			Instruction: insMOVE,
-			Size:        SizeLong,
-			SrcMode:     7, // USP
-			SrcReg:      5,
-			DstMode:     1,
-			DstReg:      uint8(reg),
-			Extra:       2, // Direction: from USP
-			Timing:      4,
-		}, nil
-
+		return decodeLine4MoveUSP(reg, false)
 	case opcode&0xFFC0 == 0x4E80:
-		// JSR <ea>
-		return DecodedOpcode{
-			Instruction: insJSR,
-			DstMode:     uint8(mode),
-			DstReg:      uint8(reg),
-			Timing:      16,
-		}, nil
-
+		return DecodedOpcode{Instruction: insJSR, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 16}, nil
 	case opcode&0xFFC0 == 0x4EC0:
-		// JMP <ea>
-		return DecodedOpcode{
-			Instruction: insJMP,
-			DstMode:     uint8(mode),
-			DstReg:      uint8(reg),
-			Timing:      8,
-		}, nil
+		return DecodedOpcode{Instruction: insJMP, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 8}, nil
 	}
 
 	return decodeLine4Group(opcode)
+}
+
+// decodeLine4MoveUSP decodes MOVE An,USP and MOVE USP,An.
+func decodeLine4MoveUSP(reg uint16, toUSP bool) (DecodedOpcode, error) {
+	if toUSP {
+		return DecodedOpcode{
+			Instruction: insMOVE, Size: SizeLong,
+			SrcMode: 1, SrcReg: uint8(reg), DstMode: 7, DstReg: 5,
+			Extra: 1, Timing: 4,
+		}, nil
+	}
+	return DecodedOpcode{
+		Instruction: insMOVE, Size: SizeLong,
+		SrcMode: 7, SrcReg: 5, DstMode: 1, DstReg: uint8(reg),
+		Extra: 2, Timing: 4,
+	}, nil
 }
 
 // decodeLine4Special decodes the special instructions at 0x4E7x.
@@ -372,107 +330,116 @@ func decodeLine4Group(opcode uint16) (DecodedOpcode, error) {
 	mode := (opcode >> 3) & 7
 	reg := opcode & 7
 
-	switch (opcode >> 6) & 0x3F {
+	if d, ok := decodeLine4Unary(opcode, mode, reg); ok {
+		return d, nil
+	}
+
+	return decodeLine4Extended(opcode, mode, reg)
+}
+
+// decodeLine4Unary decodes unary ALU operations and MOVE to/from SR/CCR in line 4.
+func decodeLine4Unary(opcode, mode, reg uint16) (DecodedOpcode, bool) {
+	op := (opcode >> 6) & 0x3F
+	if op <= 0x0A {
+		return decodeLine4UnaryLow(op, mode, reg)
+	}
+	return decodeLine4UnaryHigh(op, mode, reg)
+}
+
+func decodeLine4UnaryLow(op, mode, reg uint16) (DecodedOpcode, bool) {
+	switch op {
 	case 0x00: // NEGX.B
-		return DecodedOpcode{Instruction: insNEGX, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNEGX, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x01: // NEGX.W
-		return DecodedOpcode{Instruction: insNEGX, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNEGX, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x02: // NEGX.L
-		return DecodedOpcode{Instruction: insNEGX, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, nil
+		return DecodedOpcode{Instruction: insNEGX, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, true
 	case 0x03: // MOVE from SR
-		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Extra: 3, Timing: 6}, nil
+		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Extra: 3, Timing: 6}, true
 	case 0x08: // CLR.B
-		return DecodedOpcode{Instruction: insCLR, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insCLR, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x09: // CLR.W
-		return DecodedOpcode{Instruction: insCLR, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insCLR, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x0A: // CLR.L
-		return DecodedOpcode{Instruction: insCLR, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, nil
+		return DecodedOpcode{Instruction: insCLR, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, true
+	default:
+		return DecodedOpcode{}, false
+	}
+}
+
+func decodeLine4UnaryHigh(op, mode, reg uint16) (DecodedOpcode, bool) {
+	switch op {
 	case 0x10: // NEG.B
-		return DecodedOpcode{Instruction: insNEG, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNEG, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x11: // NEG.W
-		return DecodedOpcode{Instruction: insNEG, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNEG, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x12: // NEG.L
-		return DecodedOpcode{Instruction: insNEG, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, nil
+		return DecodedOpcode{Instruction: insNEG, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, true
 	case 0x13: // MOVE to CCR
-		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 4, Timing: 12}, nil
+		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 4, Timing: 12}, true
 	case 0x18: // NOT.B
-		return DecodedOpcode{Instruction: insNOT, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNOT, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x19: // NOT.W
-		return DecodedOpcode{Instruction: insNOT, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+		return DecodedOpcode{Instruction: insNOT, Size: SizeWord, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, true
 	case 0x1A: // NOT.L
-		return DecodedOpcode{Instruction: insNOT, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, nil
+		return DecodedOpcode{Instruction: insNOT, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 6}, true
 	case 0x1B: // MOVE to SR
-		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 5, Timing: 12}, nil
+		return DecodedOpcode{Instruction: insMOVE, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 5, Timing: 12}, true
 	case 0x20: // NBCD
-		return DecodedOpcode{Instruction: insNBCD, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 8}, nil
+		return DecodedOpcode{Instruction: insNBCD, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 8}, true
+	default:
+		return DecodedOpcode{}, false
 	}
+}
 
-	// SWAP and PEA share encoding space.
-	if opcode&0xFFF8 == 0x4840 {
+// decodeLine4Extended decodes SWAP, PEA, EXT, MOVEM, TST, TAS, Scc, LEA, CHK.
+func decodeLine4Extended(opcode, mode, reg uint16) (DecodedOpcode, error) {
+	switch {
+	case opcode&0xFFF8 == 0x4840:
 		return DecodedOpcode{Instruction: insSWAP, DstReg: uint8(reg), Timing: 4}, nil
-	}
-
-	// PEA <ea>
-	if opcode&0xFFC0 == 0x4840 {
+	case opcode&0xFFC0 == 0x4840:
 		return DecodedOpcode{Instruction: insPEA, Size: SizeLong, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 12}, nil
-	}
-
-	// EXT.W
-	if opcode&0xFFF8 == 0x4880 {
+	case opcode&0xFFF8 == 0x4880:
 		return DecodedOpcode{Instruction: insEXT, Size: SizeWord, DstReg: uint8(reg), Timing: 4}, nil
-	}
-	// EXT.L
-	if opcode&0xFFF8 == 0x48C0 {
+	case opcode&0xFFF8 == 0x48C0:
 		return DecodedOpcode{Instruction: insEXT, Size: SizeLong, DstReg: uint8(reg), Timing: 4}, nil
-	}
-
-	// MOVEM register to memory.
-	if opcode&0xFB80 == 0x4880 {
-		sz := SizeWord
-		if opcode&0x0040 != 0 {
-			sz = SizeLong
-		}
+	case opcode&0xFB80 == 0x4880:
+		sz := movemSize(opcode)
 		return DecodedOpcode{Instruction: insMOVEM, Size: sz, DstMode: uint8(mode), DstReg: uint8(reg), Extra: 0, Timing: 8}, nil
-	}
-
-	// MOVEM memory to register.
-	if opcode&0xFB80 == 0x4C80 {
-		sz := SizeWord
-		if opcode&0x0040 != 0 {
-			sz = SizeLong
-		}
+	case opcode&0xFB80 == 0x4C80:
+		sz := movemSize(opcode)
 		return DecodedOpcode{Instruction: insMOVEM, Size: sz, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 1, Timing: 12}, nil
-	}
-
-	// TST
-	if opcode&0xFF00 == 0x4A00 {
-		size := sizeFromBits((opcode >> 6) & 3)
-		if size == 0 {
-			// 0x4AC0 = TAS
-			return DecodedOpcode{Instruction: insTAS, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
-		}
-		return DecodedOpcode{Instruction: insTST, Size: size, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
-	}
-
-	// Scc
-	if opcode&0xF0C0 == 0x50C0 && mode != 1 {
+	case opcode&0xFF00 == 0x4A00:
+		return decodeLine4TstTas(opcode, mode, reg)
+	case opcode&0xF0C0 == 0x50C0 && mode != 1:
 		cond := (opcode >> 8) & 0xF
 		return DecodedOpcode{Instruction: insScc, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Extra: cond, Timing: 4}, nil
-	}
-
-	// LEA
-	if opcode&0xF1C0 == 0x41C0 {
+	case opcode&0xF1C0 == 0x41C0:
 		an := (opcode >> 9) & 7
 		return DecodedOpcode{Instruction: insLEA, Size: SizeLong, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(an), Timing: 4}, nil
-	}
-
-	// CHK
-	if opcode&0xF1C0 == 0x4180 {
+	case opcode&0xF1C0 == 0x4180:
 		dn := (opcode >> 9) & 7
 		return DecodedOpcode{Instruction: insCHK, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(dn), Timing: 10}, nil
+	default:
+		return DecodedOpcode{}, fmt.Errorf("%w: 0x%04X", ErrUnsupportedOpcode, opcode)
 	}
+}
 
-	return DecodedOpcode{}, fmt.Errorf("%w: 0x%04X", ErrUnsupportedOpcode, opcode)
+// decodeLine4TstTas decodes TST and TAS instructions.
+func decodeLine4TstTas(opcode, mode, reg uint16) (DecodedOpcode, error) {
+	size := sizeFromBits((opcode >> 6) & 3)
+	if size == 0 {
+		return DecodedOpcode{Instruction: insTAS, Size: SizeByte, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+	}
+	return DecodedOpcode{Instruction: insTST, Size: size, DstMode: uint8(mode), DstReg: uint8(reg), Timing: 4}, nil
+}
+
+// movemSize returns the operand size for MOVEM from the opcode bit.
+func movemSize(opcode uint16) OperandSize {
+	if opcode&0x0040 != 0 {
+		return SizeLong
+	}
+	return SizeWord
 }
 
 // decodeLine5 decodes line 5: ADDQ, SUBQ, Scc, DBcc.
@@ -703,64 +670,23 @@ func decodeLineC(opcode uint16) (DecodedOpcode, error) {
 	reg := opcode & 7
 	opMode := (opcode >> 6) & 7
 
-	// ABCD
-	if opMode == 4 {
-		return DecodedOpcode{
-			Instruction: insABCD,
-			Size:        SizeByte,
-			SrcReg:      uint8(reg),
-			DstReg:      uint8(dn),
-			Extra:       opcode & 0x8, // RM bit
-			Timing:      6,
-		}, nil
+	switch opMode {
+	case 4: // ABCD
+		return DecodedOpcode{Instruction: insABCD, Size: SizeByte, SrcReg: uint8(reg), DstReg: uint8(dn), Extra: opcode & 0x8, Timing: 6}, nil
+	case 3: // MULU
+		return DecodedOpcode{Instruction: insMULU, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(dn), Timing: 70}, nil
+	case 7: // MULS
+		return DecodedOpcode{Instruction: insMULS, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(dn), Timing: 70}, nil
 	}
 
-	// MULU
-	if opMode == 3 {
-		return DecodedOpcode{
-			Instruction: insMULU,
-			Size:        SizeWord,
-			SrcMode:     uint8(mode),
-			SrcReg:      uint8(reg),
-			DstReg:      uint8(dn),
-			Timing:      70,
-		}, nil
-	}
-
-	// MULS
-	if opMode == 7 {
-		return DecodedOpcode{
-			Instruction: insMULS,
-			Size:        SizeWord,
-			SrcMode:     uint8(mode),
-			SrcReg:      uint8(reg),
-			DstReg:      uint8(dn),
-			Timing:      70,
-		}, nil
-	}
-
-	// EXG
-	if opMode == 5 && mode == 0 {
-		// EXG Dn,Dn
-		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 0, Timing: 6}, nil
-	}
-	if opMode == 5 && mode == 1 {
-		// EXG An,An
-		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 1, Timing: 6}, nil
-	}
-	if opMode == 6 && mode == 1 {
-		// EXG Dn,An
-		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 2, Timing: 6}, nil
+	// EXG variants.
+	if d, ok := decodeLineCExg(opMode, mode, dn, reg); ok {
+		return d, nil
 	}
 
 	// AND
 	size := sizeFromBits(opMode & 3)
-	d := DecodedOpcode{
-		Instruction: insAND,
-		Size:        size,
-		Timing:      4,
-	}
-
+	d := DecodedOpcode{Instruction: insAND, Size: size, Timing: 4}
 	if opMode < 3 {
 		d.SrcMode = uint8(mode)
 		d.SrcReg = uint8(reg)
@@ -772,8 +698,21 @@ func decodeLineC(opcode uint16) (DecodedOpcode, error) {
 		d.DstMode = uint8(mode)
 		d.DstReg = uint8(reg)
 	}
-
 	return d, nil
+}
+
+// decodeLineCExg decodes EXG instruction variants within line C.
+func decodeLineCExg(opMode, mode, dn, reg uint16) (DecodedOpcode, bool) {
+	switch {
+	case opMode == 5 && mode == 0: // EXG Dn,Dn
+		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 0, Timing: 6}, true
+	case opMode == 5 && mode == 1: // EXG An,An
+		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 1, Timing: 6}, true
+	case opMode == 6 && mode == 1: // EXG Dn,An
+		return DecodedOpcode{Instruction: insEXG, SrcReg: uint8(dn), DstReg: uint8(reg), Extra: 2, Timing: 6}, true
+	default:
+		return DecodedOpcode{}, false
+	}
 }
 
 // decodeLineD decodes line D: ADD, ADDA, ADDX.
@@ -844,9 +783,14 @@ func decodeAddSub(opcode uint16, insBase, insAddr, insExtended *Instruction) (De
 	return d, nil
 }
 
+// shiftRotateInstructions maps (type << 1 | direction) to instruction.
+// Type: 0=AS, 1=LS, 2=ROX, 3=RO. Direction: 0=right, 1=left.
+var shiftRotateInstructions = [8]*Instruction{
+	insASR, insASL, insLSR, insLSL, insROXR, insROXL, insROR, insROL,
+}
+
 // decodeLineE decodes line E: Shift/Rotate instructions.
 func decodeLineE(opcode uint16) (DecodedOpcode, error) {
-	mode := (opcode >> 3) & 7
 	reg := opcode & 7
 
 	// Memory shift/rotate (size = word, count = 1).
@@ -857,32 +801,11 @@ func decodeLineE(opcode uint16) (DecodedOpcode, error) {
 	// Register shift/rotate.
 	size := sizeFromBits((opcode >> 6) & 3)
 	count := (opcode >> 9) & 7
-	dr := (opcode >> 8) & 1 // 0=right, 1=left
-	ir := (opcode >> 5) & 1 // 0=count in field, 1=count in register
+	dr := (opcode >> 8) & 1
+	ir := (opcode >> 5) & 1
 	typ := (opcode >> 3) & 3
 
-	_ = mode
-
-	var ins *Instruction
-
-	switch {
-	case typ == 0 && dr == 0:
-		ins = insASR
-	case typ == 0 && dr == 1:
-		ins = insASL
-	case typ == 1 && dr == 0:
-		ins = insLSR
-	case typ == 1 && dr == 1:
-		ins = insLSL
-	case typ == 2 && dr == 0:
-		ins = insROXR
-	case typ == 2 && dr == 1:
-		ins = insROXL
-	case typ == 3 && dr == 0:
-		ins = insROR
-	case typ == 3 && dr == 1:
-		ins = insROL
-	}
+	ins := shiftRotateInstructions[typ<<1|dr]
 
 	extra := count
 	if ir != 0 {
@@ -905,26 +828,7 @@ func decodeLineEMemory(opcode uint16) (DecodedOpcode, error) {
 	typ := (opcode >> 9) & 3
 	dr := (opcode >> 8) & 1
 
-	var ins *Instruction
-
-	switch {
-	case typ == 0 && dr == 0:
-		ins = insASR
-	case typ == 0 && dr == 1:
-		ins = insASL
-	case typ == 1 && dr == 0:
-		ins = insLSR
-	case typ == 1 && dr == 1:
-		ins = insLSL
-	case typ == 2 && dr == 0:
-		ins = insROXR
-	case typ == 2 && dr == 1:
-		ins = insROXL
-	case typ == 3 && dr == 0:
-		ins = insROR
-	case typ == 3 && dr == 1:
-		ins = insROL
-	}
+	ins := shiftRotateInstructions[typ<<1|dr]
 
 	return DecodedOpcode{
 		Instruction: ins,

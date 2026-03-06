@@ -235,7 +235,7 @@ func (c *CPU) State() State {
 
 // Memory returns the attached memory controller.
 //
-//nolint:ireturn
+//nolint:ireturn // intentional: Memory is the public API interface
 func (c *CPU) Memory() Memory {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -244,7 +244,7 @@ func (c *CPU) Memory() Memory {
 
 // Bus returns the attached bus interface.
 //
-//nolint:ireturn
+//nolint:ireturn // intentional: Bus is the public API interface
 func (c *CPU) Bus() Bus {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

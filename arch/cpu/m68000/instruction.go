@@ -1,10 +1,14 @@
 package m68000
 
+// execFunc is the type of an instruction execution handler.
+type execFunc func(c *CPU, d DecodedOpcode) error
+
 // Instruction defines a 68000 CPU instruction with its execution logic.
 // The 68000 uses a hierarchical opcode decoder rather than flat tables,
 // so instructions are simpler than the Z80 equivalent.
 type Instruction struct {
-	Name string // instruction mnemonic (uppercase)
+	Name string   // instruction mnemonic (uppercase)
+	exec execFunc // execution handler (nil for NOP)
 }
 
 // Instruction name constants sorted alphabetically.
@@ -87,80 +91,80 @@ const (
 
 // Instruction variable definitions.
 var (
-	insABCD    = &Instruction{Name: ABCDName}
-	insADD     = &Instruction{Name: ADDName}
-	insADDA    = &Instruction{Name: ADDAName}
-	insADDI    = &Instruction{Name: ADDIName}
-	insADDQ    = &Instruction{Name: ADDQName}
-	insADDX    = &Instruction{Name: ADDXName}
-	insAND     = &Instruction{Name: ANDName}
-	insANDI    = &Instruction{Name: ANDIName}
-	insASL     = &Instruction{Name: ASLName}
-	insASR     = &Instruction{Name: ASRName}
-	insBcc     = &Instruction{Name: BccName}
-	insBCHG    = &Instruction{Name: BCHGName}
-	insBCLR    = &Instruction{Name: BCLRName}
-	insBRA     = &Instruction{Name: BRAName}
-	insBSET    = &Instruction{Name: BSETName}
-	insBSR     = &Instruction{Name: BSRName}
-	insBTST    = &Instruction{Name: BTSTName}
-	insCHK     = &Instruction{Name: CHKName}
-	insCLR     = &Instruction{Name: CLRName}
-	insCMP     = &Instruction{Name: CMPName}
-	insCMPA    = &Instruction{Name: CMPAName}
-	insCMPI    = &Instruction{Name: CMPIName}
-	insCMPM    = &Instruction{Name: CMPMName}
-	insDBcc    = &Instruction{Name: DBccName}
-	insDIVS    = &Instruction{Name: DIVSName}
-	insDIVU    = &Instruction{Name: DIVUName}
-	insEOR     = &Instruction{Name: EORName}
-	insEORI    = &Instruction{Name: EORIName}
-	insEXG     = &Instruction{Name: EXGName}
-	insEXT     = &Instruction{Name: EXTName}
-	insILLEGAL = &Instruction{Name: ILLEGALName}
-	insJMP     = &Instruction{Name: JMPName}
-	insJSR     = &Instruction{Name: JSRName}
-	insLEA     = &Instruction{Name: LEAName}
-	insLINK    = &Instruction{Name: LINKName}
-	insLSL     = &Instruction{Name: LSLName}
-	insLSR     = &Instruction{Name: LSRName}
-	insMOVE    = &Instruction{Name: MOVEName}
-	insMOVEA   = &Instruction{Name: MOVEAName}
-	insMOVEM   = &Instruction{Name: MOVEMName}
-	insMOVEP   = &Instruction{Name: MOVEPName}
-	insMOVEQ   = &Instruction{Name: MOVEQName}
-	insMULS    = &Instruction{Name: MULSName}
-	insMULU    = &Instruction{Name: MULUName}
-	insNBCD    = &Instruction{Name: NBCDName}
-	insNEG     = &Instruction{Name: NEGName}
-	insNEGX    = &Instruction{Name: NEGXName}
+	insABCD    = &Instruction{Name: ABCDName, exec: (*CPU).execABCD}
+	insADD     = &Instruction{Name: ADDName, exec: (*CPU).execADD}
+	insADDA    = &Instruction{Name: ADDAName, exec: (*CPU).execADDA}
+	insADDI    = &Instruction{Name: ADDIName, exec: (*CPU).execADDI}
+	insADDQ    = &Instruction{Name: ADDQName, exec: (*CPU).execADDQ}
+	insADDX    = &Instruction{Name: ADDXName, exec: (*CPU).execADDX}
+	insAND     = &Instruction{Name: ANDName, exec: (*CPU).execAND}
+	insANDI    = &Instruction{Name: ANDIName, exec: (*CPU).execANDI}
+	insASL     = &Instruction{Name: ASLName, exec: (*CPU).execASL}
+	insASR     = &Instruction{Name: ASRName, exec: (*CPU).execASR}
+	insBcc     = &Instruction{Name: BccName, exec: (*CPU).execBcc}
+	insBCHG    = &Instruction{Name: BCHGName, exec: (*CPU).execBCHG}
+	insBCLR    = &Instruction{Name: BCLRName, exec: (*CPU).execBCLR}
+	insBRA     = &Instruction{Name: BRAName, exec: (*CPU).execBRA}
+	insBSET    = &Instruction{Name: BSETName, exec: (*CPU).execBSET}
+	insBSR     = &Instruction{Name: BSRName, exec: (*CPU).execBSR}
+	insBTST    = &Instruction{Name: BTSTName, exec: (*CPU).execBTST}
+	insCHK     = &Instruction{Name: CHKName, exec: (*CPU).execCHK}
+	insCLR     = &Instruction{Name: CLRName, exec: (*CPU).execCLR}
+	insCMP     = &Instruction{Name: CMPName, exec: (*CPU).execCMP}
+	insCMPA    = &Instruction{Name: CMPAName, exec: (*CPU).execCMPA}
+	insCMPI    = &Instruction{Name: CMPIName, exec: (*CPU).execCMPI}
+	insCMPM    = &Instruction{Name: CMPMName, exec: (*CPU).execCMPM}
+	insDBcc    = &Instruction{Name: DBccName, exec: (*CPU).execDBcc}
+	insDIVS    = &Instruction{Name: DIVSName, exec: (*CPU).execDIVS}
+	insDIVU    = &Instruction{Name: DIVUName, exec: (*CPU).execDIVU}
+	insEOR     = &Instruction{Name: EORName, exec: (*CPU).execEOR}
+	insEORI    = &Instruction{Name: EORIName, exec: (*CPU).execEORI}
+	insEXG     = &Instruction{Name: EXGName, exec: (*CPU).execEXG}
+	insEXT     = &Instruction{Name: EXTName, exec: (*CPU).execEXT}
+	insILLEGAL = &Instruction{Name: ILLEGALName, exec: (*CPU).execILLEGAL}
+	insJMP     = &Instruction{Name: JMPName, exec: (*CPU).execJMP}
+	insJSR     = &Instruction{Name: JSRName, exec: (*CPU).execJSR}
+	insLEA     = &Instruction{Name: LEAName, exec: (*CPU).execLEA}
+	insLINK    = &Instruction{Name: LINKName, exec: (*CPU).execLINK}
+	insLSL     = &Instruction{Name: LSLName, exec: (*CPU).execLSL}
+	insLSR     = &Instruction{Name: LSRName, exec: (*CPU).execLSR}
+	insMOVE    = &Instruction{Name: MOVEName, exec: (*CPU).execMOVE}
+	insMOVEA   = &Instruction{Name: MOVEAName, exec: (*CPU).execMOVEA}
+	insMOVEM   = &Instruction{Name: MOVEMName, exec: (*CPU).execMOVEM}
+	insMOVEP   = &Instruction{Name: MOVEPName, exec: (*CPU).execMOVEP}
+	insMOVEQ   = &Instruction{Name: MOVEQName, exec: (*CPU).execMOVEQ}
+	insMULS    = &Instruction{Name: MULSName, exec: (*CPU).execMULS}
+	insMULU    = &Instruction{Name: MULUName, exec: (*CPU).execMULU}
+	insNBCD    = &Instruction{Name: NBCDName, exec: (*CPU).execNBCD}
+	insNEG     = &Instruction{Name: NEGName, exec: (*CPU).execNEG}
+	insNEGX    = &Instruction{Name: NEGXName, exec: (*CPU).execNEGX}
 	insNOP     = &Instruction{Name: NOPName}
-	insNOT     = &Instruction{Name: NOTName}
-	insOR      = &Instruction{Name: ORName}
-	insORI     = &Instruction{Name: ORIName}
-	insPEA     = &Instruction{Name: PEAName}
-	insRESET   = &Instruction{Name: RESETName}
-	insROL     = &Instruction{Name: ROLName}
-	insROR     = &Instruction{Name: RORName}
-	insROXL    = &Instruction{Name: ROXLName}
-	insROXR    = &Instruction{Name: ROXRName}
-	insRTE     = &Instruction{Name: RTEName}
-	insRTR     = &Instruction{Name: RTRName}
-	insRTS     = &Instruction{Name: RTSName}
-	insSBCD    = &Instruction{Name: SBCDName}
-	insScc     = &Instruction{Name: SccName}
-	insSTOP    = &Instruction{Name: STOPName}
-	insSUB     = &Instruction{Name: SUBName}
-	insSUBA    = &Instruction{Name: SUBAName}
-	insSUBI    = &Instruction{Name: SUBIName}
-	insSUBQ    = &Instruction{Name: SUBQName}
-	insSUBX    = &Instruction{Name: SUBXName}
-	insSWAP    = &Instruction{Name: SWAPName}
-	insTAS     = &Instruction{Name: TASName}
-	insTRAP    = &Instruction{Name: TRAPName}
-	insTRAPV   = &Instruction{Name: TRAPVName}
-	insTST     = &Instruction{Name: TSTName}
-	insUNLK    = &Instruction{Name: UNLKName}
+	insNOT     = &Instruction{Name: NOTName, exec: (*CPU).execNOT}
+	insOR      = &Instruction{Name: ORName, exec: (*CPU).execOR}
+	insORI     = &Instruction{Name: ORIName, exec: (*CPU).execORI}
+	insPEA     = &Instruction{Name: PEAName, exec: (*CPU).execPEA}
+	insRESET   = &Instruction{Name: RESETName, exec: (*CPU).execRESET}
+	insROL     = &Instruction{Name: ROLName, exec: (*CPU).execROL}
+	insROR     = &Instruction{Name: RORName, exec: (*CPU).execROR}
+	insROXL    = &Instruction{Name: ROXLName, exec: (*CPU).execROXL}
+	insROXR    = &Instruction{Name: ROXRName, exec: (*CPU).execROXR}
+	insRTE     = &Instruction{Name: RTEName, exec: (*CPU).execRTE}
+	insRTR     = &Instruction{Name: RTRName, exec: (*CPU).execRTR}
+	insRTS     = &Instruction{Name: RTSName, exec: (*CPU).execRTS}
+	insSBCD    = &Instruction{Name: SBCDName, exec: (*CPU).execSBCD}
+	insScc     = &Instruction{Name: SccName, exec: (*CPU).execScc}
+	insSTOP    = &Instruction{Name: STOPName, exec: (*CPU).execSTOP}
+	insSUB     = &Instruction{Name: SUBName, exec: (*CPU).execSUB}
+	insSUBA    = &Instruction{Name: SUBAName, exec: (*CPU).execSUBA}
+	insSUBI    = &Instruction{Name: SUBIName, exec: (*CPU).execSUBI}
+	insSUBQ    = &Instruction{Name: SUBQName, exec: (*CPU).execSUBQ}
+	insSUBX    = &Instruction{Name: SUBXName, exec: (*CPU).execSUBX}
+	insSWAP    = &Instruction{Name: SWAPName, exec: (*CPU).execSWAP}
+	insTAS     = &Instruction{Name: TASName, exec: (*CPU).execTAS}
+	insTRAP    = &Instruction{Name: TRAPName, exec: (*CPU).execTRAP}
+	insTRAPV   = &Instruction{Name: TRAPVName, exec: (*CPU).execTRAPV}
+	insTST     = &Instruction{Name: TSTName, exec: (*CPU).execTST}
+	insUNLK    = &Instruction{Name: UNLKName, exec: (*CPU).execUNLK}
 )
 
 // Instructions maps instruction names to their definitions.

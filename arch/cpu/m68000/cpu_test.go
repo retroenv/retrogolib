@@ -101,17 +101,3 @@ func newTestCPU(t *testing.T) *CPU {
 	assert.NoError(t, err)
 	return cpu
 }
-
-// testBus implements the Bus interface for testing with custom IRQ control.
-type testBus struct {
-	Memory
-	irqLevel uint8
-}
-
-func (b *testBus) IRQAcknowledge(level uint8) uint32 {
-	return uint32(VectorAutoVector1) + uint32(level) - 1
-}
-
-func (b *testBus) IRQLevel() uint8 { return b.irqLevel }
-
-func (b *testBus) OnReset() {}
