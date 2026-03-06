@@ -9,7 +9,7 @@ type testMem struct {
 	data [1 << 24]byte
 }
 
-func (m *testMem) ReadByte(addr uint32) uint8    { return m.data[addr&0xFFFFFF] }
+func (m *testMem) ReadByte(addr uint32) uint8     { return m.data[addr&0xFFFFFF] }
 func (m *testMem) WriteByte(addr uint32, v uint8) { m.data[addr&0xFFFFFF] = v }
 func (m *testMem) ReadWord(addr uint32) uint16 {
 	lo := uint16(m.data[addr&0xFFFFFF])

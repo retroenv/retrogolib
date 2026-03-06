@@ -536,6 +536,7 @@ func trb(c *CPU, params ...any) error {
 }
 
 // mvn - Move Block Next (increment addresses).
+// C holds count-1; the loop copies C+1 bytes and exits with C=0xFFFF.
 func mvn(c *CPU, params ...any) error {
 	bm := params[0].(BlockMove)
 	c.DB = bm.Dst
@@ -548,17 +549,11 @@ func mvn(c *CPU, params ...any) error {
 		c.C--
 		c.cycles += 7
 	}
-	// Final byte
-	src := bank24(bm.Src, c.X)
-	dst := bank24(bm.Dst, c.Y)
-	c.writeMem8(dst, c.readMem8(src))
-	c.X++
-	c.Y++
-	c.C--
 	return nil
 }
 
 // mvp - Move Block Previous (decrement addresses).
+// C holds count-1; the loop copies C+1 bytes and exits with C=0xFFFF.
 func mvp(c *CPU, params ...any) error {
 	bm := params[0].(BlockMove)
 	c.DB = bm.Dst
@@ -571,12 +566,6 @@ func mvp(c *CPU, params ...any) error {
 		c.C--
 		c.cycles += 7
 	}
-	src := bank24(bm.Src, c.X)
-	dst := bank24(bm.Dst, c.Y)
-	c.writeMem8(dst, c.readMem8(src))
-	c.X--
-	c.Y--
-	c.C--
 	return nil
 }
 

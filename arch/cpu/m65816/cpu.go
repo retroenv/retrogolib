@@ -355,9 +355,25 @@ func (c *CPU) resolveEA(param any) (uint32, error) {
 	case DirectPage:
 		return c.resolveDP(uint8(p)), nil
 	case DirectPageX:
-		return c.resolveDP(uint8(uint16(p) + c.X&0xFF)), nil
+		dp := uint8(p)
+		if c.E && c.DP&0xFF == 0 {
+			// Emulation mode, DP page-aligned: (dp+X) wraps within page 0
+			return uint32(c.DP) | uint32(dp+uint8(c.X&0xFF)), nil
+		}
+		if c.IdxWidth() == 1 {
+			return (uint32(c.DP) + uint32(dp) + uint32(c.X&0xFF)) & 0xFFFF, nil
+		}
+		return (uint32(c.DP) + uint32(dp) + uint32(c.X)) & 0xFFFF, nil
 	case DirectPageY:
-		return c.resolveDP(uint8(uint16(p) + c.Y&0xFF)), nil
+		dp := uint8(p)
+		if c.E && c.DP&0xFF == 0 {
+			// Emulation mode, DP page-aligned: (dp+Y) wraps within page 0
+			return uint32(c.DP) | uint32(dp+uint8(c.Y&0xFF)), nil
+		}
+		if c.IdxWidth() == 1 {
+			return (uint32(c.DP) + uint32(dp) + uint32(c.Y&0xFF)) & 0xFFFF, nil
+		}
+		return (uint32(c.DP) + uint32(dp) + uint32(c.Y)) & 0xFFFF, nil
 	case DPIndirect:
 		return uint32(p), nil
 	case DPIndirectX:

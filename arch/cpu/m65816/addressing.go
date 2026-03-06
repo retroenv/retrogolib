@@ -9,26 +9,26 @@ const (
 
 	// Inherited from 65C02
 	ImpliedAddressing     AddressingMode = 1 << iota // no operand (NOP, TAX)
-	AccumulatorAddressing                             // A register (ASL A)
-	ImmediateAddressing                               // #imm (LDA #$42) - size varies with M/X
+	AccumulatorAddressing                            // A register (ASL A)
+	ImmediateAddressing                              // #imm (LDA #$42) - size varies with M/X
 
 	// Direct Page (replaces zero page; base address from DP register)
-	DirectPageAddressing          // dp (LDA dp)
-	DirectPageIndexedXAddressing  // dp,X
-	DirectPageIndexedYAddressing  // dp,Y
-	DirectPageIndirectAddressing  // (dp)
+	DirectPageAddressing                 // dp (LDA dp)
+	DirectPageIndexedXAddressing         // dp,X
+	DirectPageIndexedYAddressing         // dp,Y
+	DirectPageIndirectAddressing         // (dp)
 	DirectPageIndexedXIndirectAddressing // (dp,X)
 	DirectPageIndirectIndexedYAddressing // (dp),Y
 
 	// Direct Page Long (24-bit pointer in direct page)
-	DirectPageIndirectLongAddressing          // [dp]
-	DirectPageIndirectLongIndexedYAddressing  // [dp],Y
+	DirectPageIndirectLongAddressing         // [dp]
+	DirectPageIndirectLongIndexedYAddressing // [dp],Y
 
 	// Absolute (16-bit address in current data bank)
-	AbsoluteAddressing          // abs
-	AbsoluteIndexedXAddressing  // abs,X
-	AbsoluteIndexedYAddressing  // abs,Y
-	AbsoluteIndirectAddressing  // (abs) -- JMP only
+	AbsoluteAddressing                 // abs
+	AbsoluteIndexedXAddressing         // abs,X
+	AbsoluteIndexedYAddressing         // abs,Y
+	AbsoluteIndirectAddressing         // (abs) -- JMP only
 	AbsoluteIndexedXIndirectAddressing // (abs,X) -- JMP/JSR only
 
 	// Absolute Long (24-bit address)
@@ -39,8 +39,8 @@ const (
 	AbsoluteIndirectLongAddressing // [abs] -- JML only
 
 	// Stack Relative
-	StackRelativeAddressing                  // sr,S
-	StackRelativeIndirectIndexedYAddressing  // (sr,S),Y
+	StackRelativeAddressing                 // sr,S
+	StackRelativeIndirectIndexedYAddressing // (sr,S),Y
 
 	// Relative
 	RelativeAddressing     // 8-bit signed offset (branches)
@@ -70,11 +70,11 @@ type (
 	AbsLong     uint32 // 24-bit absolute long
 	AbsLongX    uint32 // 24-bit absolute long + X
 
-	StackRel  uint8  // stack-relative offset
-	SRIndY    uint32 // resolved (sr,S),Y address
+	StackRel uint8  // stack-relative offset
+	SRIndY   uint32 // resolved (sr,S),Y address
 
-	RelOffset  int8   // 8-bit branch offset (already resolved to absolute)
-	LongOffset int16  // 16-bit branch offset (already resolved to absolute)
+	RelOffset  int8  // 8-bit branch offset (already resolved to absolute)
+	LongOffset int16 // 16-bit branch offset (already resolved to absolute)
 
 	BlockMove struct{ Src, Dst uint8 } // source and destination banks for MVN/MVP
 )

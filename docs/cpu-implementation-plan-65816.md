@@ -276,6 +276,28 @@ const (
 
 ---
 
+## Current Status
+
+- **Status:** IN_PROGRESS
+- **Last Updated:** 2026-03-06
+- **Summary:** Phases 1–4 complete; Phase 5 emulation refinements in progress; Phase 7 testing expanded.
+
+## Completed Work
+
+| Date | What | Notes |
+|------|------|-------|
+| 2026-03-06 | All Phases 1–4 implemented | All files created, 256-opcode table filled, all addressing mode param readers, all instruction handlers |
+| 2026-03-06 | Fix `resolveEA` for `DirectPageX`/`DirectPageY` | Was always using 8-bit X/Y and truncating to `uint8`; now respects `IdxWidth()` and emulation-mode page-0 wrap |
+| 2026-03-06 | Fix `mvn`/`mvp` off-by-one | Redundant "final byte" copy removed; loop alone correctly exits with C=0xFFFF |
+| 2026-03-06 | Expand test coverage (Phase 7) | Added JSR/RTS, JSL/RTL, JMP, JML, PEA/PEI/PER, MVN (1-byte and 3-byte), BRK native mode, dp,X 8/16-bit, ADC/SBC 16-bit |
+
+### Next Target: Remaining Phase 5 + Phase 7 gaps
+
+- **ADC/SBC decimal mode (BCD):** When `Flags.D=1`, ADC and SBC should do BCD arithmetic. Currently they ignore the D flag.
+- **More Phase 7 tests:** MVP block move, emulation mode BRK/COP, WAI behavior, RTI, PHB/PLB/PHD/PLD, interrupt request flow (TriggerNMI/TriggerIRQ), mode switching sequence (XCE → REP → native code).
+
+---
+
 ## 7. Implementation Phases
 
 ### Phase 1: Architecture Registration + Static Analysis Foundation

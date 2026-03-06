@@ -57,7 +57,7 @@ func TestLDA_Immediate8(t *testing.T) {
 
 func TestLDA_Immediate16(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.Flags.M = 0 // 16-bit accumulator
+	cpu.Flags.M = 0                        // 16-bit accumulator
 	writeOp(mem, 0x8000, 0xA9, 0x34, 0x12) // LDA #$1234
 	if err := cpu.Step(); err != nil {
 		t.Fatal(err)
@@ -306,7 +306,7 @@ func TestBRA_Taken(t *testing.T) {
 
 func TestBNE_NotTaken(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.Flags.Z = 1 // Z set means equal, BNE not taken
+	cpu.Flags.Z = 1                  // Z set means equal, BNE not taken
 	writeOp(mem, 0x8000, 0xD0, 0x05) // BNE +5
 	if err := cpu.Step(); err != nil {
 		t.Fatal(err)
@@ -548,6 +548,359 @@ func TestDEX16(t *testing.T) {
 	}
 	if cpu.Flags.Z != 1 {
 		t.Error("DEX to zero should set Z flag")
+	}
+}
+
+// -- ADC/SBC 16-bit --
+
+func TestADC_16bit(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 0 // 16-bit accumulator
+	cpu.Flags.C = 0
+	cpu.C = 0x1000
+	writeOp(mem, 0x8000, 0x69, 0x34, 0x12) // ADC #$1234
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x2234 {
+		t.Errorf("ADC16: C=%04X, want 2234", cpu.C)
+	}
+	if cpu.Flags.C != 0 {
+		t.Error("ADC16: unexpected carry")
+	}
+}
+
+func TestADC_16bit_Carry(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 0
+	cpu.Flags.C = 0
+	cpu.C = 0xFF00
+	writeOp(mem, 0x8000, 0x69, 0x00, 0x01) // ADC #$0100
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x0000 {
+		t.Errorf("ADC16 carry: C=%04X, want 0000", cpu.C)
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("ADC16 carry: expected carry set")
+	}
+	if cpu.Flags.Z != 1 {
+		t.Error("ADC16 carry: expected zero flag")
+	}
+}
+
+func TestSBC_16bit(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 0
+	cpu.Flags.C = 1 // no borrow
+	cpu.C = 0x1234
+	writeOp(mem, 0x8000, 0xE9, 0x34, 0x02) // SBC #$0234
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x1000 {
+		t.Errorf("SBC16: C=%04X, want 1000", cpu.C)
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("SBC16: no-borrow C should be 1")
+	}
+}
+
+// -- DirectPage indexed addressing --
+
+func TestSTADP_IndexedX_8bit(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.E = false
+	cpu.Flags.M = 1 // 8-bit acc
+	cpu.Flags.X = 1 // 8-bit X
+	cpu.DP = 0x0000
+	cpu.C = 0xBB
+	cpu.X = 0x10
+	writeOp(mem, 0x8000, 0x95, 0x20) // STA $20,X  ->  EA = 0x0000 + 0x20 + 0x10 = 0x0030
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x0030] != 0xBB {
+		t.Errorf("STA dp,X 8bit: mem[0030]=%02X, want BB", mem.data[0x0030])
+	}
+}
+
+func TestSTADP_IndexedX_16bit(t *testing.T) {
+	// 16-bit X: EA = DP + dp + X (no 8-bit truncation)
+	cpu, mem := setupCPU(t)
+	cpu.E = false
+	cpu.Flags.M = 1 // 8-bit acc
+	cpu.Flags.X = 0 // 16-bit X
+	cpu.DP = 0x0000
+	cpu.C = 0xAA
+	cpu.X = 0x0100                   // high byte of X is non-zero: tests the fix
+	writeOp(mem, 0x8000, 0x95, 0xF0) // STA $F0,X  ->  EA = 0x0000 + 0xF0 + 0x0100 = 0x01F0
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x01F0] != 0xAA {
+		t.Errorf("STA dp,X 16bit: mem[01F0]=%02X, want AA", mem.data[0x01F0])
+	}
+	// Verify wrong address ($00F0) was NOT written (old bug would have written there)
+	if mem.data[0x00F0] != 0x00 {
+		t.Errorf("STA dp,X 16bit: wrote to wrong address 00F0 (old bug)")
+	}
+}
+
+func TestSTADP_IndexedX_EmulationWrap(t *testing.T) {
+	// In emulation mode with DP=$0000, (dp+X) wraps within page 0
+	cpu, mem := newTestCPU(t)
+	// Stays in emulation mode (E=true)
+	cpu.DP = 0x0000
+	cpu.C = 0x77
+	cpu.X = 0x20
+	writeOp(mem, 0x8000, 0x95, 0xF0) // STA $F0,X -> (0xF0+0x20)&0xFF = 0x10
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x0010] != 0x77 {
+		t.Errorf("STA dp,X emu wrap: mem[0010]=%02X, want 77", mem.data[0x0010])
+	}
+}
+
+// -- JSR / RTS --
+
+func TestJSR_RTS(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.SP = 0x01FF
+	// JSR $9000 at $8000; subroutine at $9000 contains RTS
+	writeOp(mem, 0x8000, 0x20, 0x00, 0x90) // JSR $9000
+	writeOp(mem, 0x9000, 0x60)             // RTS
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x9000 {
+		t.Errorf("JSR: PC=%04X, want 9000", cpu.PC)
+	}
+	if cpu.SP != 0x01FD {
+		t.Errorf("JSR: SP=%04X, want 01FD", cpu.SP)
+	}
+	// Return address $8002 pushed: high byte ($80) at $01FF, low byte ($02) at $01FE
+	if mem.data[0x01FE] != 0x02 || mem.data[0x01FF] != 0x80 {
+		t.Errorf("JSR: stack hi=%02X lo=%02X, want hi=80 lo=02", mem.data[0x01FF], mem.data[0x01FE])
+	}
+
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x8003 {
+		t.Errorf("RTS: PC=%04X, want 8003", cpu.PC)
+	}
+	if cpu.SP != 0x01FF {
+		t.Errorf("RTS: SP=%04X, want 01FF", cpu.SP)
+	}
+}
+
+// -- JSL / RTL --
+
+func TestJSL_RTL(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.SP = 0x01FF
+	cpu.PB = 0x00
+	// JSL $019000 at $8000; subroutine at bank $01:$9000 contains RTL
+	writeOp(mem, 0x8000, 0x22, 0x00, 0x90, 0x01) // JSL $019000
+	mem.data[0x019000] = 0x6B                    // RTL (in bank $01)
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x9000 {
+		t.Errorf("JSL: PC=%04X, want 9000", cpu.PC)
+	}
+	if cpu.PB != 0x01 {
+		t.Errorf("JSL: PB=%02X, want 01", cpu.PB)
+	}
+	if cpu.SP != 0x01FC {
+		t.Errorf("JSL: SP=%04X, want 01FC", cpu.SP)
+	}
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x8004 {
+		t.Errorf("RTL: PC=%04X, want 8004", cpu.PC)
+	}
+	if cpu.PB != 0x00 {
+		t.Errorf("RTL: PB=%02X, want 00", cpu.PB)
+	}
+	if cpu.SP != 0x01FF {
+		t.Errorf("RTL: SP=%04X, want 01FF", cpu.SP)
+	}
+}
+
+// -- JMP / JML --
+
+func TestJMP_Absolute(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	writeOp(mem, 0x8000, 0x4C, 0x34, 0x12) // JMP $1234
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x1234 {
+		t.Errorf("JMP: PC=%04X, want 1234", cpu.PC)
+	}
+}
+
+func TestJML_Long(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.PB = 0x00
+	writeOp(mem, 0x8000, 0x5C, 0x00, 0x90, 0x01) // JML $019000
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x9000 {
+		t.Errorf("JML: PC=%04X, want 9000", cpu.PC)
+	}
+	if cpu.PB != 0x01 {
+		t.Errorf("JML: PB=%02X, want 01", cpu.PB)
+	}
+}
+
+// -- PEA / PEI / PER --
+
+func TestPEA(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.SP = 0x01FF
+	writeOp(mem, 0x8000, 0xF4, 0x34, 0x12) // PEA $1234
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.SP != 0x01FD {
+		t.Errorf("PEA: SP=%04X, want 01FD", cpu.SP)
+	}
+	// $1234 pushed: lo=$34 at $01FE, hi=$12 at $01FF
+	if mem.data[0x01FE] != 0x34 || mem.data[0x01FF] != 0x12 {
+		t.Errorf("PEA: stack=%02X%02X, want 1234", mem.data[0x01FF], mem.data[0x01FE])
+	}
+	if cpu.PC != 0x8003 {
+		t.Errorf("PEA: PC=%04X, want 8003", cpu.PC)
+	}
+}
+
+func TestPEI(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.SP = 0x01FF
+	cpu.DP = 0x0000
+	// Store $5678 at direct page offset $10
+	mem.data[0x0010] = 0x78
+	mem.data[0x0011] = 0x56
+	writeOp(mem, 0x8000, 0xD4, 0x10) // PEI ($10)
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.SP != 0x01FD {
+		t.Errorf("PEI: SP=%04X, want 01FD", cpu.SP)
+	}
+	got := uint16(mem.data[0x01FF])<<8 | uint16(mem.data[0x01FE])
+	if got != 0x5678 {
+		t.Errorf("PEI: pushed=%04X, want 5678", got)
+	}
+	if cpu.PC != 0x8002 {
+		t.Errorf("PEI: PC=%04X, want 8002", cpu.PC)
+	}
+}
+
+func TestPER(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.SP = 0x01FF
+	// PER +$0100: effective = 0x8000 + 3 + 0x0100 = 0x8103
+	writeOp(mem, 0x8000, 0x62, 0x00, 0x01) // PER +$0100
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.SP != 0x01FD {
+		t.Errorf("PER: SP=%04X, want 01FD", cpu.SP)
+	}
+	got := uint16(mem.data[0x01FF])<<8 | uint16(mem.data[0x01FE])
+	if got != 0x8103 {
+		t.Errorf("PER: pushed=%04X, want 8103", got)
+	}
+	if cpu.PC != 0x8003 {
+		t.Errorf("PER: PC=%04X, want 8003", cpu.PC)
+	}
+}
+
+// -- MVN block move --
+
+func TestMVN_SingleByte(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.C = 0x0000 // 1 byte to copy (C+1)
+	cpu.X = 0x1000
+	cpu.Y = 0x2000
+	mem.data[0x1000] = 0xAA
+	if err := mvn(cpu, BlockMove{Src: 0x00, Dst: 0x00}); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x2000] != 0xAA {
+		t.Errorf("MVN 1-byte: dst=%02X, want AA", mem.data[0x2000])
+	}
+	if cpu.C != 0xFFFF {
+		t.Errorf("MVN 1-byte: C=%04X, want FFFF", cpu.C)
+	}
+	if cpu.X != 0x1001 {
+		t.Errorf("MVN 1-byte: X=%04X, want 1001", cpu.X)
+	}
+	if cpu.Y != 0x2001 {
+		t.Errorf("MVN 1-byte: Y=%04X, want 2001", cpu.Y)
+	}
+}
+
+func TestMVN_ThreeBytes(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.C = 0x0002 // 3 bytes to copy
+	cpu.X = 0x1000
+	cpu.Y = 0x2000
+	mem.data[0x1000] = 0xAA
+	mem.data[0x1001] = 0xBB
+	mem.data[0x1002] = 0xCC
+	if err := mvn(cpu, BlockMove{Src: 0x00, Dst: 0x00}); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
+		t.Errorf("MVN 3-byte: dst=%02X%02X%02X, want AABBCC",
+			mem.data[0x2000], mem.data[0x2001], mem.data[0x2002])
+	}
+	if cpu.C != 0xFFFF {
+		t.Errorf("MVN 3-byte: C=%04X, want FFFF", cpu.C)
+	}
+	if cpu.X != 0x1003 {
+		t.Errorf("MVN 3-byte: X=%04X, want 1003", cpu.X)
+	}
+}
+
+// -- BRK (native mode) --
+
+func TestBRK_Native(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.E = false
+	cpu.SP = 0x01FF
+	cpu.PB = 0x00
+	cpu.Flags.D = 1 // should be cleared by BRK
+	// Set native BRK vector at $FFE6 -> $9000
+	mem.data[0xFFE6] = 0x00
+	mem.data[0xFFE7] = 0x90
+	writeOp(mem, 0x8000, 0x00, 0x00) // BRK + signature byte
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x9000 {
+		t.Errorf("BRK: PC=%04X, want 9000", cpu.PC)
+	}
+	if cpu.PB != 0x00 {
+		t.Errorf("BRK: PB=%02X, want 00", cpu.PB)
+	}
+	if cpu.Flags.I != 1 {
+		t.Error("BRK: I flag should be set")
+	}
+	if cpu.Flags.D != 0 {
+		t.Error("BRK: D flag should be cleared")
+	}
+	if cpu.SP != 0x01FB {
+		t.Errorf("BRK: SP=%04X, want 01FB (pushed PB+retAddr+P)", cpu.SP)
 	}
 }
 
