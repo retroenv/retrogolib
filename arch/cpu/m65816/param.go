@@ -94,9 +94,8 @@ func paramReaderDPY(c *CPU) ([]any, []byte, bool) {
 
 func paramReaderDPIndirect(c *CPU) ([]any, []byte, bool) {
 	dp := c.fetchByte(1)
-	ptr := c.dpAddr(dp)
-	addr := uint32(c.readMem16(ptr))
-	// Pointer is in bank 0; effective address uses DB
+	// Pointer read uses DP page wrap in emulation mode (DP_lo=0)
+	addr := uint32(c.readDPWord(dp))
 	eff := c.dataAddr(uint16(addr))
 	return []any{DPIndirect(eff)}, []byte{dp}, false
 }
@@ -107,16 +106,26 @@ func paramReaderDPXIndirect(c *CPU) ([]any, []byte, bool) {
 	if c.IdxWidth() == 2 {
 		idx = uint16(dp) + c.X
 	}
-	ptr := bank24(0, c.DP+idx)
-	addr := uint32(c.readMem16(ptr))
-	eff := bank24(c.PB, uint16(addr))
+	var addr uint32
+	if c.E && c.DP&0xFF == 0 {
+		// Emulation mode, DP page-aligned: (dp+X) and pointer bytes wrap within DP 256-byte page
+		dpOffset := uint8(idx)
+		dpPage := uint32(c.DP)
+		lo := uint32(c.memory.ReadByte(dpPage | uint32(dpOffset)))
+		hi := uint32(c.memory.ReadByte(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
+		addr = hi<<8 | lo
+	} else {
+		ptr := bank24(0, c.DP+idx)
+		addr = uint32(c.readMem16(ptr))
+	}
+	eff := bank24(c.DB, uint16(addr))
 	return []any{DPIndirectX(eff)}, []byte{dp}, false
 }
 
 func paramReaderDPIndirectY(c *CPU) ([]any, []byte, bool) {
 	dp := c.fetchByte(1)
-	ptr := c.dpAddr(dp)
-	base := uint32(c.readMem16(ptr))
+	// Pointer read uses DP page wrap in emulation mode (DP_lo=0)
+	base := uint32(c.readDPWord(dp))
 	var yVal uint32
 	if c.IdxWidth() == 2 {
 		yVal = uint32(c.Y)

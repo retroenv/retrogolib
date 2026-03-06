@@ -40,6 +40,7 @@ func bra(c *CPU, params ...any) error {
 func brl(c *CPU, params ...any) error {
 	// Branch Long: always taken, 16-bit offset, already resolved to absolute
 	c.PC = params[0].(uint16)
+	c.pcChanged = true
 	return nil
 }
 
@@ -57,17 +58,15 @@ func bvs(c *CPU, params ...any) error {
 func jmp(c *CPU, params ...any) error {
 	switch p := params[0].(type) {
 	case Absolute16:
-		// JMP abs: address is in Data Bank
 		c.PC = uint16(p)
 	case DPIndirect:
-		// JMP (abs): pointer was resolved in program bank, already has PB:addr
 		c.PC = uint16(p)
 	case DPIndirectX:
-		// JMP (abs,X): same
 		c.PC = uint16(p)
 	default:
 		return nil
 	}
+	c.pcChanged = true
 	return nil
 }
 
@@ -77,8 +76,7 @@ func jml(c *CPU, params ...any) error {
 	case AbsLong:
 		c.PB = uint8(uint32(p) >> 16)
 		c.PC = uint16(p)
-	default:
-		return nil
+		c.pcChanged = true
 	}
 	return nil
 }
@@ -92,8 +90,10 @@ func jsr(c *CPU, params ...any) error {
 	switch p := params[0].(type) {
 	case Absolute16:
 		c.PC = uint16(p)
+		c.pcChanged = true
 	case DPIndirectX:
 		c.PC = uint16(p)
+		c.pcChanged = true
 	}
 	return nil
 }
@@ -108,6 +108,7 @@ func jsl(c *CPU, params ...any) error {
 	case AbsLong:
 		c.PB = uint8(uint32(p) >> 16)
 		c.PC = uint16(p)
+		c.pcChanged = true
 	}
 	return nil
 }

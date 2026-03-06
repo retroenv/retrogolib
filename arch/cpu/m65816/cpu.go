@@ -39,9 +39,10 @@ type CPU struct {
 	Flags Flags // Processor status register (P)
 	E     bool  // Emulation flag (toggled by XCE)
 
-	cycles  uint64
-	stopped bool // STP instruction state
-	waiting bool // WAI instruction state
+	cycles    uint64
+	stopped   bool // STP instruction state
+	waiting   bool // WAI instruction state
+	pcChanged bool // set by instructions that explicitly set PC (branches, jumps)
 
 	// Interrupt control
 	triggerNMI bool
@@ -254,8 +255,38 @@ func (c *CPU) writeMem8(addr uint32, value uint8) {
 }
 
 // readMem16 reads a 16-bit word (little-endian) from a 24-bit address.
+// The hi byte wraps within the same 64KB bank — used for pointer fetches
+// (DP indirect, absolute indirect, stack-relative indirect) where the 65816
+// keeps pointer bytes inside the bank containing the pointer itself.
 func (c *CPU) readMem16(addr uint32) uint16 {
-	return c.memory.ReadWord(addr & 0xFFFFFF)
+	addr &= 0xFFFFFF
+	lo := uint16(c.memory.ReadByte(addr))
+	bank := addr & 0xFF0000
+	hi := uint16(c.memory.ReadByte(bank | uint32(uint16(addr)+1)))
+	return hi<<8 | lo
+}
+
+// readData16 reads a 16-bit word (little-endian) from a 24-bit address.
+// The hi byte is at addr+1 in full 24-bit address space — used for data reads
+// (absolute, indexed-absolute, direct-page memory operands) where the 65816
+// allows the address to cross a bank boundary.
+func (c *CPU) readData16(addr uint32) uint16 {
+	addr &= 0xFFFFFF
+	lo := uint16(c.memory.ReadByte(addr))
+	hi := uint16(c.memory.ReadByte((addr + 1) & 0xFFFFFF))
+	return hi<<8 | lo
+}
+
+// readDPWord reads a 16-bit indirect pointer from a direct-page offset.
+// In emulation mode with DP_lo=0, both pointer bytes wrap within the DP 256-byte page.
+func (c *CPU) readDPWord(dpOffset uint8) uint16 {
+	if c.E && c.DP&0xFF == 0 {
+		dpPage := uint32(c.DP)
+		lo := uint16(c.memory.ReadByte(dpPage | uint32(dpOffset)))
+		hi := uint16(c.memory.ReadByte(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
+		return hi<<8 | lo
+	}
+	return c.readMem16(bank24(0, c.DP+uint16(dpOffset)))
 }
 
 // writeMem16 writes a 16-bit word (little-endian) to a 24-bit address.
@@ -275,6 +306,7 @@ func (c *CPU) branch(taken bool, addr uint16) {
 		return
 	}
 	c.PC = addr
+	c.pcChanged = true
 	c.cycles++ // extra cycle when branch taken
 }
 
@@ -338,10 +370,11 @@ func (c *CPU) fetchLong(offset uint16) uint32 {
 // Handles emulation mode page-0 wrap when DP low byte is $00.
 func (c *CPU) resolveDP(dp uint8) uint32 {
 	if c.E && c.DP&0xFF == 0 {
-		// Emulation mode with DP aligned: wrap within page 0
-		return uint32(c.DP) + uint32(dp)
+		// Emulation mode with DP page-aligned: result stays within the DP 256-byte block.
+		return uint32(c.DP) | uint32(dp)
 	}
-	return uint32(c.DP) + uint32(dp)
+	// Direct page is always in bank 0; wrap at 16 bits if DP+dp overflows.
+	return bank24(0, c.DP+uint16(dp))
 }
 
 // resolveEA resolves an effective address parameter to a readable 24-bit address.

@@ -29,7 +29,7 @@ func (c *CPU) readOperand16(param any) (uint16, error) {
 		if err != nil {
 			return 0, err
 		}
-		return c.readMem16(addr), nil
+		return c.readData16(addr), nil
 	}
 }
 
@@ -157,7 +157,7 @@ func asl(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr)
+		v := c.readData16(addr)
 		setFlag(&c.Flags.C, v&0x8000 != 0)
 		v <<= 1
 		c.writeMem16(addr, v)
@@ -254,7 +254,7 @@ func dec(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr) - 1
+		v := c.readData16(addr) - 1
 		c.writeMem16(addr, v)
 		c.setZN16(v)
 	}
@@ -323,7 +323,7 @@ func inc(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr) + 1
+		v := c.readData16(addr) + 1
 		c.writeMem16(addr, v)
 		c.setZN16(v)
 	}
@@ -381,7 +381,7 @@ func lsr(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr)
+		v := c.readData16(addr)
 		setFlag(&c.Flags.C, v&0x0001 != 0)
 		v >>= 1
 		c.writeMem16(addr, v)
@@ -436,7 +436,7 @@ func rol(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr)
+		v := c.readData16(addr)
 		setFlag(&c.Flags.C, v&0x8000 != 0)
 		v = (v << 1) | uint16(carry)
 		c.writeMem16(addr, v)
@@ -473,7 +473,7 @@ func ror(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readMem16(addr)
+		v := c.readData16(addr)
 		setFlag(&c.Flags.C, v&0x0001 != 0)
 		v = (v >> 1) | (uint16(carry) << 15)
 		c.writeMem16(addr, v)
@@ -527,7 +527,7 @@ func tsb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, uint8(c.C)&mem == 0)
 		c.writeMem8(addr, mem|uint8(c.C))
 	} else {
-		mem := c.readMem16(addr)
+		mem := c.readData16(addr)
 		setFlag(&c.Flags.Z, c.C&mem == 0)
 		c.writeMem16(addr, mem|c.C)
 	}
@@ -544,7 +544,7 @@ func trb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, uint8(c.C)&mem == 0)
 		c.writeMem8(addr, mem&^uint8(c.C))
 	} else {
-		mem := c.readMem16(addr)
+		mem := c.readData16(addr)
 		setFlag(&c.Flags.Z, c.C&mem == 0)
 		c.writeMem16(addr, mem&^c.C)
 	}
@@ -552,11 +552,9 @@ func trb(c *CPU, params ...any) error {
 }
 
 // adcBCD8 performs decimal-mode (BCD) addition for an 8-bit accumulator.
-// V is computed from the binary intermediate; N/Z/C from the BCD-adjusted result.
 func adcBCD8(c *CPU, val uint8) {
 	a := uint8(c.C)
 	cin := int(c.Flags.C)
-	binSum := int(a) + int(val) + cin // binary intermediate for V flag
 
 	lo := int(a&0x0F) + int(val&0x0F) + cin
 	loCarry := 0
@@ -564,7 +562,9 @@ func adcBCD8(c *CPU, val uint8) {
 		loCarry = 1
 		lo = (lo + 6) & 0x0F
 	}
-	hi := int(a>>4) + int(val>>4) + loCarry
+	hiA, hiVal := int(a>>4), int(val>>4)
+	hi := hiA + hiVal + loCarry
+	hiRaw := hi // save before BCD correction for V flag
 	hiCarry := 0
 	if hi > 9 {
 		hiCarry = 1
@@ -572,7 +572,8 @@ func adcBCD8(c *CPU, val uint8) {
 	}
 	result := uint8(hi<<4 | lo)
 	setFlag(&c.Flags.C, hiCarry != 0)
-	setFlag(&c.Flags.V, ^(int(a)^int(val))&(int(a)^binSum)&0x80 != 0)
+	// V: 4-bit signed overflow of hi nibble addition using BCD carry from lo nibble
+	setFlag(&c.Flags.V, ^(hiA^hiVal)&(hiA^hiRaw)&0x8 != 0)
 	c.C = uint16(c.B())<<8 | uint16(result)
 	c.setZN8(result)
 }
@@ -581,11 +582,14 @@ func adcBCD8(c *CPU, val uint8) {
 func adcBCD16(c *CPU, val uint16) {
 	a := c.C
 	cin := int(c.Flags.C)
-	binSum := int32(a) + int32(val) + int32(cin)
 
 	result := uint16(0)
 	carry := cin
+	vCarry := 0 // BCD carry into the hi nibble (nibble 3)
 	for i := uint(0); i < 4; i++ {
+		if i == 3 {
+			vCarry = carry
+		}
 		shift := i * 4
 		d := int((a>>shift)&0xF) + int((val>>shift)&0xF) + carry
 		carry = 0
@@ -596,17 +600,19 @@ func adcBCD16(c *CPU, val uint16) {
 		result |= uint16(d) << shift
 	}
 	setFlag(&c.Flags.C, carry != 0)
-	setFlag(&c.Flags.V, ^(int32(a)^int32(val))&(int32(a)^binSum)&0x8000 != 0)
+	// V: 4-bit signed overflow of hi nibble (nibble 3) using BCD carry from nibble 2
+	hiA, hiVal16 := int(a>>12)&0xF, int(val>>12)&0xF
+	hiRaw := hiA + hiVal16 + vCarry
+	setFlag(&c.Flags.V, ^(hiA^hiVal16)&(hiA^hiRaw)&0x8 != 0)
 	c.C = result
 	c.setZN16(result)
 }
 
 // sbcBCD8 performs decimal-mode (BCD) subtraction for an 8-bit accumulator.
-// V is computed from the binary intermediate; N/Z/C from the BCD-adjusted result.
 func sbcBCD8(c *CPU, val uint8) {
 	a := uint8(c.C)
 	borrow := 1 - int(c.Flags.C)
-	binResult := uint8(int(a) - int(val) - borrow) // binary intermediate for V flag
+	binResult := uint8(int(a) - int(val) - borrow)
 
 	lo := int(a&0x0F) - int(val&0x0F) - borrow
 	loBorrow := 0

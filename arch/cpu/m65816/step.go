@@ -11,8 +11,6 @@ func (c *CPU) Step() error {
 		return nil // WAI: waiting for interrupt
 	}
 
-	oldPC := c.PC
-
 	// Decode opcode at current PC
 	opByte := c.memory.ReadByte(c.FullPC())
 	op, ok := GetOpcodeInfo(opByte)
@@ -38,11 +36,12 @@ func (c *CPU) Step() error {
 		if c.opts.preExecutionHook != nil {
 			c.opts.preExecutionHook(c, ins)
 		}
+		c.pcChanged = false
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing %s: %w", ins.Name, err)
 		}
-		// Advance PC unless the instruction changed it
-		if c.PC == oldPC {
+		// Advance PC unless the instruction explicitly changed it
+		if !c.pcChanged {
 			c.PC += uint16(c.instrSize(op))
 		}
 		return nil
@@ -70,12 +69,13 @@ func (c *CPU) Step() error {
 
 	instrLen := 1 + len(operands)
 
+	c.pcChanged = false
 	if err := ins.ParamFunc(c, params...); err != nil {
 		return fmt.Errorf("executing %s: %w", ins.Name, err)
 	}
 
-	// Advance PC unless the instruction changed it (branch/jump)
-	if c.PC == oldPC {
+	// Advance PC unless the instruction explicitly changed it (branch/jump)
+	if !c.pcChanged {
 		c.PC += uint16(instrLen)
 	}
 	return nil

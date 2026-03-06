@@ -52,15 +52,14 @@ func xce(c *CPU) error {
 
 	c.E = oldC != 0
 	if c.E {
-		// Entering emulation mode: force M=1, X=1, high byte of SP = $01
+		// Entering emulation mode: force M=1, X=1, zero high bytes of X/Y, wrap SP to page 1
 		c.Flags.M = 1
 		c.Flags.X = 1
+		c.X &= 0x00FF
+		c.Y &= 0x00FF
 		c.SP = 0x0100 | (c.SP & 0x00FF)
-	} else {
-		// Entering native mode: M=1, X=1 (stays until REP changes them)
-		c.Flags.M = 1
-		c.Flags.X = 1
 	}
+	// In native mode: M and X flags are NOT changed by XCE
 	return nil
 }
 
@@ -97,6 +96,7 @@ func brk(c *CPU) error {
 		c.Flags.I = 1
 		c.Flags.D = 0 // 65C02 behavior: clear D on interrupt
 		vec := c.memory.ReadVector(VectorEmuIRQ)
+		c.PB = 0
 		c.PC = vec
 	} else {
 		c.push8(c.PB)
@@ -109,6 +109,7 @@ func brk(c *CPU) error {
 		c.PC = vec
 	}
 
+	c.pcChanged = true
 	c.mu.Lock()
 	c.irqRunning = true
 	c.mu.Unlock()
@@ -124,6 +125,7 @@ func cop(c *CPU) error {
 		c.Flags.I = 1
 		c.Flags.D = 0
 		vec := c.memory.ReadVector(VectorEmuCOP)
+		c.PB = 0
 		c.PC = vec
 	} else {
 		c.push8(c.PB)
@@ -135,6 +137,7 @@ func cop(c *CPU) error {
 		c.PB = 0
 		c.PC = vec
 	}
+	c.pcChanged = true
 	return nil
 }
 
@@ -147,6 +150,7 @@ func rti(c *CPU) error {
 		// Native mode: also pull PB
 		c.PB = c.pop8()
 	}
+	c.pcChanged = true
 
 	c.mu.Lock()
 	c.irqRunning = false
@@ -160,6 +164,7 @@ func rtl(c *CPU) error {
 	retAddr := c.pop16()
 	c.PB = c.pop8()
 	c.PC = retAddr + 1
+	c.pcChanged = true
 	return nil
 }
 
@@ -167,5 +172,6 @@ func rtl(c *CPU) error {
 func rts(c *CPU) error {
 	retAddr := c.pop16()
 	c.PC = retAddr + 1
+	c.pcChanged = true
 	return nil
 }
