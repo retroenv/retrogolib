@@ -4,11 +4,15 @@ package m6502
 
 // 65C02 instruction name constants (sorted alphabetically).
 const (
+	BbrName = "bbr"
+	BbsName = "bbs"
 	BraName = "bra"
 	PhxName = "phx"
 	PhyName = "phy"
 	PlxName = "plx"
 	PlyName = "ply"
+	RmbName = "rmb"
+	SmbName = "smb"
 	StzName = "stz"
 	TrbName = "trb"
 	TsbName = "tsb"
@@ -279,3 +283,54 @@ var Sbc65C02 = &Instruction{
 	},
 	ParamFunc: sbc,
 }
+
+// Rockwell 65C02 extensions: RMB, SMB, BBR, BBS.
+// These are present in Rockwell and WDC 65C02 variants but not the original GTE/Synertek 65C02.
+
+// Rmb0-Rmb7 reset a specific bit in a zero-page memory location.
+var (
+	Rmb0 = &Instruction{Name: RmbName + "0", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x07, Size: 2}}, ParamFunc: rmbFunc(0)}
+	Rmb1 = &Instruction{Name: RmbName + "1", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x17, Size: 2}}, ParamFunc: rmbFunc(1)}
+	Rmb2 = &Instruction{Name: RmbName + "2", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x27, Size: 2}}, ParamFunc: rmbFunc(2)}
+	Rmb3 = &Instruction{Name: RmbName + "3", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x37, Size: 2}}, ParamFunc: rmbFunc(3)}
+	Rmb4 = &Instruction{Name: RmbName + "4", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x47, Size: 2}}, ParamFunc: rmbFunc(4)}
+	Rmb5 = &Instruction{Name: RmbName + "5", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x57, Size: 2}}, ParamFunc: rmbFunc(5)}
+	Rmb6 = &Instruction{Name: RmbName + "6", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x67, Size: 2}}, ParamFunc: rmbFunc(6)}
+	Rmb7 = &Instruction{Name: RmbName + "7", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x77, Size: 2}}, ParamFunc: rmbFunc(7)}
+)
+
+// Smb0-Smb7 set a specific bit in a zero-page memory location.
+var (
+	Smb0 = &Instruction{Name: SmbName + "0", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x87, Size: 2}}, ParamFunc: smbFunc(0)}
+	Smb1 = &Instruction{Name: SmbName + "1", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0x97, Size: 2}}, ParamFunc: smbFunc(1)}
+	Smb2 = &Instruction{Name: SmbName + "2", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xa7, Size: 2}}, ParamFunc: smbFunc(2)}
+	Smb3 = &Instruction{Name: SmbName + "3", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xb7, Size: 2}}, ParamFunc: smbFunc(3)}
+	Smb4 = &Instruction{Name: SmbName + "4", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xc7, Size: 2}}, ParamFunc: smbFunc(4)}
+	Smb5 = &Instruction{Name: SmbName + "5", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xd7, Size: 2}}, ParamFunc: smbFunc(5)}
+	Smb6 = &Instruction{Name: SmbName + "6", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xe7, Size: 2}}, ParamFunc: smbFunc(6)}
+	Smb7 = &Instruction{Name: SmbName + "7", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageAddressing: {Opcode: 0xf7, Size: 2}}, ParamFunc: smbFunc(7)}
+)
+
+// Bbr0-Bbr7 branch if the specified bit of a zero-page byte is reset (0).
+var (
+	Bbr0 = &Instruction{Name: BbrName + "0", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x0f, Size: 3}}, ParamFunc: bbrFunc(0)}
+	Bbr1 = &Instruction{Name: BbrName + "1", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x1f, Size: 3}}, ParamFunc: bbrFunc(1)}
+	Bbr2 = &Instruction{Name: BbrName + "2", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x2f, Size: 3}}, ParamFunc: bbrFunc(2)}
+	Bbr3 = &Instruction{Name: BbrName + "3", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x3f, Size: 3}}, ParamFunc: bbrFunc(3)}
+	Bbr4 = &Instruction{Name: BbrName + "4", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x4f, Size: 3}}, ParamFunc: bbrFunc(4)}
+	Bbr5 = &Instruction{Name: BbrName + "5", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x5f, Size: 3}}, ParamFunc: bbrFunc(5)}
+	Bbr6 = &Instruction{Name: BbrName + "6", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x6f, Size: 3}}, ParamFunc: bbrFunc(6)}
+	Bbr7 = &Instruction{Name: BbrName + "7", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x7f, Size: 3}}, ParamFunc: bbrFunc(7)}
+)
+
+// Bbs0-Bbs7 branch if the specified bit of a zero-page byte is set (1).
+var (
+	Bbs0 = &Instruction{Name: BbsName + "0", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x8f, Size: 3}}, ParamFunc: bbsFunc(0)}
+	Bbs1 = &Instruction{Name: BbsName + "1", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0x9f, Size: 3}}, ParamFunc: bbsFunc(1)}
+	Bbs2 = &Instruction{Name: BbsName + "2", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xaf, Size: 3}}, ParamFunc: bbsFunc(2)}
+	Bbs3 = &Instruction{Name: BbsName + "3", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xbf, Size: 3}}, ParamFunc: bbsFunc(3)}
+	Bbs4 = &Instruction{Name: BbsName + "4", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xcf, Size: 3}}, ParamFunc: bbsFunc(4)}
+	Bbs5 = &Instruction{Name: BbsName + "5", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xdf, Size: 3}}, ParamFunc: bbsFunc(5)}
+	Bbs6 = &Instruction{Name: BbsName + "6", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xef, Size: 3}}, ParamFunc: bbsFunc(6)}
+	Bbs7 = &Instruction{Name: BbsName + "7", Addressing: map[AddressingMode]OpcodeInfo{ZeroPageRelativeAddressing: {Opcode: 0xff, Size: 3}}, ParamFunc: bbsFunc(7)}
+)

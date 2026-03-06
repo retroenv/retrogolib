@@ -5,6 +5,7 @@ type CPUVariant int
 
 const (
 	VariantNMOS6502 CPUVariant = iota // Original NMOS 6502
+	VariantNES6502                    // NES 2A03/2A07: NMOS 6502 with decimal mode disabled
 	Variant65C02                      // WDC 65C02 (base)
 )
 

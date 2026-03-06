@@ -12,6 +12,7 @@ func bra(c *CPU, params ...any) error {
 
 // bit65c02 - Bit Test (65C02 extended).
 // For immediate mode, only Z flag is affected (V and N are not modified).
+// For indexed modes (zp,X and abs,X), the index register is applied.
 func bit65c02(c *CPU, params ...any) error {
 	param := params[0]
 	// Check if immediate mode (int type from paramReaderImmediate)
@@ -20,8 +21,14 @@ func bit65c02(c *CPU, params ...any) error {
 		c.setZ(value & c.A)
 		return nil
 	}
-	// For non-immediate modes, behave like standard BIT
-	return bit(c, params...)
+	value, err := c.memory.ReadAddressModes(false, params...)
+	if err != nil {
+		return err
+	}
+	c.setV((value>>6)&1 == 1)
+	c.setZ(value & c.A)
+	c.setN(value)
+	return nil
 }
 
 // dec65c02 - Decrement (65C02 with accumulator mode).
@@ -119,4 +126,56 @@ func tsb(c *CPU, params ...any) error {
 	c.setZ(value & c.A)
 	result := value | c.A
 	return c.memory.WriteAddressModes(result, params...)
+}
+
+// rmbFunc returns a Reset Memory Bit handler for the given bit number (0-7).
+// Reads a zero-page byte, clears the specified bit, and writes it back.
+// Flags are not affected.
+func rmbFunc(bit uint8) func(c *CPU, params ...any) error {
+	mask := ^(uint8(1) << bit)
+	return func(c *CPU, params ...any) error {
+		addr := uint16(params[0].(Absolute))
+		v := c.memory.Read(addr)
+		c.memory.Write(addr, v&mask)
+		return nil
+	}
+}
+
+// smbFunc returns a Set Memory Bit handler for the given bit number (0-7).
+// Reads a zero-page byte, sets the specified bit, and writes it back.
+// Flags are not affected.
+func smbFunc(bit uint8) func(c *CPU, params ...any) error {
+	mask := uint8(1) << bit
+	return func(c *CPU, params ...any) error {
+		addr := uint16(params[0].(Absolute))
+		v := c.memory.Read(addr)
+		c.memory.Write(addr, v|mask)
+		return nil
+	}
+}
+
+// bbrFunc returns a Branch on Bit Reset handler for the given bit number (0-7).
+// Branches to the target address if the specified bit of the zero-page byte is 0.
+func bbrFunc(bit uint8) func(c *CPU, params ...any) error {
+	return func(c *CPU, params ...any) error {
+		zpAddr := uint16(params[0].(ZeroPage))
+		v := c.memory.Read(zpAddr)
+		if v&(1<<bit) == 0 {
+			c.branch(true, params[1])
+		}
+		return nil
+	}
+}
+
+// bbsFunc returns a Branch on Bit Set handler for the given bit number (0-7).
+// Branches to the target address if the specified bit of the zero-page byte is 1.
+func bbsFunc(bit uint8) func(c *CPU, params ...any) error {
+	return func(c *CPU, params ...any) error {
+		zpAddr := uint16(params[0].(ZeroPage))
+		v := c.memory.Read(zpAddr)
+		if v&(1<<bit) != 0 {
+			c.branch(true, params[1])
+		}
+		return nil
+	}
 }

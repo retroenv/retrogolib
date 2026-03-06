@@ -34,9 +34,27 @@ const (
 	IndirectXAddressing
 	IndirectYAddressing
 	RelativeAddressing
-	ZeroPageIndirectAddressing // 65C02: (zp) - zero page indirect without indexing
+	ZeroPageIndirectAddressing  // 65C02: (zp) - zero page indirect without indexing
 	AbsoluteXIndirectAddressing // 65C02: (abs,X) - absolute indexed indirect
+	ZeroPageRelativeAddressing  // 65C02 Rockwell: zp + rel - used by BBR/BBS instructions
 )
+
+// addressingModeSize returns the total instruction size in bytes for a given addressing mode.
+func addressingModeSize(mode AddressingMode) int {
+	switch mode {
+	case ImpliedAddressing, AccumulatorAddressing:
+		return 1
+	case AbsoluteAddressing, AbsoluteXAddressing, AbsoluteYAddressing,
+		IndirectAddressing, AbsoluteXIndirectAddressing:
+		return 3
+	case ZeroPageRelativeAddressing:
+		return 3
+	default:
+		// ImmediateAddressing, ZeroPageAddressing, ZeroPageXAddressing, ZeroPageYAddressing,
+		// IndirectXAddressing, IndirectYAddressing, RelativeAddressing, ZeroPageIndirectAddressing
+		return 2
+	}
+}
 
 // AccessMode specifies how memory is accessed during instruction execution.
 // Used for memory-mapped I/O where read and write operations to the same
