@@ -159,9 +159,9 @@ func getTestDataDir(t *testing.T) string {
 		t.Fatal("failed to get source file location")
 	}
 
-	dir := filepath.Join(filepath.Dir(thisFile), "testdata", "680x0")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m68000", "680x0")
 	if _, err := os.Stat(dir); err != nil {
-		t.Skip("test data not found; download with: git clone https://github.com/SingleStepTests/680x0.git testdata/680x0")
+		t.Skip("test data not found; run 'make -C testdata m68000' to download")
 	}
 
 	return dir

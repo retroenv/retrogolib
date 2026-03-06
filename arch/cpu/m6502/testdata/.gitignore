@@ -1,4 +1,0 @@
-# External test data managed by testdata/Makefile at project root.
-# Run 'make -C testdata m6502' to download.
-65x02/
-dormann/

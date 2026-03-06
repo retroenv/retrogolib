@@ -2,9 +2,9 @@
 
 // Package m6502 provides SingleStepTests/65x02 JSON-based single-step tests.
 //
-// To run these tests, clone the SingleStepTests repository:
+// To run these tests, download the test data:
 //
-//	git clone https://github.com/SingleStepTests/65x02.git arch/cpu/m6502/testdata/65x02
+//	make -C testdata m6502
 //
 // Then run: go test -tags singlestep ./arch/cpu/m6502/...
 package m6502
@@ -14,15 +14,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 const (
 	// ssMaxFailures limits the number of failures reported per file.
 	ssMaxFailures = 10
-
-	// ssDefaultTestData is the default directory for SingleStepTests data.
-	ssDefaultTestData = "testdata/65x02"
 )
 
 // ss6502State represents the CPU state in the SingleStepTests JSON format.
@@ -59,16 +57,31 @@ func (m *ssSparseMemory) Write(address uint16, value uint8) {
 	m.data[address] = value
 }
 
-// TestSingleStep discovers and runs all SingleStepTests/65x02 JSON test files.
-func TestSingleStep(t *testing.T) {
-	dataDir := os.Getenv("M6502_TESTDATA")
-	if dataDir == "" {
-		dataDir = ssDefaultTestData
+// getSingleStepDir returns the path to the m6502 SingleStepTests data directory,
+// skipping the test if it is not found.
+func getSingleStepDir(t *testing.T) string {
+	t.Helper()
+
+	if dir := os.Getenv("M6502_TESTDATA"); dir != "" {
+		return dir
 	}
 
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		t.Skipf("test data directory not found at %s - clone SingleStepTests/65x02 to run this test", dataDir)
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine source file location")
 	}
+
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "65x02")
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		t.Skipf("SingleStepTests m6502 data not found at %s (run 'make -C testdata m6502' to download)", dir)
+	}
+
+	return dir
+}
+
+// TestSingleStep discovers and runs all SingleStepTests/65x02 JSON test files.
+func TestSingleStep(t *testing.T) {
+	dataDir := getSingleStepDir(t)
 
 	entries, err := os.ReadDir(dataDir)
 	if err != nil {

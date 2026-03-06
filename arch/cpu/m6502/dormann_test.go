@@ -160,7 +160,7 @@ func getDormannDataDir(t *testing.T) string {
 		t.Fatal("failed to determine source file location")
 	}
 
-	dir := filepath.Join(filepath.Dir(thisFile), "testdata", "dormann")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "dormann")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		t.Skipf("Klaus Dormann test data not found at %s (run 'make -C testdata m6502' to download)", dir)
 	}

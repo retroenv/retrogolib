@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -35,9 +35,9 @@ func TestSingleStep(t *testing.T) {
 		t.Skip("skipping SingleStepTests in short mode")
 	}
 
-	cloneSingleStepTests(t)
+	dir := getSingleStepDir(t)
 
-	files, err := filepath.Glob(filepath.Join(singleStepDir, "v1", "*.json"))
+	files, err := filepath.Glob(filepath.Join(dir, "v1", "*.json"))
 	assert.NoError(t, err, "globbing test files")
 	assert.NotEqual(t, 0, len(files), "no SingleStepTests JSON files found")
 
@@ -149,23 +149,22 @@ func (h *testIOHandler) ReadPort(port uint8) uint8 {
 
 func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
 
-const singleStepDir = "testdata/singlestep"
-
-// cloneSingleStepTests clones the SingleStepTests z80 repo if not already present.
-func cloneSingleStepTests(t *testing.T) {
+// getSingleStepDir returns the path to the z80 SingleStepTests data directory,
+// skipping the test if it is not found.
+func getSingleStepDir(t *testing.T) string {
 	t.Helper()
 
-	if _, err := os.Stat(filepath.Join(singleStepDir, "v1")); err == nil {
-		return
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine source file location")
 	}
 
-	t.Log("cloning SingleStepTests/z80 repository...")
-	cmd := exec.Command("git", "clone", "--depth=1",
-		"https://github.com/SingleStepTests/z80", singleStepDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	assert.NoError(t, err, "cloning SingleStepTests")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "z80")
+	if _, err := os.Stat(filepath.Join(dir, "v1")); err != nil {
+		t.Skipf("SingleStepTests z80 data not found at %s (run 'make -C testdata z80' to download)", dir)
+	}
+
+	return dir
 }
 
 // runSingleStepFile runs all test cases from a single JSON file.

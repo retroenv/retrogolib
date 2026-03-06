@@ -1,3 +1,0 @@
-# External test data managed by testdata/Makefile at project root.
-# Run 'make -C testdata z80' to download.
-singlestep/

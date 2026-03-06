@@ -15,4 +15,8 @@
 *.o
 *.dbg
 coverage.txt
-arch/cpu/z80/testdata/singlestep/
+
+testdata/z80/
+testdata/zexall/
+testdata/m6502/
+testdata/m68000/
