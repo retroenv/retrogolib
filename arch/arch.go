@@ -33,6 +33,13 @@ const (
 	// - TurboGrafx-16/PC Engine
 	M65C02 Architecture = "65c02"
 
+	// M68000 represents the Motorola 68000 processor used in:
+	// - Sega Genesis/Mega Drive
+	// - Commodore Amiga
+	// - Atari ST
+	// - Apple Macintosh (original)
+	M68000 Architecture = "m68000"
+
 	// X86 represents the Intel x86 processor family used in:
 	// - IBM PC and compatibles
 	// - MS-DOS and compatible operating systems
@@ -55,6 +62,7 @@ var allSupportedArchitectures = []Architecture{
 	CHIP8,
 	M6502,
 	M65C02,
+	M68000,
 	X86,
 	Z80,
 }
