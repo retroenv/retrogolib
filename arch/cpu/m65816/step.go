@@ -47,7 +47,13 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	// -- Param instructions --
+	return c.executeParamInstruction(op)
+}
+
+// executeParamInstruction handles instructions that require decoded address/value parameters.
+func (c *CPU) executeParamInstruction(op Opcode) error {
+	ins := op.Instruction
+
 	params, operands, pageCrossed, err := readOpParams(c, op.Addressing, op)
 	if err != nil {
 		return fmt.Errorf("reading params for %s: %w", ins.Name, err)

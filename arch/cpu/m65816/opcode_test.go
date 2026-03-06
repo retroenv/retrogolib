@@ -4,7 +4,7 @@ import "testing"
 
 // TestOpcodeTableComplete verifies that all 256 opcode slots are defined.
 func TestOpcodeTableComplete(t *testing.T) {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		op := Opcodes[i]
 		if op.Instruction == nil {
 			t.Errorf("opcode 0x%02X has nil Instruction", i)
@@ -28,7 +28,7 @@ func TestGetOpcodeInfo(t *testing.T) {
 
 // TestOpcodeTimings verifies that all opcodes have non-zero timing.
 func TestOpcodeTimings(t *testing.T) {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		op := Opcodes[i]
 		if op.Instruction == nil {
 			continue
@@ -42,7 +42,7 @@ func TestOpcodeTimings(t *testing.T) {
 // TestOpcodeConsistency verifies each opcode references an instruction that has
 // that addressing mode registered.
 func TestOpcodeConsistency(t *testing.T) {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		op := Opcodes[i]
 		if op.Instruction == nil {
 			continue
@@ -76,7 +76,7 @@ func TestWidthFlagCorrect(t *testing.T) {
 		0xA2: true, // LDX #
 	}
 
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		op := Opcodes[i]
 		if op.Instruction == nil {
 			continue

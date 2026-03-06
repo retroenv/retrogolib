@@ -24,7 +24,7 @@ func ldx(c *CPU, params ...any) error {
 		return err
 	}
 	if c.IdxWidth() == 1 {
-		c.X = uint16(val & 0xFF)
+		c.X = val & 0xFF
 		c.setZN8(uint8(c.X))
 	} else {
 		c.X = val
@@ -39,7 +39,7 @@ func ldy(c *CPU, params ...any) error {
 		return err
 	}
 	if c.IdxWidth() == 1 {
-		c.Y = uint16(val & 0xFF)
+		c.Y = val & 0xFF
 		c.setZN8(uint8(c.Y))
 	} else {
 		c.Y = val

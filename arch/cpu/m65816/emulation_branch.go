@@ -72,8 +72,7 @@ func jmp(c *CPU, params ...any) error {
 
 // jml - Jump Long (sets PB).
 func jml(c *CPU, params ...any) error {
-	switch p := params[0].(type) {
-	case AbsLong:
+	if p, ok := params[0].(AbsLong); ok {
 		c.PB = uint8(uint32(p) >> 16)
 		c.PC = uint16(p)
 		c.pcChanged = true
@@ -106,8 +105,7 @@ func jsl(c *CPU, params ...any) error {
 	retAddr := c.PC + 3
 	c.push16raw(retAddr)
 	c.fixEmuSP()
-	switch p := params[0].(type) {
-	case AbsLong:
+	if p, ok := params[0].(AbsLong); ok {
 		c.PB = uint8(uint32(p) >> 16)
 		c.PC = uint16(p)
 		c.pcChanged = true

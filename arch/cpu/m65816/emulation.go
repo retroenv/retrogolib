@@ -1,9 +1,6 @@
 package m65816
 
-import (
-	"fmt"
-	"math"
-)
+import "math"
 
 // readOperand8 reads an 8-bit value from a param (immediate or memory).
 func (c *CPU) readOperand8(param any) (uint8, error) {
@@ -25,9 +22,9 @@ func (c *CPU) readOperand8(param any) (uint8, error) {
 // All other addressing modes use readData16, which allows the hi byte to cross a bank
 // boundary (e.g. abs,X where the index addition can carry into the bank byte).
 func (c *CPU) readOperand16(param any) (uint16, error) {
-	switch param.(type) {
+	switch p := param.(type) {
 	case Immediate16:
-		return uint16(param.(Immediate16)), nil
+		return uint16(p), nil
 	case DirectPage, DirectPageX, DirectPageY:
 		addr, err := c.resolveEA(param)
 		if err != nil {
@@ -59,34 +56,6 @@ func (c *CPU) readOperandIdx(param any) (uint16, error) {
 		return uint16(v), err
 	}
 	return c.readOperand16(param)
-}
-
-// writeOperand8 writes an 8-bit value to a memory address resolved from param.
-func (c *CPU) writeOperand8(param any, value uint8) error {
-	addr, err := c.resolveEA(param)
-	if err != nil {
-		return err
-	}
-	c.writeMem8(addr, value)
-	return nil
-}
-
-// writeOperand16 writes a 16-bit value to a memory address resolved from param.
-func (c *CPU) writeOperand16(param any, value uint16) error {
-	addr, err := c.resolveEA(param)
-	if err != nil {
-		return err
-	}
-	c.writeMem16(addr, value)
-	return nil
-}
-
-// writeOperandAcc writes accumulator-width value to memory.
-func (c *CPU) writeOperandAcc(param any, value uint16) error {
-	if c.AccWidth() == 1 {
-		return c.writeOperand8(param, uint8(value))
-	}
-	return c.writeOperand16(param, value)
 }
 
 // -- Core ALU instructions --
@@ -274,7 +243,7 @@ func dec(c *CPU, params ...any) error {
 func dex(c *CPU) error {
 	if c.IdxWidth() == 1 {
 		v := uint8(c.X) - 1
-		c.X = uint16(c.X&0xFF00) | uint16(v)
+		c.X = (c.X & 0xFF00) | uint16(v)
 		c.setZN8(v)
 	} else {
 		c.X--
@@ -286,7 +255,7 @@ func dex(c *CPU) error {
 func dey(c *CPU) error {
 	if c.IdxWidth() == 1 {
 		v := uint8(c.Y) - 1
-		c.Y = uint16(c.Y&0xFF00) | uint16(v)
+		c.Y = (c.Y & 0xFF00) | uint16(v)
 		c.setZN8(v)
 	} else {
 		c.Y--
@@ -343,7 +312,7 @@ func inc(c *CPU, params ...any) error {
 func inx(c *CPU) error {
 	if c.IdxWidth() == 1 {
 		v := uint8(c.X) + 1
-		c.X = uint16(c.X&0xFF00) | uint16(v)
+		c.X = (c.X & 0xFF00) | uint16(v)
 		c.setZN8(v)
 	} else {
 		c.X++
@@ -355,7 +324,7 @@ func inx(c *CPU) error {
 func iny(c *CPU) error {
 	if c.IdxWidth() == 1 {
 		v := uint8(c.Y) + 1
-		c.Y = uint16(c.Y&0xFF00) | uint16(v)
+		c.Y = (c.Y & 0xFF00) | uint16(v)
 		c.setZN8(v)
 	} else {
 		c.Y++
@@ -596,11 +565,11 @@ func adcBCD16(c *CPU, val uint16) {
 	result := uint16(0)
 	carry := cin
 	vCarry := 0 // BCD carry into the hi nibble (nibble 3)
-	for i := uint(0); i < 4; i++ {
+	for i := range 4 {
 		if i == 3 {
 			vCarry = carry
 		}
-		shift := i * 4
+		shift := uint(i) * 4
 		d := int((a>>shift)&0xF) + int((val>>shift)&0xF) + carry
 		carry = 0
 		if d > 9 {
@@ -651,8 +620,8 @@ func sbcBCD16(c *CPU, val uint16) {
 
 	result := uint16(0)
 	b := borrow
-	for i := uint(0); i < 4; i++ {
-		shift := i * 4
+	for i := range 4 {
+		shift := uint(i) * 4
 		d := int((a>>shift)&0xF) - int((val>>shift)&0xF) - b
 		b = 0
 		if d < 0 {
@@ -686,7 +655,7 @@ func mvn(c *CPU, params ...any) error {
 	if c.IdxWidth() == 1 {
 		idxMask = 0x00FF
 	}
-	for i := 0; i < mvBlockMaxIter; i++ {
+	for range mvBlockMaxIter {
 		src := bank24(bm.Src, c.X)
 		dst := bank24(bm.Dst, c.Y)
 		c.writeMem8(dst, c.readMem8(src))
@@ -718,7 +687,7 @@ func mvp(c *CPU, params ...any) error {
 	if c.IdxWidth() == 1 {
 		idxMask = 0x00FF
 	}
-	for i := 0; i < mvBlockMaxIter; i++ {
+	for range mvBlockMaxIter {
 		src := bank24(bm.Src, c.X)
 		dst := bank24(bm.Dst, c.Y)
 		c.writeMem8(dst, c.readMem8(src))
@@ -742,8 +711,3 @@ func mvp(c *CPU, params ...any) error {
 
 // wdm - WDM reserved (2-byte NOP, ignore operand).
 func wdm(_ *CPU, _ ...any) error { return nil }
-
-// resolveEA helper for accumulator (should not be called).
-func (c *CPU) errImmResolve(param any) error {
-	return fmt.Errorf("%w: cannot resolve immediate as address (type %T)", ErrUnsupportedAddressingMode, param)
-}

@@ -1436,10 +1436,10 @@ func TestModeSwitchSequence(t *testing.T) {
 
 func TestAbsoluteX_CrossesBankBoundary(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.Flags.X = 0  // 16-bit index registers
-	cpu.Flags.M = 1  // 8-bit accumulator
-	cpu.DB = 0x01    // data bank $01
-	cpu.X = 0x0100   // index $0100
+	cpu.Flags.X = 0 // 16-bit index registers
+	cpu.Flags.M = 1 // 8-bit accumulator
+	cpu.DB = 0x01   // data bank $01
+	cpu.X = 0x0100  // index $0100
 
 	// LDA $FF00,X → eff = bank24(DB=$01, $FF00) + $0100 = $01FF00 + $0100 = $020000
 	writeOp(mem, 0x8000, 0xBD, 0x00, 0xFF)

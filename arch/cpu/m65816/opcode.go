@@ -207,21 +207,21 @@ var Opcodes = [256]Opcode{
 
 	// $80 - $8F
 	{Instruction: Bra, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true}, // $80 BRA rel
-	{Instruction: Sta, Addressing: DirectPageIndexedXIndirectAddressing, Timing: 6},   // $81 STA (dp,X)
-	{Instruction: Brl, Addressing: RelativeLongAddressing, Timing: 4},                 // $82 BRL rl
-	{Instruction: Sta, Addressing: StackRelativeAddressing, Timing: 4},                // $83 STA sr,S
-	{Instruction: Sty, Addressing: DirectPageAddressing, Timing: 3},                   // $84 STY dp
-	{Instruction: Sta, Addressing: DirectPageAddressing, Timing: 3},                   // $85 STA dp
-	{Instruction: Stx, Addressing: DirectPageAddressing, Timing: 3},                   // $86 STX dp
-	{Instruction: Sta, Addressing: DirectPageIndirectLongAddressing, Timing: 6},       // $87 STA [dp]
-	{Instruction: Dey, Addressing: ImpliedAddressing, Timing: 2},                      // $88 DEY
-	{Instruction: Bit, Addressing: ImmediateAddressing, Timing: 2, WidthFlag: WidthM}, // $89 BIT #imm
-	{Instruction: Txa, Addressing: ImpliedAddressing, Timing: 2},                      // $8A TXA
-	{Instruction: Phb, Addressing: ImpliedAddressing, Timing: 3},                      // $8B PHB
-	{Instruction: Sty, Addressing: AbsoluteAddressing, Timing: 4},                     // $8C STY abs
-	{Instruction: Sta, Addressing: AbsoluteAddressing, Timing: 4},                     // $8D STA abs
-	{Instruction: Stx, Addressing: AbsoluteAddressing, Timing: 4},                     // $8E STX abs
-	{Instruction: Sta, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $8F STA al
+	{Instruction: Sta, Addressing: DirectPageIndexedXIndirectAddressing, Timing: 6},     // $81 STA (dp,X)
+	{Instruction: Brl, Addressing: RelativeLongAddressing, Timing: 4},                   // $82 BRL rl
+	{Instruction: Sta, Addressing: StackRelativeAddressing, Timing: 4},                  // $83 STA sr,S
+	{Instruction: Sty, Addressing: DirectPageAddressing, Timing: 3},                     // $84 STY dp
+	{Instruction: Sta, Addressing: DirectPageAddressing, Timing: 3},                     // $85 STA dp
+	{Instruction: Stx, Addressing: DirectPageAddressing, Timing: 3},                     // $86 STX dp
+	{Instruction: Sta, Addressing: DirectPageIndirectLongAddressing, Timing: 6},         // $87 STA [dp]
+	{Instruction: Dey, Addressing: ImpliedAddressing, Timing: 2},                        // $88 DEY
+	{Instruction: Bit, Addressing: ImmediateAddressing, Timing: 2, WidthFlag: WidthM},   // $89 BIT #imm
+	{Instruction: Txa, Addressing: ImpliedAddressing, Timing: 2},                        // $8A TXA
+	{Instruction: Phb, Addressing: ImpliedAddressing, Timing: 3},                        // $8B PHB
+	{Instruction: Sty, Addressing: AbsoluteAddressing, Timing: 4},                       // $8C STY abs
+	{Instruction: Sta, Addressing: AbsoluteAddressing, Timing: 4},                       // $8D STA abs
+	{Instruction: Stx, Addressing: AbsoluteAddressing, Timing: 4},                       // $8E STX abs
+	{Instruction: Sta, Addressing: AbsoluteLongAddressing, Timing: 5},                   // $8F STA al
 
 	// $90 - $9F
 	{Instruction: Bcc, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true}, // $90 BCC rel

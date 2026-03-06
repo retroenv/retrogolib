@@ -186,6 +186,25 @@ func (c *CPU) Reset() {
 // Memory returns the CPU's memory.
 func (c *CPU) Memory() *Memory { return c.memory }
 
+// GetP returns the current processor status byte.
+func (c *CPU) GetP() uint8 {
+	return c.Flags.Get()
+}
+
+// SetP sets the processor status from a byte, handling E-mode constraints.
+func (c *CPU) SetP(p uint8) {
+	c.Flags.Set(p)
+	if c.E {
+		// Emulation mode forces M=1, X=1
+		c.Flags.M = 1
+		c.Flags.X = 1
+	} else if c.Flags.X != 0 {
+		// X flag transition to 8-bit: zero high bytes of X and Y
+		c.X &= 0x00FF
+		c.Y &= 0x00FF
+	}
+}
+
 // push8 pushes a byte onto the stack and decrements SP.
 // In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
 func (c *CPU) push8(value uint8) {
@@ -229,13 +248,6 @@ func (c *CPU) fixEmuSP() {
 	}
 }
 
-// push24 pushes a 24-bit value onto the stack (high byte first).
-func (c *CPU) push24(value uint32) {
-	c.push8(uint8(value >> 16))
-	c.push8(uint8(value >> 8))
-	c.push8(uint8(value))
-}
-
 // pop8 pops a byte from the stack and increments SP.
 // In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
 func (c *CPU) pop8() uint8 {
@@ -258,14 +270,6 @@ func (c *CPU) pop16() uint16 {
 	lo := uint16(c.pop8())
 	hi := uint16(c.pop8())
 	return hi<<8 | lo
-}
-
-// pop24 pops a 24-bit value from the stack.
-func (c *CPU) pop24() uint32 {
-	lo := uint32(c.pop8())
-	mid := uint32(c.pop8())
-	hi := uint32(c.pop8())
-	return hi<<16 | mid<<8 | lo
 }
 
 // dataAddr forms a 24-bit data address using the Data Bank register.
@@ -351,25 +355,6 @@ func (c *CPU) branch(taken bool, addr uint16) {
 	c.cycles++ // extra cycle when branch taken
 }
 
-// GetP returns the current processor status byte.
-func (c *CPU) GetP() uint8 {
-	return c.Flags.Get()
-}
-
-// SetP sets the processor status from a byte, handling E-mode constraints.
-func (c *CPU) SetP(p uint8) {
-	c.Flags.Set(p)
-	if c.E {
-		// Emulation mode forces M=1, X=1
-		c.Flags.M = 1
-		c.Flags.X = 1
-	} else if c.Flags.X != 0 {
-		// X flag transition to 8-bit: zero high bytes of X and Y
-		c.X &= 0x00FF
-		c.Y &= 0x00FF
-	}
-}
-
 // instrSize returns the actual size of an instruction given the opcode's WidthFlag
 // and current M/X flag state.
 func (c *CPU) instrSize(op Opcode) int {
@@ -399,14 +384,6 @@ func (c *CPU) fetchWord(offset uint16) uint16 {
 	return hi<<8 | lo
 }
 
-// fetchLong reads 3 bytes from PC+offset.
-func (c *CPU) fetchLong(offset uint16) uint32 {
-	b0 := uint32(c.fetchByte(offset))
-	b1 := uint32(c.fetchByte(offset + 1))
-	b2 := uint32(c.fetchByte(offset + 2))
-	return b2<<16 | b1<<8 | b0
-}
-
 // resolveDP resolves a direct page address to a 24-bit address.
 // Handles emulation mode page-0 wrap when DP low byte is $00.
 func (c *CPU) resolveDP(dp uint8) uint32 {
@@ -418,36 +395,33 @@ func (c *CPU) resolveDP(dp uint8) uint32 {
 	return bank24(0, c.DP+uint16(dp))
 }
 
+// resolveDPIndexed resolves a dp,X or dp,Y effective address.
+// idx is the raw (possibly 16-bit) index register value; IdxWidth() governs masking.
+func (c *CPU) resolveDPIndexed(dp uint8, idx uint16) uint32 {
+	if c.E && c.DP&0xFF == 0 {
+		// Emulation mode, DP page-aligned: addition wraps within page 0.
+		return uint32(c.DP) | uint32(dp+uint8(idx&0xFF))
+	}
+	if c.IdxWidth() == 1 {
+		return (uint32(c.DP) + uint32(dp) + uint32(idx&0xFF)) & 0xFFFF
+	}
+	return (uint32(c.DP) + uint32(dp) + uint32(idx)) & 0xFFFF
+}
+
 // resolveEA resolves an effective address parameter to a readable 24-bit address.
 // Returns the address and an error if the type is unexpected.
-func (c *CPU) resolveEA(param any) (uint32, error) {
+func (c *CPU) resolveEA(param any) (uint32, error) { //nolint:cyclop
 	switch p := param.(type) {
 	case Immediate8:
-		return 0, fmt.Errorf("resolveEA called on immediate8")
+		return 0, errors.New("resolveEA called on immediate8")
 	case Immediate16:
-		return 0, fmt.Errorf("resolveEA called on immediate16")
+		return 0, errors.New("resolveEA called on immediate16")
 	case DirectPage:
 		return c.resolveDP(uint8(p)), nil
 	case DirectPageX:
-		dp := uint8(p)
-		if c.E && c.DP&0xFF == 0 {
-			// Emulation mode, DP page-aligned: (dp+X) wraps within page 0
-			return uint32(c.DP) | uint32(dp+uint8(c.X&0xFF)), nil
-		}
-		if c.IdxWidth() == 1 {
-			return (uint32(c.DP) + uint32(dp) + uint32(c.X&0xFF)) & 0xFFFF, nil
-		}
-		return (uint32(c.DP) + uint32(dp) + uint32(c.X)) & 0xFFFF, nil
+		return c.resolveDPIndexed(uint8(p), c.X), nil
 	case DirectPageY:
-		dp := uint8(p)
-		if c.E && c.DP&0xFF == 0 {
-			// Emulation mode, DP page-aligned: (dp+Y) wraps within page 0
-			return uint32(c.DP) | uint32(dp+uint8(c.Y&0xFF)), nil
-		}
-		if c.IdxWidth() == 1 {
-			return (uint32(c.DP) + uint32(dp) + uint32(c.Y&0xFF)) & 0xFFFF, nil
-		}
-		return (uint32(c.DP) + uint32(dp) + uint32(c.Y)) & 0xFFFF, nil
+		return c.resolveDPIndexed(uint8(p), c.Y), nil
 	case DPIndirect:
 		return uint32(p), nil
 	case DPIndirectX:
