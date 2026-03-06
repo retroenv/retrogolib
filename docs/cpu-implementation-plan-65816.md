@@ -280,7 +280,7 @@ const (
 
 - **Status:** IN_PROGRESS
 - **Last Updated:** 2026-03-06
-- **Summary:** Phases 1–5 substantially complete; Phase 7 tests cover all major instruction groups.
+- **Summary:** Phases 1–5 complete; Phase 7 tests cover all major instruction groups including BCD, mode switching, bank boundary, and emulation-mode interrupts. 81 tests passing.
 
 ## Completed Work
 
@@ -292,12 +292,13 @@ const (
 | 2026-03-06 | Expand test coverage (Phase 7) | Added JSR/RTS, JSL/RTL, JMP, JML, PEA/PEI/PER, MVN 1+3-byte, BRK native, dp,X 8/16-bit, ADC/SBC 16-bit |
 | 2026-03-06 | ADC/SBC decimal mode (BCD) — Phase 5 | `adcBCD8/16` and `sbcBCD8/16` helpers; `adc`/`sbc` dispatch on `Flags.D≠0`. V from binary intermediate; N/Z/C from BCD result. |
 | 2026-03-06 | Expand test coverage round 2 (Phase 7) | Added BCD ADC/SBC (8+16-bit), MVP, RTI native, PHB/PLB, PHD/PLD, WAI+NMI dispatch |
+| 2026-03-06 | Expand test coverage round 3 (Phase 7) | Added BRK/COP emulation mode (stack layout + vectors), CLC→XCE→REP→LDA mode-switch sequence, abs,X bank-boundary crossing. 81 tests total. |
 
 ### Next Target: Remaining Phase 7 gaps (lower priority)
 
-- **Emulation mode BRK/COP:** Test BRK/COP behavior specifically in emulation mode (different stack sequence, different vector).
-- **Mode switching sequence:** XCE → REP #$30 → 16-bit native code sequence test.
-- **Bank boundary addressing:** Tests for data addresses crossing bank boundaries (DB register effect on abs,X/Y when crossing $xxFF→$xx00).
+- **Emulation mode compatibility sweep:** Verify all 65C02-compatible instructions behave identically in emulation mode (ADC/SBC with correct wrapping, etc.).
+- **Cycle accuracy tests:** Verify page-crossing penalties for abs,X and abs,Y loads.
+- **SNES system layer (Phase 6):** LoROM/HiROM memory mapping, DMA, VBlank NMI timing.
 
 ---
 

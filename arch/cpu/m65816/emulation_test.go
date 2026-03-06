@@ -1213,6 +1213,125 @@ func TestWAI_HaltsAndResumes(t *testing.T) {
 	}
 }
 
+// -- BRK/COP emulation mode --
+
+func TestBRK_EmulationMode(t *testing.T) {
+	cpu, mem := newTestCPU(t) // starts in emulation mode (E=true), SP=$01FF
+	mem.WriteWord(VectorEmuIRQ, 0x9000)
+	writeOp(mem, 0x8000, 0x00, 0x00) // BRK + signature byte
+
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cpu.PC != 0x9000 {
+		t.Errorf("BRK emulation: PC=%04X, want 9000", cpu.PC)
+	}
+	// 3-byte push: push16(PC+2) + push8(P|B) → SP goes $01FF→$01FE→$01FD→$01FC
+	if cpu.SP != 0x01FC {
+		t.Errorf("BRK emulation: SP=%04X, want 01FC", cpu.SP)
+	}
+	// Stack layout: $01FF=hi(PC+2=$8002), $01FE=lo, $01FD=P|Break
+	if mem.data[0x01FF] != 0x80 {
+		t.Errorf("BRK emulation: stack[01FF]=%02X, want 80 (hi of PC+2)", mem.data[0x01FF])
+	}
+	if mem.data[0x01FE] != 0x02 {
+		t.Errorf("BRK emulation: stack[01FE]=%02X, want 02 (lo of PC+2)", mem.data[0x01FE])
+	}
+	if mem.data[0x01FD]&MaskBreak == 0 {
+		t.Errorf("BRK emulation: pushed P=%02X should have Break flag set", mem.data[0x01FD])
+	}
+	if cpu.Flags.I != 1 {
+		t.Error("BRK emulation: I flag should be set after interrupt")
+	}
+	if cpu.Flags.D != 0 {
+		t.Error("BRK emulation: D flag should be cleared after interrupt")
+	}
+}
+
+func TestCOP_EmulationMode(t *testing.T) {
+	cpu, mem := newTestCPU(t) // starts in emulation mode (E=true), SP=$01FF
+	mem.WriteWord(VectorEmuCOP, 0xA000)
+	writeOp(mem, 0x8000, 0x02, 0x00) // COP + signature byte
+
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cpu.PC != 0xA000 {
+		t.Errorf("COP emulation: PC=%04X, want A000", cpu.PC)
+	}
+	if cpu.SP != 0x01FC {
+		t.Errorf("COP emulation: SP=%04X, want 01FC", cpu.SP)
+	}
+	if mem.data[0x01FF] != 0x80 {
+		t.Errorf("COP emulation: stack[01FF]=%02X, want 80 (hi of PC+2)", mem.data[0x01FF])
+	}
+	if mem.data[0x01FE] != 0x02 {
+		t.Errorf("COP emulation: stack[01FE]=%02X, want 02 (lo of PC+2)", mem.data[0x01FE])
+	}
+	if cpu.Flags.I != 1 {
+		t.Error("COP emulation: I flag should be set after interrupt")
+	}
+	if cpu.Flags.D != 0 {
+		t.Error("COP emulation: D flag should be cleared after interrupt")
+	}
+}
+
+// -- Mode switch sequence --
+
+func TestModeSwitchSequence(t *testing.T) {
+	cpu, mem := newTestCPU(t) // starts in emulation mode (E=true)
+	// CLC ($18) → XCE ($FB) → REP #$30 ($C2 $30) → LDA #$1234 ($A9 $34 $12)
+	writeOp(mem, 0x8000, 0x18, 0xFB, 0xC2, 0x30, 0xA9, 0x34, 0x12)
+
+	if err := cpu.Step(); err != nil { // CLC: clear carry
+		t.Fatalf("CLC: %v", err)
+	}
+	if err := cpu.Step(); err != nil { // XCE: E=0 (native), C=1
+		t.Fatalf("XCE: %v", err)
+	}
+	if cpu.E {
+		t.Fatal("XCE: expected native mode (E=false)")
+	}
+	if err := cpu.Step(); err != nil { // REP #$30: clear M and X
+		t.Fatalf("REP: %v", err)
+	}
+	if cpu.Flags.M != 0 {
+		t.Error("REP #$30: M flag should be 0 (16-bit accumulator)")
+	}
+	if cpu.Flags.X != 0 {
+		t.Error("REP #$30: X flag should be 0 (16-bit index)")
+	}
+	if err := cpu.Step(); err != nil { // LDA #$1234 in 16-bit mode
+		t.Fatalf("LDA: %v", err)
+	}
+	if cpu.C != 0x1234 {
+		t.Errorf("mode switch LDA: C=%04X, want 1234", cpu.C)
+	}
+}
+
+// -- Bank boundary crossing --
+
+func TestAbsoluteX_CrossesBankBoundary(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.X = 0  // 16-bit index registers
+	cpu.Flags.M = 1  // 8-bit accumulator
+	cpu.DB = 0x01    // data bank $01
+	cpu.X = 0x0100   // index $0100
+
+	// LDA $FF00,X → eff = bank24(DB=$01, $FF00) + $0100 = $01FF00 + $0100 = $020000
+	writeOp(mem, 0x8000, 0xBD, 0x00, 0xFF)
+	mem.data[0x020000] = 0x55
+
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x55 {
+		t.Errorf("LDA abs,X bank cross: A=%02X, want 55", cpu.A())
+	}
+}
+
 // -- Flags --
 
 func TestFlagsRoundtrip(t *testing.T) {
