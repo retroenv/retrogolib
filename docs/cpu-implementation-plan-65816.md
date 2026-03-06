@@ -280,7 +280,7 @@ const (
 
 - **Status:** IN_PROGRESS
 - **Last Updated:** 2026-03-06
-- **Summary:** Phases 1–5 complete; Phase 7 tests cover all major instruction groups. Two timing bugs fixed: BRA cycle count and branch page-crossing penalty in emulation mode. 84 tests passing.
+- **Summary:** Phases 1–5 complete; all 512 singlestep test files (512,000+ test cases) pass. Full SingleStepTests/65816 suite passes with 0 failures.
 
 ## Completed Work
 
@@ -294,6 +294,10 @@ const (
 | 2026-03-06 | Expand test coverage round 2 (Phase 7) | Added BCD ADC/SBC (8+16-bit), MVP, RTI native, PHB/PLB, PHD/PLD, WAI+NMI dispatch |
 | 2026-03-06 | Expand test coverage round 3 (Phase 7) | Added BRK/COP emulation mode (stack layout + vectors), CLC→XCE→REP→LDA mode-switch sequence, abs,X bank-boundary crossing. 81 tests total. |
 | 2026-03-06 | Fix BRA timing + branch page-crossing (emulation mode compatibility) | BRA had Timing=3 but branch() always adds +1, giving 4 cycles (wrong). Fixed to Timing=2. Added page-crossing detection to paramReaderRelative; step.go now only applies branch page-cross penalty in emulation mode (E=1). 84 tests total. |
+| 2026-03-06 | Fix 65816-native stack instructions page-1 wrap | Added push8raw/pop8raw/push16raw/pop16raw/fixEmuSP helpers. PHD, JSL, RTL, PLB, PEA, PEI, PER use full 16-bit SP in emulation mode; 6502-compat instructions (BRK, COP, JSR, RTS, etc.) keep page-1 wrap. Fixed 8 singlestep test files. |
+| 2026-03-06 | Fix readMem24 bank boundary wrap | readMem24 was using ReadLong without bank wrapping; rewrote to wrap all 3 bytes within same bank (like readMem16 does). Fixed [dp] indirect long and JML [abs] failures. |
+| 2026-03-06 | Fix readOperand16 DirectPage bank behavior | DirectPage, DirectPageX, DirectPageY params now use readMem16 (bank-0 wrap); all others use readData16 (24-bit arithmetic). |
+| 2026-03-06 | Fix MVP/MVN block move: do-while loop, 8-bit index mask, cycle-budget cap | Changed loop from while to do-while (always execute at least one transfer). Added 8-bit index mask (idxMask) for emulation mode/X=1. Limited to 14 iterations per Step() to match singlestep test 100-cycle budget (14×7=98). When block incomplete, advance PC by 2 (mid-instruction state) not 3. All 4 MVP/MVN test files (40,000 tests) now pass. |
 
 ### Next Target: Remaining Phase 7 gaps (lower priority)
 

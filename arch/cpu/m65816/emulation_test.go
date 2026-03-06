@@ -946,7 +946,8 @@ func TestPER(t *testing.T) {
 
 func TestMVN_SingleByte(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.C = 0x0000 // 1 byte to copy (C+1)
+	cpu.Flags.X = 0 // 16-bit index registers
+	cpu.C = 0x0000  // 1 byte to copy (C+1)
 	cpu.X = 0x1000
 	cpu.Y = 0x2000
 	mem.data[0x1000] = 0xAA
@@ -969,7 +970,8 @@ func TestMVN_SingleByte(t *testing.T) {
 
 func TestMVN_ThreeBytes(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.C = 0x0002 // 3 bytes to copy
+	cpu.Flags.X = 0 // 16-bit index registers
+	cpu.C = 0x0002  // 3 bytes to copy
 	cpu.X = 0x1000
 	cpu.Y = 0x2000
 	mem.data[0x1000] = 0xAA
@@ -1189,8 +1191,9 @@ func TestSBC_Decimal16(t *testing.T) {
 
 func TestMVP_ThreeBytes(t *testing.T) {
 	cpu, mem := setupCPU(t)
-	cpu.C = 0x0002 // 3 bytes to copy
-	cpu.X = 0x1002 // start from high address (moving backwards)
+	cpu.Flags.X = 0 // 16-bit index registers
+	cpu.C = 0x0002  // 3 bytes to copy
+	cpu.X = 0x1002  // start from high address (moving backwards)
 	cpu.Y = 0x2002
 	mem.data[0x1000] = 0xAA
 	mem.data[0x1001] = 0xBB
