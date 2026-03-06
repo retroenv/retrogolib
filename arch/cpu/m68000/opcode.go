@@ -403,10 +403,10 @@ func decodeLine4Extended(opcode, mode, reg uint16) (DecodedOpcode, error) {
 		return DecodedOpcode{Instruction: insEXT, Size: SizeWord, DstReg: uint8(reg), Timing: 4}, nil
 	case opcode&0xFFF8 == 0x48C0:
 		return DecodedOpcode{Instruction: insEXT, Size: SizeLong, DstReg: uint8(reg), Timing: 4}, nil
-	case opcode&0xFB80 == 0x4880:
+	case opcode&0xFF80 == 0x4880:
 		sz := movemSize(opcode)
 		return DecodedOpcode{Instruction: insMOVEM, Size: sz, DstMode: uint8(mode), DstReg: uint8(reg), Extra: 0, Timing: 8}, nil
-	case opcode&0xFB80 == 0x4C80:
+	case opcode&0xFF80 == 0x4C80:
 		sz := movemSize(opcode)
 		return DecodedOpcode{Instruction: insMOVEM, Size: sz, SrcMode: uint8(mode), SrcReg: uint8(reg), Extra: 1, Timing: 12}, nil
 	case opcode&0xFF00 == 0x4A00:
