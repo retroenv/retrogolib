@@ -33,6 +33,11 @@ const (
 	// - TurboGrafx-16/PC Engine
 	M65C02 Architecture = "65c02"
 
+	// M65816 represents the WDC 65C816 (65816) processor used in:
+	// - Super Nintendo Entertainment System (SNES/Super Famicom)
+	// - Apple IIGS
+	M65816 Architecture = "65816"
+
 	// M68000 represents the Motorola 68000 processor used in:
 	// - Sega Genesis/Mega Drive
 	// - Commodore Amiga
@@ -62,6 +67,7 @@ var allSupportedArchitectures = []Architecture{
 	CHIP8,
 	M6502,
 	M65C02,
+	M65816,
 	M68000,
 	X86,
 	Z80,
