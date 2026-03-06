@@ -2,7 +2,7 @@ package m68000
 
 // Bit manipulation instructions: BTST, BSET, BCLR, BCHG.
 
-func (c *CPU) execBTST(d DecodedOpcode) error {
+func execBTST(c *CPU, d DecodedOpcode) error {
 	bitNum := c.getBitNumber(d)
 
 	// For register operands, bit number modulo 32. For memory, modulo 8.
@@ -27,7 +27,7 @@ func (c *CPU) execBTST(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execBSET(d DecodedOpcode) error {
+func execBSET(c *CPU, d DecodedOpcode) error {
 	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {
@@ -52,7 +52,7 @@ func (c *CPU) execBSET(d DecodedOpcode) error {
 	return c.writeEA(dstEA, val|(1<<bitNum))
 }
 
-func (c *CPU) execBCLR(d DecodedOpcode) error {
+func execBCLR(c *CPU, d DecodedOpcode) error {
 	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {
@@ -77,7 +77,7 @@ func (c *CPU) execBCLR(d DecodedOpcode) error {
 	return c.writeEA(dstEA, val&^(1<<bitNum))
 }
 
-func (c *CPU) execBCHG(d DecodedOpcode) error {
+func execBCHG(c *CPU, d DecodedOpcode) error {
 	bitNum := c.getBitNumber(d)
 
 	if d.DstMode == 0 {

@@ -4,7 +4,7 @@ package m68000
 // NEG, NEGX, CLR, CMP, CMPA, CMPI, CMPM, AND, ANDI, OR, ORI, EOR, EORI, NOT, EXT,
 // TST, MULU, MULS, DIVU, DIVS, ABCD, SBCD, NBCD.
 
-func (c *CPU) execADD(d DecodedOpcode) error {
+func execADD(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -28,7 +28,7 @@ func (c *CPU) execADD(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execADDA(d DecodedOpcode) error {
+func execADDA(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (c *CPU) execADDA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execADDI(d DecodedOpcode) error {
+func execADDI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
@@ -59,7 +59,7 @@ func (c *CPU) execADDI(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execADDQ(d DecodedOpcode) error {
+func execADDQ(c *CPU, d DecodedOpcode) error {
 	imm := uint32(d.Extra)
 	if d.DstMode == 1 {
 		// ADDQ to address register: no flags affected, full 32-bit.
@@ -81,7 +81,7 @@ func (c *CPU) execADDQ(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execADDX(d DecodedOpcode) error {
+func execADDX(c *CPU, d DecodedOpcode) error {
 	x := uint32(c.Flags.X)
 
 	var src, dst uint32
@@ -118,7 +118,7 @@ func (c *CPU) execADDX(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execSUB(d DecodedOpcode) error {
+func execSUB(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -142,7 +142,7 @@ func (c *CPU) execSUB(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execSUBA(d DecodedOpcode) error {
+func execSUBA(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (c *CPU) execSUBA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execSUBI(d DecodedOpcode) error {
+func execSUBI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
@@ -173,7 +173,7 @@ func (c *CPU) execSUBI(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execSUBQ(d DecodedOpcode) error {
+func execSUBQ(c *CPU, d DecodedOpcode) error {
 	imm := uint32(d.Extra)
 	if d.DstMode == 1 {
 		c.setRegA(d.DstReg, c.getRegA(d.DstReg)-imm)
@@ -194,7 +194,7 @@ func (c *CPU) execSUBQ(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execSUBX(d DecodedOpcode) error {
+func execSUBX(c *CPU, d DecodedOpcode) error {
 	x := uint32(c.Flags.X)
 
 	var src, dst uint32
@@ -229,7 +229,7 @@ func (c *CPU) execSUBX(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execNEG(d DecodedOpcode) error {
+func execNEG(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -244,7 +244,7 @@ func (c *CPU) execNEG(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execNEGX(d DecodedOpcode) error {
+func execNEGX(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (c *CPU) execNEGX(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execCLR(d DecodedOpcode) error {
+func execCLR(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -273,7 +273,7 @@ func (c *CPU) execCLR(d DecodedOpcode) error {
 	return c.writeEA(dstEA, 0)
 }
 
-func (c *CPU) execCMP(d DecodedOpcode) error {
+func execCMP(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -289,7 +289,7 @@ func (c *CPU) execCMP(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execCMPA(d DecodedOpcode) error {
+func execCMPA(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -306,7 +306,7 @@ func (c *CPU) execCMPA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execCMPI(d DecodedOpcode) error {
+func execCMPI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
@@ -323,7 +323,7 @@ func (c *CPU) execCMPI(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execCMPM(d DecodedOpcode) error {
+func execCMPM(c *CPU, d DecodedOpcode) error {
 	srcAddr := c.getRegA(d.SrcReg)
 	src, err := c.readMemory(srcAddr, d.Size)
 	if err != nil {
@@ -343,7 +343,7 @@ func (c *CPU) execCMPM(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execAND(d DecodedOpcode) error {
+func execAND(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -367,7 +367,7 @@ func (c *CPU) execAND(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execANDI(d DecodedOpcode) error {
+func execANDI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	// ANDI to CCR/SR special cases.
@@ -397,7 +397,7 @@ func (c *CPU) execANDI(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execOR(d DecodedOpcode) error {
+func execOR(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -421,7 +421,7 @@ func (c *CPU) execOR(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execORI(d DecodedOpcode) error {
+func execORI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	// ORI to CCR/SR special cases.
@@ -451,7 +451,7 @@ func (c *CPU) execORI(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execEOR(d DecodedOpcode) error {
+func execEOR(c *CPU, d DecodedOpcode) error {
 	src := c.getRegD(d.SrcReg, d.Size)
 
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
@@ -468,7 +468,7 @@ func (c *CPU) execEOR(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execEORI(d DecodedOpcode) error {
+func execEORI(c *CPU, d DecodedOpcode) error {
 	imm := c.readImmediate(d.Size)
 
 	// EORI to CCR/SR special cases.
@@ -498,7 +498,7 @@ func (c *CPU) execEORI(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execNOT(d DecodedOpcode) error {
+func execNOT(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -513,7 +513,7 @@ func (c *CPU) execNOT(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execEXT(d DecodedOpcode) error {
+func execEXT(c *CPU, d DecodedOpcode) error {
 	var result uint32
 	if d.Size == SizeWord {
 		result = uint32(int16(int8(c.D[d.DstReg])))
@@ -526,7 +526,7 @@ func (c *CPU) execEXT(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execTST(d DecodedOpcode) error {
+func execTST(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -539,7 +539,7 @@ func (c *CPU) execTST(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execMULU(d DecodedOpcode) error {
+func execMULU(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
 	if err != nil {
 		return err
@@ -560,7 +560,7 @@ func (c *CPU) execMULU(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execMULS(d DecodedOpcode) error {
+func execMULS(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
 	if err != nil {
 		return err
@@ -581,7 +581,7 @@ func (c *CPU) execMULS(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execDIVU(d DecodedOpcode) error {
+func execDIVU(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
 	if err != nil {
 		return err
@@ -613,7 +613,7 @@ func (c *CPU) execDIVU(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execDIVS(d DecodedOpcode) error {
+func execDIVS(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
 	if err != nil {
 		return err
@@ -646,7 +646,7 @@ func (c *CPU) execDIVS(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execABCD(d DecodedOpcode) error {
+func execABCD(c *CPU, d DecodedOpcode) error {
 	var src, dst uint8
 
 	if d.Extra&0x8 == 0 {
@@ -688,7 +688,7 @@ func (c *CPU) execABCD(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execSBCD(d DecodedOpcode) error {
+func execSBCD(c *CPU, d DecodedOpcode) error {
 	var src, dst uint8
 
 	if d.Extra&0x8 == 0 {
@@ -732,7 +732,7 @@ func (c *CPU) execSBCD(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execNBCD(d DecodedOpcode) error {
+func execNBCD(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, SizeByte)
 	if err != nil {
 		return err

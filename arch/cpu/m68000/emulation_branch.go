@@ -65,7 +65,7 @@ func (c *CPU) evaluateConditionCompound(cond uint16) bool {
 	}
 }
 
-func (c *CPU) execBcc(d DecodedOpcode) error {
+func execBcc(c *CPU, d DecodedOpcode) error {
 	if !c.evaluateCondition(d.Extra) {
 		// Branch not taken. If short branch, PC is already past opcode word.
 		// If long branch (disp==0), we need to skip the extension word.
@@ -78,11 +78,11 @@ func (c *CPU) execBcc(d DecodedOpcode) error {
 	return c.takeBranch(d)
 }
 
-func (c *CPU) execBRA(d DecodedOpcode) error {
+func execBRA(c *CPU, d DecodedOpcode) error {
 	return c.takeBranch(d)
 }
 
-func (c *CPU) execBSR(d DecodedOpcode) error {
+func execBSR(c *CPU, d DecodedOpcode) error {
 	// Calculate target first, then push return address.
 	pcBeforeBranch := c.PC
 	disp := int32(int8(d.DstReg))
@@ -100,7 +100,7 @@ func (c *CPU) execBSR(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execDBcc(d DecodedOpcode) error {
+func execDBcc(c *CPU, d DecodedOpcode) error {
 	disp := int16(c.readWord())
 
 	if c.evaluateCondition(d.Extra) {
@@ -122,7 +122,7 @@ func (c *CPU) execDBcc(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execScc(d DecodedOpcode) error {
+func execScc(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, SizeByte)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (c *CPU) execScc(d DecodedOpcode) error {
 	return c.writeEA(dstEA, result)
 }
 
-func (c *CPU) execJMP(d DecodedOpcode) error {
+func execJMP(c *CPU, d DecodedOpcode) error {
 	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeLong)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func (c *CPU) execJMP(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execJSR(d DecodedOpcode) error {
+func execJSR(c *CPU, d DecodedOpcode) error {
 	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeLong)
 	if err != nil {
 		return err

@@ -3,19 +3,19 @@ package m68000
 // System and privileged instructions: TRAP, TRAPV, CHK, RTE, RTS, RTR, STOP,
 // RESET, ILLEGAL, TAS.
 
-func (c *CPU) execTRAP(d DecodedOpcode) error {
+func execTRAP(c *CPU, d DecodedOpcode) error {
 	vector := int(VectorTrap0) + int(d.Extra)
 	return c.processException(vector)
 }
 
-func (c *CPU) execTRAPV(_ DecodedOpcode) error {
+func execTRAPV(c *CPU, _ DecodedOpcode) error {
 	if c.Flags.V != 0 {
 		return c.processException(VectorTRAPV)
 	}
 	return nil
 }
 
-func (c *CPU) execCHK(d DecodedOpcode) error {
+func execCHK(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *CPU) execCHK(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execRTE(_ DecodedOpcode) error {
+func execRTE(c *CPU, _ DecodedOpcode) error {
 	if !c.IsSupervisor() {
 		return c.processException(VectorPrivilege)
 	}
@@ -53,19 +53,19 @@ func (c *CPU) execRTE(_ DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execRTS(_ DecodedOpcode) error {
+func execRTS(c *CPU, _ DecodedOpcode) error {
 	c.PC = c.pop32()
 	return nil
 }
 
-func (c *CPU) execRTR(_ DecodedOpcode) error {
+func execRTR(c *CPU, _ DecodedOpcode) error {
 	ccr := c.pop16()
 	c.SetCCR(uint8(ccr))
 	c.PC = c.pop32()
 	return nil
 }
 
-func (c *CPU) execSTOP(_ DecodedOpcode) error {
+func execSTOP(c *CPU, _ DecodedOpcode) error {
 	if !c.IsSupervisor() {
 		return c.processException(VectorPrivilege)
 	}
@@ -76,7 +76,7 @@ func (c *CPU) execSTOP(_ DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execRESET(_ DecodedOpcode) error {
+func execRESET(c *CPU, _ DecodedOpcode) error {
 	if !c.IsSupervisor() {
 		return c.processException(VectorPrivilege)
 	}
@@ -85,7 +85,7 @@ func (c *CPU) execRESET(_ DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execILLEGAL(d DecodedOpcode) error {
+func execILLEGAL(c *CPU, d DecodedOpcode) error {
 	// Check for Line A / Line F traps.
 	opcodeWord := d.Extra
 	if opcodeWord != 0 {
@@ -100,7 +100,7 @@ func (c *CPU) execILLEGAL(d DecodedOpcode) error {
 	return c.processException(VectorIllegal)
 }
 
-func (c *CPU) execTAS(d DecodedOpcode) error {
+func execTAS(c *CPU, d DecodedOpcode) error {
 	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, SizeByte)
 	if err != nil {
 		return err

@@ -2,7 +2,7 @@ package m68000
 
 // Shift and rotate instructions: ASL, ASR, LSL, LSR, ROL, ROR, ROXL, ROXR.
 
-func (c *CPU) execASL(d DecodedOpcode) error {
+func execASL(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		// Memory shift (count=1, size=word).
 		return c.shiftMemory(d, func(val uint32) uint32 {
@@ -44,7 +44,7 @@ func (c *CPU) execASL(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execASR(d DecodedOpcode) error {
+func execASR(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			lsb := val & 1
@@ -84,7 +84,7 @@ func (c *CPU) execASR(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execLSL(d DecodedOpcode) error {
+func execLSL(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			msb := val & 0x8000
@@ -120,7 +120,7 @@ func (c *CPU) execLSL(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execLSR(d DecodedOpcode) error {
+func execLSR(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			lsb := val & 1
@@ -157,7 +157,7 @@ func (c *CPU) execLSR(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execROL(d DecodedOpcode) error {
+func execROL(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			msb := val & 0x8000
@@ -193,7 +193,7 @@ func (c *CPU) execROL(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execROR(d DecodedOpcode) error {
+func execROR(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			lsb := val & 1
@@ -228,7 +228,7 @@ func (c *CPU) execROR(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execROXL(d DecodedOpcode) error {
+func execROXL(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			msb := val & 0x8000
@@ -262,7 +262,7 @@ func (c *CPU) execROXL(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execROXR(d DecodedOpcode) error {
+func execROXR(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		return c.shiftMemory(d, func(val uint32) uint32 {
 			lsb := val & 1

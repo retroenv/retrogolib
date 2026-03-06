@@ -3,9 +3,9 @@ package m68000
 // Data movement instructions: MOVE, MOVEA, MOVEQ, MOVEM, MOVEP, EXG, LEA, PEA,
 // LINK, UNLK, SWAP.
 
-func (c *CPU) execMOVE(d DecodedOpcode) error {
+func execMOVE(c *CPU, d DecodedOpcode) error {
 	if d.Extra != 0 {
-		return c.execMOVESpecial(d)
+		return execMOVESpecial(c, d)
 	}
 
 	// Regular MOVE.
@@ -28,7 +28,7 @@ func (c *CPU) execMOVE(d DecodedOpcode) error {
 }
 
 // execMOVESpecial handles MOVE to/from SR/CCR/USP.
-func (c *CPU) execMOVESpecial(d DecodedOpcode) error {
+func execMOVESpecial(c *CPU, d DecodedOpcode) error {
 	switch d.Extra {
 	case 1: // MOVE An,USP
 		if !c.IsSupervisor() {
@@ -84,7 +84,7 @@ func (c *CPU) execMOVESpecial(d DecodedOpcode) error {
 	}
 }
 
-func (c *CPU) execMOVEA(d DecodedOpcode) error {
+func execMOVEA(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (c *CPU) execMOVEA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execMOVEQ(d DecodedOpcode) error {
+func execMOVEQ(c *CPU, d DecodedOpcode) error {
 	// Sign-extend 8-bit immediate to 32-bit.
 	value := uint32(int32(int8(d.Extra)))
 	c.D[d.DstReg] = value
@@ -108,19 +108,19 @@ func (c *CPU) execMOVEQ(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execMOVEM(d DecodedOpcode) error {
+func execMOVEM(c *CPU, d DecodedOpcode) error {
 	mask := c.readWord()
 
 	if d.Extra == 0 {
 		// Register to memory.
-		return c.execMOVEMToMem(d, mask)
+		return execMOVEMToMem(c, d, mask)
 	}
 	// Memory to register.
-	return c.execMOVEMToReg(d, mask)
+	return execMOVEMToReg(c, d, mask)
 }
 
 // execMOVEMToMem moves registers to memory.
-func (c *CPU) execMOVEMToMem(d DecodedOpcode, mask uint16) error {
+func execMOVEMToMem(c *CPU, d DecodedOpcode, mask uint16) error {
 	if d.DstMode == 4 {
 		// Predecrement mode: register order is reversed (A7 first, D0 last).
 		addr := c.getRegA(d.DstReg)
@@ -163,7 +163,7 @@ func (c *CPU) execMOVEMToMem(d DecodedOpcode, mask uint16) error {
 }
 
 // execMOVEMToReg moves memory to registers.
-func (c *CPU) execMOVEMToReg(d DecodedOpcode, mask uint16) error {
+func execMOVEMToReg(c *CPU, d DecodedOpcode, mask uint16) error {
 	ea, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (c *CPU) setMovemReg(i uint8, value uint32) {
 	}
 }
 
-func (c *CPU) execMOVEP(d DecodedOpcode) error {
+func execMOVEP(c *CPU, d DecodedOpcode) error {
 	if d.SrcMode == 0 {
 		// MOVEP Dn,d16(An): register to memory.
 		disp := int16(c.readWord())
@@ -251,7 +251,7 @@ func (c *CPU) execMOVEP(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execEXG(d DecodedOpcode) error {
+func execEXG(c *CPU, d DecodedOpcode) error {
 	switch d.Extra {
 	case 0: // EXG Dn,Dn
 		c.D[d.SrcReg], c.D[d.DstReg] = c.D[d.DstReg], c.D[d.SrcReg]
@@ -269,7 +269,7 @@ func (c *CPU) execEXG(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execLEA(d DecodedOpcode) error {
+func execLEA(c *CPU, d DecodedOpcode) error {
 	ea, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeLong)
 	if err != nil {
 		return err
@@ -278,7 +278,7 @@ func (c *CPU) execLEA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execPEA(d DecodedOpcode) error {
+func execPEA(c *CPU, d DecodedOpcode) error {
 	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeLong)
 	if err != nil {
 		return err
@@ -287,7 +287,7 @@ func (c *CPU) execPEA(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execLINK(d DecodedOpcode) error {
+func execLINK(c *CPU, d DecodedOpcode) error {
 	// Push current An.
 	c.push32(c.getRegA(d.DstReg))
 	// An = SP.
@@ -298,13 +298,13 @@ func (c *CPU) execLINK(d DecodedOpcode) error {
 	return nil
 }
 
-func (c *CPU) execUNLK(d DecodedOpcode) error {
+func execUNLK(c *CPU, d DecodedOpcode) error {
 	c.sp = c.getRegA(d.DstReg)
 	c.setRegA(d.DstReg, c.pop32())
 	return nil
 }
 
-func (c *CPU) execSWAP(d DecodedOpcode) error {
+func execSWAP(c *CPU, d DecodedOpcode) error {
 	val := c.D[d.DstReg]
 	result := (val>>16)&0xFFFF | (val&0xFFFF)<<16
 	c.D[d.DstReg] = result
