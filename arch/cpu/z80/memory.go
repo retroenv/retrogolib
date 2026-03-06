@@ -64,7 +64,7 @@ func (a *legacyBusAdapter) WritePort(address uint16, value uint8) {
 }
 
 func (a *legacyBusAdapter) IRQData() uint8 { return 0xFF }
-func (a *legacyBusAdapter) OnRETI()         {}
+func (a *legacyBusAdapter) OnRETI()        {}
 
 // BasicMemory implements a simple 64KB flat memory space with no banking.
 // This is suitable for basic Z80 systems without memory mappers.

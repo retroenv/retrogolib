@@ -4,9 +4,9 @@ import "fmt"
 
 // TraceStep contains all info needed to print a trace step.
 type TraceStep struct {
-	PC     uint32       // Program counter before instruction
+	PC     uint32        // Program counter before instruction
 	Opcode DecodedOpcode // Decoded opcode
-	Words  []uint16     // Instruction words
+	Words  []uint16      // Instruction words
 }
 
 // Step executes the next instruction in the CPU.

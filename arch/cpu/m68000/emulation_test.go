@@ -576,7 +576,7 @@ func TestBTST_DataReg(t *testing.T) {
 
 func TestBTST_DataReg_NotSet(t *testing.T) {
 	cpu := newTestCPUWithProgram(t, 0x0101) // BTST D0,D1
-	cpu.D[0] = 5 // Test bit 5.
+	cpu.D[0] = 5                            // Test bit 5.
 	cpu.D[1] = 0x0010
 
 	err := cpu.Step()
@@ -709,10 +709,10 @@ func TestConditions(t *testing.T) {
 	cpu := newTestCPU(t)
 
 	tests := []struct {
-		name string
-		cond uint16
+		name  string
+		cond  uint16
 		flags Flags
-		want bool
+		want  bool
 	}{
 		{"T", 0, Flags{}, true},
 		{"F", 1, Flags{}, false},

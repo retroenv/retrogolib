@@ -7,19 +7,19 @@ type AddressingMode int
 const (
 	NoAddressing        AddressingMode = 0
 	DataRegDirectMode   AddressingMode = 1 << iota // Dn
-	AddrRegDirectMode                               // An
-	AddrRegIndirectMode                             // (An)
-	PostIncrementMode                               // (An)+
-	PreDecrementMode                                // -(An)
-	DisplacementMode                                // d16(An)
-	IndexedMode                                     // d8(An,Xn)
-	AbsShortMode                                    // (xxx).W
-	AbsLongMode                                     // (xxx).L
-	PCDisplacementMode                              // d16(PC)
-	PCIndexedMode                                   // d8(PC,Xn)
-	ImmediateMode                                   // #imm
-	StatusRegMode                                   // SR/CCR (implicit)
-	QuickImmediateMode                              // 3-bit or 8-bit in opcode
+	AddrRegDirectMode                              // An
+	AddrRegIndirectMode                            // (An)
+	PostIncrementMode                              // (An)+
+	PreDecrementMode                               // -(An)
+	DisplacementMode                               // d16(An)
+	IndexedMode                                    // d8(An,Xn)
+	AbsShortMode                                   // (xxx).W
+	AbsLongMode                                    // (xxx).L
+	PCDisplacementMode                             // d16(PC)
+	PCIndexedMode                                  // d8(PC,Xn)
+	ImmediateMode                                  // #imm
+	StatusRegMode                                  // SR/CCR (implicit)
+	QuickImmediateMode                             // 3-bit or 8-bit in opcode
 )
 
 // OperandSize represents the size of an operand in bytes.

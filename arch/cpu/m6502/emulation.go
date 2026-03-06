@@ -70,7 +70,7 @@ func adcDecimalNMOS(c *CPU, a, value uint8) {
 	c.setN(partial)
 	c.setV((a^value)&0x80 == 0 && (a^partial)&0x80 != 0)
 
-	c.A = uint8((hi<<4) | lo)
+	c.A = uint8((hi << 4) | lo)
 	c.Flags.C = uint8(hiCarry)
 }
 
@@ -104,7 +104,7 @@ func adcDecimal65C02(c *CPU, a, value uint8) {
 		hiCarry = 1
 	}
 
-	c.A = uint8((hi<<4) | lo)
+	c.A = uint8((hi << 4) | lo)
 	c.Flags.C = uint8(hiCarry)
 
 	// N and Z from the BCD-corrected result.
@@ -938,7 +938,7 @@ func arr(c *CPU, params ...any) error {
 	c.setZN(c.A)
 
 	// ARR-specific V flag: XOR of bits 6 and 5 of the ROR result.
-	c.Flags.V = (c.A >> 6) & 1 ^ (c.A >> 5) & 1
+	c.Flags.V = (c.A>>6)&1 ^ (c.A>>5)&1
 
 	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
 		// Decimal mode: nibble corrections conditioned on the AND result,

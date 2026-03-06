@@ -39,7 +39,7 @@ const (
 // dormannTest describes a single Klaus Dormann binary ROM test.
 type dormannTest struct {
 	name      string
-	binary    string    // relative path inside the dormann data dir
+	binary    string // relative path inside the dormann data dir
 	variant   CPUVariant
 	startPC   uint16
 	successPC uint16

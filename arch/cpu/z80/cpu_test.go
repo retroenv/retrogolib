@@ -118,7 +118,7 @@ type testBus struct {
 	retiCalls int
 }
 
-func (b *testBus) ReadPort(_ uint16) uint8   { return 0xFF }
+func (b *testBus) ReadPort(_ uint16) uint8     { return 0xFF }
 func (b *testBus) WritePort(_ uint16, _ uint8) {}
-func (b *testBus) IRQData() uint8             { return b.irqData }
+func (b *testBus) IRQData() uint8              { return b.irqData }
 func (b *testBus) OnRETI()                     { b.retiCalls++ }
