@@ -19,8 +19,10 @@ func phb(c *CPU) error {
 }
 
 // phd - Push Direct Page Register (always 16-bit).
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func phd(c *CPU) error {
-	c.push16(c.DP)
+	c.push16raw(c.DP)
+	c.fixEmuSP()
 	return nil
 }
 
@@ -70,15 +72,19 @@ func pla(c *CPU) error {
 }
 
 // plb - Pull Data Bank Register.
+// 65816-native: uses full 16-bit SP (no page-1 wrap).
 func plb(c *CPU) error {
-	c.DB = c.pop8()
+	c.DB = c.pop8raw()
+	c.fixEmuSP()
 	c.setZN8(c.DB)
 	return nil
 }
 
 // pld - Pull Direct Page Register.
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func pld(c *CPU) error {
-	c.DP = c.pop16()
+	c.DP = c.pop16raw()
+	c.fixEmuSP()
 	c.setZN16(c.DP)
 	return nil
 }
@@ -118,32 +124,37 @@ func ply(c *CPU) error {
 
 // pea - Push Effective Absolute Address.
 // Pushes the 16-bit absolute address from the instruction stream (not the contents).
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func pea(c *CPU) error {
-	// The operand is an Absolute16 encoded address
 	b1 := c.fetchByte(1)
 	b2 := c.fetchByte(2)
 	addr := uint16(b2)<<8 | uint16(b1)
-	c.push16(addr)
+	c.push16raw(addr)
+	c.fixEmuSP()
 	return nil
 }
 
 // pei - Push Effective Indirect Address.
 // Reads 16-bit pointer from (DP+dp) and pushes it.
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func pei(c *CPU) error {
 	dp := c.fetchByte(1)
 	ptr := c.dpAddr(dp)
 	val := c.readMem16(ptr)
-	c.push16(val)
+	c.push16raw(val)
+	c.fixEmuSP()
 	return nil
 }
 
 // per - Push Effective Relative Address.
 // Pushes PC+3+signed16offset (the effective absolute address, not the contents).
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func per(c *CPU) error {
 	b1 := c.fetchByte(1)
 	b2 := c.fetchByte(2)
 	offset := int16(uint16(b2)<<8 | uint16(b1))
 	eff := uint16(int32(c.PC) + 3 + int32(offset))
-	c.push16(eff)
+	c.push16raw(eff)
+	c.fixEmuSP()
 	return nil
 }

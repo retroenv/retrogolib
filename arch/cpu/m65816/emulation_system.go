@@ -160,9 +160,11 @@ func rti(c *CPU) error {
 }
 
 // rtl - Return from Subroutine Long.
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func rtl(c *CPU) error {
-	retAddr := c.pop16()
-	c.PB = c.pop8()
+	retAddr := c.pop16raw()
+	c.PB = c.pop8raw()
+	c.fixEmuSP()
 	c.PC = retAddr + 1
 	c.pcChanged = true
 	return nil

@@ -187,19 +187,46 @@ func (c *CPU) Reset() {
 func (c *CPU) Memory() *Memory { return c.memory }
 
 // push8 pushes a byte onto the stack and decrements SP.
+// In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
 func (c *CPU) push8(value uint8) {
 	c.memory.WriteByte(bank24(0, c.SP), value)
 	c.SP--
 	if c.E {
-		// Emulation mode: SP wraps within page 1 ($0100-$01FF)
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
+}
+
+// push8raw pushes a byte without page-1 wrap, for 65816-native stack instructions
+// that use the full 16-bit SP even in emulation mode.
+func (c *CPU) push8raw(value uint8) {
+	c.memory.WriteByte(bank24(0, c.SP), value)
+	c.SP--
 }
 
 // push16 pushes a 16-bit word onto the stack (high byte first).
 func (c *CPU) push16(value uint16) {
 	c.push8(uint8(value >> 8))
 	c.push8(uint8(value))
+}
+
+// push16raw pushes a 16-bit word without per-byte page-1 wrap.
+func (c *CPU) push16raw(value uint16) {
+	c.push8raw(uint8(value >> 8))
+	c.push8raw(uint8(value))
+}
+
+// pop16raw pops a 16-bit word without per-byte page-1 wrap.
+func (c *CPU) pop16raw() uint16 {
+	lo := uint16(c.pop8raw())
+	hi := uint16(c.pop8raw())
+	return hi<<8 | lo
+}
+
+// fixEmuSP normalises SP to page 1 after a 65816-native stack instruction.
+func (c *CPU) fixEmuSP() {
+	if c.E {
+		c.SP = 0x0100 | (c.SP & 0x00FF)
+	}
 }
 
 // push24 pushes a 24-bit value onto the stack (high byte first).
@@ -210,11 +237,19 @@ func (c *CPU) push24(value uint32) {
 }
 
 // pop8 pops a byte from the stack and increments SP.
+// In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
 func (c *CPU) pop8() uint8 {
 	c.SP++
 	if c.E {
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
+	return c.memory.ReadByte(bank24(0, c.SP))
+}
+
+// pop8raw pops a byte without page-1 wrap, for 65816-native stack instructions
+// that use the full 16-bit SP even in emulation mode.
+func (c *CPU) pop8raw() uint8 {
+	c.SP++
 	return c.memory.ReadByte(bank24(0, c.SP))
 }
 
@@ -294,9 +329,15 @@ func (c *CPU) writeMem16(addr uint32, value uint16) {
 	c.memory.WriteWord(addr&0xFFFFFF, value)
 }
 
-// readMem24 reads a 24-bit (3-byte) value from a 24-bit address.
+// readMem24 reads a 24-bit (3-byte) long pointer, wrapping within the same bank.
+// All three bytes stay in the same 64KB bank as addr — used for [dp] and [abs] pointer fetches.
 func (c *CPU) readMem24(addr uint32) uint32 {
-	return c.memory.ReadLong(addr & 0xFFFFFF)
+	addr &= 0xFFFFFF
+	bank := addr & 0xFF0000
+	lo := uint32(c.memory.ReadByte(addr))
+	mid := uint32(c.memory.ReadByte(bank | uint32(uint16(addr)+1)))
+	hi := uint32(c.memory.ReadByte(bank | uint32(uint16(addr)+2)))
+	return hi<<16 | mid<<8 | lo
 }
 
 // branch performs a relative branch if the condition is true.

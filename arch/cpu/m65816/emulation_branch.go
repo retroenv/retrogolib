@@ -99,11 +99,13 @@ func jsr(c *CPU, params ...any) error {
 }
 
 // jsl - Jump to Subroutine Long.
+// 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func jsl(c *CPU, params ...any) error {
 	// Pushes PB, then PC+3 (last byte of JSL instruction).
-	c.push8(c.PB)
+	c.push8raw(c.PB)
 	retAddr := c.PC + 3
-	c.push16(retAddr)
+	c.push16raw(retAddr)
+	c.fixEmuSP()
 	switch p := params[0].(type) {
 	case AbsLong:
 		c.PB = uint8(uint32(p) >> 16)
