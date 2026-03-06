@@ -58,7 +58,11 @@ func (c *CPU) Step() error {
 		c.TraceStep.PageCrossed = pageCrossed
 	}
 	if pageCrossed && op.PageCrossCycle {
-		c.cycles++
+		// Branch (relative) page-crossing penalty only applies in emulation mode.
+		// For all other addressing modes (abs,X etc.) the penalty applies always.
+		if op.Addressing != RelativeAddressing || c.E {
+			c.cycles++
+		}
 	}
 	if c.opts.preExecutionHook != nil {
 		c.opts.preExecutionHook(c, ins, params...)

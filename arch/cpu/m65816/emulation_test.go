@@ -328,6 +328,124 @@ func TestBNE_Taken(t *testing.T) {
 	}
 }
 
+// -- Cycle accuracy --
+
+// LDA abs,X: 4 cycles with no page crossing, 5 cycles when X crosses a page boundary.
+func TestLDA_AbsX_PageCross_Cycles(t *testing.T) {
+	// No page cross: base=$8100, X=$01 → eff=$8101 (same page $81)
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 1
+	cpu.Flags.X = 1
+	cpu.DB = 0x00
+	cpu.X = 0x01
+	writeOp(mem, 0x8000, 0xBD, 0x00, 0x81) // LDA $8100,X
+	before := cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 4 {
+		t.Errorf("LDA abs,X no page cross: %d cycles, want 4", cpu.cycles-before)
+	}
+
+	// Page cross: base=$81FF, X=$01 → eff=$8200 (crosses $81→$82)
+	cpu.PC = 0x8000
+	cpu.X = 0x01
+	writeOp(mem, 0x8000, 0xBD, 0xFF, 0x81) // LDA $81FF,X
+	before = cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 5 {
+		t.Errorf("LDA abs,X page cross: %d cycles, want 5", cpu.cycles-before)
+	}
+}
+
+// BNE cycle counts: 2 not taken, 3 taken same page, 3 taken cross page (native),
+// 4 taken cross page (emulation mode).
+func TestBranch_Cycles(t *testing.T) {
+	// Not taken: 2 cycles
+	cpu, mem := setupCPU(t)
+	cpu.Flags.Z = 1                  // Z set → BNE not taken
+	writeOp(mem, 0x8000, 0xD0, 0x05) // BNE +5
+	before := cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 2 {
+		t.Errorf("BNE not taken: %d cycles, want 2", cpu.cycles-before)
+	}
+
+	// Taken, same page: 3 cycles
+	cpu.PC = 0x8000
+	cpu.Flags.Z = 0                  // BNE taken
+	writeOp(mem, 0x8000, 0xD0, 0x05) // BNE +5 → target=$8007 (page $80, same as nextPC $8002)
+	before = cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 3 {
+		t.Errorf("BNE taken same page: %d cycles, want 3", cpu.cycles-before)
+	}
+
+	// Taken, cross page, native mode: 3 cycles (no page-cross penalty in native mode)
+	// BNE at $82FE, offset=-128 ($80) → nextPC=$8300, target=$8280 (page $82 ≠ $83)
+	cpu.PC = 0x82FE
+	cpu.E = false // native mode (already set by setupCPU)
+	cpu.Flags.Z = 0
+	writeOp(mem, 0x82FE, 0xD0, 0x80) // BNE -128
+	before = cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 3 {
+		t.Errorf("BNE taken cross page native: %d cycles, want 3", cpu.cycles-before)
+	}
+
+	// Taken, cross page, emulation mode: 4 cycles
+	cpu.PC = 0x82FE
+	cpu.E = true
+	cpu.Flags.M = 1
+	cpu.Flags.X = 1
+	cpu.Flags.Z = 0
+	writeOp(mem, 0x82FE, 0xD0, 0x80) // BNE -128
+	before = cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 4 {
+		t.Errorf("BNE taken cross page emulation: %d cycles, want 4", cpu.cycles-before)
+	}
+}
+
+// BRA (always taken): 3 cycles same page, 4 cycles cross page in emulation mode.
+func TestBRA_Cycles(t *testing.T) {
+	// Same page: 3 cycles (native)
+	cpu, mem := setupCPU(t)
+	writeOp(mem, 0x8000, 0x80, 0x05) // BRA +5 → target=$8007 (same page as nextPC=$8002)
+	before := cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 3 {
+		t.Errorf("BRA same page native: %d cycles, want 3", cpu.cycles-before)
+	}
+
+	// Cross page, emulation mode: 4 cycles
+	// BRA at $82FE, offset=-128 → nextPC=$8300, target=$8280 (page $82 ≠ $83)
+	cpu.PC = 0x82FE
+	cpu.E = true
+	cpu.Flags.M = 1
+	cpu.Flags.X = 1
+	writeOp(mem, 0x82FE, 0x80, 0x80) // BRA -128
+	before = cpu.cycles
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.cycles-before != 4 {
+		t.Errorf("BRA cross page emulation: %d cycles, want 4", cpu.cycles-before)
+	}
+}
+
 // -- Stack operations --
 
 func TestPHA_PLA_8bit(t *testing.T) {

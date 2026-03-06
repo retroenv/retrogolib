@@ -262,8 +262,12 @@ func paramReaderSRIndirectY(c *CPU) ([]any, []byte, bool) {
 func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
 	offset := int8(c.fetchByte(1))
 	// Branch target: PC+2 (after the 2-byte instruction) + signed offset
-	target := uint16(int32(c.PC) + 2 + int32(offset))
-	return []any{target}, []byte{uint8(offset)}, false
+	nextPC := c.PC + 2
+	target := uint16(int32(nextPC) + int32(offset))
+	// Page crossing: target lands in a different 256-byte page than the next instruction.
+	// On the 65816, this penalty applies only in emulation mode (handled in step.go).
+	pageCrossed := (target & 0xFF00) != (nextPC & 0xFF00)
+	return []any{target}, []byte{uint8(offset)}, pageCrossed
 }
 
 func paramReaderRelativeLong(c *CPU) ([]any, []byte, bool) {

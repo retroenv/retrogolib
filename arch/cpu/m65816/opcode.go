@@ -80,7 +80,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Ora, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $0F ORA al
 
 	// $10 - $1F
-	{Instruction: Bpl, Addressing: RelativeAddressing, Timing: 2},                                         // $10 BPL rel
+	{Instruction: Bpl, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $10 BPL rel
 	{Instruction: Ora, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $11 ORA (dp),Y
 	{Instruction: Ora, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $12 ORA (dp)
 	{Instruction: Ora, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $13 ORA (sr,S),Y
@@ -116,7 +116,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: And, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $2F AND al
 
 	// $30 - $3F
-	{Instruction: Bmi, Addressing: RelativeAddressing, Timing: 2},                                         // $30 BMI rel
+	{Instruction: Bmi, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $30 BMI rel
 	{Instruction: And, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $31 AND (dp),Y
 	{Instruction: And, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $32 AND (dp)
 	{Instruction: And, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $33 AND (sr,S),Y
@@ -152,7 +152,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Eor, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $4F EOR al
 
 	// $50 - $5F
-	{Instruction: Bvc, Addressing: RelativeAddressing, Timing: 2},                                         // $50 BVC rel
+	{Instruction: Bvc, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $50 BVC rel
 	{Instruction: Eor, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $51 EOR (dp),Y
 	{Instruction: Eor, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $52 EOR (dp)
 	{Instruction: Eor, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $53 EOR (sr,S),Y
@@ -188,7 +188,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Adc, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $6F ADC al
 
 	// $70 - $7F
-	{Instruction: Bvs, Addressing: RelativeAddressing, Timing: 2},                                         // $70 BVS rel
+	{Instruction: Bvs, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $70 BVS rel
 	{Instruction: Adc, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $71 ADC (dp),Y
 	{Instruction: Adc, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $72 ADC (dp)
 	{Instruction: Adc, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $73 ADC (sr,S),Y
@@ -206,7 +206,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Adc, Addressing: AbsoluteLongIndexedXAddressing, Timing: 5},                             // $7F ADC al,X
 
 	// $80 - $8F
-	{Instruction: Bra, Addressing: RelativeAddressing, Timing: 3},                     // $80 BRA rel
+	{Instruction: Bra, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true}, // $80 BRA rel
 	{Instruction: Sta, Addressing: DirectPageIndexedXIndirectAddressing, Timing: 6},   // $81 STA (dp,X)
 	{Instruction: Brl, Addressing: RelativeLongAddressing, Timing: 4},                 // $82 BRL rl
 	{Instruction: Sta, Addressing: StackRelativeAddressing, Timing: 4},                // $83 STA sr,S
@@ -224,7 +224,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Sta, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $8F STA al
 
 	// $90 - $9F
-	{Instruction: Bcc, Addressing: RelativeAddressing, Timing: 2},                       // $90 BCC rel
+	{Instruction: Bcc, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true}, // $90 BCC rel
 	{Instruction: Sta, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 6},     // $91 STA (dp),Y
 	{Instruction: Sta, Addressing: DirectPageIndirectAddressing, Timing: 5},             // $92 STA (dp)
 	{Instruction: Sta, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},  // $93 STA (sr,S),Y
@@ -260,7 +260,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Lda, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $AF LDA al
 
 	// $B0 - $BF
-	{Instruction: Bcs, Addressing: RelativeAddressing, Timing: 2},                                         // $B0 BCS rel
+	{Instruction: Bcs, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $B0 BCS rel
 	{Instruction: Lda, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $B1 LDA (dp),Y
 	{Instruction: Lda, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $B2 LDA (dp)
 	{Instruction: Lda, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $B3 LDA (sr,S),Y
@@ -296,7 +296,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Cmp, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $CF CMP al
 
 	// $D0 - $DF
-	{Instruction: Bne, Addressing: RelativeAddressing, Timing: 2},                                         // $D0 BNE rel
+	{Instruction: Bne, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $D0 BNE rel
 	{Instruction: Cmp, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $D1 CMP (dp),Y
 	{Instruction: Cmp, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $D2 CMP (dp)
 	{Instruction: Cmp, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $D3 CMP (sr,S),Y
@@ -332,7 +332,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Sbc, Addressing: AbsoluteLongAddressing, Timing: 5},                 // $EF SBC al
 
 	// $F0 - $FF
-	{Instruction: Beq, Addressing: RelativeAddressing, Timing: 2},                                         // $F0 BEQ rel
+	{Instruction: Beq, Addressing: RelativeAddressing, Timing: 2, PageCrossCycle: true},                   // $F0 BEQ rel
 	{Instruction: Sbc, Addressing: DirectPageIndirectIndexedYAddressing, Timing: 5, PageCrossCycle: true}, // $F1 SBC (dp),Y
 	{Instruction: Sbc, Addressing: DirectPageIndirectAddressing, Timing: 5},                               // $F2 SBC (dp)
 	{Instruction: Sbc, Addressing: StackRelativeIndirectIndexedYAddressing, Timing: 7},                    // $F3 SBC (sr,S),Y

@@ -280,7 +280,7 @@ const (
 
 - **Status:** IN_PROGRESS
 - **Last Updated:** 2026-03-06
-- **Summary:** Phases 1–5 complete; Phase 7 tests cover all major instruction groups including BCD, mode switching, bank boundary, and emulation-mode interrupts. 81 tests passing.
+- **Summary:** Phases 1–5 complete; Phase 7 tests cover all major instruction groups. Two timing bugs fixed: BRA cycle count and branch page-crossing penalty in emulation mode. 84 tests passing.
 
 ## Completed Work
 
@@ -293,11 +293,12 @@ const (
 | 2026-03-06 | ADC/SBC decimal mode (BCD) — Phase 5 | `adcBCD8/16` and `sbcBCD8/16` helpers; `adc`/`sbc` dispatch on `Flags.D≠0`. V from binary intermediate; N/Z/C from BCD result. |
 | 2026-03-06 | Expand test coverage round 2 (Phase 7) | Added BCD ADC/SBC (8+16-bit), MVP, RTI native, PHB/PLB, PHD/PLD, WAI+NMI dispatch |
 | 2026-03-06 | Expand test coverage round 3 (Phase 7) | Added BRK/COP emulation mode (stack layout + vectors), CLC→XCE→REP→LDA mode-switch sequence, abs,X bank-boundary crossing. 81 tests total. |
+| 2026-03-06 | Fix BRA timing + branch page-crossing (emulation mode compatibility) | BRA had Timing=3 but branch() always adds +1, giving 4 cycles (wrong). Fixed to Timing=2. Added page-crossing detection to paramReaderRelative; step.go now only applies branch page-cross penalty in emulation mode (E=1). 84 tests total. |
 
 ### Next Target: Remaining Phase 7 gaps (lower priority)
 
-- **Emulation mode compatibility sweep:** Verify all 65C02-compatible instructions behave identically in emulation mode (ADC/SBC with correct wrapping, etc.).
-- **Cycle accuracy tests:** Verify page-crossing penalties for abs,X and abs,Y loads.
+- **More cycle accuracy tests:** Verify page-crossing penalties for abs,Y and (dp),Y addressing modes; verify DP penalty cycle when DP_low≠0.
+- **Emulation mode compatibility sweep:** Verify remaining 65C02 edge cases (ORA/AND/EOR, CMP, LDX/LDY in various addressing modes) in emulation mode.
 - **SNES system layer (Phase 6):** LoROM/HiROM memory mapping, DMA, VBlank NMI timing.
 
 ---
