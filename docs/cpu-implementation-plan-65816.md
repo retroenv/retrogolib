@@ -280,7 +280,7 @@ const (
 
 - **Status:** IN_PROGRESS
 - **Last Updated:** 2026-03-06
-- **Summary:** Phases 1–4 complete; Phase 5 emulation refinements in progress; Phase 7 testing expanded.
+- **Summary:** Phases 1–5 substantially complete; Phase 7 tests cover all major instruction groups.
 
 ## Completed Work
 
@@ -289,12 +289,15 @@ const (
 | 2026-03-06 | All Phases 1–4 implemented | All files created, 256-opcode table filled, all addressing mode param readers, all instruction handlers |
 | 2026-03-06 | Fix `resolveEA` for `DirectPageX`/`DirectPageY` | Was always using 8-bit X/Y and truncating to `uint8`; now respects `IdxWidth()` and emulation-mode page-0 wrap |
 | 2026-03-06 | Fix `mvn`/`mvp` off-by-one | Redundant "final byte" copy removed; loop alone correctly exits with C=0xFFFF |
-| 2026-03-06 | Expand test coverage (Phase 7) | Added JSR/RTS, JSL/RTL, JMP, JML, PEA/PEI/PER, MVN (1-byte and 3-byte), BRK native mode, dp,X 8/16-bit, ADC/SBC 16-bit |
+| 2026-03-06 | Expand test coverage (Phase 7) | Added JSR/RTS, JSL/RTL, JMP, JML, PEA/PEI/PER, MVN 1+3-byte, BRK native, dp,X 8/16-bit, ADC/SBC 16-bit |
+| 2026-03-06 | ADC/SBC decimal mode (BCD) — Phase 5 | `adcBCD8/16` and `sbcBCD8/16` helpers; `adc`/`sbc` dispatch on `Flags.D≠0`. V from binary intermediate; N/Z/C from BCD result. |
+| 2026-03-06 | Expand test coverage round 2 (Phase 7) | Added BCD ADC/SBC (8+16-bit), MVP, RTI native, PHB/PLB, PHD/PLD, WAI+NMI dispatch |
 
-### Next Target: Remaining Phase 5 + Phase 7 gaps
+### Next Target: Remaining Phase 7 gaps (lower priority)
 
-- **ADC/SBC decimal mode (BCD):** When `Flags.D=1`, ADC and SBC should do BCD arithmetic. Currently they ignore the D flag.
-- **More Phase 7 tests:** MVP block move, emulation mode BRK/COP, WAI behavior, RTI, PHB/PLB/PHD/PLD, interrupt request flow (TriggerNMI/TriggerIRQ), mode switching sequence (XCE → REP → native code).
+- **Emulation mode BRK/COP:** Test BRK/COP behavior specifically in emulation mode (different stack sequence, different vector).
+- **Mode switching sequence:** XCE → REP #$30 → 16-bit native code sequence test.
+- **Bank boundary addressing:** Tests for data addresses crossing bank boundaries (DB register effect on abs,X/Y when crossing $xxFF→$xx00).
 
 ---
 

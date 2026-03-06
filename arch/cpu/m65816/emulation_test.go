@@ -904,6 +904,315 @@ func TestBRK_Native(t *testing.T) {
 	}
 }
 
+// -- ADC decimal mode (BCD) --
+
+func TestADC_Decimal8_Basic(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 0
+	cpu.C = 0x0025 // BCD 25
+	if err := adc(cpu, Immediate8(0x13)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x38 {
+		t.Errorf("ADC BCD 25+13: A=%02X, want 38", cpu.A())
+	}
+	if cpu.Flags.C != 0 {
+		t.Error("ADC BCD 25+13: unexpected carry")
+	}
+}
+
+func TestADC_Decimal8_CarryOut(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 0
+	cpu.C = 0x99 // BCD 99
+	if err := adc(cpu, Immediate8(0x01)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x00 {
+		t.Errorf("ADC BCD 99+01: A=%02X, want 00 (wrapped)", cpu.A())
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("ADC BCD 99+01: expected carry out")
+	}
+	if cpu.Flags.Z != 1 {
+		t.Error("ADC BCD 99+01: expected zero flag")
+	}
+}
+
+func TestADC_Decimal8_LowNibbleAdjust(t *testing.T) {
+	// Low nibble overflow: 5+5=10 → adjust to 0 with carry to high nibble
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 0
+	cpu.C = 0x15 // BCD 15
+	if err := adc(cpu, Immediate8(0x15)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x30 {
+		t.Errorf("ADC BCD 15+15: A=%02X, want 30", cpu.A())
+	}
+	if cpu.Flags.C != 0 {
+		t.Error("ADC BCD 15+15: unexpected carry")
+	}
+}
+
+func TestADC_Decimal16(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 0 // 16-bit accumulator
+	cpu.Flags.C = 0
+	cpu.C = 0x1234 // BCD 1234
+	if err := adc(cpu, Immediate16(0x4321)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x5555 {
+		t.Errorf("ADC BCD16 1234+4321: C=%04X, want 5555", cpu.C)
+	}
+	if cpu.Flags.C != 0 {
+		t.Error("ADC BCD16 1234+4321: unexpected carry")
+	}
+}
+
+func TestADC_Decimal16_CarryOut(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 0
+	cpu.Flags.C = 0
+	cpu.C = 0x9999 // BCD 9999
+	if err := adc(cpu, Immediate16(0x0001)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x0000 {
+		t.Errorf("ADC BCD16 9999+1: C=%04X, want 0000", cpu.C)
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("ADC BCD16 9999+1: expected carry")
+	}
+}
+
+// -- SBC decimal mode (BCD) --
+
+func TestSBC_Decimal8_Basic(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 1 // no borrow
+	cpu.C = 0x50    // BCD 50
+	if err := sbc(cpu, Immediate8(0x20)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x30 {
+		t.Errorf("SBC BCD 50-20: A=%02X, want 30", cpu.A())
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("SBC BCD 50-20: carry (no borrow) should be 1")
+	}
+}
+
+func TestSBC_Decimal8_LowNibbleBorrow(t *testing.T) {
+	// Low nibble borrow: 20-05 → low nibble 0-5 < 0, borrow
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 1 // no borrow
+	cpu.C = 0x20    // BCD 20
+	if err := sbc(cpu, Immediate8(0x05)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x15 {
+		t.Errorf("SBC BCD 20-05: A=%02X, want 15", cpu.A())
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("SBC BCD 20-05: carry (no borrow) should be 1")
+	}
+}
+
+func TestSBC_Decimal8_WithBorrow(t *testing.T) {
+	// 10-10 with borrow (C=0): result = 10-10-1 = -1 = 99 in BCD, carry=0
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 1
+	cpu.Flags.C = 0 // borrow in
+	cpu.C = 0x10    // BCD 10
+	if err := sbc(cpu, Immediate8(0x10)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.A() != 0x99 {
+		t.Errorf("SBC BCD 10-10 borrow: A=%02X, want 99", cpu.A())
+	}
+	if cpu.Flags.C != 0 {
+		t.Error("SBC BCD 10-10 borrow: carry (borrow occurred) should be 0")
+	}
+}
+
+func TestSBC_Decimal16(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.Flags.D = 1
+	cpu.Flags.M = 0 // 16-bit accumulator
+	cpu.Flags.C = 1 // no borrow
+	cpu.C = 0x5678  // BCD 5678
+	if err := sbc(cpu, Immediate16(0x1234)); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.C != 0x4444 {
+		t.Errorf("SBC BCD16 5678-1234: C=%04X, want 4444", cpu.C)
+	}
+	if cpu.Flags.C != 1 {
+		t.Error("SBC BCD16 5678-1234: carry (no borrow) should be 1")
+	}
+}
+
+// -- MVP block move --
+
+func TestMVP_ThreeBytes(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.C = 0x0002 // 3 bytes to copy
+	cpu.X = 0x1002 // start from high address (moving backwards)
+	cpu.Y = 0x2002
+	mem.data[0x1000] = 0xAA
+	mem.data[0x1001] = 0xBB
+	mem.data[0x1002] = 0xCC
+	if err := mvp(cpu, BlockMove{Src: 0x00, Dst: 0x00}); err != nil {
+		t.Fatal(err)
+	}
+	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
+		t.Errorf("MVP 3-byte: dst=%02X%02X%02X, want AABBCC",
+			mem.data[0x2000], mem.data[0x2001], mem.data[0x2002])
+	}
+	if cpu.C != 0xFFFF {
+		t.Errorf("MVP 3-byte: C=%04X, want FFFF", cpu.C)
+	}
+	if cpu.X != 0x0FFF {
+		t.Errorf("MVP 3-byte: X=%04X, want 0FFF", cpu.X)
+	}
+}
+
+// -- RTI --
+
+func TestRTI_Native(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.E = false
+	// Manually arrange stack (lowest to highest address): P, PC_lo, PC_hi, PB
+	// Stack grows down; SP points to last written byte.
+	// Push order was: PB ($00), PC ($8005), P ($A5)
+	cpu.SP = 0x01FB
+	mem.data[0x01FC] = 0xA5 // P
+	mem.data[0x01FD] = 0x05 // PC low
+	mem.data[0x01FE] = 0x80 // PC high
+	mem.data[0x01FF] = 0x00 // PB
+	if err := rti(cpu); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != 0x8005 {
+		t.Errorf("RTI: PC=%04X, want 8005", cpu.PC)
+	}
+	if cpu.PB != 0x00 {
+		t.Errorf("RTI: PB=%02X, want 00", cpu.PB)
+	}
+	if cpu.Flags.Get() != 0xA5 {
+		t.Errorf("RTI: P=%02X, want A5", cpu.Flags.Get())
+	}
+	if cpu.SP != 0x01FF {
+		t.Errorf("RTI: SP=%04X, want 01FF", cpu.SP)
+	}
+}
+
+// -- PHB / PLB --
+
+func TestPHB_PLB(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.SP = 0x01FF
+	cpu.DB = 0x42
+	if err := phb(cpu); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.SP != 0x01FE {
+		t.Errorf("PHB: SP=%04X, want 01FE", cpu.SP)
+	}
+	cpu.DB = 0x00
+	if err := plb(cpu); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.DB != 0x42 {
+		t.Errorf("PLB: DB=%02X, want 42", cpu.DB)
+	}
+	if cpu.SP != 0x01FF {
+		t.Errorf("PLB: SP=%04X, want 01FF", cpu.SP)
+	}
+}
+
+// -- PHD / PLD --
+
+func TestPHD_PLD(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	cpu.SP = 0x01FF
+	cpu.DP = 0x1234
+	if err := phd(cpu); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.SP != 0x01FD {
+		t.Errorf("PHD: SP=%04X, want 01FD", cpu.SP)
+	}
+	cpu.DP = 0x0000
+	if err := pld(cpu); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.DP != 0x1234 {
+		t.Errorf("PLD: DP=%04X, want 1234", cpu.DP)
+	}
+	if cpu.SP != 0x01FF {
+		t.Errorf("PLD: SP=%04X, want 01FF", cpu.SP)
+	}
+}
+
+// -- WAI --
+
+func TestWAI_HaltsAndResumes(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	// Setup native NMI vector -> $9000
+	mem.data[0xFFEA] = 0x00
+	mem.data[0xFFEB] = 0x90
+	cpu.PC = 0x8000
+	writeOp(mem, 0x8000, 0xCB) // WAI
+
+	// Step executes WAI and sets waiting=true
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if !cpu.waiting {
+		t.Fatal("WAI: expected waiting=true")
+	}
+	beforePC := cpu.PC
+
+	// Further steps do nothing while waiting
+	if err := cpu.Step(); err != nil {
+		t.Fatal(err)
+	}
+	if cpu.PC != beforePC {
+		t.Errorf("WAI: step while waiting should not advance PC")
+	}
+
+	// TriggerNMI clears waiting and queues interrupt
+	cpu.TriggerNMI()
+	if cpu.waiting {
+		t.Error("TriggerNMI should clear waiting flag")
+	}
+
+	// CheckInterrupts dispatches the NMI (separate from Step in this emulator)
+	handled := cpu.CheckInterrupts()
+	if !handled {
+		t.Fatal("CheckInterrupts: expected NMI to be handled")
+	}
+	if cpu.PC != 0x9000 {
+		t.Errorf("after NMI: PC=%04X, want 9000", cpu.PC)
+	}
+}
+
 // -- Flags --
 
 func TestFlagsRoundtrip(t *testing.T) {

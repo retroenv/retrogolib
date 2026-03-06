@@ -86,6 +86,14 @@ func adc(c *CPU, params ...any) error {
 	if err != nil {
 		return err
 	}
+	if c.Flags.D != 0 {
+		if c.AccWidth() == 1 {
+			adcBCD8(c, uint8(val))
+		} else {
+			adcBCD16(c, val)
+		}
+		return nil
+	}
 	if c.AccWidth() == 1 {
 		a := uint8(c.C)
 		sum := int(a) + int(uint8(val)) + int(c.Flags.C)
@@ -479,6 +487,14 @@ func sbc(c *CPU, params ...any) error {
 	if err != nil {
 		return err
 	}
+	if c.Flags.D != 0 {
+		if c.AccWidth() == 1 {
+			sbcBCD8(c, uint8(val))
+		} else {
+			sbcBCD16(c, val)
+		}
+		return nil
+	}
 	if c.AccWidth() == 1 {
 		a := uint8(c.C)
 		v := uint8(val)
@@ -533,6 +549,106 @@ func trb(c *CPU, params ...any) error {
 		c.writeMem16(addr, mem&^c.C)
 	}
 	return nil
+}
+
+// adcBCD8 performs decimal-mode (BCD) addition for an 8-bit accumulator.
+// V is computed from the binary intermediate; N/Z/C from the BCD-adjusted result.
+func adcBCD8(c *CPU, val uint8) {
+	a := uint8(c.C)
+	cin := int(c.Flags.C)
+	binSum := int(a) + int(val) + cin // binary intermediate for V flag
+
+	lo := int(a&0x0F) + int(val&0x0F) + cin
+	loCarry := 0
+	if lo > 9 {
+		loCarry = 1
+		lo = (lo + 6) & 0x0F
+	}
+	hi := int(a>>4) + int(val>>4) + loCarry
+	hiCarry := 0
+	if hi > 9 {
+		hiCarry = 1
+		hi = (hi + 6) & 0x0F
+	}
+	result := uint8(hi<<4 | lo)
+	setFlag(&c.Flags.C, hiCarry != 0)
+	setFlag(&c.Flags.V, ^(int(a)^int(val))&(int(a)^binSum)&0x80 != 0)
+	c.C = uint16(c.B())<<8 | uint16(result)
+	c.setZN8(result)
+}
+
+// adcBCD16 performs decimal-mode (BCD) addition for a 16-bit accumulator.
+func adcBCD16(c *CPU, val uint16) {
+	a := c.C
+	cin := int(c.Flags.C)
+	binSum := int32(a) + int32(val) + int32(cin)
+
+	result := uint16(0)
+	carry := cin
+	for i := uint(0); i < 4; i++ {
+		shift := i * 4
+		d := int((a>>shift)&0xF) + int((val>>shift)&0xF) + carry
+		carry = 0
+		if d > 9 {
+			carry = 1
+			d = (d + 6) & 0xF
+		}
+		result |= uint16(d) << shift
+	}
+	setFlag(&c.Flags.C, carry != 0)
+	setFlag(&c.Flags.V, ^(int32(a)^int32(val))&(int32(a)^binSum)&0x8000 != 0)
+	c.C = result
+	c.setZN16(result)
+}
+
+// sbcBCD8 performs decimal-mode (BCD) subtraction for an 8-bit accumulator.
+// V is computed from the binary intermediate; N/Z/C from the BCD-adjusted result.
+func sbcBCD8(c *CPU, val uint8) {
+	a := uint8(c.C)
+	borrow := 1 - int(c.Flags.C)
+	binResult := uint8(int(a) - int(val) - borrow) // binary intermediate for V flag
+
+	lo := int(a&0x0F) - int(val&0x0F) - borrow
+	loBorrow := 0
+	if lo < 0 {
+		loBorrow = 1
+		lo = (lo - 6) & 0x0F
+	}
+	hi := int(a>>4) - int(val>>4) - loBorrow
+	hiBorrow := 0
+	if hi < 0 {
+		hiBorrow = 1
+		hi = (hi - 6) & 0x0F
+	}
+	result := uint8(hi<<4 | lo)
+	setFlag(&c.Flags.C, hiBorrow == 0)
+	setFlag(&c.Flags.V, (a^val)&0x80 != 0 && (a^binResult)&0x80 != 0)
+	c.C = uint16(c.B())<<8 | uint16(result)
+	c.setZN8(result)
+}
+
+// sbcBCD16 performs decimal-mode (BCD) subtraction for a 16-bit accumulator.
+func sbcBCD16(c *CPU, val uint16) {
+	a := c.C
+	borrow := 1 - int(c.Flags.C)
+	binResult := uint16(int32(a) - int32(val) - int32(borrow))
+
+	result := uint16(0)
+	b := borrow
+	for i := uint(0); i < 4; i++ {
+		shift := i * 4
+		d := int((a>>shift)&0xF) - int((val>>shift)&0xF) - b
+		b = 0
+		if d < 0 {
+			b = 1
+			d = (d - 6) & 0xF
+		}
+		result |= uint16(d) << shift
+	}
+	setFlag(&c.Flags.C, b == 0)
+	setFlag(&c.Flags.V, (a^val)&0x8000 != 0 && (a^binResult)&0x8000 != 0)
+	c.C = result
+	c.setZN16(result)
 }
 
 // mvn - Move Block Next (increment addresses).
