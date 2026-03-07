@@ -79,10 +79,6 @@ linters:
       - linters:
           - err113
         text: do not define dynamic errors
-      - linters:
-          - govet
-        text: "stdmethods: method"
-        path: "arch/cpu/m65816/"
 
 formatters:
   enable:

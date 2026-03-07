@@ -208,7 +208,7 @@ func (c *CPU) SetP(p uint8) {
 // push8 pushes a byte onto the stack and decrements SP.
 // In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
 func (c *CPU) push8(value uint8) {
-	c.memory.WriteByte(bank24(0, c.SP), value)
+	c.memory.Write(bank24(0, c.SP), value)
 	c.SP--
 	if c.E {
 		c.SP = 0x0100 | (c.SP & 0x00FF)
@@ -218,7 +218,7 @@ func (c *CPU) push8(value uint8) {
 // push8raw pushes a byte without page-1 wrap, for 65816-native stack instructions
 // that use the full 16-bit SP even in emulation mode.
 func (c *CPU) push8raw(value uint8) {
-	c.memory.WriteByte(bank24(0, c.SP), value)
+	c.memory.Write(bank24(0, c.SP), value)
 	c.SP--
 }
 
@@ -255,14 +255,14 @@ func (c *CPU) pop8() uint8 {
 	if c.E {
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
-	return c.memory.ReadByte(bank24(0, c.SP))
+	return c.memory.Read(bank24(0, c.SP))
 }
 
 // pop8raw pops a byte without page-1 wrap, for 65816-native stack instructions
 // that use the full 16-bit SP even in emulation mode.
 func (c *CPU) pop8raw() uint8 {
 	c.SP++
-	return c.memory.ReadByte(bank24(0, c.SP))
+	return c.memory.Read(bank24(0, c.SP))
 }
 
 // pop16 pops a 16-bit word from the stack (low byte first).
@@ -285,12 +285,12 @@ func (c *CPU) dpAddr(offset uint8) uint32 {
 
 // readMem8 reads a byte from a 24-bit address.
 func (c *CPU) readMem8(addr uint32) uint8 {
-	return c.memory.ReadByte(addr & 0xFFFFFF)
+	return c.memory.Read(addr & 0xFFFFFF)
 }
 
 // writeMem8 writes a byte to a 24-bit address.
 func (c *CPU) writeMem8(addr uint32, value uint8) {
-	c.memory.WriteByte(addr&0xFFFFFF, value)
+	c.memory.Write(addr&0xFFFFFF, value)
 }
 
 // readMem16 reads a 16-bit word (little-endian) from a 24-bit address.
@@ -299,9 +299,9 @@ func (c *CPU) writeMem8(addr uint32, value uint8) {
 // keeps pointer bytes inside the bank containing the pointer itself.
 func (c *CPU) readMem16(addr uint32) uint16 {
 	addr &= 0xFFFFFF
-	lo := uint16(c.memory.ReadByte(addr))
+	lo := uint16(c.memory.Read(addr))
 	bank := addr & 0xFF0000
-	hi := uint16(c.memory.ReadByte(bank | uint32(uint16(addr)+1)))
+	hi := uint16(c.memory.Read(bank | uint32(uint16(addr)+1)))
 	return hi<<8 | lo
 }
 
@@ -311,8 +311,8 @@ func (c *CPU) readMem16(addr uint32) uint16 {
 // allows the address to cross a bank boundary.
 func (c *CPU) readData16(addr uint32) uint16 {
 	addr &= 0xFFFFFF
-	lo := uint16(c.memory.ReadByte(addr))
-	hi := uint16(c.memory.ReadByte((addr + 1) & 0xFFFFFF))
+	lo := uint16(c.memory.Read(addr))
+	hi := uint16(c.memory.Read((addr + 1) & 0xFFFFFF))
 	return hi<<8 | lo
 }
 
@@ -321,8 +321,8 @@ func (c *CPU) readData16(addr uint32) uint16 {
 func (c *CPU) readDPWord(dpOffset uint8) uint16 {
 	if c.E && c.DP&0xFF == 0 {
 		dpPage := uint32(c.DP)
-		lo := uint16(c.memory.ReadByte(dpPage | uint32(dpOffset)))
-		hi := uint16(c.memory.ReadByte(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
+		lo := uint16(c.memory.Read(dpPage | uint32(dpOffset)))
+		hi := uint16(c.memory.Read(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
 		return hi<<8 | lo
 	}
 	return c.readMem16(bank24(0, c.DP+uint16(dpOffset)))
@@ -338,9 +338,9 @@ func (c *CPU) writeMem16(addr uint32, value uint16) {
 func (c *CPU) readMem24(addr uint32) uint32 {
 	addr &= 0xFFFFFF
 	bank := addr & 0xFF0000
-	lo := uint32(c.memory.ReadByte(addr))
-	mid := uint32(c.memory.ReadByte(bank | uint32(uint16(addr)+1)))
-	hi := uint32(c.memory.ReadByte(bank | uint32(uint16(addr)+2)))
+	lo := uint32(c.memory.Read(addr))
+	mid := uint32(c.memory.Read(bank | uint32(uint16(addr)+1)))
+	hi := uint32(c.memory.Read(bank | uint32(uint16(addr)+2)))
 	return hi<<16 | mid<<8 | lo
 }
 
@@ -374,7 +374,7 @@ func (c *CPU) instrSize(op Opcode) int {
 
 // fetchByte reads the next byte from PC (in PB bank) without advancing PC.
 func (c *CPU) fetchByte(offset uint16) uint8 {
-	return c.memory.ReadByte(bank24(c.PB, c.PC+offset))
+	return c.memory.Read(bank24(c.PB, c.PC+offset))
 }
 
 // fetchWord reads the next word starting at PC+offset.

@@ -111,8 +111,8 @@ func paramReaderDPXIndirect(c *CPU) ([]any, []byte, bool) {
 		// Emulation mode, DP page-aligned: (dp+X) and pointer bytes wrap within DP 256-byte page
 		dpOffset := uint8(idx)
 		dpPage := uint32(c.DP)
-		lo := uint32(c.memory.ReadByte(dpPage | uint32(dpOffset)))
-		hi := uint32(c.memory.ReadByte(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
+		lo := uint32(c.memory.Read(dpPage | uint32(dpOffset)))
+		hi := uint32(c.memory.Read(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
 		addr = hi<<8 | lo
 	} else {
 		ptr := bank24(0, c.DP+idx)

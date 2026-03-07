@@ -48,8 +48,8 @@ type ss65816Memory struct {
 	data map[uint32]uint8
 }
 
-func (m *ss65816Memory) ReadByte(addr uint32) uint8 { return m.data[addr&0xFFFFFF] }
-func (m *ss65816Memory) WriteByte(addr uint32, v uint8) {
+func (m *ss65816Memory) Read(addr uint32) uint8 { return m.data[addr&0xFFFFFF] }
+func (m *ss65816Memory) Write(addr uint32, v uint8) {
 	m.data[addr&0xFFFFFF] = v
 }
 func (m *ss65816Memory) ReadWord(addr uint32) uint16 {

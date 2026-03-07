@@ -23,8 +23,8 @@ const (
 // All addresses are 24-bit (uint32 masked to low 24 bits).
 // Byte order is little-endian (65816 native byte order).
 type BasicMemory interface {
-	ReadByte(address uint32) uint8
-	WriteByte(address uint32, value uint8)
+	Read(address uint32) uint8
+	Write(address uint32, value uint8)
 	// ReadWord reads two bytes in little-endian order.
 	ReadWord(address uint32) uint16
 	// WriteWord writes two bytes in little-endian order.
@@ -46,17 +46,17 @@ func NewMemory(mem BasicMemory) (*Memory, error) {
 
 // ReadLong reads a 24-bit (3-byte) value in little-endian order.
 func (m *Memory) ReadLong(address uint32) uint32 {
-	lo := uint32(m.ReadByte(address))
-	mid := uint32(m.ReadByte(address + 1))
-	hi := uint32(m.ReadByte(address + 2))
+	lo := uint32(m.Read(address))
+	mid := uint32(m.Read(address + 1))
+	hi := uint32(m.Read(address + 2))
 	return hi<<16 | mid<<8 | lo
 }
 
 // WriteLong writes a 24-bit (3-byte) value in little-endian order.
 func (m *Memory) WriteLong(address uint32, value uint32) {
-	m.WriteByte(address, uint8(value))
-	m.WriteByte(address+1, uint8(value>>8))
-	m.WriteByte(address+2, uint8(value>>16))
+	m.Write(address, uint8(value))
+	m.Write(address+1, uint8(value>>8))
+	m.Write(address+2, uint8(value>>16))
 }
 
 // ReadVector reads a 16-bit interrupt vector from the given address.

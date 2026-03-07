@@ -12,7 +12,7 @@ func (c *CPU) Step() error {
 	}
 
 	// Decode opcode at current PC
-	opByte := c.memory.ReadByte(c.FullPC())
+	opByte := c.memory.Read(c.FullPC())
 	op, ok := GetOpcodeInfo(opByte)
 	if !ok {
 		return fmt.Errorf("%w: 0x%02x at PB=%02X PC=%04X", ErrInvalidOpcode, opByte, c.PB, c.PC)

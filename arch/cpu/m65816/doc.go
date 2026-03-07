@@ -19,8 +19,8 @@
 // # Basic Usage
 //
 //	type myMem struct { data [16 * 1024 * 1024]byte }
-//	func (m *myMem) ReadByte(addr uint32) uint8      { return m.data[addr&0xFFFFFF] }
-//	func (m *myMem) WriteByte(addr uint32, v uint8)  { m.data[addr&0xFFFFFF] = v }
+//	func (m *myMem) Read(addr uint32) uint8      { return m.data[addr&0xFFFFFF] }
+//	func (m *myMem) Write(addr uint32, v uint8)  { m.data[addr&0xFFFFFF] = v }
 //	func (m *myMem) ReadWord(addr uint32) uint16 {
 //	    lo := uint16(m.data[addr&0xFFFFFF])
 //	    hi := uint16(m.data[(addr+1)&0xFFFFFF])
