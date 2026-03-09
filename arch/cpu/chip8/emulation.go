@@ -242,7 +242,7 @@ func sub(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg1] > c.V[reg2] {
+	if c.V[reg1] >= c.V[reg2] {
 		c.V[0xf] = 1
 	} else {
 		c.V[0xf] = 0
@@ -458,7 +458,7 @@ func subn(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg2] > c.V[reg1] {
+	if c.V[reg2] >= c.V[reg1] {
 		c.V[0xf] = 1
 	} else {
 		c.V[0xf] = 0
