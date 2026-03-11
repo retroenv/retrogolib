@@ -9,12 +9,20 @@ type Interrupts struct {
 }
 
 // TriggerIrq causes an interrupt request to occur on the next cycle.
+// This is a no-op for the 6507 variant (Atari 2600) which has no IRQ pin.
 func (c *CPU) TriggerIrq() {
+	if c.opts.variant == Variant6507 {
+		return
+	}
 	c.triggerIrq = true
 }
 
 // TriggerNMI causes a non-maskable interrupt to occur on the next cycle.
+// This is a no-op for the 6507 variant (Atari 2600) which has no NMI pin.
 func (c *CPU) TriggerNMI() {
+	if c.opts.variant == Variant6507 {
+		return
+	}
 	c.triggerNmi = true
 }
 

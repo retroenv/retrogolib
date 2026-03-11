@@ -17,6 +17,10 @@ const (
 	// Uses the WDC 65C816 processor.
 	AppleIIGS System = "apple-iigs"
 
+	// Atari2600 represents the Atari 2600 (VCS) home video game console.
+	// Uses the MOS 6507 processor (6502 with 13-bit address bus, no IRQ/NMI).
+	Atari2600 System = "atari-2600"
+
 	// CHIP8System represents the Chip-8 virtual machine system.
 	// Used on COSMAC VIP, Telmac 1800, ETI 660, and modern emulators.
 	CHIP8System System = "chip8"
@@ -47,6 +51,7 @@ const (
 // Adding a new system requires updating only this slice.
 var allSupportedSystems = []System{
 	AppleIIGS,
+	Atari2600,
 	CHIP8System,
 	DOS,
 	GameBoy,
