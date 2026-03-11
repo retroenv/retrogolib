@@ -4,6 +4,87 @@ package m68000
 // NEG, NEGX, CLR, CMP, CMPA, CMPI, CMPM, AND, ANDI, OR, ORI, EOR, EORI, NOT, EXT,
 // TST, MULU, MULS, DIVU, DIVS, ABCD, SBCD, NBCD.
 
+// setAddFlags sets flags for ADD-type operations.
+func (c *CPU) setAddFlags(src, dst, result uint32, size OperandSize) {
+	msb := msbMask(size)
+	sm := src & msb
+	dm := dst & msb
+	rm := result & msb
+
+	c.setFlagN(result, size)
+	c.setFlagZ(result, size)
+	setFlag(&c.Flags.V, (sm == dm) && (rm != sm))
+	setFlag(&c.Flags.C, maskValue(result, size) < maskValue(src, size))
+	c.Flags.X = c.Flags.C
+}
+
+// setAddXFlags sets flags for ADDX-type operations (Z flag only cleared, never set).
+func (c *CPU) setAddXFlags(src, dst, result uint32, size OperandSize) {
+	msb := msbMask(size)
+	sm := src & msb
+	dm := dst & msb
+	rm := result & msb
+
+	c.setFlagN(result, size)
+	if maskValue(result, size) != 0 {
+		c.Flags.Z = 0
+	}
+	setFlag(&c.Flags.V, (sm == dm) && (rm != sm))
+	setFlag(&c.Flags.C, maskValue(result, size) < maskValue(src, size))
+	c.Flags.X = c.Flags.C
+}
+
+// setSubFlags sets flags for SUB-type operations.
+func (c *CPU) setSubFlags(src, dst, result uint32, size OperandSize) {
+	msb := msbMask(size)
+	sm := src & msb
+	dm := dst & msb
+	rm := result & msb
+
+	c.setFlagN(result, size)
+	c.setFlagZ(result, size)
+	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
+	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
+	c.Flags.X = c.Flags.C
+}
+
+// setSubXFlags sets flags for SUBX-type operations (Z flag only cleared, never set).
+func (c *CPU) setSubXFlags(src, dst, result uint32, size OperandSize) {
+	msb := msbMask(size)
+	sm := src & msb
+	dm := dst & msb
+	rm := result & msb
+
+	c.setFlagN(result, size)
+	if maskValue(result, size) != 0 {
+		c.Flags.Z = 0
+	}
+	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
+	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
+	c.Flags.X = c.Flags.C
+}
+
+// setCmpFlags sets flags for CMP-type operations (X not affected).
+func (c *CPU) setCmpFlags(src, dst, result uint32, size OperandSize) {
+	msb := msbMask(size)
+	sm := src & msb
+	dm := dst & msb
+	rm := result & msb
+
+	c.setFlagN(result, size)
+	c.setFlagZ(result, size)
+	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
+	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
+}
+
+// setLogicFlags sets flags for logic operations (AND, OR, EOR, NOT, etc.).
+func (c *CPU) setLogicFlags(result uint32, size OperandSize) {
+	c.setFlagN(result, size)
+	c.setFlagZ(result, size)
+	c.Flags.V = 0
+	c.Flags.C = 0
+}
+
 func execADD(c *CPU, d DecodedOpcode) error {
 	srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
@@ -767,85 +848,4 @@ func execNBCD(c *CPU, d DecodedOpcode) error {
 	}
 
 	return c.writeEA(dstEA, uint32(result))
-}
-
-// setAddFlags sets flags for ADD-type operations.
-func (c *CPU) setAddFlags(src, dst, result uint32, size OperandSize) {
-	msb := msbMask(size)
-	sm := src & msb
-	dm := dst & msb
-	rm := result & msb
-
-	c.setFlagN(result, size)
-	c.setFlagZ(result, size)
-	setFlag(&c.Flags.V, (sm == dm) && (rm != sm))
-	setFlag(&c.Flags.C, maskValue(result, size) < maskValue(src, size))
-	c.Flags.X = c.Flags.C
-}
-
-// setAddXFlags sets flags for ADDX-type operations (Z flag only cleared, never set).
-func (c *CPU) setAddXFlags(src, dst, result uint32, size OperandSize) {
-	msb := msbMask(size)
-	sm := src & msb
-	dm := dst & msb
-	rm := result & msb
-
-	c.setFlagN(result, size)
-	if maskValue(result, size) != 0 {
-		c.Flags.Z = 0
-	}
-	setFlag(&c.Flags.V, (sm == dm) && (rm != sm))
-	setFlag(&c.Flags.C, maskValue(result, size) < maskValue(src, size))
-	c.Flags.X = c.Flags.C
-}
-
-// setSubFlags sets flags for SUB-type operations.
-func (c *CPU) setSubFlags(src, dst, result uint32, size OperandSize) {
-	msb := msbMask(size)
-	sm := src & msb
-	dm := dst & msb
-	rm := result & msb
-
-	c.setFlagN(result, size)
-	c.setFlagZ(result, size)
-	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
-	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
-	c.Flags.X = c.Flags.C
-}
-
-// setSubXFlags sets flags for SUBX-type operations (Z flag only cleared, never set).
-func (c *CPU) setSubXFlags(src, dst, result uint32, size OperandSize) {
-	msb := msbMask(size)
-	sm := src & msb
-	dm := dst & msb
-	rm := result & msb
-
-	c.setFlagN(result, size)
-	if maskValue(result, size) != 0 {
-		c.Flags.Z = 0
-	}
-	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
-	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
-	c.Flags.X = c.Flags.C
-}
-
-// setCmpFlags sets flags for CMP-type operations (X not affected).
-func (c *CPU) setCmpFlags(src, dst, result uint32, size OperandSize) {
-	msb := msbMask(size)
-	sm := src & msb
-	dm := dst & msb
-	rm := result & msb
-
-	c.setFlagN(result, size)
-	c.setFlagZ(result, size)
-	setFlag(&c.Flags.V, (sm != dm) && (rm != dm))
-	setFlag(&c.Flags.C, maskValue(src, size) > maskValue(dst, size))
-}
-
-// setLogicFlags sets flags for logic operations (AND, OR, EOR, NOT, etc.).
-func (c *CPU) setLogicFlags(result uint32, size OperandSize) {
-	c.setFlagN(result, size)
-	c.setFlagZ(result, size)
-	c.Flags.V = 0
-	c.Flags.C = 0
 }

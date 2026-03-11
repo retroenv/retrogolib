@@ -4,17 +4,8 @@ import (
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
+	"github.com/retroenv/retrogolib/set"
 )
-
-func cpuTestSetup65C02(t *testing.T) *CPU {
-	t.Helper()
-	memory, err := NewMemory(&testMemory{})
-	assert.NoError(t, err)
-	memory.WriteWord(ResetAddress, 0x8000)
-	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory, WithVariant(Variant65C02))
-	return cpu
-}
 
 // TestBra tests the Branch Always instruction.
 func TestBra(t *testing.T) {
@@ -505,33 +496,33 @@ func Test65C02OpcodeTableNoUnofficialInstructions(t *testing.T) {
 	t.Parallel()
 
 	// These are NMOS unofficial instructions that should NOT appear in 65C02 table
-	unofficialNames := map[string]bool{
-		AlrName: true,
-		AncName: true,
-		AneName: true,
-		ArrName: true,
-		AxsName: true,
-		DcpName: true,
-		IscName: true,
-		LasName: true,
-		LaxName: true,
-		LxaName: true,
-		RlaName: true,
-		RraName: true,
-		SaxName: true,
-		ShaName: true,
-		ShxName: true,
-		ShyName: true,
-		SloName: true,
-		SreName: true,
-		TasName: true,
-	}
+	unofficialNames := set.NewFromSlice([]string{
+		AlrName,
+		AncName,
+		AneName,
+		ArrName,
+		AxsName,
+		DcpName,
+		IscName,
+		LasName,
+		LaxName,
+		LxaName,
+		RlaName,
+		RraName,
+		SaxName,
+		ShaName,
+		ShxName,
+		ShyName,
+		SloName,
+		SreName,
+		TasName,
+	})
 
 	for i, opcode := range Opcodes65C02 {
 		if opcode.Instruction == nil {
 			continue
 		}
-		_, isUnofficial := unofficialNames[opcode.Instruction.Name]
+		isUnofficial := unofficialNames.Contains(opcode.Instruction.Name)
 		assert.False(t, isUnofficial,
 			"Opcode 0x%02X uses unofficial instruction %s in 65C02 table", i, opcode.Instruction.Name)
 	}
@@ -641,4 +632,14 @@ func Test65C02VerifyOpcodes(t *testing.T) {
 		assert.Equal(t, b, info.Opcode,
 			"Opcode mismatch for instruction %s with addressing %d at position 0x%02X", ins.Name, op.Addressing, b)
 	}
+}
+
+func cpuTestSetup65C02(t *testing.T) *CPU {
+	t.Helper()
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.WriteWord(ResetAddress, 0x8000)
+	memory.WriteWord(IrqAddress, testIrqAddress)
+	cpu := New(memory, WithVariant(Variant65C02))
+	return cpu
 }

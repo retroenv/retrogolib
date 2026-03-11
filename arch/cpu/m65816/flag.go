@@ -63,16 +63,7 @@ func (f *Flags) Set(p uint8) {
 	f.N = (p >> 7) & 1
 }
 
-// setZ sets or clears the zero flag.
-func setFlag(flag *uint8, condition bool) {
-	if condition {
-		*flag = 1
-	} else {
-		*flag = 0
-	}
-}
-
-// setZN sets the zero and negative flags based on an 8-bit value.
+// setZN8 sets the zero and negative flags based on an 8-bit value.
 func (c *CPU) setZN8(value uint8) {
 	setFlag(&c.Flags.Z, value == 0)
 	setFlag(&c.Flags.N, value&0x80 != 0)
@@ -96,4 +87,13 @@ func (c *CPU) compare16(a, b uint16) {
 	result := int32(a) - int32(b)
 	setFlag(&c.Flags.C, a >= b)
 	c.setZN16(uint16(result))
+}
+
+// setFlag sets or clears a processor status flag.
+func setFlag(flag *uint8, condition bool) {
+	if condition {
+		*flag = 1
+	} else {
+		*flag = 0
+	}
 }

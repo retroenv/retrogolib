@@ -2,6 +2,35 @@ package m68000
 
 // Shift and rotate instructions: ASL, ASR, LSL, LSR, ROL, ROR, ROXL, ROXR.
 
+// shiftCount returns the shift/rotate count from the opcode extra field.
+func (c *CPU) shiftCount(d DecodedOpcode) uint32 {
+	count := uint32(d.Extra & 7)
+	if d.Extra&0x20 != 0 {
+		// Count from register.
+		count = c.D[d.Extra&7] % 64
+	} else if count == 0 {
+		count = 8
+	}
+	return count
+}
+
+// shiftMemory performs a memory shift/rotate operation.
+func (c *CPU) shiftMemory(d DecodedOpcode, op func(uint32) uint32) error {
+	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeWord)
+	if err != nil {
+		return err
+	}
+	val, err := c.readEA(ea)
+	if err != nil {
+		return err
+	}
+
+	result := op(val)
+	c.setFlagN(result, SizeWord)
+	c.setFlagZ(result, SizeWord)
+	return c.writeEA(ea, result)
+}
+
 func execASL(c *CPU, d DecodedOpcode) error {
 	if d.Extra&0x40 != 0 {
 		// Memory shift (count=1, size=word).
@@ -294,33 +323,4 @@ func execROXR(c *CPU, d DecodedOpcode) error {
 	c.Flags.C = c.Flags.X
 
 	return nil
-}
-
-// shiftCount returns the shift/rotate count from the opcode extra field.
-func (c *CPU) shiftCount(d DecodedOpcode) uint32 {
-	count := uint32(d.Extra & 7)
-	if d.Extra&0x20 != 0 {
-		// Count from register.
-		count = c.D[d.Extra&7] % 64
-	} else if count == 0 {
-		count = 8
-	}
-	return count
-}
-
-// shiftMemory performs a memory shift/rotate operation.
-func (c *CPU) shiftMemory(d DecodedOpcode, op func(uint32) uint32) error {
-	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeWord)
-	if err != nil {
-		return err
-	}
-	val, err := c.readEA(ea)
-	if err != nil {
-		return err
-	}
-
-	result := op(val)
-	c.setFlagN(result, SizeWord)
-	c.setFlagZ(result, SizeWord)
-	return c.writeEA(ea, result)
 }

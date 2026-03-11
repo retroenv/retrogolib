@@ -1,8 +1,5 @@
 package m68000
 
-// execFunc is the type of an instruction execution handler.
-type execFunc func(c *CPU, d DecodedOpcode) error
-
 // Instruction defines a 68000 CPU instruction with its execution logic.
 // The 68000 uses a hierarchical opcode decoder rather than flat tables,
 // so instructions are simpler than the Z80 equivalent.
@@ -10,6 +7,9 @@ type Instruction struct {
 	Name string   // instruction mnemonic (uppercase)
 	exec execFunc // execution handler (nil for NOP)
 }
+
+// execFunc is the type of an instruction execution handler.
+type execFunc func(c *CPU, d DecodedOpcode) error
 
 // Instruction name constants sorted alphabetically.
 const (

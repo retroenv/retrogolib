@@ -3,6 +3,23 @@ package m68000
 // Data movement instructions: MOVE, MOVEA, MOVEQ, MOVEM, MOVEP, EXG, LEA, PEA,
 // LINK, UNLK, SWAP.
 
+// getMovemReg returns the value of register i (0-7=D0-D7, 8-15=A0-A7).
+func (c *CPU) getMovemReg(i uint8) uint32 {
+	if i < 8 {
+		return c.D[i]
+	}
+	return c.getRegA(i - 8)
+}
+
+// setMovemReg sets the value of register i (0-7=D0-D7, 8-15=A0-A7).
+func (c *CPU) setMovemReg(i uint8, value uint32) {
+	if i < 8 {
+		c.D[i] = value
+	} else {
+		c.setRegA(i-8, value)
+	}
+}
+
 func execMOVE(c *CPU, d DecodedOpcode) error {
 	if d.Extra != 0 {
 		return execMOVESpecial(c, d)
@@ -195,23 +212,6 @@ func execMOVEMToReg(c *CPU, d DecodedOpcode, mask uint16) error {
 	}
 
 	return nil
-}
-
-// getMovemReg returns the value of register i (0-7=D0-D7, 8-15=A0-A7).
-func (c *CPU) getMovemReg(i uint8) uint32 {
-	if i < 8 {
-		return c.D[i]
-	}
-	return c.getRegA(i - 8)
-}
-
-// setMovemReg sets the value of register i (0-7=D0-D7, 8-15=A0-A7).
-func (c *CPU) setMovemReg(i uint8, value uint32) {
-	if i < 8 {
-		c.D[i] = value
-	} else {
-		c.setRegA(i-8, value)
-	}
 }
 
 func execMOVEP(c *CPU, d DecodedOpcode) error {

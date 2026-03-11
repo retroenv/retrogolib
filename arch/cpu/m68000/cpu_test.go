@@ -6,6 +6,16 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+// newTestCPU creates a CPU for testing with a basic memory/bus.
+func newTestCPU(t *testing.T) *CPU {
+	t.Helper()
+	mem := NewBasicMemory()
+	bus := NewBasicBus(mem)
+	cpu, err := New(bus, WithInitialPC(0x1000), WithInitialSP(0x10000))
+	assert.NoError(t, err)
+	return cpu
+}
+
 func TestNew(t *testing.T) {
 	mem := NewBasicMemory()
 	bus := NewBasicBus(mem)
@@ -90,14 +100,4 @@ func TestCycles(t *testing.T) {
 
 	cpu.cycles = 42
 	assert.Equal(t, uint64(42), cpu.Cycles())
-}
-
-// newTestCPU creates a CPU for testing with a basic memory/bus.
-func newTestCPU(t *testing.T) *CPU {
-	t.Helper()
-	mem := NewBasicMemory()
-	bus := NewBasicBus(mem)
-	cpu, err := New(bus, WithInitialPC(0x1000), WithInitialSP(0x10000))
-	assert.NoError(t, err)
-	return cpu
 }

@@ -47,6 +47,17 @@ type BasicMemory struct {
 	data [0x1000000]uint8 // 16MB (24-bit address space)
 }
 
+// BasicBus wraps BasicMemory into a Bus implementation for simple use cases.
+type BasicBus struct {
+	Memory
+	irqLevel uint8
+}
+
+// NewBasicBus creates a new basic bus wrapping the given memory.
+func NewBasicBus(mem Memory) *BasicBus {
+	return &BasicBus{Memory: mem}
+}
+
 // NewBasicMemory creates a new basic memory controller with flat 16MB address space.
 func NewBasicMemory() *BasicMemory {
 	return &BasicMemory{}
@@ -108,17 +119,6 @@ func (mem *BasicMemory) LoadROM(data []byte) {
 // Data returns a reference to the underlying memory array.
 func (mem *BasicMemory) Data() *[0x1000000]uint8 {
 	return &mem.data
-}
-
-// BasicBus wraps BasicMemory into a Bus implementation for simple use cases.
-type BasicBus struct {
-	Memory
-	irqLevel uint8
-}
-
-// NewBasicBus creates a new basic bus wrapping the given memory.
-func NewBasicBus(mem Memory) *BasicBus {
-	return &BasicBus{Memory: mem}
 }
 
 // IRQAcknowledge acknowledges an interrupt and returns the autovector number.

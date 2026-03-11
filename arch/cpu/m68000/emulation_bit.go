@@ -2,6 +2,16 @@ package m68000
 
 // Bit manipulation instructions: BTST, BSET, BCLR, BCHG.
 
+// getBitNumber returns the bit number from the source operand.
+func (c *CPU) getBitNumber(d DecodedOpcode) uint32 {
+	if d.SrcMode == 7 && d.SrcReg == 4 {
+		// Immediate bit number.
+		return c.readImmediate(SizeByte)
+	}
+	// Register bit number.
+	return c.D[d.SrcReg]
+}
+
 func execBTST(c *CPU, d DecodedOpcode) error {
 	bitNum := c.getBitNumber(d)
 
@@ -100,14 +110,4 @@ func execBCHG(c *CPU, d DecodedOpcode) error {
 
 	setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
 	return c.writeEA(dstEA, val^(1<<bitNum))
-}
-
-// getBitNumber returns the bit number from the source operand.
-func (c *CPU) getBitNumber(d DecodedOpcode) uint32 {
-	if d.SrcMode == 7 && d.SrcReg == 4 {
-		// Immediate bit number.
-		return c.readImmediate(SizeByte)
-	}
-	// Register bit number.
-	return c.D[d.SrcReg]
 }

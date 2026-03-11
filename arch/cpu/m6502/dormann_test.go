@@ -36,16 +36,6 @@ const (
 	c65c02SuccessPC   = uint16(0x24F1) // 65C02_extended_opcodes_test.lst line: jmp * ;test passed, no errors
 )
 
-// dormannTest describes a single Klaus Dormann binary ROM test.
-type dormannTest struct {
-	name      string
-	binary    string // relative path inside the dormann data dir
-	variant   CPUVariant
-	startPC   uint16
-	successPC uint16
-	maxCycles uint64
-}
-
 // TestDormann runs the Klaus Dormann 6502/65C02 functional test ROMs.
 func TestDormann(t *testing.T) {
 	if testing.Short() {
@@ -81,6 +71,16 @@ func TestDormann(t *testing.T) {
 	}
 }
 
+// dormannTest describes a single Klaus Dormann binary ROM test.
+type dormannTest struct {
+	name      string
+	binary    string // relative path inside the dormann data dir
+	variant   CPUVariant
+	startPC   uint16
+	successPC uint16
+	maxCycles uint64
+}
+
 // runDormannTest loads a binary ROM and runs it until the CPU halts, then checks the success address.
 func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	t.Helper()
@@ -91,9 +91,7 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 		t.Skipf("test binary not found at %s (run 'make -C testdata m6502' to download): %v", path, err)
 	}
 
-	if len(data) > 0x10000 {
-		t.Fatalf("binary too large: %d bytes (max 65536)", len(data))
-	}
+	assert.LessOrEqual(t, len(data), 0x10000)
 
 	// Load binary flat into 64KB RAM.
 	mem := &testMemory{}
@@ -119,9 +117,8 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	for cycles < tc.maxCycles {
 		prevPC = cpu.PC
 
-		if stepErr := cpu.Step(); stepErr != nil {
-			t.Fatalf("CPU error at PC=0x%04X after %d cycles: %v", cpu.PC, cycles, stepErr)
-		}
+		stepErr := cpu.Step()
+		assert.Nil(t, stepErr)
 
 		cycles++
 
@@ -135,13 +132,8 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 		}
 	}
 
-	if !halted {
-		t.Fatalf("%s: did not halt after %d cycles (last PC=0x%04X)", tc.name, cycles, cpu.PC)
-	}
-
-	if cpu.PC != tc.successPC {
-		t.Fatalf("%s: halted at 0x%04X (FAIL trap), expected success at 0x%04X", tc.name, cpu.PC, tc.successPC)
-	}
+	assert.True(t, halted)
+	assert.Equal(t, tc.successPC, cpu.PC)
 
 	t.Logf("%s: PASSED at 0x%04X after %d cycles", tc.name, cpu.PC, cycles)
 }
@@ -156,9 +148,7 @@ func getDormannDataDir(t *testing.T) string {
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to determine source file location")
-	}
+	assert.True(t, ok)
 
 	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "dormann")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {

@@ -155,9 +155,7 @@ func getSingleStepDir(t *testing.T) string {
 	t.Helper()
 
 	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to determine source file location")
-	}
+	assert.True(t, ok)
 
 	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "z80")
 	if _, err := os.Stat(filepath.Join(dir, "v1")); err != nil {

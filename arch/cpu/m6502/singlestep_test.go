@@ -16,12 +16,37 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/retroenv/retrogolib/assert"
 )
 
 const (
 	// ssMaxFailures limits the number of failures reported per file.
 	ssMaxFailures = 10
 )
+
+// TestSingleStep discovers and runs all SingleStepTests/65x02 JSON test files.
+func TestSingleStep(t *testing.T) {
+	dataDir := getSingleStepDir(t)
+
+	entries, err := os.ReadDir(dataDir)
+	assert.NoError(t, err)
+
+	found := false
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		subDir := filepath.Join(dataDir, entry.Name())
+		runSingleStepSubdir(t, subDir, entry.Name())
+		found = true
+	}
+
+	if !found {
+		t.Skipf("no test subdirectories found in %s", dataDir)
+	}
+}
 
 // ss6502State represents the CPU state in the SingleStepTests JSON format.
 type ss6502State struct {
@@ -42,6 +67,8 @@ type ss6502TestCase struct {
 	Cycles  [][]any     `json:"cycles"`
 }
 
+// getSingleStepDir returns the path to the m6502 SingleStepTests data directory,
+// skipping the test if it is not found.
 // ssSparseMemory implements BasicMemory using a sparse map for test isolation.
 type ssSparseMemory struct {
 	data map[uint16]uint8
@@ -57,8 +84,6 @@ func (m *ssSparseMemory) Write(address uint16, value uint8) {
 	m.data[address] = value
 }
 
-// getSingleStepDir returns the path to the m6502 SingleStepTests data directory,
-// skipping the test if it is not found.
 func getSingleStepDir(t *testing.T) string {
 	t.Helper()
 
@@ -67,9 +92,7 @@ func getSingleStepDir(t *testing.T) string {
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to determine source file location")
-	}
+	assert.True(t, ok)
 
 	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "65x02")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -77,31 +100,6 @@ func getSingleStepDir(t *testing.T) string {
 	}
 
 	return dir
-}
-
-// TestSingleStep discovers and runs all SingleStepTests/65x02 JSON test files.
-func TestSingleStep(t *testing.T) {
-	dataDir := getSingleStepDir(t)
-
-	entries, err := os.ReadDir(dataDir)
-	if err != nil {
-		t.Fatalf("failed to read test data directory %s: %v", dataDir, err)
-	}
-
-	found := false
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		subDir := filepath.Join(dataDir, entry.Name())
-		runSingleStepSubdir(t, subDir, entry.Name())
-		found = true
-	}
-
-	if !found {
-		t.Skipf("no test subdirectories found in %s", dataDir)
-	}
 }
 
 // runSingleStepSubdir runs all JSON test files in a subdirectory.
@@ -151,17 +149,14 @@ func runSingleStepFile(t *testing.T, path string, variant CPUVariant) {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("failed to read test file %s: %v", path, err)
-	}
+	assert.NoError(t, err)
 	if len(data) == 0 {
 		t.Skipf("empty test file %s", path)
 	}
 
 	var testCases []ss6502TestCase
-	if err := json.Unmarshal(data, &testCases); err != nil {
-		t.Fatalf("failed to parse test file %s: %v", path, err)
-	}
+	err = json.Unmarshal(data, &testCases)
+	assert.NoError(t, err)
 
 	failures := 0
 	for _, tc := range testCases {
@@ -193,10 +188,7 @@ func runSingleStepCase(t *testing.T, tc ss6502TestCase, variant CPUVariant) bool
 	}
 
 	memory, err := NewMemory(mem)
-	if err != nil {
-		t.Errorf("[%s] failed to create memory: %v", tc.Name, err)
-		return false
-	}
+	assert.NoError(t, err)
 
 	cpu := New(memory, WithVariant(variant))
 
@@ -208,10 +200,8 @@ func runSingleStepCase(t *testing.T, tc ss6502TestCase, variant CPUVariant) bool
 	cpu.Y = tc.Initial.Y
 	cpu.setFlags(tc.Initial.P)
 
-	if err := cpu.Step(); err != nil {
-		t.Errorf("[%s] Step() error: %v", tc.Name, err)
-		return false
-	}
+	stepErr := cpu.Step()
+	assert.NoError(t, stepErr)
 
 	return verifySingleStepCase(t, tc, cpu, mem)
 }
@@ -223,27 +213,27 @@ func verifySingleStepCase(t *testing.T, tc ss6502TestCase, cpu *CPU, mem *ssSpar
 	passed := true
 
 	if cpu.PC != tc.Final.PC {
-		t.Errorf("[%s] PC: got 0x%04X, want 0x%04X", tc.Name, cpu.PC, tc.Final.PC)
+		assert.Equal(t, tc.Final.PC, cpu.PC)
 		passed = false
 	}
 
 	if cpu.SP != tc.Final.S {
-		t.Errorf("[%s] SP: got 0x%02X, want 0x%02X", tc.Name, cpu.SP, tc.Final.S)
+		assert.Equal(t, tc.Final.S, cpu.SP)
 		passed = false
 	}
 
 	if cpu.A != tc.Final.A {
-		t.Errorf("[%s] A: got 0x%02X, want 0x%02X", tc.Name, cpu.A, tc.Final.A)
+		assert.Equal(t, tc.Final.A, cpu.A)
 		passed = false
 	}
 
 	if cpu.X != tc.Final.X {
-		t.Errorf("[%s] X: got 0x%02X, want 0x%02X", tc.Name, cpu.X, tc.Final.X)
+		assert.Equal(t, tc.Final.X, cpu.X)
 		passed = false
 	}
 
 	if cpu.Y != tc.Final.Y {
-		t.Errorf("[%s] Y: got 0x%02X, want 0x%02X", tc.Name, cpu.Y, tc.Final.Y)
+		assert.Equal(t, tc.Final.Y, cpu.Y)
 		passed = false
 	}
 
@@ -252,8 +242,7 @@ func verifySingleStepCase(t *testing.T, tc ss6502TestCase, cpu *CPU, mem *ssSpar
 	gotP := cpu.GetFlags() & pMask
 	wantP := tc.Final.P & pMask
 	if gotP != wantP {
-		t.Errorf("[%s] P: got 0x%02X, want 0x%02X (masked: got 0x%02X, want 0x%02X)",
-			tc.Name, cpu.GetFlags(), tc.Final.P, gotP, wantP)
+		assert.Equal(t, wantP, gotP)
 		passed = false
 	}
 
@@ -262,7 +251,7 @@ func verifySingleStepCase(t *testing.T, tc ss6502TestCase, cpu *CPU, mem *ssSpar
 		want := uint8(entry[1])
 		got := mem.Read(addr)
 		if got != want {
-			t.Errorf("[%s] RAM[0x%04X]: got 0x%02X, want 0x%02X", tc.Name, addr, got, want)
+			assert.Equal(t, want, got)
 			passed = false
 		}
 	}

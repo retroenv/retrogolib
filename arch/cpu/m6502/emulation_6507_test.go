@@ -6,15 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func cpuTestSetup6507(t *testing.T) *CPU {
-	t.Helper()
-	memory, err := NewMemory(&testMemory{})
-	assert.NoError(t, err)
-	memory.WriteWord(ResetAddress, 0x1000) // Atari 2600 ROM starts at $1000
-	cpu := New(memory, WithVariant(Variant6507))
-	return cpu
-}
-
 func TestVariant6507LoadStore(t *testing.T) {
 	t.Parallel()
 
@@ -248,4 +239,13 @@ func TestVariant6507InterruptVsNMOS(t *testing.T) {
 
 	cpu6507.TriggerNMI()
 	assert.Equal(t, false, cpu6507.triggerNmi)
+}
+
+func cpuTestSetup6507(t *testing.T) *CPU {
+	t.Helper()
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.WriteWord(ResetAddress, 0x1000) // Atari 2600 ROM starts at $1000
+	cpu := New(memory, WithVariant(Variant6507))
+	return cpu
 }

@@ -16,6 +16,39 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+func newTestMemory() *testMemory {
+	return &testMemory{data: make(map[uint32]uint8)}
+}
+
+// TestSingleStep runs the SingleStepTests/680x0 JSON test suite.
+// Download test data: git clone https://github.com/SingleStepTests/680x0.git testdata/680x0
+func TestSingleStep(t *testing.T) {
+	testDir := getTestDataDir(t)
+
+	files, err := filepath.Glob(filepath.Join(testDir, "*.json.gz"))
+	assert.NoError(t, err)
+
+	if len(files) == 0 {
+		t.Skip("no .json.gz test files found in", testDir)
+	}
+
+	sort.Strings(files)
+
+	var totalPass, totalFail int
+
+	for _, file := range files {
+		name := strings.TrimSuffix(filepath.Base(file), ".json.gz")
+		t.Run(name, func(t *testing.T) {
+			pass, fail := runTestFile(t, file)
+			totalPass += pass
+			totalFail += fail
+		})
+	}
+
+	t.Logf("overall: %d passed, %d failed out of %d total",
+		totalPass, totalFail, totalPass+totalFail)
+}
+
 // testState represents the CPU state from a JSON test case.
 type testState struct {
 	D0       uint32      `json:"d0"`
@@ -54,8 +87,9 @@ type testMemory struct {
 	data map[uint32]uint8
 }
 
-func newTestMemory() *testMemory {
-	return &testMemory{data: make(map[uint32]uint8)}
+// testBusForSingleStep wraps testMemory into a Bus with no IRQ activity.
+type testBusForSingleStep struct {
+	Memory
 }
 
 // Read reads a byte from memory at the given address.
@@ -99,11 +133,6 @@ func (m *testMemory) WriteLong(address uint32, value uint32) {
 	m.data[addr+3] = uint8(value)
 }
 
-// testBusForSingleStep wraps testMemory into a Bus with no IRQ activity.
-type testBusForSingleStep struct {
-	Memory
-}
-
 // IRQAcknowledge acknowledges an interrupt and returns the autovector number.
 func (b *testBusForSingleStep) IRQAcknowledge(level uint8) uint32 {
 	return uint32(VectorAutoVector1) + uint32(level) - 1
@@ -114,35 +143,6 @@ func (b *testBusForSingleStep) IRQLevel() uint8 { return 0 }
 
 // OnReset handles the RESET instruction (no-op for tests).
 func (b *testBusForSingleStep) OnReset() {}
-
-// TestSingleStep runs the SingleStepTests/680x0 JSON test suite.
-// Download test data: git clone https://github.com/SingleStepTests/680x0.git testdata/680x0
-func TestSingleStep(t *testing.T) {
-	testDir := getTestDataDir(t)
-
-	files, err := filepath.Glob(filepath.Join(testDir, "*.json.gz"))
-	assert.NoError(t, err)
-
-	if len(files) == 0 {
-		t.Skip("no .json.gz test files found in", testDir)
-	}
-
-	sort.Strings(files)
-
-	var totalPass, totalFail int
-
-	for _, file := range files {
-		name := strings.TrimSuffix(filepath.Base(file), ".json.gz")
-		t.Run(name, func(t *testing.T) {
-			pass, fail := runTestFile(t, file)
-			totalPass += pass
-			totalFail += fail
-		})
-	}
-
-	t.Logf("overall: %d passed, %d failed out of %d total",
-		totalPass, totalFail, totalPass+totalFail)
-}
 
 func getTestDataDir(t *testing.T) string {
 	t.Helper()
@@ -155,9 +155,7 @@ func getTestDataDir(t *testing.T) string {
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to get source file location")
-	}
+	assert.True(t, ok)
 
 	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m68000", "680x0")
 	if _, err := os.Stat(dir); err != nil {

@@ -16,9 +16,36 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/retroenv/retrogolib/assert"
 )
 
 const ssMaxFailures = 10
+
+// TestSingleStep discovers and runs all SingleStepTests/65816 JSON test files.
+func TestSingleStep(t *testing.T) {
+	dataDir := getSingleStepDir(t)
+
+	entries, err := os.ReadDir(dataDir)
+	assert.NoError(t, err)
+
+	found := false
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		filePath := filepath.Join(dataDir, entry.Name())
+		name := entry.Name()[:len(entry.Name())-len(".json")]
+		t.Run(name, func(t *testing.T) {
+			runSS65816File(t, filePath)
+		})
+		found = true
+	}
+
+	if !found {
+		t.Skipf("no JSON test files found in %s", dataDir)
+	}
+}
 
 // ss65816State represents the 65816 CPU state in the SingleStepTests JSON format.
 type ss65816State struct {
@@ -77,9 +104,7 @@ func getSingleStepDir(t *testing.T) string {
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to determine source file location")
-	}
+	assert.True(t, ok)
 
 	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m65816", "65816", "v1")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -89,49 +114,19 @@ func getSingleStepDir(t *testing.T) string {
 	return dir
 }
 
-// TestSingleStep discovers and runs all SingleStepTests/65816 JSON test files.
-func TestSingleStep(t *testing.T) {
-	dataDir := getSingleStepDir(t)
-
-	entries, err := os.ReadDir(dataDir)
-	if err != nil {
-		t.Fatalf("failed to read test data directory %s: %v", dataDir, err)
-	}
-
-	found := false
-	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
-			continue
-		}
-		filePath := filepath.Join(dataDir, entry.Name())
-		name := entry.Name()[:len(entry.Name())-len(".json")]
-		t.Run(name, func(t *testing.T) {
-			runSS65816File(t, filePath)
-		})
-		found = true
-	}
-
-	if !found {
-		t.Skipf("no JSON test files found in %s", dataDir)
-	}
-}
-
 // runSS65816File executes all test cases from a single JSON file.
 func runSS65816File(t *testing.T, path string) {
 	t.Helper()
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("failed to read %s: %v", path, err)
-	}
+	assert.NoError(t, err)
 	if len(data) == 0 {
 		t.Skipf("empty test file %s", path)
 	}
 
 	var cases []ss65816TestCase
-	if err := json.Unmarshal(data, &cases); err != nil {
-		t.Fatalf("failed to parse %s: %v", path, err)
-	}
+	err = json.Unmarshal(data, &cases)
+	assert.NoError(t, err)
 
 	pass, fail := 0, 0
 	for i := range cases {
@@ -160,16 +155,10 @@ func runSS65816Case(t *testing.T, tc *ss65816TestCase) bool {
 	}
 
 	wrapped, err := NewMemory(mem)
-	if err != nil {
-		t.Errorf("[%s] NewMemory: %v", tc.Name, err)
-		return false
-	}
+	assert.NoError(t, err)
 
 	cpu, err := New(wrapped)
-	if err != nil {
-		t.Errorf("[%s] New: %v", tc.Name, err)
-		return false
-	}
+	assert.NoError(t, err)
 
 	// Load initial CPU state directly (bypass SetP side-effects for clean load).
 	cpu.E = tc.Initial.E != 0
@@ -188,10 +177,8 @@ func runSS65816Case(t *testing.T, tc *ss65816TestCase) bool {
 	cpu.DP = tc.Initial.D
 	cpu.PB = tc.Initial.PBR
 
-	if err := cpu.Step(); err != nil {
-		t.Errorf("[%s] Step(): %v", tc.Name, err)
-		return false
-	}
+	err = cpu.Step()
+	assert.NoError(t, err)
 
 	return verifySS65816Case(t, tc, cpu, mem)
 }

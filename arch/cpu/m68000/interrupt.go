@@ -26,6 +26,11 @@ const (
 	VectorTrap15      = 47 // TRAP #15
 )
 
+// TriggerIRQ triggers a maskable interrupt at the given level (1-7).
+func (c *CPU) TriggerIRQ(_ uint8) {
+	// IRQ level is read from bus on each step.
+}
+
 // processException processes an exception with the given vector number.
 // It saves the current state and loads the new PC from the vector table.
 func (c *CPU) processException(vector int) error {
@@ -84,11 +89,6 @@ func (c *CPU) processInterruptException(level uint8) {
 
 	c.stopped = false
 	c.cycles += 44
-}
-
-// TriggerIRQ triggers a maskable interrupt at the given level (1-7).
-func (c *CPU) TriggerIRQ(_ uint8) {
-	// IRQ level is read from bus on each step.
 }
 
 // checkInterrupts checks for pending interrupts and processes them.

@@ -65,6 +65,24 @@ func (c *CPU) evaluateConditionCompound(cond uint16) bool {
 	}
 }
 
+// takeBranch takes a branch with the displacement encoded in the opcode.
+func (c *CPU) takeBranch(d DecodedOpcode) error {
+	// PC currently points after the opcode word.
+	// For short branch (8-bit disp): base is PC after opcode word.
+	// For long branch (disp==0): base is PC before extension word, disp is 16-bit.
+	pcBase := c.PC
+	disp := int32(int8(d.DstReg))
+
+	if d.DstReg == 0 {
+		// 16-bit displacement follows the opcode word.
+		disp = int32(int16(c.readWord()))
+		pcBase = c.PC - 2 // Base is the extension word address.
+	}
+
+	c.PC = uint32(int32(pcBase) + disp)
+	return nil
+}
+
 func execBcc(c *CPU, d DecodedOpcode) error {
 	if !c.evaluateCondition(d.Extra) {
 		// Branch not taken. If short branch, PC is already past opcode word.
@@ -151,23 +169,5 @@ func execJSR(c *CPU, d DecodedOpcode) error {
 	}
 	c.push32(c.PC)
 	c.PC = ea.Address
-	return nil
-}
-
-// takeBranch takes a branch with the displacement encoded in the opcode.
-func (c *CPU) takeBranch(d DecodedOpcode) error {
-	// PC currently points after the opcode word.
-	// For short branch (8-bit disp): base is PC after opcode word.
-	// For long branch (disp==0): base is PC before extension word, disp is 16-bit.
-	pcBase := c.PC
-	disp := int32(int8(d.DstReg))
-
-	if d.DstReg == 0 {
-		// 16-bit displacement follows the opcode word.
-		disp = int32(int16(c.readWord()))
-		pcBase = c.PC - 2 // Base is the extension word address.
-	}
-
-	c.PC = uint32(int32(pcBase) + disp)
 	return nil
 }

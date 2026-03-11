@@ -27,24 +27,6 @@ const (
 	Scheme3F                        // 64 KB, 16 banks, Tigervision, write bank to $003F
 )
 
-// bankingSchemeNames maps banking schemes to their display names.
-var bankingSchemeNames = map[BankingScheme]string{
-	SchemeNone: "None",
-	SchemeF8:   "F8",
-	SchemeFA:   "FA",
-	SchemeF6:   "F6",
-	SchemeF4:   "F4",
-	Scheme3F:   "3F",
-}
-
-// String returns the name of the banking scheme.
-func (b BankingScheme) String() string {
-	if name, ok := bankingSchemeNames[b]; ok {
-		return name
-	}
-	return fmt.Sprintf("BankingScheme(%d)", int(b))
-}
-
 // Bank switching trigger address ranges within the ROM window.
 // Bank switching is triggered by accessing (reading) these addresses.
 const (
@@ -73,6 +55,62 @@ type Cartridge struct {
 	ROM    []byte        // raw ROM data
 	Scheme BankingScheme // detected banking scheme
 	Banks  int           // number of 4 KB banks
+}
+
+// bankingSchemeNames maps banking schemes to their display names.
+var bankingSchemeNames = map[BankingScheme]string{
+	SchemeNone: "None",
+	SchemeF8:   "F8",
+	SchemeFA:   "FA",
+	SchemeF6:   "F6",
+	SchemeF4:   "F4",
+	Scheme3F:   "3F",
+}
+
+// String returns the name of the banking scheme.
+func (b BankingScheme) String() string {
+	if name, ok := bankingSchemeNames[b]; ok {
+		return name
+	}
+	return fmt.Sprintf("BankingScheme(%d)", int(b))
+}
+
+// BankOffset returns the byte offset into the ROM for the given bank number.
+// Returns an error if the bank number is out of range.
+func (c *Cartridge) BankOffset(bank int) (int, error) {
+	if bank < 0 || bank >= c.Banks {
+		return 0, fmt.Errorf("bank %d out of range (0-%d)", bank, c.Banks-1)
+	}
+	return bank * atari2600.ROMWindowSize, nil
+}
+
+// triggerRange maps each banking scheme to its trigger address range.
+var triggerRange = map[BankingScheme][2]uint16{
+	SchemeF8: {F8TriggerStart, F8TriggerEnd},
+	SchemeFA: {FATriggerStart, FATriggerEnd},
+	SchemeF6: {F6TriggerStart, F6TriggerEnd},
+	SchemeF4: {F4TriggerStart, F4TriggerEnd},
+}
+
+// TriggerBank returns the bank number selected by accessing the given address,
+// or -1 if the address is not a bank switching trigger for this cartridge's scheme.
+func (c *Cartridge) TriggerBank(address uint16) int {
+	if c.Scheme == Scheme3F {
+		// Tigervision: the bank number is written as data to $003F,
+		// not encoded in the trigger address itself. Return 0 to
+		// signal that the address matches; the caller must read the
+		// written value to determine the actual bank.
+		if address == Trigger3F {
+			return 0
+		}
+		return -1
+	}
+
+	r, ok := triggerRange[c.Scheme]
+	if ok && address >= r[0] && address <= r[1] {
+		return int(address - r[0])
+	}
+	return -1
 }
 
 // Load reads a raw Atari 2600 ROM binary and detects the banking scheme.
@@ -129,42 +167,4 @@ func DetectScheme(size int) (BankingScheme, error) {
 	default:
 		return SchemeNone, fmt.Errorf("unsupported ROM size: %d bytes", size)
 	}
-}
-
-// BankOffset returns the byte offset into the ROM for the given bank number.
-// Returns an error if the bank number is out of range.
-func (c *Cartridge) BankOffset(bank int) (int, error) {
-	if bank < 0 || bank >= c.Banks {
-		return 0, fmt.Errorf("bank %d out of range (0-%d)", bank, c.Banks-1)
-	}
-	return bank * atari2600.ROMWindowSize, nil
-}
-
-// triggerRange maps each banking scheme to its trigger address range.
-var triggerRange = map[BankingScheme][2]uint16{
-	SchemeF8: {F8TriggerStart, F8TriggerEnd},
-	SchemeFA: {FATriggerStart, FATriggerEnd},
-	SchemeF6: {F6TriggerStart, F6TriggerEnd},
-	SchemeF4: {F4TriggerStart, F4TriggerEnd},
-}
-
-// TriggerBank returns the bank number selected by accessing the given address,
-// or -1 if the address is not a bank switching trigger for this cartridge's scheme.
-func (c *Cartridge) TriggerBank(address uint16) int {
-	if c.Scheme == Scheme3F {
-		// Tigervision: the bank number is written as data to $003F,
-		// not encoded in the trigger address itself. Return 0 to
-		// signal that the address matches; the caller must read the
-		// written value to determine the actual bank.
-		if address == Trigger3F {
-			return 0
-		}
-		return -1
-	}
-
-	r, ok := triggerRange[c.Scheme]
-	if ok && address >= r[0] && address <= r[1] {
-		return int(address - r[0])
-	}
-	return -1
 }

@@ -44,28 +44,6 @@ type Bus interface {
 	OnRETI()
 }
 
-// legacyBusAdapter wraps Memory + IOHandler into a Bus for backward compatibility.
-type legacyBusAdapter struct {
-	Memory
-	ioHandler IOHandler
-}
-
-func (a *legacyBusAdapter) ReadPort(address uint16) uint8 {
-	if a.ioHandler != nil {
-		return a.ioHandler.ReadPort(uint8(address))
-	}
-	return 0xFF
-}
-
-func (a *legacyBusAdapter) WritePort(address uint16, value uint8) {
-	if a.ioHandler != nil {
-		a.ioHandler.WritePort(uint8(address), value)
-	}
-}
-
-func (a *legacyBusAdapter) IRQData() uint8 { return 0xFF }
-func (a *legacyBusAdapter) OnRETI()        {}
-
 // BasicMemory implements a simple 64KB flat memory space with no banking.
 // This is suitable for basic Z80 systems without memory mappers.
 type BasicMemory struct {
@@ -123,3 +101,25 @@ func (mem *BasicMemory) LoadProgram(data []byte) {
 func (mem *BasicMemory) Data() *[0x10000]uint8 {
 	return &mem.data
 }
+
+// legacyBusAdapter wraps Memory + IOHandler into a Bus for backward compatibility.
+type legacyBusAdapter struct {
+	Memory
+	ioHandler IOHandler
+}
+
+func (a *legacyBusAdapter) ReadPort(address uint16) uint8 {
+	if a.ioHandler != nil {
+		return a.ioHandler.ReadPort(uint8(address))
+	}
+	return 0xFF
+}
+
+func (a *legacyBusAdapter) WritePort(address uint16, value uint8) {
+	if a.ioHandler != nil {
+		a.ioHandler.WritePort(uint8(address), value)
+	}
+}
+
+func (a *legacyBusAdapter) IRQData() uint8 { return 0xFF }
+func (a *legacyBusAdapter) OnRETI()        {}

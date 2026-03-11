@@ -23,16 +23,6 @@ type Opcode struct {
 	WidthFlag      WidthFlag // Which flag affects operand width
 }
 
-// GetOpcodeInfo returns opcode information for the given byte.
-// Returns the Opcode and true if defined, or zero Opcode and false if undefined.
-func GetOpcodeInfo(b uint8) (Opcode, bool) {
-	op := Opcodes[b]
-	if op.Instruction == nil {
-		return Opcode{}, false
-	}
-	return op, true
-}
-
 // ReadsMemory returns true if this opcode reads from memory.
 func (op Opcode) ReadsMemory(memReadInstructions set.Set[string]) bool {
 	switch op.Addressing {
@@ -54,6 +44,16 @@ func (op Opcode) WritesMemory(memWriteInstructions set.Set[string]) bool {
 // IsBranching returns true if this opcode is a branching instruction.
 func (op Opcode) IsBranching(branchInstructions set.Set[string]) bool {
 	return branchInstructions.Contains(op.Instruction.Name)
+}
+
+// GetOpcodeInfo returns opcode information for the given byte.
+// Returns the Opcode and true if defined, or zero Opcode and false if undefined.
+func GetOpcodeInfo(b uint8) (Opcode, bool) {
+	op := Opcodes[b]
+	if op.Instruction == nil {
+		return Opcode{}, false
+	}
+	return op, true
 }
 
 // Opcodes is the complete 65816 opcode table.
