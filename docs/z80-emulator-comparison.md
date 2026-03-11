@@ -486,10 +486,10 @@ execution for hardware accuracy.
 7. **DD/FD passthrough** — correct undocumented behavior with +4 T-states
 
 ### Areas for Improvement
-1. **Undocumented ED mirrors** — add NEG/IM/RETN opcode mirrors
-2. **IM 0 accuracy** — execute data bus instruction instead of assuming RST 38H
-3. **RETI/RETN callbacks** — notify peripherals on interrupt return
-4. **16-bit I/O port address** — expose B register on high address bus
+1. **Undocumented ED mirrors** — add NEG/IM/RETN opcode mirrors (planned, see `z80-gap-closure-plan.md` Phase 7)
+2. ~~**IM 0 accuracy**~~ — ✅ Done (gap closure Phase 2: full IM 0 via `IRQData()`)
+3. ~~**RETI/RETN callbacks**~~ — ✅ Done (gap closure Phase 4: `OnRETI()` notification)
+4. ~~**16-bit I/O port address**~~ — ✅ Done (gap closure Phase 1: Bus interface with 16-bit port address)
 5. **Performance** — profile and optimize mutex, `...any` params, flag writes
 6. **Pre-computed parity table** — replace runtime `bits.OnesCount8()` with lookup
 

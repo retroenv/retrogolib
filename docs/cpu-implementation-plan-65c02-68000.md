@@ -1,11 +1,21 @@
 # CPU Implementation Plan: WDC 65C02 and Motorola 68000
 
+## Current Status
+
+- **65C02 Status:** COMPLETE
+- **68000 Status:** COMPLETE
+- **Last Updated:** 2026-03-11
+- **Summary:** Both CPUs are fully implemented. The 65C02 is a variant within `arch/cpu/m6502/`.
+  The 68000 is a separate package at `arch/cpu/m68000/`. System constants for Genesis, Amiga,
+  Atari ST, and Macintosh are not yet registered (see Part 3). For 68000 accuracy gaps and
+  next steps, see `m68000-gap-closure-plan.md`.
+
 ## Context
 
-The retrogolib library currently supports 4 CPU architectures (6502, Z80, CHIP-8, x86-stub)
-and 6 systems (NES, ZX Spectrum, Game Boy, CHIP-8, DOS, Generic). Adding the 65C02 and 68000
-expands support to major retro platforms: Apple IIe/IIc, Atari Lynx, TurboGrafx-16 (65C02)
-and Sega Genesis/Mega Drive, Amiga, Atari ST, Macintosh (68000).
+The retrogolib library currently supports 6 CPU architectures (6502, 65C02, 65816, Z80, 68000,
+CHIP-8) and static analysis for x86, with 8 systems registered. The 65C02 and 68000 expanded
+support to major retro platforms: Apple IIe/IIc, Atari Lynx, TurboGrafx-16 (65C02) and Sega
+Genesis/Mega Drive, Amiga, Atari ST, Macintosh (68000).
 
 ---
 
@@ -18,9 +28,9 @@ mode, and behavioral fixes. Rather than creating a separate package, extend `arc
 with a variant option. This mirrors how rust-z80emu handles NMOS/CMOS/BM1 as flavours of
 the same CPU.
 
-### 1.2 New Instructions (27 total)
+### 1.2 New Instructions
 
-**Stack operations (2):**
+**Stack operations (4):**
 - PHX ($DA, implied, 3 cycles) -- Push X
 - PHY ($5A, implied, 3 cycles) -- Push Y
 - PLX ($FA, implied, 4 cycles) -- Pull X
@@ -450,8 +460,13 @@ M68000 Architecture = "m68000"
 ```
 
 ### New System Constants
+
+**Not yet registered.** The following systems are candidates for `arch/system.go` but should
+be added when a corresponding system package is created (memory map, registers, cartridge
+format), not before:
+
 ```go
-// arch/system.go - add:
+// arch/system.go - add when system packages are created:
 AppleII      System = "apple-ii"       // Apple IIe/IIc (65C02)
 AtariLynx    System = "atari-lynx"     // Atari Lynx (65C02)
 TurboGrafx   System = "turbografx"     // TurboGrafx-16/PC Engine (65C02 variant)
@@ -465,22 +480,20 @@ Macintosh68k System = "macintosh-68k"  // Original Macintosh (68000)
 
 ## Part 4: Implementation Order
 
-### Recommended Sequence
+### Recommended Sequence (completed)
 
-**Step 1: 65C02 (2-3 weeks effort)**
-- Smallest delta, extends proven codebase
+**Step 1: 65C02** -- ✅ Complete
+- Variant within m6502 package
 - Unlocks Apple II, Atari Lynx, TurboGrafx-16
-- Validates the variant pattern for future use
 
-**Step 2: 68000 Static Analysis (1-2 weeks)**
+**Step 2: 68000 Static Analysis** -- ✅ Complete
 - Instruction definitions, opcode decoding, categories
-- No emulation yet -- useful for disassemblers/analyzers
-- Follows existing x86 stub pattern
+- Line-based hierarchical decoder
 
-**Step 3: 68000 Emulation (4-6 weeks)**
-- Full instruction execution
-- Exception handling
-- Test suite integration
+**Step 3: 68000 Emulation** -- ✅ Complete
+- Full instruction execution with all 14 addressing modes
+- Exception handling and privilege modes
+- See `m68000-gap-closure-plan.md` for remaining accuracy gaps
 
 ### Quality Gates
 

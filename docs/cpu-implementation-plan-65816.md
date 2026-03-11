@@ -278,9 +278,9 @@ const (
 
 ## Current Status
 
-- **Status:** IN_PROGRESS
-- **Last Updated:** 2026-03-06
-- **Summary:** Phases 1–5 complete; all 512 singlestep test files (512,000+ test cases) pass. Full SingleStepTests/65816 suite passes with 0 failures.
+- **Status:** COMPLETE (CPU emulation scope)
+- **Last Updated:** 2026-03-11
+- **Summary:** Phases 1–5 complete; all 512 singlestep test files (512,000+ test cases) pass. Full SingleStepTests/65816 suite passes with 0 failures. Phase 6 (SNES system support) is out of scope for this package. Phase 7 testing is substantially complete.
 
 ## Completed Work
 
@@ -299,11 +299,11 @@ const (
 | 2026-03-06 | Fix readOperand16 DirectPage bank behavior | DirectPage, DirectPageX, DirectPageY params now use readMem16 (bank-0 wrap); all others use readData16 (24-bit arithmetic). |
 | 2026-03-06 | Fix MVP/MVN block move: do-while loop, 8-bit index mask, cycle-budget cap | Changed loop from while to do-while (always execute at least one transfer). Added 8-bit index mask (idxMask) for emulation mode/X=1. Limited to 14 iterations per Step() to match singlestep test 100-cycle budget (14×7=98). When block incomplete, advance PC by 2 (mid-instruction state) not 3. All 4 MVP/MVN test files (40,000 tests) now pass. |
 
-### Next Target: Remaining Phase 7 gaps (lower priority)
+### Remaining Work (lower priority)
 
-- **More cycle accuracy tests:** Verify page-crossing penalties for abs,Y and (dp),Y addressing modes; verify DP penalty cycle when DP_low≠0.
-- **Emulation mode compatibility sweep:** Verify remaining 65C02 edge cases (ORA/AND/EOR, CMP, LDX/LDY in various addressing modes) in emulation mode.
-- **SNES system layer (Phase 6):** LoROM/HiROM memory mapping, DMA, VBlank NMI timing.
+- [ ] **More cycle accuracy tests:** Verify page-crossing penalties for abs,Y and (dp),Y addressing modes; verify DP penalty cycle when DP_low≠0.
+- [ ] **Emulation mode compatibility sweep:** Verify remaining 65C02 edge cases (ORA/AND/EOR, CMP, LDX/LDY in various addressing modes) in emulation mode.
+- [ ] **SNES system layer (Phase 6):** LoROM/HiROM memory mapping, DMA, VBlank NMI timing. Out of scope for the CPU package; tracked in `supported-systems.md`.
 
 ---
 
@@ -548,8 +548,8 @@ motivation for 65816 support.
 - **Addressing mode tests** -- Each mode with various DP, DB values
 - **Block move tests** -- MVN/MVP with various bank configurations
 - **Emulation mode compatibility** -- Verify 65C02 behavior in emulation mode
-- **bsnes/higan accuracy tests** -- Compare against known-accurate SNES emulator behavior
-- **Tom Harte processor tests** -- If available for 65816
+- **SingleStepTests/65816** -- ✅ All 512 test files (512,000+ test cases) pass with 0 failures
+- **bsnes/higan accuracy tests** -- Not yet compared; lower priority given SingleStepTests coverage
 
 ---
 

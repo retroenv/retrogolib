@@ -365,18 +365,20 @@ of the entire Z80 into a single header file.
 ## 14. Potential Improvements for retrogolib
 
 Based on this cross-language comparison, areas where retrogolib could learn from other
-implementations:
+implementations. Items marked ✅ have been implemented since this comparison was written
+(see `z80-gap-closure-plan.md`).
 
 ### From floooh/chips
 - **T-state granularity**: Consider adding optional cycle-level callbacks for systems
-  requiring mid-instruction timing accuracy (ZX Spectrum memory contention)
+  requiring mid-instruction timing accuracy (ZX Spectrum memory contention).
+  Tracked as Phase 6 in `z80-gap-closure-plan.md` (deferred until a concrete system needs it).
 - **Code generation**: YAML-driven instruction definitions could reduce maintenance burden
 
 ### From redcode/Z80
-- **Full IM 0**: Support executing arbitrary instructions from the data bus during
-  interrupt acknowledge, not just RST 38h
-- **LD A,{I|R} interrupt bug**: The Zilog NMOS bug where P/V is reset when INT fires
-  during these instructions
+- ~~**Full IM 0**~~ — ✅ Done (gap closure Phase 2: `Bus.IRQData()` provides data bus value,
+  RST instruction vector extracted from bits 3-5)
+- ~~**LD A,{I|R} interrupt bug**~~ — ✅ Done (gap closure Phase 5: `lastWasLdAIR` flag
+  resets P/V on interrupt acceptance)
 - **Per-model Q behavior**: Different Z80 manufacturers (Zilog, NEC, ST) have subtly
   different Q register behavior
 

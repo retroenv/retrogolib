@@ -69,7 +69,7 @@ Target systems: ZX Spectrum, MSX, ColecoVision, CP/M systems, Amstrad CPC, Game 
 
 Full emulator for the 32-bit CISC processor with 16-bit external data bus.
 
-- ~68 instruction mnemonics
+- 75 instruction mnemonics
 - Hierarchical line-based opcode decoder (16 lines from top 4 bits)
 - 14 addressing modes with effective address resolution
 - 8 data registers (D0-D7, 32-bit) and 8 address registers (A0-A7)
@@ -133,6 +133,20 @@ System-level support for the NES.
 
 ---
 
+## Related Plans
+
+- **65816:** `cpu-implementation-plan-65816.md` -- COMPLETE (CPU emulation)
+- **65C02 + 68000:** `cpu-implementation-plan-65c02-68000.md` -- COMPLETE (both CPUs)
+- **Z80 gaps:** `z80-gap-closure-plan.md` -- Phases 1-5 done, Phases 6-7 planned
+- **68000 gaps:** `m68000-gap-closure-plan.md` -- Address errors, exception frames, bus errors, timing
+- **Atari 2600:** `system-implementation-plan-atari2600.md` -- 6507 variant + TIA/RIOT system package
+- **Game Boy:** `system-implementation-plan-gameboy.md` -- LR35902 CPU + GB system package
+- **Commodore 64:** `system-implementation-plan-c64.md` -- 6510 variant + C64 system package
+- **Z80 comparisons:** `z80-emulator-comparison.md`, `z80-emulator-comparison-cross-language.md`
+- **68000 comparison:** `m68000-emulator-comparison.md`
+
+---
+
 ## Missing Systems and CPUs
 
 The following are notable gaps in the retrogolib foundation, grouped by priority based on
@@ -152,17 +166,17 @@ ecosystem size and tool-building demand.
 
 ### High-Value System Package Additions
 
-| System | CPU(s) | Notes |
-|--------|--------|-------|
-| Game Boy / Game Boy Color | Sharp LR35902 | The z80 package already provides `GameBoyMemory` with MBC1 banking. Missing: GB system package (memory map, I/O registers, cartridge format). |
-| SNES / Super Famicom | 65816 + SPC700 | The 65816 CPU is already implemented. Missing: system package with memory map constants, cartridge format (SMC/SFC headers), and register definitions. |
-| Sega Genesis / Mega Drive | 68000 + Z80 | Both CPUs are implemented. Missing: system package with the Genesis memory map, VDP registers, and ROM header parsing. |
-| Commodore 64 | 6510 | Large software library, active retro scene. Needs 6510 CPU variant and C64 memory map/banking constants. |
-| ZX Spectrum | Z80 | Z80 is already fully implemented. A system package (memory layout, ROM addresses, ULA I/O ports) would be a small addition with high value for the active Spectrum community. |
-| Atari 2600 | 6507 (6502 variant) | 13-bit address bus (8 KB), no RAM on CPU side, TIA chip drives output. Unusual architecture. |
-| MSX | Z80 | Z80 is implemented. MSX system package needs slot-based memory mapper and standard I/O port definitions. |
-| Amstrad CPC | Z80 | Z80 is implemented. Needs Gate Array, CRTC, and memory banking constants. |
-| Apple II | 6502 | 6502 is implemented. Needs soft switch addresses, slot memory map, and disk image format support. |
+| System | CPU(s) | CPU Ready | Notes |
+|--------|--------|-----------|-------|
+| Game Boy / Game Boy Color | Sharp LR35902 | Partial | The z80 package provides `GameBoyMemory` with MBC1 banking. Missing: GB system package (memory map, I/O registers, cartridge format) and GB-specific CPU variant. |
+| SNES / Super Famicom | 65816 + SPC700 | 65816 ✅ | The 65816 CPU is complete. Missing: system package with memory map constants, cartridge format (SMC/SFC headers), register definitions, and SPC700 audio CPU. |
+| Sega Genesis / Mega Drive | 68000 + Z80 | Both ✅ | Both CPUs are implemented. Missing: system package with the Genesis memory map, VDP registers, and ROM header parsing. |
+| Commodore 64 | 6510 | Partial | Large software library, active retro scene. Needs 6510 CPU variant and C64 memory map/banking constants. |
+| ZX Spectrum | Z80 | ✅ | Z80 is fully implemented. A system package (memory layout, ROM addresses, ULA I/O ports) would be a small addition with high value. |
+| Atari 2600 | 6507 (6502 variant) | Partial | 13-bit address bus (8 KB), no RAM on CPU side, TIA chip drives output. Unusual architecture. |
+| MSX | Z80 | ✅ | Z80 is implemented. MSX system package needs slot-based memory mapper and standard I/O port definitions. |
+| Amstrad CPC | Z80 | ✅ | Z80 is implemented. Needs Gate Array, CRTC, and memory banking constants. |
+| Apple II | 6502/65C02 | ✅ | Both 6502 and 65C02 are implemented. Needs soft switch addresses, slot memory map, and disk image format support. |
 
 ### x86 Runtime Emulation
 

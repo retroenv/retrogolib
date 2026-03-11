@@ -300,8 +300,31 @@ This phase is **not recommended** until there's a concrete system that needs it.
 | 3 | IM 2 vector from data bus | No | None | Done |
 | 4 | RETI notification | No | None | Done |
 | 5 | LD A,{I\|R} interrupt bug | No | None | Done |
-| 6 | T-state callbacks | No (optional) | None | Planned |
+| 6 | T-state callbacks | No (optional) | None | Planned (deferred) |
+| 7 | Undocumented ED opcode mirrors | No | None | Planned |
 
 All phases are backward-compatible. The existing `New(memory Memory, ...)` constructor
 and all tests continue to work unchanged. New features are only active when the host
 provides a `Bus` implementation.
+
+---
+
+## Phase 7: Undocumented ED Opcode Mirrors (Low Priority)
+
+### Problem
+The Z80 has undocumented ED-prefix opcodes that mirror documented instructions. Other
+emulators (koron-go, codesqueak, voytas) implement these, and they are identified as a
+gap in both the Go and cross-language comparison documents. While no known software depends
+on these and zexall does not test them, completeness is desirable.
+
+### Change
+Add handlers for the following undocumented ED mirrors:
+
+- **NEG mirrors:** ED 4C, 54, 5C, 64, 6C, 7C all execute NEG (same as ED 44)
+- **IM mirrors:** ED 4E, 66 -> IM 0; ED 6E -> IM 0 (some docs say IM 0/1)
+- **RETN mirrors:** ED 55, 5D, 65, 6D, 75, 7D all execute RETN (same as ED 45)
+- **IN/OUT mirrors:** ED 70 reads port (C) and discards result; ED 71 writes 0 to port (C)
+
+### Impact on Tests
+None. These opcodes are not exercised by zexall or singlestep tests. Add dedicated unit
+tests for each mirror.

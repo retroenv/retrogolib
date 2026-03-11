@@ -366,29 +366,15 @@ cartridge detection schemes.
 
 ## Gap Closure Recommendations
 
-### Phase 1: Address Error Checking
-- Add alignment validation to `readEA` and `writeEA` for word/long accesses.
-- Trigger `processException(VectorAddressError)` on misaligned access.
-- Extend `processException` to save Type 2 stack frames for address errors.
+A detailed gap closure plan with implementation guidance is maintained separately in
+`m68000-gap-closure-plan.md`. Summary of phases:
 
-### Phase 2: Exception Stack Frames
-- Implement Type 2 stack frame (14 bytes) with faulting address and access info.
-- Track instruction word and access type during instruction execution.
-- Apply Type 2 frames to address error and bus error exceptions.
-
-### Phase 3: Bus Error Support
-- Extend the Bus interface or Memory interface to return errors on read/write.
-- Translate bus-level errors into 68000 Bus Error exceptions with Type 2 frames.
-
-### Phase 4: Variable Cycle Timing
-- Add EA cycle costs based on addressing mode (Motorola M68000UM Table 8-4).
-- Add size-dependent timing for long word operations.
-- Add data-dependent timing for MULU/MULS/DIVU/DIVS.
-
-### Phase 5: Prefetch Queue (Optional)
-- Model the 2-word prefetch pipeline (IRC and IRD registers).
-- Fetch next instruction word during execute phase of current instruction.
-- Only needed for cycle-exact Amiga/demo emulation.
+1. **Address Error Checking** (High) -- Alignment validation, Address Error exception
+2. **Type 2 Exception Stack Frames** (Medium) -- 14-byte frames for bus/address errors
+3. **Bus Error Support** (Medium) -- Optional interface for hardware error signaling
+4. **Variable Cycle Timing** (Low) -- EA-dependent and data-dependent cycle costs
+5. **Prefetch Queue Emulation** (Low, deferred) -- IRC/IRD 2-word pipeline
+6. **SingleStepTests Integration** (Medium) -- 73,000+ JSON test vectors from MAME
 
 ---
 
