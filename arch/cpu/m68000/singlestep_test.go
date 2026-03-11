@@ -16,10 +16,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func newTestMemory() *testMemory {
-	return &testMemory{data: make(map[uint32]uint8)}
-}
-
 // TestSingleStep runs the SingleStepTests/680x0 JSON test suite.
 // Download test data: git clone https://github.com/SingleStepTests/680x0.git testdata/680x0
 func TestSingleStep(t *testing.T) {
@@ -90,6 +86,10 @@ type testMemory struct {
 // testBusForSingleStep wraps testMemory into a Bus with no IRQ activity.
 type testBusForSingleStep struct {
 	Memory
+}
+
+func newTestMemory() *testMemory {
+	return &testMemory{data: make(map[uint32]uint8)}
 }
 
 // Read reads a byte from memory at the given address.

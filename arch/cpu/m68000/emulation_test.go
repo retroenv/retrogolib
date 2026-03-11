@@ -6,20 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-// Helper to create a CPU with program data at PC.
-func newTestCPUWithProgram(t *testing.T, program ...uint16) *CPU {
-	t.Helper()
-	mem := NewBasicMemory()
-	bus := NewBasicBus(mem)
-	cpu, err := New(bus, WithInitialPC(0x1000), WithInitialSP(0x10000))
-	assert.NoError(t, err)
-
-	for i, word := range program {
-		mem.WriteWord(0x1000+uint32(i)*2, word)
-	}
-	return cpu
-}
-
 // --- ALU Tests ---
 
 func TestADD_DataReg(t *testing.T) {
@@ -778,4 +764,18 @@ func TestLINK_UNLK(t *testing.T) {
 	err = cpu.Step()
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0x12345678), cpu.A[6])
+}
+
+// newTestCPUWithProgram creates a CPU with program data at PC.
+func newTestCPUWithProgram(t *testing.T, program ...uint16) *CPU {
+	t.Helper()
+	mem := NewBasicMemory()
+	bus := NewBasicBus(mem)
+	cpu, err := New(bus, WithInitialPC(0x1000), WithInitialSP(0x10000))
+	assert.NoError(t, err)
+
+	for i, word := range program {
+		mem.WriteWord(0x1000+uint32(i)*2, word)
+	}
+	return cpu
 }

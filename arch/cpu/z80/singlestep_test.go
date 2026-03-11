@@ -11,20 +11,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func newTestIOHandler(ports []singleStepPort) *testIOHandler {
-	h := &testIOHandler{
-		reads:  make(map[uint8]uint8),
-		writes: make(map[uint8]uint8),
-	}
-	for _, p := range ports {
-		port := uint8(p.Address)
-		if p.IsRead {
-			h.reads[port] = p.Value
-		}
-	}
-	return h
-}
-
 // TestSingleStep runs the SingleStepTests Z80 test suite.
 // Each JSON file contains 1000 test cases that verify single-instruction execution
 // against known-correct hardware traces.
@@ -97,6 +83,20 @@ type singleStepTest struct {
 type testIOHandler struct {
 	reads  map[uint8]uint8
 	writes map[uint8]uint8
+}
+
+func newTestIOHandler(ports []singleStepPort) *testIOHandler {
+	h := &testIOHandler{
+		reads:  make(map[uint8]uint8),
+		writes: make(map[uint8]uint8),
+	}
+	for _, p := range ports {
+		port := uint8(p.Address)
+		if p.IsRead {
+			h.reads[port] = p.Value
+		}
+	}
+	return h
 }
 
 // UnmarshalJSON handles the ports field which is an array of [addr, val, "r"|"w"].

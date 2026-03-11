@@ -6,18 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func newTestCPU(t *testing.T) (*CPU, *testMem) {
-	t.Helper()
-	mem := &testMem{}
-	// Set reset vector to $8000
-	mem.WriteWord(VectorEmuRESET, 0x8000)
-	wrapped, err := NewMemory(mem)
-	assert.NoError(t, err)
-	cpu, err := New(wrapped)
-	assert.NoError(t, err)
-	return cpu, mem
-}
-
 func TestNew(t *testing.T) {
 	cpu, _ := newTestCPU(t)
 	assert.Equal(t, uint16(0x8000), cpu.PC)
@@ -113,6 +101,18 @@ func TestFullPC(t *testing.T) {
 // testMem is a simple flat 16 MB memory for testing.
 type testMem struct {
 	data [1 << 24]byte
+}
+
+func newTestCPU(t *testing.T) (*CPU, *testMem) {
+	t.Helper()
+	mem := &testMem{}
+	// Set reset vector to $8000
+	mem.WriteWord(VectorEmuRESET, 0x8000)
+	wrapped, err := NewMemory(mem)
+	assert.NoError(t, err)
+	cpu, err := New(wrapped)
+	assert.NoError(t, err)
+	return cpu, mem
 }
 
 func (m *testMem) Read(addr uint32) uint8     { return m.data[addr&0xFFFFFF] }

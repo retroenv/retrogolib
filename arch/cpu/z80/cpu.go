@@ -146,24 +146,6 @@ func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
 	return newCPU(bus, opts)
 }
 
-func newCPU(bus Bus, opts Options) (*CPU, error) {
-	// Default to generic system
-	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
-		opts.systemType = arch.Generic
-		opts.initialPC = 0x0000
-		opts.initialSP = 0xFFFF
-	}
-
-	c := &CPU{
-		PC:   opts.initialPC,
-		SP:   opts.initialSP,
-		opts: opts,
-		bus:  bus,
-	}
-
-	return c, nil
-}
-
 // Cycles returns total CPU cycles executed.
 func (c *CPU) Cycles() uint64 {
 	c.mu.RLock()
@@ -423,4 +405,22 @@ func (c *CPU) setLogicalFlags(result uint8, hFlag bool) {
 	c.setH(hFlag)
 	c.setN(false)
 	c.setC(false)
+}
+
+func newCPU(bus Bus, opts Options) (*CPU, error) {
+	// Default to generic system
+	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
+		opts.systemType = arch.Generic
+		opts.initialPC = 0x0000
+		opts.initialSP = 0xFFFF
+	}
+
+	c := &CPU{
+		PC:   opts.initialPC,
+		SP:   opts.initialSP,
+		opts: opts,
+		bus:  bus,
+	}
+
+	return c, nil
 }

@@ -38,6 +38,15 @@ func NewTestLogger(t TestingT) *Logger {
 	return NewWithConfig(cfg)
 }
 
+type testHandler struct {
+	handler slog.Handler
+	t       TestingT
+}
+
+type testingWriter struct {
+	t TestingT
+}
+
 func newTestHandler(t TestingT) *testHandler {
 	writer := &testingWriter{
 		t: t,
@@ -46,15 +55,6 @@ func newTestHandler(t TestingT) *testHandler {
 		t:       t,
 		handler: slog.NewTextHandler(writer, nil),
 	}
-}
-
-type testHandler struct {
-	handler slog.Handler
-	t       TestingT
-}
-
-type testingWriter struct {
-	t TestingT
 }
 
 // Enabled reports whether the handler handles records at the given level.
