@@ -22,6 +22,10 @@ func TestVerifyOpcodes(t *testing.T) {
 			// Unofficial NOPs share opcodes with different addressing modes
 			continue
 		}
+		if ins.Name == KilName {
+			// KIL/JAM instructions share the same addressing mode across multiple opcodes
+			continue
+		}
 
 		info := ins.Addressing[op.Addressing]
 		assert.Equal(t, b, info.Opcode, "Opcode mismatch for instruction %s with addressing %d", ins.Name, op.Addressing)

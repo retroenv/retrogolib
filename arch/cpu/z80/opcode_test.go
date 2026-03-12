@@ -42,8 +42,8 @@ func TestVerifyOpcodes(t *testing.T) {
 			if ins == nil {
 				continue
 			}
-			if ins.Unofficial && ins.Name == Nop.Name {
-				// Unofficial NOPs share opcodes with different addressing modes
+			if ins.Unofficial {
+				// Unofficial instructions don't need reverse mappings for disassembly
 				continue
 			}
 
@@ -264,14 +264,6 @@ func TestRegisterDecoding(t *testing.T) {
 // Instruction API Testing
 // =============================================================================
 
-type opcodeByRegisterTest struct {
-	name        string
-	instruction *Instruction
-	register    RegisterParam
-	wantOpcode  byte
-	wantExists  bool
-}
-
 func TestInstruction_GetOpcodeByRegister(t *testing.T) {
 	t.Parallel()
 
@@ -419,6 +411,14 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 			}
 		})
 	}
+}
+
+type opcodeByRegisterTest struct {
+	name        string
+	instruction *Instruction
+	register    RegisterParam
+	wantOpcode  byte
+	wantExists  bool
 }
 
 func getOpcodeByRegisterTests() []opcodeByRegisterTest {

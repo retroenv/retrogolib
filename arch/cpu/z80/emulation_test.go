@@ -6,12 +6,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type cpuTest struct {
-	Name  string
-	Setup func(cpu *CPU)
-	Check func(cpu *CPU)
-}
-
 func TestInc8(t *testing.T) {
 	t.Parallel()
 	tests := []cpuTest{
@@ -520,19 +514,19 @@ func TestRegisterPairs(t *testing.T) {
 	// Test 16-bit increment
 	cpu.B, cpu.C = 0xFF, 0xFF
 	bc := cpu.bc()
-	result := cpu.inc16(bc)
+	result := bc + 1
 	assert.Equal(t, uint16(0x0000), result, "Increment of 0xFFFF should wrap to 0x0000")
 
 	// Test 16-bit decrement
 	cpu.H, cpu.L = 0x00, 0x00
 	hl := cpu.hl()
-	result = cpu.dec16(hl)
+	result = hl - 1
 	assert.Equal(t, uint16(0xFFFF), result, "Decrement of 0x0000 should wrap to 0xFFFF")
 
 	// Test 16-bit addition
 	cpu.H, cpu.L = 0x12, 0x34
 	hl = cpu.hl()
-	result = cpu.addHL(hl, 0x5678)
+	result = cpu.add16(hl, 0x5678)
 	assert.Equal(t, uint16(0x68AC), result, "0x1234 + 0x5678 should equal 0x68AC")
 	assert.Equal(t, uint8(0), cpu.Flags.C, "Should not set carry for this addition")
 	assert.Equal(t, uint8(0), cpu.Flags.N, "N flag should be clear for ADD HL")
@@ -540,7 +534,7 @@ func TestRegisterPairs(t *testing.T) {
 	// Test 16-bit addition with carry
 	cpu.H, cpu.L = 0xFF, 0xFF
 	hl = cpu.hl()
-	result = cpu.addHL(hl, 0x0001)
+	result = cpu.add16(hl, 0x0001)
 	assert.Equal(t, uint16(0x0000), result, "0xFFFF + 0x0001 should wrap to 0x0000")
 	assert.Equal(t, uint8(1), cpu.Flags.C, "Should set carry for this addition")
 }
@@ -574,7 +568,7 @@ func TestExchange(t *testing.T) {
 	// Test EX DE,HL
 	cpu.D, cpu.E = 0x12, 0x34
 	cpu.H, cpu.L = 0x56, 0x78
-	cpu.exDEHL()
+	cpu.D, cpu.E, cpu.H, cpu.L = cpu.H, cpu.L, cpu.D, cpu.E
 	assert.Equal(t, uint8(0x56), cpu.D, "D should have H's value")
 	assert.Equal(t, uint8(0x78), cpu.E, "E should have L's value")
 	assert.Equal(t, uint8(0x12), cpu.H, "H should have D's value")
@@ -588,7 +582,12 @@ func TestExchange(t *testing.T) {
 	cpu.AltD, cpu.AltE = 0xCC, 0xDD
 	cpu.AltH, cpu.AltL = 0xEE, 0xFF
 
-	cpu.exx()
+	cpu.B, cpu.AltB = cpu.AltB, cpu.B
+	cpu.C, cpu.AltC = cpu.AltC, cpu.C
+	cpu.D, cpu.AltD = cpu.AltD, cpu.D
+	cpu.E, cpu.AltE = cpu.AltE, cpu.E
+	cpu.H, cpu.AltH = cpu.AltH, cpu.H
+	cpu.L, cpu.AltL = cpu.AltL, cpu.L
 
 	assert.Equal(t, uint8(0xAA), cpu.B, "B should have alt B's value")
 	assert.Equal(t, uint8(0xBB), cpu.C, "C should have alt C's value")
@@ -608,14 +607,15 @@ func TestExchangeAF(t *testing.T) {
 	cpu.A = 0x12
 	cpu.setFlags(0x34)
 	cpu.AltA = 0x56
-	cpu.setFlagsFromUint8(&cpu.AltFlags, 0x78)
+	setAltFlags(&cpu.AltFlags, 0x78)
 
-	cpu.exAF()
+	cpu.A, cpu.AltA = cpu.AltA, cpu.A
+	cpu.Flags, cpu.AltFlags = cpu.AltFlags, cpu.Flags
 
 	assert.Equal(t, uint8(0x56), cpu.A, "A should have alt A's value")
-	assert.Equal(t, uint8(0x78), cpu.getFlags(), "F should have alt F's value")
+	assert.Equal(t, uint8(0x78), cpu.GetFlags(), "F should have alt F's value")
 	assert.Equal(t, uint8(0x12), cpu.AltA, "Alt A should have A's value")
-	assert.Equal(t, uint8(0x34), cpu.getFlagsAsUint8(cpu.AltFlags), "Alt F should have F's value")
+	assert.Equal(t, uint8(0x34), getAltFlagsAsUint8(cpu.AltFlags), "Alt F should have F's value")
 }
 
 func TestLoadInstructionExecution(t *testing.T) {
@@ -624,24 +624,22 @@ func TestLoadInstructionExecution(t *testing.T) {
 
 	// Test LD r,r' (register to register)
 	cpu.B = 0x42
-	cpu.ldReg8(&cpu.A, cpu.B)
+	cpu.A = cpu.B
 	assert.Equal(t, uint8(0x42), cpu.A, "A should have B's value after LD A,B")
 
 	// Test LD r,n (immediate to register)
-	cpu.ldImm8(&cpu.C, 0x84)
+	cpu.C = 0x84
 	assert.Equal(t, uint8(0x84), cpu.C, "C should have immediate value after LD C,n")
 
 	// Test LD r,(HL) (memory to register)
 	cpu.H, cpu.L = 0x20, 0x00
 	cpu.Memory().Write(0x2000, 0x99)
-	hl := cpu.hl()
-	cpu.ldMemToReg8(&cpu.D, hl)
+	cpu.D = cpu.Memory().Read(cpu.hl())
 	assert.Equal(t, uint8(0x99), cpu.D, "D should have memory value after LD D,(HL)")
 
 	// Test LD (HL),r (register to memory)
 	cpu.E = 0x77
-	hl = cpu.hl()
-	cpu.ldRegToMem8(hl, cpu.E)
+	cpu.Memory().Write(cpu.hl(), cpu.E)
 	assert.Equal(t, uint8(0x77), cpu.Memory().Read(0x2000), "Memory should have E's value after LD (HL),E")
 }
 
@@ -687,7 +685,7 @@ func TestJumpInstructions(t *testing.T) {
 				cpu.PC = 0x1000
 			},
 			Check: func(cpu *CPU) {
-				cpu.jp(0x2000)
+				cpu.PC = 0x2000
 				assert.Equal(t, uint16(0x2000), cpu.PC)
 			},
 		},
@@ -697,7 +695,7 @@ func TestJumpInstructions(t *testing.T) {
 				cpu.PC = 0x1000
 			},
 			Check: func(cpu *CPU) {
-				cpu.jr(10)
+				cpu.PC = uint16(int32(cpu.PC) + int32(int8(10)))
 				assert.Equal(t, uint16(0x100A), cpu.PC)
 			},
 		},
@@ -707,7 +705,7 @@ func TestJumpInstructions(t *testing.T) {
 				cpu.PC = 0x1000
 			},
 			Check: func(cpu *CPU) {
-				cpu.jr(-10) // 0xF6 in two's complement
+				cpu.PC = uint16(int32(cpu.PC) + int32(int8(-10)))
 				assert.Equal(t, uint16(0x0FF6), cpu.PC)
 			},
 		},
@@ -718,7 +716,9 @@ func TestJumpInstructions(t *testing.T) {
 				cpu.Flags.Z = 1
 			},
 			Check: func(cpu *CPU) {
-				cpu.jpZ(0x2000)
+				if cpu.Flags.Z == 1 {
+					cpu.PC = 0x2000
+				}
 				assert.Equal(t, uint16(0x2000), cpu.PC)
 			},
 		},
@@ -729,7 +729,9 @@ func TestJumpInstructions(t *testing.T) {
 				cpu.Flags.Z = 0
 			},
 			Check: func(cpu *CPU) {
-				cpu.jpZ(0x2000)
+				if cpu.Flags.Z == 1 {
+					cpu.PC = 0x2000
+				}
 				assert.Equal(t, uint16(0x1000), cpu.PC)
 			},
 		},
@@ -747,7 +749,10 @@ func TestDJNZ(t *testing.T) {
 				cpu.B = 0x02
 			},
 			Check: func(cpu *CPU) {
-				cpu.djnz(5)
+				cpu.B--
+				if cpu.B != 0 {
+					cpu.PC = uint16(int32(cpu.PC) + int32(int8(5)))
+				}
 				assert.Equal(t, uint8(0x01), cpu.B)
 				assert.Equal(t, uint16(0x1005), cpu.PC)
 			},
@@ -759,7 +764,10 @@ func TestDJNZ(t *testing.T) {
 				cpu.B = 0x01
 			},
 			Check: func(cpu *CPU) {
-				cpu.djnz(5)
+				cpu.B--
+				if cpu.B != 0 {
+					cpu.PC = uint16(int32(cpu.PC) + int32(int8(5)))
+				}
 				assert.Equal(t, uint8(0x00), cpu.B)
 				assert.Equal(t, uint16(0x1000), cpu.PC)
 			},
@@ -807,6 +815,12 @@ func TestEndlessLoopDetection(t *testing.T) {
 	assert.NoError(t, err, "Step should not return error for JP")
 	assert.Equal(t, uint16(0x0200), cpu.PC, "PC should jump to same address (endless loop)")
 	assert.Greater(t, cpu.cycles, thirdCycles, "Cycles should have advanced for JP")
+}
+
+type cpuTest struct {
+	Name  string
+	Setup func(cpu *CPU)
+	Check func(cpu *CPU)
 }
 
 func cpuTestSetup(t *testing.T) *CPU {

@@ -22,25 +22,25 @@ type OpcodeInfo struct {
 // Opcodes maps the first opcode byte to CPU instruction information.
 // Reference https://www.masswerk.at/6502/6502_instruction_set.html
 var Opcodes = [256]Opcode{
-	{Instruction: Brk, Addressing: ImpliedAddressing, Timing: 7},   // 0x00
-	{Instruction: Ora, Addressing: IndirectXAddressing, Timing: 6}, // 0x01
-	{}, // 0x02
-	{Instruction: Slo, Addressing: IndirectXAddressing, Timing: 8},                       // 0x03
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x04
-	{Instruction: Ora, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x05
-	{Instruction: Asl, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x06
-	{Instruction: Slo, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x07
-	{Instruction: Php, Addressing: ImpliedAddressing, Timing: 3},                         // 0x08
-	{Instruction: Ora, Addressing: ImmediateAddressing, Timing: 2},                       // 0x09
-	{Instruction: Asl, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x0a
-	{Instruction: Anc, Addressing: ImmediateAddressing, Timing: 2},                       // 0x0b
-	{Instruction: NopUnofficial, Addressing: AbsoluteAddressing, Timing: 4},              // 0x0c
-	{Instruction: Ora, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x0d
-	{Instruction: Asl, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x0e
-	{Instruction: Slo, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x0f
-	{Instruction: Bpl, Addressing: RelativeAddressing, Timing: 2},                        // 0x10
-	{Instruction: Ora, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0x11
-	{}, // 0x12
+	{Instruction: Brk, Addressing: ImpliedAddressing, Timing: 7},                                   // 0x00
+	{Instruction: Ora, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x01
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x02 - KIL/JAM
+	{Instruction: Slo, Addressing: IndirectXAddressing, Timing: 8},                                 // 0x03
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x04
+	{Instruction: Ora, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0x05
+	{Instruction: Asl, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x06
+	{Instruction: Slo, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x07
+	{Instruction: Php, Addressing: ImpliedAddressing, Timing: 3},                                   // 0x08
+	{Instruction: Ora, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x09
+	{Instruction: Asl, Addressing: AccumulatorAddressing, Timing: 2},                               // 0x0a
+	{Instruction: Anc, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x0b
+	{Instruction: NopUnofficial, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x0c
+	{Instruction: Ora, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x0d
+	{Instruction: Asl, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x0e
+	{Instruction: Slo, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x0f
+	{Instruction: Bpl, Addressing: RelativeAddressing, Timing: 2},                                  // 0x10
+	{Instruction: Ora, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0x11
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x12 - KIL/JAM
 	{Instruction: Slo, Addressing: IndirectYAddressing, Timing: 8},                                 // 0x13
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x14
 	{Instruction: Ora, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x15
@@ -56,23 +56,23 @@ var Opcodes = [256]Opcode{
 	{Instruction: Slo, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0x1f
 	{Instruction: Jsr, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x20
 	{Instruction: And, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x21
-	{}, // 0x22
-	{Instruction: Rla, Addressing: IndirectXAddressing, Timing: 8},                       // 0x23
-	{Instruction: Bit, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x24
-	{Instruction: And, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x25
-	{Instruction: Rol, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x26
-	{Instruction: Rla, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x27
-	{Instruction: Plp, Addressing: ImpliedAddressing, Timing: 4},                         // 0x28
-	{Instruction: And, Addressing: ImmediateAddressing, Timing: 2},                       // 0x29
-	{Instruction: Rol, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x2a
-	{Instruction: AncUnofficial, Addressing: ImmediateAddressing, Timing: 2},             // 0x2b (alternate)
-	{Instruction: Bit, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x2c
-	{Instruction: And, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x2d
-	{Instruction: Rol, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x2e
-	{Instruction: Rla, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x2f
-	{Instruction: Bmi, Addressing: RelativeAddressing, Timing: 2},                        // 0x30
-	{Instruction: And, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0x31
-	{}, // 0x32
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x22 - KIL/JAM
+	{Instruction: Rla, Addressing: IndirectXAddressing, Timing: 8},                                 // 0x23
+	{Instruction: Bit, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0x24
+	{Instruction: And, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0x25
+	{Instruction: Rol, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x26
+	{Instruction: Rla, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x27
+	{Instruction: Plp, Addressing: ImpliedAddressing, Timing: 4},                                   // 0x28
+	{Instruction: And, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x29
+	{Instruction: Rol, Addressing: AccumulatorAddressing, Timing: 2},                               // 0x2a
+	{Instruction: AncUnofficial, Addressing: ImmediateAddressing, Timing: 2},                       // 0x2b (alternate)
+	{Instruction: Bit, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x2c
+	{Instruction: And, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x2d
+	{Instruction: Rol, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x2e
+	{Instruction: Rla, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x2f
+	{Instruction: Bmi, Addressing: RelativeAddressing, Timing: 2},                                  // 0x30
+	{Instruction: And, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0x31
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x32 - KIL/JAM
 	{Instruction: Rla, Addressing: IndirectYAddressing, Timing: 8},                                 // 0x33
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x34
 	{Instruction: And, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x35
@@ -88,23 +88,23 @@ var Opcodes = [256]Opcode{
 	{Instruction: Rla, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0x3f
 	{Instruction: Rti, Addressing: ImpliedAddressing, Timing: 6},                                   // 0x40
 	{Instruction: Eor, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x41
-	{}, // 0x42
-	{Instruction: Sre, Addressing: IndirectXAddressing, Timing: 8},                       // 0x43
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x44
-	{Instruction: Eor, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x45
-	{Instruction: Lsr, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x46
-	{Instruction: Sre, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x47
-	{Instruction: Pha, Addressing: ImpliedAddressing, Timing: 3},                         // 0x48
-	{Instruction: Eor, Addressing: ImmediateAddressing, Timing: 2},                       // 0x49
-	{Instruction: Lsr, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x4a
-	{Instruction: Alr, Addressing: ImmediateAddressing, Timing: 2},                       // 0x4b
-	{Instruction: Jmp, Addressing: AbsoluteAddressing, Timing: 3},                        // 0x4c
-	{Instruction: Eor, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x4d
-	{Instruction: Lsr, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x4e
-	{Instruction: Sre, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x4f
-	{Instruction: Bvc, Addressing: RelativeAddressing, Timing: 2},                        // 0x50
-	{Instruction: Eor, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0x51
-	{}, // 0x52
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x42 - KIL/JAM
+	{Instruction: Sre, Addressing: IndirectXAddressing, Timing: 8},                                 // 0x43
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x44
+	{Instruction: Eor, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0x45
+	{Instruction: Lsr, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x46
+	{Instruction: Sre, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x47
+	{Instruction: Pha, Addressing: ImpliedAddressing, Timing: 3},                                   // 0x48
+	{Instruction: Eor, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x49
+	{Instruction: Lsr, Addressing: AccumulatorAddressing, Timing: 2},                               // 0x4a
+	{Instruction: Alr, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x4b
+	{Instruction: Jmp, Addressing: AbsoluteAddressing, Timing: 3},                                  // 0x4c
+	{Instruction: Eor, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x4d
+	{Instruction: Lsr, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x4e
+	{Instruction: Sre, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x4f
+	{Instruction: Bvc, Addressing: RelativeAddressing, Timing: 2},                                  // 0x50
+	{Instruction: Eor, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0x51
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x52 - KIL/JAM
 	{Instruction: Sre, Addressing: IndirectYAddressing, Timing: 8},                                 // 0x53
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x54
 	{Instruction: Eor, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x55
@@ -120,23 +120,23 @@ var Opcodes = [256]Opcode{
 	{Instruction: Sre, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0x5f
 	{Instruction: Rts, Addressing: ImpliedAddressing, Timing: 6},                                   // 0x60
 	{Instruction: Adc, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x61
-	{}, // 0x62
-	{Instruction: Rra, Addressing: IndirectXAddressing, Timing: 8},                       // 0x63
-	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},              // 0x64
-	{Instruction: Adc, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x65
-	{Instruction: Ror, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x66
-	{Instruction: Rra, Addressing: ZeroPageAddressing, Timing: 5},                        // 0x67
-	{Instruction: Pla, Addressing: ImpliedAddressing, Timing: 4},                         // 0x68
-	{Instruction: Adc, Addressing: ImmediateAddressing, Timing: 2},                       // 0x69
-	{Instruction: Ror, Addressing: AccumulatorAddressing, Timing: 2},                     // 0x6a
-	{Instruction: Arr, Addressing: ImmediateAddressing, Timing: 2},                       // 0x6b
-	{Instruction: Jmp, Addressing: IndirectAddressing, Timing: 5},                        // 0x6c
-	{Instruction: Adc, Addressing: AbsoluteAddressing, Timing: 4},                        // 0x6d
-	{Instruction: Ror, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x6e
-	{Instruction: Rra, Addressing: AbsoluteAddressing, Timing: 6},                        // 0x6f
-	{Instruction: Bvs, Addressing: RelativeAddressing, Timing: 2},                        // 0x70
-	{Instruction: Adc, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0x71
-	{}, // 0x72
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x62 - KIL/JAM
+	{Instruction: Rra, Addressing: IndirectXAddressing, Timing: 8},                                 // 0x63
+	{Instruction: NopUnofficial, Addressing: ZeroPageAddressing, Timing: 3},                        // 0x64
+	{Instruction: Adc, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0x65
+	{Instruction: Ror, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x66
+	{Instruction: Rra, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0x67
+	{Instruction: Pla, Addressing: ImpliedAddressing, Timing: 4},                                   // 0x68
+	{Instruction: Adc, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x69
+	{Instruction: Ror, Addressing: AccumulatorAddressing, Timing: 2},                               // 0x6a
+	{Instruction: Arr, Addressing: ImmediateAddressing, Timing: 2},                                 // 0x6b
+	{Instruction: Jmp, Addressing: IndirectAddressing, Timing: 5},                                  // 0x6c
+	{Instruction: Adc, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x6d
+	{Instruction: Ror, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x6e
+	{Instruction: Rra, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0x6f
+	{Instruction: Bvs, Addressing: RelativeAddressing, Timing: 2},                                  // 0x70
+	{Instruction: Adc, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0x71
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x72 - KIL/JAM
 	{Instruction: Rra, Addressing: IndirectYAddressing, Timing: 8},                                 // 0x73
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x74
 	{Instruction: Adc, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x75
@@ -168,71 +168,71 @@ var Opcodes = [256]Opcode{
 	{Instruction: Sax, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0x8f
 	{Instruction: Bcc, Addressing: RelativeAddressing, Timing: 2},                                  // 0x90
 	{Instruction: Sta, Addressing: IndirectYAddressing, Timing: 6},                                 // 0x91
-	{}, // 0x92
-	{Instruction: Sha, Addressing: IndirectYAddressing, Timing: 6},                       // 0x93
-	{Instruction: Sty, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x94
-	{Instruction: Sta, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0x95
-	{Instruction: Stx, Addressing: ZeroPageYAddressing, Timing: 4},                       // 0x96
-	{Instruction: Sax, Addressing: ZeroPageYAddressing, Timing: 4},                       // 0x97
-	{Instruction: Tya, Addressing: ImpliedAddressing, Timing: 2},                         // 0x98
-	{Instruction: Sta, Addressing: AbsoluteYAddressing, Timing: 5},                       // 0x99
-	{Instruction: Txs, Addressing: ImpliedAddressing, Timing: 2},                         // 0x9a
-	{Instruction: Tas, Addressing: AbsoluteYAddressing, Timing: 5},                       // 0x9b
-	{Instruction: Shy, Addressing: AbsoluteXAddressing, Timing: 5},                       // 0x9c
-	{Instruction: Sta, Addressing: AbsoluteXAddressing, Timing: 5},                       // 0x9d
-	{Instruction: Shx, Addressing: AbsoluteYAddressing, Timing: 5},                       // 0x9e
-	{Instruction: Sha, Addressing: AbsoluteYAddressing, Timing: 5},                       // 0x9f
-	{Instruction: Ldy, Addressing: ImmediateAddressing, Timing: 2},                       // 0xa0
-	{Instruction: Lda, Addressing: IndirectXAddressing, Timing: 6},                       // 0xa1
-	{Instruction: Ldx, Addressing: ImmediateAddressing, Timing: 2},                       // 0xa2
-	{Instruction: Lax, Addressing: IndirectXAddressing, Timing: 6},                       // 0xa3
-	{Instruction: Ldy, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xa4
-	{Instruction: Lda, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xa5
-	{Instruction: Ldx, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xa6
-	{Instruction: Lax, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xa7
-	{Instruction: Tay, Addressing: ImpliedAddressing, Timing: 2},                         // 0xa8
-	{Instruction: Lda, Addressing: ImmediateAddressing, Timing: 2},                       // 0xa9
-	{Instruction: Tax, Addressing: ImpliedAddressing, Timing: 2},                         // 0xaa
-	{Instruction: Lxa, Addressing: ImmediateAddressing, Timing: 2},                       // 0xab
-	{Instruction: Ldy, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xac
-	{Instruction: Lda, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xad
-	{Instruction: Ldx, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xae
-	{Instruction: Lax, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xaf
-	{Instruction: Bcs, Addressing: RelativeAddressing, Timing: 2},                        // 0xb0
-	{Instruction: Lda, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0xb1
-	{}, // 0xb2
-	{Instruction: Lax, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0xb3
-	{Instruction: Ldy, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0xb4
-	{Instruction: Lda, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0xb5
-	{Instruction: Ldx, Addressing: ZeroPageYAddressing, Timing: 4},                       // 0xb6
-	{Instruction: Lax, Addressing: ZeroPageYAddressing, Timing: 4},                       // 0xb7
-	{Instruction: Clv, Addressing: ImpliedAddressing, Timing: 2},                         // 0xb8
-	{Instruction: Lda, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true}, // 0xb9
-	{Instruction: Tsx, Addressing: ImpliedAddressing, Timing: 2},                         // 0xba
-	{Instruction: Las, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true}, // 0xbb
-	{Instruction: Ldy, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xbc
-	{Instruction: Lda, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xbd
-	{Instruction: Ldx, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true}, // 0xbe
-	{Instruction: Lax, Addressing: AbsoluteYAddressing, Timing: 4},                       // 0xbf
-	{Instruction: Cpy, Addressing: ImmediateAddressing, Timing: 2},                       // 0xc0
-	{Instruction: Cmp, Addressing: IndirectXAddressing, Timing: 6},                       // 0xc1
-	{Instruction: NopUnofficial, Addressing: ImmediateAddressing, Timing: 2},             // 0xc2
-	{Instruction: Dcp, Addressing: IndirectXAddressing, Timing: 8},                       // 0xc3
-	{Instruction: Cpy, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xc4
-	{Instruction: Cmp, Addressing: ZeroPageAddressing, Timing: 3},                        // 0xc5
-	{Instruction: Dec, Addressing: ZeroPageAddressing, Timing: 5},                        // 0xc6
-	{Instruction: Dcp, Addressing: ZeroPageAddressing, Timing: 5},                        // 0xc7
-	{Instruction: Iny, Addressing: ImpliedAddressing, Timing: 2},                         // 0xc8
-	{Instruction: Cmp, Addressing: ImmediateAddressing, Timing: 2},                       // 0xc9
-	{Instruction: Dex, Addressing: ImpliedAddressing, Timing: 2},                         // 0xca
-	{Instruction: Axs, Addressing: ImmediateAddressing, Timing: 2},                       // 0xcb
-	{Instruction: Cpy, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xcc
-	{Instruction: Cmp, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xcd
-	{Instruction: Dec, Addressing: AbsoluteAddressing, Timing: 6},                        // 0xce
-	{Instruction: Dcp, Addressing: AbsoluteAddressing, Timing: 6},                        // 0xcf
-	{Instruction: Bne, Addressing: RelativeAddressing, Timing: 2},                        // 0xd0
-	{Instruction: Cmp, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true}, // 0xd1
-	{}, // 0xd2
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x92 - KIL/JAM
+	{Instruction: Sha, Addressing: IndirectYAddressing, Timing: 6},                                 // 0x93
+	{Instruction: Sty, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x94
+	{Instruction: Sta, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0x95
+	{Instruction: Stx, Addressing: ZeroPageYAddressing, Timing: 4},                                 // 0x96
+	{Instruction: Sax, Addressing: ZeroPageYAddressing, Timing: 4},                                 // 0x97
+	{Instruction: Tya, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x98
+	{Instruction: Sta, Addressing: AbsoluteYAddressing, Timing: 5},                                 // 0x99
+	{Instruction: Txs, Addressing: ImpliedAddressing, Timing: 2},                                   // 0x9a
+	{Instruction: Tas, Addressing: AbsoluteYAddressing, Timing: 5},                                 // 0x9b
+	{Instruction: Shy, Addressing: AbsoluteXAddressing, Timing: 5},                                 // 0x9c
+	{Instruction: Sta, Addressing: AbsoluteXAddressing, Timing: 5},                                 // 0x9d
+	{Instruction: Shx, Addressing: AbsoluteYAddressing, Timing: 5},                                 // 0x9e
+	{Instruction: Sha, Addressing: AbsoluteYAddressing, Timing: 5},                                 // 0x9f
+	{Instruction: Ldy, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xa0
+	{Instruction: Lda, Addressing: IndirectXAddressing, Timing: 6},                                 // 0xa1
+	{Instruction: Ldx, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xa2
+	{Instruction: Lax, Addressing: IndirectXAddressing, Timing: 6},                                 // 0xa3
+	{Instruction: Ldy, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xa4
+	{Instruction: Lda, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xa5
+	{Instruction: Ldx, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xa6
+	{Instruction: Lax, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xa7
+	{Instruction: Tay, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xa8
+	{Instruction: Lda, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xa9
+	{Instruction: Tax, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xaa
+	{Instruction: Lxa, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xab
+	{Instruction: Ldy, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xac
+	{Instruction: Lda, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xad
+	{Instruction: Ldx, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xae
+	{Instruction: Lax, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xaf
+	{Instruction: Bcs, Addressing: RelativeAddressing, Timing: 2},                                  // 0xb0
+	{Instruction: Lda, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0xb1
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xb2 - KIL/JAM
+	{Instruction: Lax, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0xb3
+	{Instruction: Ldy, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0xb4
+	{Instruction: Lda, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0xb5
+	{Instruction: Ldx, Addressing: ZeroPageYAddressing, Timing: 4},                                 // 0xb6
+	{Instruction: Lax, Addressing: ZeroPageYAddressing, Timing: 4},                                 // 0xb7
+	{Instruction: Clv, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xb8
+	{Instruction: Lda, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xb9
+	{Instruction: Tsx, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xba
+	{Instruction: Las, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xbb
+	{Instruction: Ldy, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xbc
+	{Instruction: Lda, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xbd
+	{Instruction: Ldx, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xbe
+	{Instruction: Lax, Addressing: AbsoluteYAddressing, Timing: 4},                                 // 0xbf
+	{Instruction: Cpy, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xc0
+	{Instruction: Cmp, Addressing: IndirectXAddressing, Timing: 6},                                 // 0xc1
+	{Instruction: NopUnofficial, Addressing: ImmediateAddressing, Timing: 2},                       // 0xc2
+	{Instruction: Dcp, Addressing: IndirectXAddressing, Timing: 8},                                 // 0xc3
+	{Instruction: Cpy, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xc4
+	{Instruction: Cmp, Addressing: ZeroPageAddressing, Timing: 3},                                  // 0xc5
+	{Instruction: Dec, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0xc6
+	{Instruction: Dcp, Addressing: ZeroPageAddressing, Timing: 5},                                  // 0xc7
+	{Instruction: Iny, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xc8
+	{Instruction: Cmp, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xc9
+	{Instruction: Dex, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xca
+	{Instruction: Axs, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xcb
+	{Instruction: Cpy, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xcc
+	{Instruction: Cmp, Addressing: AbsoluteAddressing, Timing: 4},                                  // 0xcd
+	{Instruction: Dec, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0xce
+	{Instruction: Dcp, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0xcf
+	{Instruction: Bne, Addressing: RelativeAddressing, Timing: 2},                                  // 0xd0
+	{Instruction: Cmp, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0xd1
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xd2 - KIL/JAM
 	{Instruction: Dcp, Addressing: IndirectYAddressing, Timing: 8},                                 // 0xd3
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0xd4
 	{Instruction: Cmp, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0xd5
@@ -264,7 +264,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: Isc, Addressing: AbsoluteAddressing, Timing: 6},                                  // 0xef
 	{Instruction: Beq, Addressing: RelativeAddressing, Timing: 2},                                  // 0xf0
 	{Instruction: Sbc, Addressing: IndirectYAddressing, Timing: 5, PageCrossCycle: true},           // 0xf1
-	{}, // 0xf2
+	{Instruction: Kil, Addressing: ImpliedAddressing, Timing: 2},                                   // 0xf2 - KIL/JAM
 	{Instruction: Isc, Addressing: IndirectYAddressing, Timing: 8},                                 // 0xf3
 	{Instruction: NopUnofficial, Addressing: ZeroPageXAddressing, Timing: 4},                       // 0xf4
 	{Instruction: Sbc, Addressing: ZeroPageXAddressing, Timing: 4},                                 // 0xf5

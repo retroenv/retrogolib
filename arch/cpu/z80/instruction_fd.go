@@ -457,6 +457,18 @@ var FdPopIY = &Instruction{
 	NoParamFunc: fdPopIY,
 }
 
+// FdLdSpIY loads SP from IY (LD SP,IY, FD prefix).
+var FdLdSpIY = &Instruction{
+	Name: LdName,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {Prefix: 0xFD, Opcode: 0xF9, Size: 2, Cycles: 10},
+	},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegIY: {Prefix: 0xFD, Opcode: 0xF9, Size: 2, Cycles: 10}, // LD SP,IY
+	},
+	NoParamFunc: fdLdSpIY,
+}
+
 // FdcbShift performs shift/rotate operations on IY indexed memory (FDCB prefix).
 var FdcbShift = &Instruction{
 	Name: FdcbShiftName,

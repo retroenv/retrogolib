@@ -64,6 +64,7 @@ const (
 	IscName = "isc" // Unofficial
 	JmpName = "jmp"
 	JsrName = "jsr"
+	KilName = "kil" // Unofficial - halts the CPU (0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xB2, 0xD2, 0xF2)
 	LasName = "las" // Unofficial
 	LaxName = "lax" // Unofficial
 	LdaName = "lda"
@@ -410,6 +411,16 @@ var Jsr = &Instruction{
 	ParamFunc: jsr,
 }
 
+// Kil - Kill/Jam: halts the CPU. Unofficial opcode that freezes the 6502.
+// The test-visible effect is that PC advances by 1 (past the opcode byte).
+var Kil = &Instruction{
+	Name: KilName,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImpliedAddressing: {Opcode: 0x02, Size: 1},
+	},
+	NoParamFunc: kil,
+}
+
 // Lda - Load Accumulator - load a byte into A.
 var Lda = &Instruction{
 	Name: LdaName,
@@ -717,6 +728,7 @@ var Instructions = map[string]*Instruction{
 	BmiName: Bmi,
 	BneName: Bne,
 	BplName: Bpl,
+	BraName: Bra,
 	BrkName: Brk,
 	BvcName: Bvc,
 	BvsName: Bvs,
@@ -738,6 +750,7 @@ var Instructions = map[string]*Instruction{
 	IscName: Isc,
 	JmpName: Jmp,
 	JsrName: Jsr,
+	KilName: Kil,
 	LasName: Las,
 	LaxName: Lax,
 	LdaName: Lda,
@@ -749,8 +762,12 @@ var Instructions = map[string]*Instruction{
 	OraName: Ora,
 	PhaName: Pha,
 	PhpName: Php,
+	PhxName: Phx,
+	PhyName: Phy,
 	PlaName: Pla,
 	PlpName: Plp,
+	PlxName: Plx,
+	PlyName: Ply,
 	RlaName: Rla,
 	RolName: Rol,
 	RorName: Ror,
@@ -770,11 +787,14 @@ var Instructions = map[string]*Instruction{
 	StaName: Sta,
 	StxName: Stx,
 	StyName: Sty,
+	StzName: Stz,
 	TasName: Tas,
 	TaxName: Tax,
 	TayName: Tay,
 	TsxName: Tsx,
 	TxaName: Txa,
+	TrbName: Trb,
+	TsbName: Tsb,
 	TxsName: Txs,
 	TyaName: Tya,
 }

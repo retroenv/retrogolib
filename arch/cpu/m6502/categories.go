@@ -10,6 +10,7 @@ var BranchingInstructions = set.NewFromSlice([]string{
 	Bmi.Name,
 	Bne.Name,
 	Bpl.Name,
+	Bra.Name,
 	Bvc.Name,
 	Bvs.Name,
 	Jmp.Name,
@@ -43,10 +44,11 @@ var MemoryReadInstructions = set.NewFromSlice([]string{
 // MemoryWriteInstructions contains all instructions that can write to an
 // absolute memory address.
 var MemoryWriteInstructions = set.NewFromSlice([]string{
+	Sax.Name,
 	Sta.Name,
 	Stx.Name,
 	Sty.Name,
-	Sax.Name,
+	Stz.Name,
 })
 
 // MemoryReadWriteInstructions contains all instructions that can read and write
@@ -54,18 +56,20 @@ var MemoryWriteInstructions = set.NewFromSlice([]string{
 var MemoryReadWriteInstructions = set.NewFromSlice([]string{
 	Adc.Name,
 	Asl.Name,
+	Dcp.Name,
 	Dec.Name,
 	Eor.Name,
 	Inc.Name,
+	Isc.Name,
 	Lsr.Name,
 	Ora.Name,
+	Rla.Name,
 	Rol.Name,
 	Ror.Name,
-	Sbc.Name,
-	Dcp.Name,
-	Isc.Name,
-	Rla.Name,
 	Rra.Name,
+	Sbc.Name,
 	Slo.Name,
 	Sre.Name,
+	Trb.Name,
+	Tsb.Name,
 })

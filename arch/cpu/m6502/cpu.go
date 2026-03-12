@@ -48,6 +48,8 @@ type CPU struct {
 	opts      Options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
+	branchTaken bool // set by branch() to distinguish taken vs not-taken
+
 	memory *Memory
 }
 
@@ -200,6 +202,7 @@ func (c *CPU) branch(branchTo bool, param any) {
 	}
 
 	c.PC = uint16(addr)
+	c.branchTaken = true
 	c.cycles++
 }
 

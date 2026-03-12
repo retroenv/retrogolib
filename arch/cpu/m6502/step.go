@@ -16,6 +16,7 @@ type TraceStep struct {
 
 // Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
+	c.branchTaken = false
 	oldPC := c.PC
 	opcode, err := c.decodeNextInstruction()
 	if err != nil {
@@ -37,12 +38,9 @@ func (c *CPU) Step() error {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
 
-		// Get the correct instruction size from the opcode info
-		size := 1
-		for _, info := range ins.Addressing {
-			size = int(info.Size)
-			break
-		}
+		// Determine instruction size from the opcode table's addressing mode,
+		// not the instruction's own addressing map (which may differ for shared NOPs).
+		size := addressingModeSize(opcode.Addressing)
 		c.updatePC(ins, oldPC, size)
 		return nil
 	}
@@ -75,7 +73,13 @@ func (c *CPU) Step() error {
 // decodeNextInstruction decodes the current instruction at the program counter.
 func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
-	opcode := Opcodes[b]
+
+	var opcode Opcode
+	if c.opts.variant >= Variant65C02 {
+		opcode = Opcodes65C02[b]
+	} else {
+		opcode = Opcodes[b]
+	}
 	if opcode.Instruction == nil {
 		return Opcode{}, fmt.Errorf("%w: 0x%02x at PC=0x%04x", ErrUnknownOpcode, b, c.PC)
 	}
@@ -94,8 +98,17 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// update PC only if the instruction execution did not change it
 	if oldPC == c.PC {
-		if ins.Name == Jmp.Name {
-			return // endless loop detected
+		// If the instruction explicitly sets PC (JMP, JSR, RTI, RTS, BRK) but landed on the
+		// same address, don't advance further (self-referencing jump or interrupt to same addr).
+		if ins.Name == Jmp.Name || ins.Name == Jsr.Name {
+			return
+		}
+		if _, ok := NotExecutingFollowingOpcodeInstructions[ins.Name]; ok {
+			return
+		}
+		// If a branch was taken but targeted the same address (self-loop), don't advance.
+		if c.branchTaken {
+			return
 		}
 
 		c.PC += uint16(amount)
