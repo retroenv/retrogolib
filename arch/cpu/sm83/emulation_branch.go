@@ -25,12 +25,14 @@ func jpAbs(c *CPU, params ...any) error {
 
 // jpCond performs a conditional absolute jump (JP cc,nn).
 // If the condition is met, jumps and adds 1 extra cycle.
-// If not taken, step.go advances PC by instruction size.
+// If not taken, advances PC past the 3-byte instruction.
 func jpCond(c *CPU, params ...any) error {
 	addr := uint16(params[0].(Extended))
 	if c.checkCondition() {
 		c.PC = addr
 		c.cycles++
+	} else {
+		c.PC += 3
 	}
 	return nil
 }
@@ -51,12 +53,14 @@ func jrRel(c *CPU, params ...any) error {
 
 // jrCond performs a conditional relative jump (JR cc,e).
 // If the condition is met, jumps and adds 1 extra cycle.
-// If not taken, step.go advances PC by instruction size.
+// If not taken, advances PC past the 2-byte instruction.
 func jrCond(c *CPU, params ...any) error {
 	offset := int8(params[0].(Relative))
 	if c.checkCondition() {
 		c.PC = uint16(int32(c.PC) + 2 + int32(offset))
 		c.cycles++
+	} else {
+		c.PC += 2
 	}
 	return nil
 }
@@ -72,13 +76,15 @@ func call(c *CPU, params ...any) error {
 
 // callCond performs a conditional call (CALL cc,nn).
 // If the condition is met, pushes PC+3, jumps, and adds 3 extra cycles.
-// If not taken, step.go advances PC by instruction size.
+// If not taken, advances PC past the 3-byte instruction.
 func callCond(c *CPU, params ...any) error {
 	addr := uint16(params[0].(Extended))
 	if c.checkCondition() {
 		c.push16(c.PC + 3)
 		c.PC = addr
 		c.cycles += 3
+	} else {
+		c.PC += 3
 	}
 	return nil
 }
@@ -91,11 +97,13 @@ func ret(c *CPU) error {
 
 // retCond performs a conditional return (RET cc).
 // If the condition is met, pops PC and adds 3 extra cycles.
-// If not taken, step.go advances PC by instruction size.
+// If not taken, advances PC past the 1-byte instruction.
 func retCond(c *CPU) error {
 	if c.checkCondition() {
 		c.PC = c.pop16()
 		c.cycles += 3
+	} else {
+		c.PC++
 	}
 	return nil
 }
