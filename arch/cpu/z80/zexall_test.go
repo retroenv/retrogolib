@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -16,7 +18,8 @@ func TestZexdoc(t *testing.T) {
 		t.Skip("skipping ZEXDOC in short mode")
 	}
 
-	runZex(t, "testdata/zexdoc.com", 67)
+	dir := getZexallDir(t)
+	runZex(t, filepath.Join(dir, "zexdoc.com"), 67)
 }
 
 // TestZexall runs the ZEXALL Z80 instruction exerciser (all flags including undocumented).
@@ -25,7 +28,24 @@ func TestZexall(t *testing.T) {
 		t.Skip("skipping ZEXALL in short mode")
 	}
 
-	runZex(t, "testdata/zexall.com", 67)
+	dir := getZexallDir(t)
+	runZex(t, filepath.Join(dir, "zexall.com"), 67)
+}
+
+// getZexallDir returns the path to the ZEXALL test data directory,
+// skipping the test if it is not found.
+func getZexallDir(t *testing.T) string {
+	t.Helper()
+
+	_, thisFile, _, ok := runtime.Caller(0)
+	assert.True(t, ok)
+
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "zexall")
+	if _, err := os.Stat(dir); err != nil {
+		t.Skipf("ZEXALL data not found at %s (run 'make -C testdata zexall' to download)", dir)
+	}
+
+	return dir
 }
 
 // zexOutput tracks output buffering and error counting for ZEX tests.
