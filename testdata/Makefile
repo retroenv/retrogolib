@@ -5,6 +5,7 @@
 #
 # Usage:
 #   make all        - download/update all test data
+#   make sm83       - SM83 (Game Boy) SingleStepTests
 #   make z80        - Z80 SingleStepTests + ZEXALL exerciser
 #   make m6502      - 65x02 SingleStepTests + Klaus Dormann functional tests
 #   make m68000     - 680x0 SingleStepTests
@@ -14,6 +15,7 @@
 REPO_ROOT := $(shell git -C $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) rev-parse --show-toplevel)
 
 TESTDATA_ROOT    := $(REPO_ROOT)/testdata
+SM83_TESTDATA    := $(TESTDATA_ROOT)/sm83
 Z80_TESTDATA     := $(TESTDATA_ROOT)/z80
 ZEXALL_TESTDATA  := $(TESTDATA_ROOT)/zexall
 M6502_TESTDATA   := $(TESTDATA_ROOT)/m6502
@@ -25,9 +27,20 @@ DORMANN_REPO     := https://github.com/Klaus2m5/6502_65C02_functional_tests
 ZEXALL_REPO      := https://github.com/agn453/ZEXALL
 DIRTYHAIRY_65816 := https://github.com/DirtyHairy/65816.git
 
-.PHONY: all z80 z80-singlestep zexall m6502 m6502-singlestep m6502-dormann m68000 m65816 clean
+.PHONY: all sm83 z80 z80-singlestep zexall m6502 m6502-singlestep m6502-dormann m68000 m65816 clean
 
-all: z80 m6502 m68000 m65816
+all: sm83 z80 m6502 m68000 m65816
+
+# SM83: SingleStepTests/sm83
+sm83:
+	@echo "==> SM83: SingleStepTests/sm83"
+	@if [ -d "$(SM83_TESTDATA)/.git" ]; then \
+		echo "  Updating..."; \
+		git -C "$(SM83_TESTDATA)" pull --ff-only; \
+	else \
+		echo "  Cloning..."; \
+		git clone --depth=1 $(SINGLESTEP_BASE)/sm83.git "$(SM83_TESTDATA)"; \
+	fi
 
 # Z80: SingleStepTests/z80 + ZEXALL exerciser
 z80: z80-singlestep zexall
@@ -113,6 +126,7 @@ m65816:
 
 clean:
 	@echo "==> Removing all downloaded test data"
+	rm -rf "$(SM83_TESTDATA)"
 	rm -rf "$(Z80_TESTDATA)"
 	rm -rf "$(ZEXALL_TESTDATA)"
 	rm -rf "$(M6502_TESTDATA)/65x02"

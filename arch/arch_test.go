@@ -122,7 +122,7 @@ func TestFromString(t *testing.T) {
 
 func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
-	expected := []Architecture{CHIP8, M6502, M65C02, M65816, M68000, X86, Z80}
+	expected := []Architecture{CHIP8, M6502, M65C02, M65816, M68000, SM83, X86, Z80}
 
 	assert.Len(t, expected, len(got))
 

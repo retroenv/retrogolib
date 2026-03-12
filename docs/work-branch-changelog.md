@@ -4,7 +4,7 @@ Tracks every file changed on the `work` branch compared to `main`. This document
 kept up to date as changes are made. Features will be extracted from `work` to `main`
 individually.
 
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-12
 
 ---
 
@@ -26,7 +26,7 @@ individually.
 
 ### `testdata/Makefile`
 - **What:** New file, manages external test data downloads
-- **Why:** Automates cloning/updating of SingleStepTests (Z80, 65x02, 680x0, 65816),
+- **Why:** Automates cloning/updating of SingleStepTests (SM83, Z80, 65x02, 680x0, 65816),
   ZEXALL exerciser, and Klaus Dormann functional tests. Includes PR #5 fix for 65816
   SBC dp,X page wrap in emulation mode
 
@@ -35,8 +35,8 @@ individually.
 ## Architecture & System Registration
 
 ### `arch/arch.go`
-- **What:** Added architecture constants: `M65C02`, `M65816`, `M68000`
-- **Why:** Registers the three new CPU architectures for validation and lookup
+- **What:** Added architecture constants: `M65C02`, `M65816`, `M68000`, `SM83`
+- **Why:** Registers the four new CPU architectures for validation and lookup
 
 ### `arch/arch_test.go`
 - **What:** Updated test count expectation for new architectures
@@ -567,6 +567,9 @@ Entire package is new. Implements the 32-bit CISC processor with 16-bit data bus
 ### `system-implementation-plan-c64.md` (new)
 - Commodore 64 implementation plan: 6510 variant + VIC-II/SID/CIA system package
 
+### `cpu-implementation-plan-sm83.md` (new)
+- SM83 CPU implementation plan. Status: COMPLETE for CPU emulation scope
+
 ### `system-implementation-plan-gameboy.md` (new)
 - Game Boy implementation plan: LR35902 CPU package + GB system package
 
@@ -578,3 +581,78 @@ Entire package is new. Implements the 32-bit CISC processor with 16-bit data bus
 
 ### `z80-gap-closure-plan.md` (new)
 - Z80 gap closure: Bus interface, IM 0/2, RETI, LD A,{I|R} bug, ED mirrors
+
+---
+
+## Sharp SM83 (`arch/cpu/sm83/`) -- All New
+
+Entire package is new. Implements the SM83 (LR35902) CPU used in Game Boy / Game Boy Color.
+Architecturally distinct from Z80 — removes shadow registers, IX/IY, I/O instructions, DD/ED/FD
+prefixes, and repurposes 14+ opcodes for Game Boy-specific operations.
+
+### `doc.go`
+- Package documentation with architecture overview and key Z80 differences
+
+### `addressing.go`
+- 7 addressing modes (no PortAddressing), SM83-specific RegisterParam constants
+  (RegHLPlus, RegHLMinus, RegHighMem, RegCIndirect, RegSPOffset), string representations
+
+### `instruction.go`
+- Instruction struct, OpcodeInfo struct, 44 instruction name constants, ~60 instruction
+  variable definitions covering all SM83 opcodes including SM83-unique instructions
+  (STOP, SWAP, LDH, LD HL+/-, ADD SP,e, LD HL,SP+e, LD (nn),SP, RETI at 0xD9)
+
+### `opcode.go`
+- Opcode struct, 256-entry base opcode table with M-cycle timing, 11 illegal opcode
+  slots ($D3, $DB, $DD, $E3, $E4, $EB, $EC, $ED, $F4, $FC, $FD)
+
+### `opcode_cb.go`
+- 256-entry CB-prefix opcode table, SWAP at 0x30-0x37 (replaces Z80's SLL)
+
+### `categories.go`
+- Instruction category sets: branching, non-returning, memory read/write
+
+### `errors.go`
+- Package-specific errors including ErrIllegalOpcode
+
+### `flag.go`
+- 4 flags only: Z (bit 7), N (bit 6), H (bit 5), C (bit 4), lower nibble always 0
+
+### `cpu.go`
+- CPU state: A,F,B,C,D,E,H,L (8-bit), SP,PC (16-bit), IME, imeDelay, haltBug
+- Register pair accessors, stack operations, register value get/set by 3-bit encoding
+
+### `option.go`
+- Functional options with Game Boy defaults (PC=0x0100, SP=0xFFFE)
+
+### `memory.go`
+- Memory interface (Read/Write/ReadWord/WriteWord), BasicMemory flat 64KB implementation
+
+### `step.go`
+- Fetch/decode/execute with CB prefix handling, HALT bug, delayed EI semantics,
+  TraceStep support, jump instruction detection
+
+### `param.go`
+- Parameter reading for all 7 addressing modes
+
+### `interrupt.go`
+- 5 fixed vectors (VBlank $0040, LCD STAT $0048, Timer $0050, Serial $0058, Joypad $0060),
+  IME, IE ($FFFF) / IF ($FF0F) register interaction, HALT wake-up and HALT bug activation
+
+### `emulation.go`
+- ALU: ADD, ADC, SUB, SBC, AND, OR, XOR, CP, INC, DEC (8-bit and 16-bit), DAA, CPL,
+  CCF, SCF, ADD HL,rr, ADD SP,e, NOP, HALT, STOP, DI, EI, rotate accumulator (RLCA/RRCA/RLA/RRA)
+
+### `emulation_load.go`
+- LD variants: register, immediate, indirect (BC/DE), HL+/-, LDH ($FF00+n), LD (C),
+  LD (nn),A / LD A,(nn), LD (nn),SP, LD SP,HL, LD HL,SP+e, LD (HL),n, PUSH, POP
+
+### `emulation_branch.go`
+- JP, JR (absolute/relative, conditional/unconditional), CALL, RET (conditional/unconditional),
+  RETI, RST, condition checking helper
+
+### `emulation_cb.go`
+- RLC, RRC, RL, RR, SLA, SRA, SWAP, SRL, BIT, RES, SET with (HL) indirect support
+
+### `singlestep_test.go` (new)
+- Integration test runner for SingleStepTests/sm83 JSON test vectors

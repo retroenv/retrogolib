@@ -52,11 +52,15 @@ const (
 	// - Embedded x86 systems
 	X86 Architecture = "x86"
 
+	// SM83 represents the Sharp SM83 (LR35902) processor used in:
+	// - Nintendo Game Boy
+	// - Nintendo Game Boy Color
+	SM83 Architecture = "sm83"
+
 	// Z80 represents the Zilog Z80 processor used in:
 	// - ZX Spectrum
 	// - Amstrad CPC
 	// - MSX computers
-	// - Game Boy (modified Z80)
 	// - Sega Master System/Game Gear
 	Z80 Architecture = "z80"
 )
@@ -69,6 +73,7 @@ var allSupportedArchitectures = []Architecture{
 	M65C02,
 	M65816,
 	M68000,
+	SM83,
 	X86,
 	Z80,
 }
