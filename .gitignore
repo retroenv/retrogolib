@@ -15,9 +15,3 @@
 *.o
 *.dbg
 coverage.txt
-
-testdata/z80/
-testdata/zexall/
-testdata/m6502/
-testdata/m68000/
-testdata/m65816/

@@ -4,31 +4,16 @@ Tracks every file changed on the `work` branch compared to `main`. This document
 kept up to date as changes are made. Features will be extracted from `work` to `main`
 individually.
 
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-03-13
 
 ---
 
 ## Build & Configuration
 
-### `.gitignore`
-- **What:** Added gitignore entries for external test data directories
-- **Why:** The `testdata/` subdirectories (z80/, zexall/, m6502/, m68000/, m65816/) are
-  cloned from external repos by `testdata/Makefile` and should not be committed
-
 ### `Makefile`
 - **What:** Changed `test` target to use `-short` flag; added `test-integration` target
 - **Why:** Integration tests (SingleStepTests, ZEXDOC, ZEXALL) take minutes to run and
   should not block normal `make test`. They run via `make test-integration` separately
-
-### `testdata/.gitignore`
-- **What:** New file, ignores everything except itself and Makefile
-- **Why:** Keeps the testdata directory clean -- only the Makefile is committed
-
-### `testdata/Makefile`
-- **What:** New file, manages external test data downloads
-- **Why:** Automates cloning/updating of SingleStepTests (SM83, Z80, 65x02, 680x0, 65816),
-  ZEXALL exerciser, and Klaus Dormann functional tests. Includes PR #5 fix for 65816
-  SBC dp,X page wrap in emulation mode
 
 ---
 
