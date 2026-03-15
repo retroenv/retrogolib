@@ -183,55 +183,62 @@ var LdReg8 = &Instruction{
 		RegLoadHLA: {Prefix: 0x00, Opcode: 0x7E, Size: 1, Cycles: 7}, // LD A,(HL)
 	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
-		{RegB, RegB}: {Prefix: 0x00, Opcode: 0x40, Size: 1, Cycles: 4}, // LD B,B
-		{RegB, RegC}: {Prefix: 0x00, Opcode: 0x41, Size: 1, Cycles: 4}, // LD B,C
-		{RegB, RegD}: {Prefix: 0x00, Opcode: 0x42, Size: 1, Cycles: 4}, // LD B,D
-		{RegB, RegE}: {Prefix: 0x00, Opcode: 0x43, Size: 1, Cycles: 4}, // LD B,E
-		{RegB, RegH}: {Prefix: 0x00, Opcode: 0x44, Size: 1, Cycles: 4}, // LD B,H
-		{RegB, RegL}: {Prefix: 0x00, Opcode: 0x45, Size: 1, Cycles: 4}, // LD B,L
-		{RegB, RegA}: {Prefix: 0x00, Opcode: 0x47, Size: 1, Cycles: 4}, // LD B,A
-		{RegC, RegB}: {Prefix: 0x00, Opcode: 0x48, Size: 1, Cycles: 4}, // LD C,B
-		{RegC, RegC}: {Prefix: 0x00, Opcode: 0x49, Size: 1, Cycles: 4}, // LD C,C
-		{RegC, RegD}: {Prefix: 0x00, Opcode: 0x4A, Size: 1, Cycles: 4}, // LD C,D
-		{RegC, RegE}: {Prefix: 0x00, Opcode: 0x4B, Size: 1, Cycles: 4}, // LD C,E
-		{RegC, RegH}: {Prefix: 0x00, Opcode: 0x4C, Size: 1, Cycles: 4}, // LD C,H
-		{RegC, RegL}: {Prefix: 0x00, Opcode: 0x4D, Size: 1, Cycles: 4}, // LD C,L
-		{RegC, RegA}: {Prefix: 0x00, Opcode: 0x4F, Size: 1, Cycles: 4}, // LD C,A
-		{RegD, RegB}: {Prefix: 0x00, Opcode: 0x50, Size: 1, Cycles: 4}, // LD D,B
-		{RegD, RegC}: {Prefix: 0x00, Opcode: 0x51, Size: 1, Cycles: 4}, // LD D,C
-		{RegD, RegD}: {Prefix: 0x00, Opcode: 0x52, Size: 1, Cycles: 4}, // LD D,D
-		{RegD, RegE}: {Prefix: 0x00, Opcode: 0x53, Size: 1, Cycles: 4}, // LD D,E
-		{RegD, RegH}: {Prefix: 0x00, Opcode: 0x54, Size: 1, Cycles: 4}, // LD D,H
-		{RegD, RegL}: {Prefix: 0x00, Opcode: 0x55, Size: 1, Cycles: 4}, // LD D,L
-		{RegD, RegA}: {Prefix: 0x00, Opcode: 0x57, Size: 1, Cycles: 4}, // LD D,A
-		{RegE, RegB}: {Prefix: 0x00, Opcode: 0x58, Size: 1, Cycles: 4}, // LD E,B
-		{RegE, RegC}: {Prefix: 0x00, Opcode: 0x59, Size: 1, Cycles: 4}, // LD E,C
-		{RegE, RegD}: {Prefix: 0x00, Opcode: 0x5A, Size: 1, Cycles: 4}, // LD E,D
-		{RegE, RegE}: {Prefix: 0x00, Opcode: 0x5B, Size: 1, Cycles: 4}, // LD E,E
-		{RegE, RegH}: {Prefix: 0x00, Opcode: 0x5C, Size: 1, Cycles: 4}, // LD E,H
-		{RegE, RegL}: {Prefix: 0x00, Opcode: 0x5D, Size: 1, Cycles: 4}, // LD E,L
-		{RegE, RegA}: {Prefix: 0x00, Opcode: 0x5F, Size: 1, Cycles: 4}, // LD E,A
-		{RegH, RegB}: {Prefix: 0x00, Opcode: 0x60, Size: 1, Cycles: 4}, // LD H,B
-		{RegH, RegC}: {Prefix: 0x00, Opcode: 0x61, Size: 1, Cycles: 4}, // LD H,C
-		{RegH, RegD}: {Prefix: 0x00, Opcode: 0x62, Size: 1, Cycles: 4}, // LD H,D
-		{RegH, RegE}: {Prefix: 0x00, Opcode: 0x63, Size: 1, Cycles: 4}, // LD H,E
-		{RegH, RegH}: {Prefix: 0x00, Opcode: 0x64, Size: 1, Cycles: 4}, // LD H,H
-		{RegH, RegL}: {Prefix: 0x00, Opcode: 0x65, Size: 1, Cycles: 4}, // LD H,L
-		{RegH, RegA}: {Prefix: 0x00, Opcode: 0x67, Size: 1, Cycles: 4}, // LD H,A
-		{RegL, RegB}: {Prefix: 0x00, Opcode: 0x68, Size: 1, Cycles: 4}, // LD L,B
-		{RegL, RegC}: {Prefix: 0x00, Opcode: 0x69, Size: 1, Cycles: 4}, // LD L,C
-		{RegL, RegD}: {Prefix: 0x00, Opcode: 0x6A, Size: 1, Cycles: 4}, // LD L,D
-		{RegL, RegE}: {Prefix: 0x00, Opcode: 0x6B, Size: 1, Cycles: 4}, // LD L,E
-		{RegL, RegH}: {Prefix: 0x00, Opcode: 0x6C, Size: 1, Cycles: 4}, // LD L,H
-		{RegL, RegL}: {Prefix: 0x00, Opcode: 0x6D, Size: 1, Cycles: 4}, // LD L,L
-		{RegL, RegA}: {Prefix: 0x00, Opcode: 0x6F, Size: 1, Cycles: 4}, // LD L,A
-		{RegA, RegB}: {Prefix: 0x00, Opcode: 0x78, Size: 1, Cycles: 4}, // LD A,B
-		{RegA, RegC}: {Prefix: 0x00, Opcode: 0x79, Size: 1, Cycles: 4}, // LD A,C
-		{RegA, RegD}: {Prefix: 0x00, Opcode: 0x7A, Size: 1, Cycles: 4}, // LD A,D
-		{RegA, RegE}: {Prefix: 0x00, Opcode: 0x7B, Size: 1, Cycles: 4}, // LD A,E
-		{RegA, RegH}: {Prefix: 0x00, Opcode: 0x7C, Size: 1, Cycles: 4}, // LD A,H
-		{RegA, RegL}: {Prefix: 0x00, Opcode: 0x7D, Size: 1, Cycles: 4}, // LD A,L
-		{RegA, RegA}: {Prefix: 0x00, Opcode: 0x7F, Size: 1, Cycles: 4}, // LD A,A
+		{RegB, RegB}:          {Prefix: 0x00, Opcode: 0x40, Size: 1, Cycles: 4}, // LD B,B
+		{RegB, RegC}:          {Prefix: 0x00, Opcode: 0x41, Size: 1, Cycles: 4}, // LD B,C
+		{RegB, RegD}:          {Prefix: 0x00, Opcode: 0x42, Size: 1, Cycles: 4}, // LD B,D
+		{RegB, RegE}:          {Prefix: 0x00, Opcode: 0x43, Size: 1, Cycles: 4}, // LD B,E
+		{RegB, RegH}:          {Prefix: 0x00, Opcode: 0x44, Size: 1, Cycles: 4}, // LD B,H
+		{RegB, RegL}:          {Prefix: 0x00, Opcode: 0x45, Size: 1, Cycles: 4}, // LD B,L
+		{RegB, RegA}:          {Prefix: 0x00, Opcode: 0x47, Size: 1, Cycles: 4}, // LD B,A
+		{RegC, RegB}:          {Prefix: 0x00, Opcode: 0x48, Size: 1, Cycles: 4}, // LD C,B
+		{RegC, RegC}:          {Prefix: 0x00, Opcode: 0x49, Size: 1, Cycles: 4}, // LD C,C
+		{RegC, RegD}:          {Prefix: 0x00, Opcode: 0x4A, Size: 1, Cycles: 4}, // LD C,D
+		{RegC, RegE}:          {Prefix: 0x00, Opcode: 0x4B, Size: 1, Cycles: 4}, // LD C,E
+		{RegC, RegH}:          {Prefix: 0x00, Opcode: 0x4C, Size: 1, Cycles: 4}, // LD C,H
+		{RegC, RegL}:          {Prefix: 0x00, Opcode: 0x4D, Size: 1, Cycles: 4}, // LD C,L
+		{RegC, RegA}:          {Prefix: 0x00, Opcode: 0x4F, Size: 1, Cycles: 4}, // LD C,A
+		{RegD, RegB}:          {Prefix: 0x00, Opcode: 0x50, Size: 1, Cycles: 4}, // LD D,B
+		{RegD, RegC}:          {Prefix: 0x00, Opcode: 0x51, Size: 1, Cycles: 4}, // LD D,C
+		{RegD, RegD}:          {Prefix: 0x00, Opcode: 0x52, Size: 1, Cycles: 4}, // LD D,D
+		{RegD, RegE}:          {Prefix: 0x00, Opcode: 0x53, Size: 1, Cycles: 4}, // LD D,E
+		{RegD, RegH}:          {Prefix: 0x00, Opcode: 0x54, Size: 1, Cycles: 4}, // LD D,H
+		{RegD, RegL}:          {Prefix: 0x00, Opcode: 0x55, Size: 1, Cycles: 4}, // LD D,L
+		{RegD, RegA}:          {Prefix: 0x00, Opcode: 0x57, Size: 1, Cycles: 4}, // LD D,A
+		{RegE, RegB}:          {Prefix: 0x00, Opcode: 0x58, Size: 1, Cycles: 4}, // LD E,B
+		{RegE, RegC}:          {Prefix: 0x00, Opcode: 0x59, Size: 1, Cycles: 4}, // LD E,C
+		{RegE, RegD}:          {Prefix: 0x00, Opcode: 0x5A, Size: 1, Cycles: 4}, // LD E,D
+		{RegE, RegE}:          {Prefix: 0x00, Opcode: 0x5B, Size: 1, Cycles: 4}, // LD E,E
+		{RegE, RegH}:          {Prefix: 0x00, Opcode: 0x5C, Size: 1, Cycles: 4}, // LD E,H
+		{RegE, RegL}:          {Prefix: 0x00, Opcode: 0x5D, Size: 1, Cycles: 4}, // LD E,L
+		{RegE, RegA}:          {Prefix: 0x00, Opcode: 0x5F, Size: 1, Cycles: 4}, // LD E,A
+		{RegH, RegB}:          {Prefix: 0x00, Opcode: 0x60, Size: 1, Cycles: 4}, // LD H,B
+		{RegH, RegC}:          {Prefix: 0x00, Opcode: 0x61, Size: 1, Cycles: 4}, // LD H,C
+		{RegH, RegD}:          {Prefix: 0x00, Opcode: 0x62, Size: 1, Cycles: 4}, // LD H,D
+		{RegH, RegE}:          {Prefix: 0x00, Opcode: 0x63, Size: 1, Cycles: 4}, // LD H,E
+		{RegH, RegH}:          {Prefix: 0x00, Opcode: 0x64, Size: 1, Cycles: 4}, // LD H,H
+		{RegH, RegL}:          {Prefix: 0x00, Opcode: 0x65, Size: 1, Cycles: 4}, // LD H,L
+		{RegH, RegA}:          {Prefix: 0x00, Opcode: 0x67, Size: 1, Cycles: 4}, // LD H,A
+		{RegL, RegB}:          {Prefix: 0x00, Opcode: 0x68, Size: 1, Cycles: 4}, // LD L,B
+		{RegL, RegC}:          {Prefix: 0x00, Opcode: 0x69, Size: 1, Cycles: 4}, // LD L,C
+		{RegL, RegD}:          {Prefix: 0x00, Opcode: 0x6A, Size: 1, Cycles: 4}, // LD L,D
+		{RegL, RegE}:          {Prefix: 0x00, Opcode: 0x6B, Size: 1, Cycles: 4}, // LD L,E
+		{RegL, RegH}:          {Prefix: 0x00, Opcode: 0x6C, Size: 1, Cycles: 4}, // LD L,H
+		{RegL, RegL}:          {Prefix: 0x00, Opcode: 0x6D, Size: 1, Cycles: 4}, // LD L,L
+		{RegL, RegA}:          {Prefix: 0x00, Opcode: 0x6F, Size: 1, Cycles: 4}, // LD L,A
+		{RegA, RegB}:          {Prefix: 0x00, Opcode: 0x78, Size: 1, Cycles: 4}, // LD A,B
+		{RegA, RegC}:          {Prefix: 0x00, Opcode: 0x79, Size: 1, Cycles: 4}, // LD A,C
+		{RegA, RegD}:          {Prefix: 0x00, Opcode: 0x7A, Size: 1, Cycles: 4}, // LD A,D
+		{RegA, RegE}:          {Prefix: 0x00, Opcode: 0x7B, Size: 1, Cycles: 4}, // LD A,E
+		{RegA, RegH}:          {Prefix: 0x00, Opcode: 0x7C, Size: 1, Cycles: 4}, // LD A,H
+		{RegA, RegL}:          {Prefix: 0x00, Opcode: 0x7D, Size: 1, Cycles: 4}, // LD A,L
+		{RegA, RegA}:          {Prefix: 0x00, Opcode: 0x7F, Size: 1, Cycles: 4}, // LD A,A
+		{RegHLIndirect, RegB}: {Prefix: 0x00, Opcode: 0x70, Size: 1, Cycles: 7}, // LD (HL),B
+		{RegHLIndirect, RegC}: {Prefix: 0x00, Opcode: 0x71, Size: 1, Cycles: 7}, // LD (HL),C
+		{RegHLIndirect, RegD}: {Prefix: 0x00, Opcode: 0x72, Size: 1, Cycles: 7}, // LD (HL),D
+		{RegHLIndirect, RegE}: {Prefix: 0x00, Opcode: 0x73, Size: 1, Cycles: 7}, // LD (HL),E
+		{RegHLIndirect, RegH}: {Prefix: 0x00, Opcode: 0x74, Size: 1, Cycles: 7}, // LD (HL),H
+		{RegHLIndirect, RegL}: {Prefix: 0x00, Opcode: 0x75, Size: 1, Cycles: 7}, // LD (HL),L
+		{RegHLIndirect, RegA}: {Prefix: 0x00, Opcode: 0x77, Size: 1, Cycles: 7}, // LD (HL),A
 	},
 	ParamFunc: ldReg8,
 }
@@ -276,18 +283,18 @@ var DecReg8 = &Instruction{
 var AddA = &Instruction{
 	Name: AddName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0x87, Size: 1, Cycles: 4}, // ADD A,A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0x86, Size: 1, Cycles: 7}, // ADD A,(HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xC6, Size: 2, Cycles: 7}, // ADD A,n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0x87, Size: 1, Cycles: 4}, // ADD A,A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xC6, Size: 2, Cycles: 7}, // ADD A,n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0x80, Size: 1, Cycles: 4}, // ADD A,B
-		RegC: {Prefix: 0x00, Opcode: 0x81, Size: 1, Cycles: 4}, // ADD A,C
-		RegD: {Prefix: 0x00, Opcode: 0x82, Size: 1, Cycles: 4}, // ADD A,D
-		RegE: {Prefix: 0x00, Opcode: 0x83, Size: 1, Cycles: 4}, // ADD A,E
-		RegH: {Prefix: 0x00, Opcode: 0x84, Size: 1, Cycles: 4}, // ADD A,H
-		RegL: {Prefix: 0x00, Opcode: 0x85, Size: 1, Cycles: 4}, // ADD A,L
-		RegA: {Prefix: 0x00, Opcode: 0x87, Size: 1, Cycles: 4}, // ADD A,A
+		RegB:          {Prefix: 0x00, Opcode: 0x80, Size: 1, Cycles: 4}, // ADD A,B
+		RegC:          {Prefix: 0x00, Opcode: 0x81, Size: 1, Cycles: 4}, // ADD A,C
+		RegD:          {Prefix: 0x00, Opcode: 0x82, Size: 1, Cycles: 4}, // ADD A,D
+		RegE:          {Prefix: 0x00, Opcode: 0x83, Size: 1, Cycles: 4}, // ADD A,E
+		RegH:          {Prefix: 0x00, Opcode: 0x84, Size: 1, Cycles: 4}, // ADD A,H
+		RegL:          {Prefix: 0x00, Opcode: 0x85, Size: 1, Cycles: 4}, // ADD A,L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0x86, Size: 1, Cycles: 7}, // ADD A,(HL)
+		RegA:          {Prefix: 0x00, Opcode: 0x87, Size: 1, Cycles: 4}, // ADD A,A
 	},
 	ParamFunc: addA,
 }
@@ -296,18 +303,18 @@ var AddA = &Instruction{
 var SubA = &Instruction{
 	Name: SubName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0x97, Size: 1, Cycles: 4}, // SUB A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0x96, Size: 1, Cycles: 7}, // SUB (HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xD6, Size: 2, Cycles: 7}, // SUB n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0x97, Size: 1, Cycles: 4}, // SUB A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xD6, Size: 2, Cycles: 7}, // SUB n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0x90, Size: 1, Cycles: 4}, // SUB B
-		RegC: {Prefix: 0x00, Opcode: 0x91, Size: 1, Cycles: 4}, // SUB C
-		RegD: {Prefix: 0x00, Opcode: 0x92, Size: 1, Cycles: 4}, // SUB D
-		RegE: {Prefix: 0x00, Opcode: 0x93, Size: 1, Cycles: 4}, // SUB E
-		RegH: {Prefix: 0x00, Opcode: 0x94, Size: 1, Cycles: 4}, // SUB H
-		RegL: {Prefix: 0x00, Opcode: 0x95, Size: 1, Cycles: 4}, // SUB L
-		RegA: {Prefix: 0x00, Opcode: 0x97, Size: 1, Cycles: 4}, // SUB A
+		RegB:          {Prefix: 0x00, Opcode: 0x90, Size: 1, Cycles: 4}, // SUB B
+		RegC:          {Prefix: 0x00, Opcode: 0x91, Size: 1, Cycles: 4}, // SUB C
+		RegD:          {Prefix: 0x00, Opcode: 0x92, Size: 1, Cycles: 4}, // SUB D
+		RegE:          {Prefix: 0x00, Opcode: 0x93, Size: 1, Cycles: 4}, // SUB E
+		RegH:          {Prefix: 0x00, Opcode: 0x94, Size: 1, Cycles: 4}, // SUB H
+		RegL:          {Prefix: 0x00, Opcode: 0x95, Size: 1, Cycles: 4}, // SUB L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0x96, Size: 1, Cycles: 7}, // SUB (HL)
+		RegA:          {Prefix: 0x00, Opcode: 0x97, Size: 1, Cycles: 4}, // SUB A
 	},
 	ParamFunc: subA,
 }
@@ -316,18 +323,18 @@ var SubA = &Instruction{
 var AndA = &Instruction{
 	Name: AndName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0xA7, Size: 1, Cycles: 4}, // AND A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0xA6, Size: 1, Cycles: 7}, // AND (HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xE6, Size: 2, Cycles: 7}, // AND n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0xA7, Size: 1, Cycles: 4}, // AND A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xE6, Size: 2, Cycles: 7}, // AND n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0xA0, Size: 1, Cycles: 4}, // AND B
-		RegC: {Prefix: 0x00, Opcode: 0xA1, Size: 1, Cycles: 4}, // AND C
-		RegD: {Prefix: 0x00, Opcode: 0xA2, Size: 1, Cycles: 4}, // AND D
-		RegE: {Prefix: 0x00, Opcode: 0xA3, Size: 1, Cycles: 4}, // AND E
-		RegH: {Prefix: 0x00, Opcode: 0xA4, Size: 1, Cycles: 4}, // AND H
-		RegL: {Prefix: 0x00, Opcode: 0xA5, Size: 1, Cycles: 4}, // AND L
-		RegA: {Prefix: 0x00, Opcode: 0xA7, Size: 1, Cycles: 4}, // AND A
+		RegB:          {Prefix: 0x00, Opcode: 0xA0, Size: 1, Cycles: 4}, // AND B
+		RegC:          {Prefix: 0x00, Opcode: 0xA1, Size: 1, Cycles: 4}, // AND C
+		RegD:          {Prefix: 0x00, Opcode: 0xA2, Size: 1, Cycles: 4}, // AND D
+		RegE:          {Prefix: 0x00, Opcode: 0xA3, Size: 1, Cycles: 4}, // AND E
+		RegH:          {Prefix: 0x00, Opcode: 0xA4, Size: 1, Cycles: 4}, // AND H
+		RegL:          {Prefix: 0x00, Opcode: 0xA5, Size: 1, Cycles: 4}, // AND L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0xA6, Size: 1, Cycles: 7}, // AND (HL)
+		RegA:          {Prefix: 0x00, Opcode: 0xA7, Size: 1, Cycles: 4}, // AND A
 	},
 	ParamFunc: andA,
 }
@@ -336,18 +343,18 @@ var AndA = &Instruction{
 var OrA = &Instruction{
 	Name: OrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0xB7, Size: 1, Cycles: 4}, // OR A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0xB6, Size: 1, Cycles: 7}, // OR (HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xF6, Size: 2, Cycles: 7}, // OR n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0xB7, Size: 1, Cycles: 4}, // OR A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xF6, Size: 2, Cycles: 7}, // OR n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0xB0, Size: 1, Cycles: 4}, // OR B
-		RegC: {Prefix: 0x00, Opcode: 0xB1, Size: 1, Cycles: 4}, // OR C
-		RegD: {Prefix: 0x00, Opcode: 0xB2, Size: 1, Cycles: 4}, // OR D
-		RegE: {Prefix: 0x00, Opcode: 0xB3, Size: 1, Cycles: 4}, // OR E
-		RegH: {Prefix: 0x00, Opcode: 0xB4, Size: 1, Cycles: 4}, // OR H
-		RegL: {Prefix: 0x00, Opcode: 0xB5, Size: 1, Cycles: 4}, // OR L
-		RegA: {Prefix: 0x00, Opcode: 0xB7, Size: 1, Cycles: 4}, // OR A
+		RegB:          {Prefix: 0x00, Opcode: 0xB0, Size: 1, Cycles: 4}, // OR B
+		RegC:          {Prefix: 0x00, Opcode: 0xB1, Size: 1, Cycles: 4}, // OR C
+		RegD:          {Prefix: 0x00, Opcode: 0xB2, Size: 1, Cycles: 4}, // OR D
+		RegE:          {Prefix: 0x00, Opcode: 0xB3, Size: 1, Cycles: 4}, // OR E
+		RegH:          {Prefix: 0x00, Opcode: 0xB4, Size: 1, Cycles: 4}, // OR H
+		RegL:          {Prefix: 0x00, Opcode: 0xB5, Size: 1, Cycles: 4}, // OR L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0xB6, Size: 1, Cycles: 7}, // OR (HL)
+		RegA:          {Prefix: 0x00, Opcode: 0xB7, Size: 1, Cycles: 4}, // OR A
 	},
 	ParamFunc: orA,
 }
@@ -356,18 +363,18 @@ var OrA = &Instruction{
 var XorA = &Instruction{
 	Name: XorName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0xAF, Size: 1, Cycles: 4}, // XOR A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0xAE, Size: 1, Cycles: 7}, // XOR (HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xEE, Size: 2, Cycles: 7}, // XOR n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0xAF, Size: 1, Cycles: 4}, // XOR A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xEE, Size: 2, Cycles: 7}, // XOR n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0xA8, Size: 1, Cycles: 4}, // XOR B
-		RegC: {Prefix: 0x00, Opcode: 0xA9, Size: 1, Cycles: 4}, // XOR C
-		RegD: {Prefix: 0x00, Opcode: 0xAA, Size: 1, Cycles: 4}, // XOR D
-		RegE: {Prefix: 0x00, Opcode: 0xAB, Size: 1, Cycles: 4}, // XOR E
-		RegH: {Prefix: 0x00, Opcode: 0xAC, Size: 1, Cycles: 4}, // XOR H
-		RegL: {Prefix: 0x00, Opcode: 0xAD, Size: 1, Cycles: 4}, // XOR L
-		RegA: {Prefix: 0x00, Opcode: 0xAF, Size: 1, Cycles: 4}, // XOR A
+		RegB:          {Prefix: 0x00, Opcode: 0xA8, Size: 1, Cycles: 4}, // XOR B
+		RegC:          {Prefix: 0x00, Opcode: 0xA9, Size: 1, Cycles: 4}, // XOR C
+		RegD:          {Prefix: 0x00, Opcode: 0xAA, Size: 1, Cycles: 4}, // XOR D
+		RegE:          {Prefix: 0x00, Opcode: 0xAB, Size: 1, Cycles: 4}, // XOR E
+		RegH:          {Prefix: 0x00, Opcode: 0xAC, Size: 1, Cycles: 4}, // XOR H
+		RegL:          {Prefix: 0x00, Opcode: 0xAD, Size: 1, Cycles: 4}, // XOR L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0xAE, Size: 1, Cycles: 7}, // XOR (HL)
+		RegA:          {Prefix: 0x00, Opcode: 0xAF, Size: 1, Cycles: 4}, // XOR A
 	},
 	ParamFunc: xorA,
 }
@@ -376,18 +383,18 @@ var XorA = &Instruction{
 var CpA = &Instruction{
 	Name: CpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0xBF, Size: 1, Cycles: 4}, // CP A (base opcode)
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0xBE, Size: 1, Cycles: 7}, // CP (HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xFE, Size: 2, Cycles: 7}, // CP n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0xBF, Size: 1, Cycles: 4}, // CP A (base opcode)
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xFE, Size: 2, Cycles: 7}, // CP n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0xB8, Size: 1, Cycles: 4}, // CP B
-		RegC: {Prefix: 0x00, Opcode: 0xB9, Size: 1, Cycles: 4}, // CP C
-		RegD: {Prefix: 0x00, Opcode: 0xBA, Size: 1, Cycles: 4}, // CP D
-		RegE: {Prefix: 0x00, Opcode: 0xBB, Size: 1, Cycles: 4}, // CP E
-		RegH: {Prefix: 0x00, Opcode: 0xBC, Size: 1, Cycles: 4}, // CP H
-		RegL: {Prefix: 0x00, Opcode: 0xBD, Size: 1, Cycles: 4}, // CP L
-		RegA: {Prefix: 0x00, Opcode: 0xBF, Size: 1, Cycles: 4}, // CP A
+		RegB:          {Prefix: 0x00, Opcode: 0xB8, Size: 1, Cycles: 4}, // CP B
+		RegC:          {Prefix: 0x00, Opcode: 0xB9, Size: 1, Cycles: 4}, // CP C
+		RegD:          {Prefix: 0x00, Opcode: 0xBA, Size: 1, Cycles: 4}, // CP D
+		RegE:          {Prefix: 0x00, Opcode: 0xBB, Size: 1, Cycles: 4}, // CP E
+		RegH:          {Prefix: 0x00, Opcode: 0xBC, Size: 1, Cycles: 4}, // CP H
+		RegL:          {Prefix: 0x00, Opcode: 0xBD, Size: 1, Cycles: 4}, // CP L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0xBE, Size: 1, Cycles: 7}, // CP (HL)
+		RegA:          {Prefix: 0x00, Opcode: 0xBF, Size: 1, Cycles: 4}, // CP A
 	},
 	ParamFunc: cpA,
 }
@@ -438,13 +445,6 @@ var LdIndirect = &Instruction{
 		RegBCIndirect: {Prefix: 0x00, Opcode: 0x02, Size: 1, Cycles: 7}, // LD (BC),A
 		RegLoadDE:     {Prefix: 0x00, Opcode: 0x1A, Size: 1, Cycles: 7}, // LD A,(DE)
 		RegDEIndirect: {Prefix: 0x00, Opcode: 0x12, Size: 1, Cycles: 7}, // LD (DE),A
-		RegB:          {Prefix: 0x00, Opcode: 0x70, Size: 1, Cycles: 7}, // LD (HL),B
-		RegC:          {Prefix: 0x00, Opcode: 0x71, Size: 1, Cycles: 7}, // LD (HL),C
-		RegD:          {Prefix: 0x00, Opcode: 0x72, Size: 1, Cycles: 7}, // LD (HL),D
-		RegE:          {Prefix: 0x00, Opcode: 0x73, Size: 1, Cycles: 7}, // LD (HL),E
-		RegH:          {Prefix: 0x00, Opcode: 0x74, Size: 1, Cycles: 7}, // LD (HL),H
-		RegL:          {Prefix: 0x00, Opcode: 0x75, Size: 1, Cycles: 7}, // LD (HL),L
-		RegA:          {Prefix: 0x00, Opcode: 0x77, Size: 1, Cycles: 7}, // LD (HL),A
 	},
 	ParamFunc: ldIndirect,
 }
@@ -485,7 +485,7 @@ var Rlca = &Instruction{
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Prefix: 0x00, Opcode: 0x07, Size: 1, Cycles: 4},
 	},
-	NoParamFunc: rlca,
+	NoParamFunc: rlcaFunc,
 }
 
 // Rrca - Rotate Right Circular Accumulator.
@@ -494,7 +494,7 @@ var Rrca = &Instruction{
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Prefix: 0x00, Opcode: 0x0F, Size: 1, Cycles: 4},
 	},
-	NoParamFunc: rrca,
+	NoParamFunc: rrcaFunc,
 }
 
 // Rla - Rotate Left Accumulator through carry.
@@ -644,18 +644,18 @@ var Ccf = &Instruction{
 var AdcA = &Instruction{
 	Name: AdcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0x8F, Size: 1, Cycles: 4}, // ADC A,A
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0x8E, Size: 1, Cycles: 7}, // ADC A,(HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xCE, Size: 2, Cycles: 7}, // ADC A,n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0x8F, Size: 1, Cycles: 4}, // ADC A,A
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xCE, Size: 2, Cycles: 7}, // ADC A,n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0x88, Size: 1, Cycles: 4}, // ADC A,B
-		RegC: {Prefix: 0x00, Opcode: 0x89, Size: 1, Cycles: 4}, // ADC A,C
-		RegD: {Prefix: 0x00, Opcode: 0x8A, Size: 1, Cycles: 4}, // ADC A,D
-		RegE: {Prefix: 0x00, Opcode: 0x8B, Size: 1, Cycles: 4}, // ADC A,E
-		RegH: {Prefix: 0x00, Opcode: 0x8C, Size: 1, Cycles: 4}, // ADC A,H
-		RegL: {Prefix: 0x00, Opcode: 0x8D, Size: 1, Cycles: 4}, // ADC A,L
-		RegA: {Prefix: 0x00, Opcode: 0x8F, Size: 1, Cycles: 4}, // ADC A,A
+		RegB:          {Prefix: 0x00, Opcode: 0x88, Size: 1, Cycles: 4}, // ADC A,B
+		RegC:          {Prefix: 0x00, Opcode: 0x89, Size: 1, Cycles: 4}, // ADC A,C
+		RegD:          {Prefix: 0x00, Opcode: 0x8A, Size: 1, Cycles: 4}, // ADC A,D
+		RegE:          {Prefix: 0x00, Opcode: 0x8B, Size: 1, Cycles: 4}, // ADC A,E
+		RegH:          {Prefix: 0x00, Opcode: 0x8C, Size: 1, Cycles: 4}, // ADC A,H
+		RegL:          {Prefix: 0x00, Opcode: 0x8D, Size: 1, Cycles: 4}, // ADC A,L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0x8E, Size: 1, Cycles: 7}, // ADC A,(HL)
+		RegA:          {Prefix: 0x00, Opcode: 0x8F, Size: 1, Cycles: 4}, // ADC A,A
 	},
 	ParamFunc: adcA,
 }
@@ -664,18 +664,18 @@ var AdcA = &Instruction{
 var SbcA = &Instruction{
 	Name: SbcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing:         {Prefix: 0x00, Opcode: 0x9F, Size: 1, Cycles: 4}, // SBC A,A
-		RegisterIndirectAddressing: {Prefix: 0x00, Opcode: 0x9E, Size: 1, Cycles: 7}, // SBC A,(HL)
-		ImmediateAddressing:        {Prefix: 0x00, Opcode: 0xDE, Size: 2, Cycles: 7}, // SBC A,n
+		RegisterAddressing:  {Prefix: 0x00, Opcode: 0x9F, Size: 1, Cycles: 4}, // SBC A,A
+		ImmediateAddressing: {Prefix: 0x00, Opcode: 0xDE, Size: 2, Cycles: 7}, // SBC A,n
 	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
-		RegB: {Prefix: 0x00, Opcode: 0x98, Size: 1, Cycles: 4}, // SBC A,B
-		RegC: {Prefix: 0x00, Opcode: 0x99, Size: 1, Cycles: 4}, // SBC A,C
-		RegD: {Prefix: 0x00, Opcode: 0x9A, Size: 1, Cycles: 4}, // SBC A,D
-		RegE: {Prefix: 0x00, Opcode: 0x9B, Size: 1, Cycles: 4}, // SBC A,E
-		RegH: {Prefix: 0x00, Opcode: 0x9C, Size: 1, Cycles: 4}, // SBC A,H
-		RegL: {Prefix: 0x00, Opcode: 0x9D, Size: 1, Cycles: 4}, // SBC A,L
-		RegA: {Prefix: 0x00, Opcode: 0x9F, Size: 1, Cycles: 4}, // SBC A,A
+		RegB:          {Prefix: 0x00, Opcode: 0x98, Size: 1, Cycles: 4}, // SBC A,B
+		RegC:          {Prefix: 0x00, Opcode: 0x99, Size: 1, Cycles: 4}, // SBC A,C
+		RegD:          {Prefix: 0x00, Opcode: 0x9A, Size: 1, Cycles: 4}, // SBC A,D
+		RegE:          {Prefix: 0x00, Opcode: 0x9B, Size: 1, Cycles: 4}, // SBC A,E
+		RegH:          {Prefix: 0x00, Opcode: 0x9C, Size: 1, Cycles: 4}, // SBC A,H
+		RegL:          {Prefix: 0x00, Opcode: 0x9D, Size: 1, Cycles: 4}, // SBC A,L
+		RegHLIndirect: {Prefix: 0x00, Opcode: 0x9E, Size: 1, Cycles: 7}, // SBC A,(HL)
+		RegA:          {Prefix: 0x00, Opcode: 0x9F, Size: 1, Cycles: 4}, // SBC A,A
 	},
 	ParamFunc: sbcA,
 }

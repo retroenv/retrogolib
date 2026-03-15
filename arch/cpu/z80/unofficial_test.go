@@ -6,69 +6,53 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-func TestUndocumentedNopPrefixes(t *testing.T) {
+func TestUndocumentedDDFDPassthrough(t *testing.T) {
+	t.Parallel()
+
+	// DD/FD prefix with non-IX/IY opcode falls through to unprefixed instruction
+	// with 4 extra T-states. DD 00 = NOP (4+4=8 cycles, PC advances by 2).
 	tests := []struct {
-		name         string
-		program      []uint8
-		expectedPC   uint16
-		expectedSize uint8
-		description  string
+		name           string
+		program        []uint8
+		expectedPC     uint16
+		expectedCycles uint64
+		description    string
 	}{
 		{
-			name:         "DD prefix with invalid opcode",
-			program:      []uint8{0xDD, 0xFF}, // DD followed by invalid opcode
-			expectedPC:   1,                   // Should advance by 1 (treat DD as NOP)
-			expectedSize: 1,
-			description:  "DD prefix followed by invalid opcode should act as 4-cycle NOP",
+			name:           "DD prefix with NOP",
+			program:        []uint8{0xDD, 0x00},
+			expectedPC:     2,
+			expectedCycles: 8,
+			description:    "DD prefix + NOP should execute NOP with 4 extra cycles",
 		},
 		{
-			name:         "FD prefix with invalid opcode",
-			program:      []uint8{0xFD, 0xFF}, // FD followed by invalid opcode
-			expectedPC:   1,                   // Should advance by 1 (treat FD as NOP)
-			expectedSize: 1,
-			description:  "FD prefix followed by invalid opcode should act as 4-cycle NOP",
-		},
-		{
-			name:         "DD prefix at end of program",
-			program:      []uint8{0xDD}, // DD at end
-			expectedPC:   1,             // Should advance by 1
-			expectedSize: 1,
-			description:  "DD prefix alone should act as 4-cycle NOP",
-		},
-		{
-			name:         "FD prefix at end of program",
-			program:      []uint8{0xFD}, // FD at end
-			expectedPC:   1,             // Should advance by 1
-			expectedSize: 1,
-			description:  "FD prefix alone should act as 4-cycle NOP",
+			name:           "FD prefix with NOP",
+			program:        []uint8{0xFD, 0x00},
+			expectedPC:     2,
+			expectedCycles: 8,
+			description:    "FD prefix + NOP should execute NOP with 4 extra cycles",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			memory := NewBasicMemory()
 			cpu, err := New(memory)
 			assert.NoError(t, err)
 
-			// Load program into memory
 			for i, b := range tt.program {
 				memory.Write(uint16(i), b)
 			}
 
-			// Reset CPU state
 			cpu.PC = 0
 			initialCycles := cpu.cycles
 
-			// Execute one instruction
 			err = cpu.Step()
 			assert.NoError(t, err, tt.description)
 
-			// Verify PC advanced correctly
-			assert.Equal(t, tt.expectedPC, cpu.PC, "PC should advance by %d", tt.expectedSize)
-
-			// Verify timing (4 cycles for undocumented NOP)
-			expectedCycles := initialCycles + 4
-			assert.Equal(t, expectedCycles, cpu.cycles, "Should consume 4 cycles")
+			assert.Equal(t, tt.expectedPC, cpu.PC, "PC should advance correctly")
+			assert.Equal(t, initialCycles+tt.expectedCycles, cpu.cycles, "cycles should match")
 		})
 	}
 }
@@ -159,40 +143,37 @@ func TestValidDDFDInstructionsStillWork(t *testing.T) {
 	}
 }
 
-func TestMultipleUndocumentedNops(t *testing.T) {
+func TestDDFDPassthroughSequence(t *testing.T) {
+	t.Parallel()
+
 	memory := NewBasicMemory()
 	cpu, err := New(memory)
 	assert.NoError(t, err)
 
-	// Test DD with invalid opcode - should act as 1-byte NOP
-	memory.Write(0x0000, 0xDD) // DD prefix
-	memory.Write(0x0001, 0xFF) // Invalid DD opcode
+	// DD 00 = NOP with DD prefix (8 cycles, advances 2)
+	memory.Write(0x0000, 0xDD)
+	memory.Write(0x0001, 0x00)
+	// FD 00 = NOP with FD prefix (8 cycles, advances 2)
+	memory.Write(0x0002, 0xFD)
+	memory.Write(0x0003, 0x00)
+	// Regular NOP (4 cycles, advances 1)
+	memory.Write(0x0004, 0x00)
 
 	cpu.PC = 0
 	initialCycles := cpu.cycles
 
-	// Execute DD undocumented NOP
 	err = cpu.Step()
 	assert.NoError(t, err)
-	assert.Equal(t, uint16(1), cpu.PC, "DD+invalid should advance PC by 1")
-	assert.Equal(t, initialCycles+4, cpu.cycles, "DD+invalid should consume 4 cycles")
+	assert.Equal(t, uint16(2), cpu.PC, "DD+NOP should advance PC by 2")
+	assert.Equal(t, initialCycles+8, cpu.cycles, "DD+NOP should consume 8 cycles")
 
-	// Test FD with invalid opcode - should act as 1-byte NOP
-	memory.Write(0x0001, 0xFD) // FD prefix at current PC
-	memory.Write(0x0002, 0xFF) // Invalid FD opcode
-
-	// Execute FD undocumented NOP
 	err = cpu.Step()
 	assert.NoError(t, err)
-	assert.Equal(t, uint16(2), cpu.PC, "FD+invalid should advance PC by 1")
-	assert.Equal(t, initialCycles+8, cpu.cycles, "FD+invalid should consume another 4 cycles")
+	assert.Equal(t, uint16(4), cpu.PC, "FD+NOP should advance PC by 2")
+	assert.Equal(t, initialCycles+16, cpu.cycles, "FD+NOP should consume another 8 cycles")
 
-	// Test regular NOP
-	memory.Write(0x0002, 0x00) // Regular NOP at current PC
-
-	// Execute regular NOP
 	err = cpu.Step()
 	assert.NoError(t, err)
-	assert.Equal(t, uint16(3), cpu.PC, "Regular NOP should advance PC by 1")
-	assert.Equal(t, initialCycles+12, cpu.cycles, "Regular NOP should consume another 4 cycles")
+	assert.Equal(t, uint16(5), cpu.PC, "Regular NOP should advance PC by 1")
+	assert.Equal(t, initialCycles+20, cpu.cycles, "Regular NOP should consume another 4 cycles")
 }

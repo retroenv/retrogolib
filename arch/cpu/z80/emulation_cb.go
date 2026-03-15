@@ -52,25 +52,25 @@ func cbSrl(c *CPU, _ ...any) error {
 
 // cbBit implements CB 40-7F: BIT n,r.
 func cbBit(c *CPU, _ ...any) error {
-	opcodeByte := c.memory.Read(c.PC + 1)
-	bit := (opcodeByte >> 3) & 0x07
+	opcodeByte := c.bus.Read(c.PC + 1)
+	bitNum := (opcodeByte >> 3) & 0x07
 	reg := opcodeByte & 0x07
 
-	var value uint8
 	if reg == 6 { // BIT n,(HL)
 		addr := c.hl()
-		value = c.memory.Read(addr)
+		value := c.bus.Read(addr)
+		c.bitMemptr(bitNum, value, uint8(c.MEMPTR>>8))
 	} else {
-		value = c.GetRegisterValue(reg)
+		value := c.GetRegisterValue(reg)
+		c.bit(bitNum, value)
 	}
 
-	c.bit(bit, value)
 	return nil
 }
 
 // cbRes implements CB 80-BF: RES n,r.
 func cbRes(c *CPU, _ ...any) error {
-	opcodeByte := c.memory.Read(c.PC + 1)
+	opcodeByte := c.bus.Read(c.PC + 1)
 	bit := (opcodeByte >> 3) & 0x07
 	c.applyCBOperation(func(value uint8) uint8 {
 		return c.res(bit, value)
@@ -80,7 +80,7 @@ func cbRes(c *CPU, _ ...any) error {
 
 // cbSet implements CB C0-FF: SET n,r.
 func cbSet(c *CPU, _ ...any) error {
-	opcodeByte := c.memory.Read(c.PC + 1)
+	opcodeByte := c.bus.Read(c.PC + 1)
 	bit := (opcodeByte >> 3) & 0x07
 	c.applyCBOperation(func(value uint8) uint8 {
 		return c.setBit(bit, value)
