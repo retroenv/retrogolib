@@ -3,8 +3,8 @@
 
 package m6502
 
-// Dcp ...
-var Dcp = &Instruction{
+// DcpInst ...
+var DcpInst = &Instruction{
 	Name:       DcpName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -19,8 +19,8 @@ var Dcp = &Instruction{
 	ParamFunc: dcp,
 }
 
-// Isc ...
-var Isc = &Instruction{
+// IscInst ...
+var IscInst = &Instruction{
 	Name:       IscName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -35,9 +35,9 @@ var Isc = &Instruction{
 	ParamFunc: isc,
 }
 
-// Las - AND memory with SP, store result in A, X, and SP.
+// LasInst - AND memory with SP, store result in A, X, and SP.
 // Also known as LAR or LAE.
-var Las = &Instruction{
+var LasInst = &Instruction{
 	Name:       LasName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -46,8 +46,8 @@ var Las = &Instruction{
 	ParamFunc: las,
 }
 
-// Lax ...
-var Lax = &Instruction{
+// LaxInst ...
+var LaxInst = &Instruction{
 	Name:       LaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -61,8 +61,8 @@ var Lax = &Instruction{
 	ParamFunc: lax,
 }
 
-// NopUnofficial ...
-var NopUnofficial = &Instruction{
+// NopUnofficialInst ...
+var NopUnofficialInst = &Instruction{
 	Name:       NopName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -76,8 +76,8 @@ var NopUnofficial = &Instruction{
 	ParamFunc: nopUnofficial,
 }
 
-// Rla ...
-var Rla = &Instruction{
+// RlaInst ...
+var RlaInst = &Instruction{
 	Name:       RlaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -92,8 +92,8 @@ var Rla = &Instruction{
 	ParamFunc: rla,
 }
 
-// Rra ...
-var Rra = &Instruction{
+// RraInst ...
+var RraInst = &Instruction{
 	Name:       RraName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -108,8 +108,8 @@ var Rra = &Instruction{
 	ParamFunc: rra,
 }
 
-// Sax ...
-var Sax = &Instruction{
+// SaxInst ...
+var SaxInst = &Instruction{
 	Name:       SaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -121,8 +121,8 @@ var Sax = &Instruction{
 	ParamFunc: sax,
 }
 
-// SbcUnofficial ...
-var SbcUnofficial = &Instruction{
+// SbcUnofficialInst ...
+var SbcUnofficialInst = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -131,9 +131,9 @@ var SbcUnofficial = &Instruction{
 	ParamFunc: sbc,
 }
 
-// Sha - Store A AND X AND (addr_hi + 1).
+// ShaInst - Store A AND X AND (addr_hi + 1).
 // Also known as AHX or AXA. Unstable: address corruption occurs on page cross.
-var Sha = &Instruction{
+var ShaInst = &Instruction{
 	Name:       ShaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -143,9 +143,9 @@ var Sha = &Instruction{
 	ParamFunc: sha,
 }
 
-// Shx - Store X AND (addr_hi + 1).
+// ShxInst - Store X AND (addr_hi + 1).
 // Also known as SXA or XAS. Unstable: address corruption occurs on page cross.
-var Shx = &Instruction{
+var ShxInst = &Instruction{
 	Name:       ShxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -154,9 +154,9 @@ var Shx = &Instruction{
 	ParamFunc: shx,
 }
 
-// Shy - Store Y AND (addr_hi + 1).
+// ShyInst - Store Y AND (addr_hi + 1).
 // Also known as SYA or SAY. Unstable: address corruption occurs on page cross.
-var Shy = &Instruction{
+var ShyInst = &Instruction{
 	Name:       ShyName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -165,8 +165,8 @@ var Shy = &Instruction{
 	ParamFunc: shy,
 }
 
-// Slo ...
-var Slo = &Instruction{
+// SloInst ...
+var SloInst = &Instruction{
 	Name:       SloName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -181,8 +181,8 @@ var Slo = &Instruction{
 	ParamFunc: slo,
 }
 
-// Sre ...
-var Sre = &Instruction{
+// SreInst ...
+var SreInst = &Instruction{
 	Name:       SreName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -197,9 +197,9 @@ var Sre = &Instruction{
 	ParamFunc: sre,
 }
 
-// Tas - Transfer A AND X to SP, then store SP AND (addr_hi + 1).
+// TasInst - Transfer A AND X to SP, then store SP AND (addr_hi + 1).
 // Also known as XAS or SHS. Unstable: corrupts SP; address corruption on page cross.
-var Tas = &Instruction{
+var TasInst = &Instruction{
 	Name:       TasName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -208,8 +208,8 @@ var Tas = &Instruction{
 	ParamFunc: tas,
 }
 
-// Alr - AND with accumulator, then LSR.
-var Alr = &Instruction{
+// AlrInst - AND with accumulator, then LSR.
+var AlrInst = &Instruction{
 	Name:       AlrName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -218,8 +218,8 @@ var Alr = &Instruction{
 	ParamFunc: alr,
 }
 
-// Anc - AND with accumulator, copy N flag to C flag.
-var Anc = &Instruction{
+// AncInst - AND with accumulator, copy N flag to C flag.
+var AncInst = &Instruction{
 	Name:       AncName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -228,8 +228,8 @@ var Anc = &Instruction{
 	ParamFunc: anc,
 }
 
-// AncUnofficial - Alternate opcode for ANC (same behavior as Anc).
-var AncUnofficial = &Instruction{
+// AncUnofficialInst - Alternate opcode for ANC (same behavior as AncInst).
+var AncUnofficialInst = &Instruction{
 	Name:       AncName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -238,10 +238,10 @@ var AncUnofficial = &Instruction{
 	ParamFunc: anc,
 }
 
-// Ane - OR accumulator with magic constant 0xFF, AND with X and immediate, store in A.
+// AneInst - OR accumulator with magic constant 0xFF, AND with X and immediate, store in A.
 // Also known as XAA. Highly unstable: the magic constant varies by chip and environment.
 // Reference: https://www.nesdev.org/wiki/Visual6502wiki/6502_Opcode_8B_(XAA,_ANE)
-var Ane = &Instruction{
+var AneInst = &Instruction{
 	Name:       AneName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -250,8 +250,8 @@ var Ane = &Instruction{
 	ParamFunc: ane,
 }
 
-// Arr - AND with accumulator, then ROR.
-var Arr = &Instruction{
+// ArrInst - AND with accumulator, then ROR.
+var ArrInst = &Instruction{
 	Name:       ArrName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -260,8 +260,8 @@ var Arr = &Instruction{
 	ParamFunc: arr,
 }
 
-// Axs - (A AND X) minus immediate, store in X.
-var Axs = &Instruction{
+// AxsInst - (A AND X) minus immediate, store in X.
+var AxsInst = &Instruction{
 	Name:       AxsName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
@@ -270,10 +270,10 @@ var Axs = &Instruction{
 	ParamFunc: axs,
 }
 
-// Lxa - OR accumulator with magic constant 0xFF, AND with immediate, store in A and X.
+// LxaInst - OR accumulator with magic constant 0xFF, AND with immediate, store in A and X.
 // Also known as ATX or OAL. Highly unstable: the magic constant varies by chip and environment.
 // Reference: https://www.nesdev.org/wiki/CPU_unofficial_opcodes
-var Lxa = &Instruction{
+var LxaInst = &Instruction{
 	Name:       LxaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{

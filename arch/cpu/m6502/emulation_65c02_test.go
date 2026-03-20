@@ -617,11 +617,11 @@ func Test65C02VerifyOpcodes(t *testing.T) {
 			continue
 		}
 		// Skip NOP variants used for replaced unofficial opcodes
-		if ins == Nop65C02 {
+		if ins == Nop65C02Inst {
 			continue
 		}
 		// Skip the official NOP at 0xEA
-		if ins == Nop {
+		if ins == NopInst {
 			continue
 		}
 

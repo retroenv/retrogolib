@@ -100,7 +100,7 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	if oldPC == c.PC {
 		// If the instruction explicitly sets PC (JMP, JSR, RTI, RTS, BRK) but landed on the
 		// same address, don't advance further (self-referencing jump or interrupt to same addr).
-		if ins.Name == Jmp.Name || ins.Name == Jsr.Name {
+		if ins.Name == JmpInst.Name || ins.Name == JsrInst.Name {
 			return
 		}
 		if _, ok := NotExecutingFollowingOpcodeInstructions[ins.Name]; ok {
@@ -127,7 +127,7 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// account for a branch page crossing extra CPU cycle.
-	if ins.Name != Jmp.Name && ins.Name != Jsr.Name {
+	if ins.Name != JmpInst.Name && ins.Name != JsrInst.Name {
 		c.cycles++
 	}
 }

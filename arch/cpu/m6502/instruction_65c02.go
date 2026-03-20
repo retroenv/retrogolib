@@ -18,8 +18,8 @@ const (
 	TsbName = "tsb"
 )
 
-// Bra - Branch Always.
-var Bra = &Instruction{
+// BraInst - Branch Always.
+var BraInst = &Instruction{
 	Name: BraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RelativeAddressing: {Opcode: 0x80, Size: 2},
@@ -27,9 +27,9 @@ var Bra = &Instruction{
 	ParamFunc: bra,
 }
 
-// Bit65C02 extends the BIT instruction with additional addressing modes for the 65C02.
+// Bit65C02Inst extends the BIT instruction with additional addressing modes for the 65C02.
 // The base BIT instruction (zp, abs) is defined in instruction.go.
-var Bit65C02 = &Instruction{
+var Bit65C02Inst = &Instruction{
 	Name: BitName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing: {Opcode: 0x89, Size: 2},
@@ -41,8 +41,8 @@ var Bit65C02 = &Instruction{
 	ParamFunc: bit65c02,
 }
 
-// Dec65C02 extends the DEC instruction with accumulator addressing for the 65C02.
-var Dec65C02 = &Instruction{
+// Dec65C02Inst extends the DEC instruction with accumulator addressing for the 65C02.
+var Dec65C02Inst = &Instruction{
 	Name: DecName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing: {Opcode: 0x3a, Size: 1},
@@ -54,8 +54,8 @@ var Dec65C02 = &Instruction{
 	ParamFunc: dec65c02,
 }
 
-// Inc65C02 extends the INC instruction with accumulator addressing for the 65C02.
-var Inc65C02 = &Instruction{
+// Inc65C02Inst extends the INC instruction with accumulator addressing for the 65C02.
+var Inc65C02Inst = &Instruction{
 	Name: IncName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing: {Opcode: 0x1a, Size: 1},
@@ -67,8 +67,8 @@ var Inc65C02 = &Instruction{
 	ParamFunc: inc65c02,
 }
 
-// Jmp65C02 extends the JMP instruction with absolute indexed indirect for the 65C02.
-var Jmp65C02 = &Instruction{
+// Jmp65C02Inst extends the JMP instruction with absolute indexed indirect for the 65C02.
+var Jmp65C02Inst = &Instruction{
 	Name: JmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AbsoluteAddressing:          {Opcode: 0x4c, Size: 3},
@@ -78,8 +78,8 @@ var Jmp65C02 = &Instruction{
 	ParamFunc: jmp65c02,
 }
 
-// Phx - Push X Register.
-var Phx = &Instruction{
+// PhxInst - Push X Register.
+var PhxInst = &Instruction{
 	Name: PhxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xda, Size: 1},
@@ -87,8 +87,8 @@ var Phx = &Instruction{
 	NoParamFunc: phx,
 }
 
-// Phy - Push Y Register.
-var Phy = &Instruction{
+// PhyInst - Push Y Register.
+var PhyInst = &Instruction{
 	Name: PhyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x5a, Size: 1},
@@ -96,8 +96,8 @@ var Phy = &Instruction{
 	NoParamFunc: phy,
 }
 
-// Plx - Pull X Register.
-var Plx = &Instruction{
+// PlxInst - Pull X Register.
+var PlxInst = &Instruction{
 	Name: PlxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xfa, Size: 1},
@@ -105,8 +105,8 @@ var Plx = &Instruction{
 	NoParamFunc: plx,
 }
 
-// Ply - Pull Y Register.
-var Ply = &Instruction{
+// PlyInst - Pull Y Register.
+var PlyInst = &Instruction{
 	Name: PlyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x7a, Size: 1},
@@ -114,8 +114,8 @@ var Ply = &Instruction{
 	NoParamFunc: ply,
 }
 
-// Stz - Store Zero.
-var Stz = &Instruction{
+// StzInst - Store Zero.
+var StzInst = &Instruction{
 	Name: StzName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:  {Opcode: 0x64, Size: 2},
@@ -126,8 +126,8 @@ var Stz = &Instruction{
 	ParamFunc: stz,
 }
 
-// Trb - Test and Reset Bits.
-var Trb = &Instruction{
+// TrbInst - Test and Reset Bits.
+var TrbInst = &Instruction{
 	Name: TrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing: {Opcode: 0x14, Size: 2},
@@ -136,8 +136,8 @@ var Trb = &Instruction{
 	ParamFunc: trb,
 }
 
-// Tsb - Test and Set Bits.
-var Tsb = &Instruction{
+// TsbInst - Test and Set Bits.
+var TsbInst = &Instruction{
 	Name: TsbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing: {Opcode: 0x04, Size: 2},
@@ -149,8 +149,8 @@ var Tsb = &Instruction{
 // 65C02 instruction variants for existing instructions with new zero page indirect mode.
 // These extend ORA, AND, EOR, ADC, STA, LDA, CMP, SBC with (zp) addressing.
 
-// Ora65C02 extends ORA with zero page indirect addressing.
-var Ora65C02 = &Instruction{
+// Ora65C02Inst extends ORA with zero page indirect addressing.
+var Ora65C02Inst = &Instruction{
 	Name: OraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0x09, Size: 2},
@@ -166,8 +166,8 @@ var Ora65C02 = &Instruction{
 	ParamFunc: ora,
 }
 
-// And65C02 extends AND with zero page indirect addressing.
-var And65C02 = &Instruction{
+// And65C02Inst extends AND with zero page indirect addressing.
+var And65C02Inst = &Instruction{
 	Name: AndName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0x29, Size: 2},
@@ -183,8 +183,8 @@ var And65C02 = &Instruction{
 	ParamFunc: and,
 }
 
-// Eor65C02 extends EOR with zero page indirect addressing.
-var Eor65C02 = &Instruction{
+// Eor65C02Inst extends EOR with zero page indirect addressing.
+var Eor65C02Inst = &Instruction{
 	Name: EorName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0x49, Size: 2},
@@ -200,8 +200,8 @@ var Eor65C02 = &Instruction{
 	ParamFunc: eor,
 }
 
-// Adc65C02 extends ADC with zero page indirect addressing.
-var Adc65C02 = &Instruction{
+// Adc65C02Inst extends ADC with zero page indirect addressing.
+var Adc65C02Inst = &Instruction{
 	Name: AdcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0x69, Size: 2},
@@ -217,8 +217,8 @@ var Adc65C02 = &Instruction{
 	ParamFunc: adc,
 }
 
-// Sta65C02 extends STA with zero page indirect addressing.
-var Sta65C02 = &Instruction{
+// Sta65C02Inst extends STA with zero page indirect addressing.
+var Sta65C02Inst = &Instruction{
 	Name: StaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ZeroPageAddressing:         {Opcode: 0x85, Size: 2},
@@ -233,8 +233,8 @@ var Sta65C02 = &Instruction{
 	ParamFunc: sta,
 }
 
-// Lda65C02 extends LDA with zero page indirect addressing.
-var Lda65C02 = &Instruction{
+// Lda65C02Inst extends LDA with zero page indirect addressing.
+var Lda65C02Inst = &Instruction{
 	Name: LdaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0xa9, Size: 2},
@@ -250,8 +250,8 @@ var Lda65C02 = &Instruction{
 	ParamFunc: lda,
 }
 
-// Cmp65C02 extends CMP with zero page indirect addressing.
-var Cmp65C02 = &Instruction{
+// Cmp65C02Inst extends CMP with zero page indirect addressing.
+var Cmp65C02Inst = &Instruction{
 	Name: CmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0xc9, Size: 2},
@@ -267,8 +267,8 @@ var Cmp65C02 = &Instruction{
 	ParamFunc: cmp,
 }
 
-// Sbc65C02 extends SBC with zero page indirect addressing.
-var Sbc65C02 = &Instruction{
+// Sbc65C02Inst extends SBC with zero page indirect addressing.
+var Sbc65C02Inst = &Instruction{
 	Name: SbcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:        {Opcode: 0xe9, Size: 2},
