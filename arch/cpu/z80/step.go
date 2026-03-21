@@ -410,10 +410,10 @@ func (c *CPU) handleInterrupts() {
 // jumpInstructions is a lookup set of instructions that always modify PC.
 // These include all jump, call, return, and repeat block instructions.
 var jumpInstructions = set.Set[*Instruction]{
-	Call:        {},
+	CallInst:    {},
 	CallCond:    {},
 	DdJpIX:      {},
-	Djnz:        {},
+	DjnzInst:    {},
 	EdCpdr:      {},
 	EdCpir:      {},
 	EdIndr:      {},
@@ -430,9 +430,9 @@ var jumpInstructions = set.Set[*Instruction]{
 	JpIndirect:  {},
 	JrCond:      {},
 	JrRel:       {},
-	Ret:         {},
+	RetInst:     {},
 	RetCond:     {},
-	Rst:         {},
+	RstInst:     {},
 	edRetnAlias: {},
 }
 

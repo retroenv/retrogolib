@@ -14,70 +14,70 @@ type OpcodeInfo struct {
 // Opcodes maps the first nibble of the opcode to the list of opcodes.
 var Opcodes = [16][]Opcode{
 	0x0: {
-		{Info: Opcode00E0, Instruction: Cls},
-		{Info: Opcode00EE, Instruction: Ret},
+		{Info: Opcode00E0, Instruction: ClsInst},
+		{Info: Opcode00EE, Instruction: RetInst},
 	},
 	0x1: {
-		{Info: Opcode1000, Instruction: Jp},
+		{Info: Opcode1000, Instruction: JpInst},
 	},
 	0x2: {
-		{Info: Opcode2000, Instruction: Call},
+		{Info: Opcode2000, Instruction: CallInst},
 	},
 	0x3: {
-		{Info: Opcode3000, Instruction: Se},
+		{Info: Opcode3000, Instruction: SeInst},
 	},
 	0x4: {
-		{Info: Opcode4000, Instruction: Sne},
+		{Info: Opcode4000, Instruction: SneInst},
 	},
 	0x5: {
-		{Info: Opcode5000, Instruction: Se},
+		{Info: Opcode5000, Instruction: SeInst},
 	},
 	0x6: {
-		{Info: Opcode6000, Instruction: Ld},
+		{Info: Opcode6000, Instruction: LdInst},
 	},
 	0x7: {
-		{Info: Opcode7000, Instruction: Add},
+		{Info: Opcode7000, Instruction: AddInst},
 	},
 	0x8: {
-		{Info: Opcode8000, Instruction: Ld},
-		{Info: Opcode8001, Instruction: Or},
-		{Info: Opcode8002, Instruction: And},
-		{Info: Opcode8003, Instruction: Xor},
-		{Info: Opcode8004, Instruction: Add},
-		{Info: Opcode8005, Instruction: Sub},
-		{Info: Opcode8006, Instruction: Shr},
-		{Info: Opcode8007, Instruction: Subn},
-		{Info: Opcode800E, Instruction: Shl},
+		{Info: Opcode8000, Instruction: LdInst},
+		{Info: Opcode8001, Instruction: OrInst},
+		{Info: Opcode8002, Instruction: AndInst},
+		{Info: Opcode8003, Instruction: XorInst},
+		{Info: Opcode8004, Instruction: AddInst},
+		{Info: Opcode8005, Instruction: SubInst},
+		{Info: Opcode8006, Instruction: ShrInst},
+		{Info: Opcode8007, Instruction: SubnInst},
+		{Info: Opcode800E, Instruction: ShlInst},
 	},
 	0x9: {
-		{Info: Opcode9000, Instruction: Sne},
+		{Info: Opcode9000, Instruction: SneInst},
 	},
 	0xA: {
-		{Info: OpcodeA000, Instruction: Ld},
+		{Info: OpcodeA000, Instruction: LdInst},
 	},
 	0xB: {
-		{Info: OpcodeB000, Instruction: Jp},
+		{Info: OpcodeB000, Instruction: JpInst},
 	},
 	0xC: {
-		{Info: OpcodeC000, Instruction: Rnd},
+		{Info: OpcodeC000, Instruction: RndInst},
 	},
 	0xD: {
-		{Info: OpcodeD000, Instruction: Drw},
+		{Info: OpcodeD000, Instruction: DrwInst},
 	},
 	0xE: {
-		{Info: OpcodeE09E, Instruction: Skp},
-		{Info: OpcodeE0A1, Instruction: Sknp},
+		{Info: OpcodeE09E, Instruction: SkpInst},
+		{Info: OpcodeE0A1, Instruction: SknpInst},
 	},
 	0xF: {
-		{Info: OpcodeF007, Instruction: Ld},
-		{Info: OpcodeF00A, Instruction: Ld},
-		{Info: OpcodeF015, Instruction: Ld},
-		{Info: OpcodeF018, Instruction: Ld},
-		{Info: OpcodeF01E, Instruction: Add},
-		{Info: OpcodeF029, Instruction: Ld},
-		{Info: OpcodeF033, Instruction: Ld},
-		{Info: OpcodeF055, Instruction: Ld},
-		{Info: OpcodeF065, Instruction: Ld},
+		{Info: OpcodeF007, Instruction: LdInst},
+		{Info: OpcodeF00A, Instruction: LdInst},
+		{Info: OpcodeF015, Instruction: LdInst},
+		{Info: OpcodeF018, Instruction: LdInst},
+		{Info: OpcodeF01E, Instruction: AddInst},
+		{Info: OpcodeF029, Instruction: LdInst},
+		{Info: OpcodeF033, Instruction: LdInst},
+		{Info: OpcodeF055, Instruction: LdInst},
+		{Info: OpcodeF065, Instruction: LdInst},
 	},
 }
 

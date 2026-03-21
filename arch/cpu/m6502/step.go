@@ -94,7 +94,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// update PC only if the instruction execution did not change it
 	if oldPC == c.PC {
-		if ins.Name == Jmp.Name {
+		if ins.Name == JmpInst.Name {
 			return // endless loop detected
 		}
 
@@ -114,7 +114,7 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// account for a branch page crossing extra CPU cycle.
-	if ins.Name != Jmp.Name && ins.Name != Jsr.Name {
+	if ins.Name != JmpInst.Name && ins.Name != JsrInst.Name {
 		c.cycles++
 	}
 }
