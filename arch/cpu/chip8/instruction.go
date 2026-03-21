@@ -38,8 +38,8 @@ const (
 
 // Standard Chip-8 Instructions
 
-// Add adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
-var Add = &Instruction{
+// AddInst adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
+var AddInst = &Instruction{
 	Name:      AddName,
 	Emulation: add,
 	Addressing: map[Mode]OpcodeInfo{
@@ -49,8 +49,8 @@ var Add = &Instruction{
 	},
 }
 
-// And performs bitwise AND on two registers (AND Vx, Vy).
-var And = &Instruction{
+// AndInst performs bitwise AND on two registers (AND Vx, Vy).
+var AndInst = &Instruction{
 	Name:      AndName,
 	Emulation: and,
 	Addressing: map[Mode]OpcodeInfo{
@@ -58,8 +58,8 @@ var And = &Instruction{
 	},
 }
 
-// Call calls a subroutine at address (CALL addr).
-var Call = &Instruction{
+// CallInst calls a subroutine at address (CALL addr).
+var CallInst = &Instruction{
 	Name:      CallName,
 	Emulation: call,
 	Addressing: map[Mode]OpcodeInfo{
@@ -67,8 +67,8 @@ var Call = &Instruction{
 	},
 }
 
-// Cls clears the display screen (CLS).
-var Cls = &Instruction{
+// ClsInst clears the display screen (CLS).
+var ClsInst = &Instruction{
 	Name:      ClsName,
 	Emulation: cls,
 	Addressing: map[Mode]OpcodeInfo{
@@ -76,8 +76,8 @@ var Cls = &Instruction{
 	},
 }
 
-// Drw draws n-byte sprite from memory location I at (Vx, Vy), sets VF on collision (DRW Vx, Vy, nibble).
-var Drw = &Instruction{
+// DrwInst draws n-byte sprite from memory location I at (Vx, Vy), sets VF on collision (DRW Vx, Vy, nibble).
+var DrwInst = &Instruction{
 	Name:      DrwName,
 	Emulation: drw,
 	Addressing: map[Mode]OpcodeInfo{
@@ -85,8 +85,8 @@ var Drw = &Instruction{
 	},
 }
 
-// Jp jumps to address, optionally adding V0 to the address (JP addr / JP V0, addr).
-var Jp = &Instruction{
+// JpInst jumps to address, optionally adding V0 to the address (JP addr / JP V0, addr).
+var JpInst = &Instruction{
 	Name:      JpName,
 	Emulation: jp,
 	Addressing: map[Mode]OpcodeInfo{
@@ -95,8 +95,8 @@ var Jp = &Instruction{
 	},
 }
 
-// Ld loads values into registers, timers, or memory (LD Vx, byte / LD I, addr / LD DT, Vx).
-var Ld = &Instruction{
+// LdInst loads values into registers, timers, or memory (LD Vx, byte / LD I, addr / LD DT, Vx).
+var LdInst = &Instruction{
 	Name:      LdName,
 	Emulation: ld,
 	Addressing: map[Mode]OpcodeInfo{
@@ -114,8 +114,8 @@ var Ld = &Instruction{
 	},
 }
 
-// Or performs bitwise OR on two registers (OR Vx, Vy).
-var Or = &Instruction{
+// OrInst performs bitwise OR on two registers (OR Vx, Vy).
+var OrInst = &Instruction{
 	Name:      OrName,
 	Emulation: or,
 	Addressing: map[Mode]OpcodeInfo{
@@ -123,8 +123,8 @@ var Or = &Instruction{
 	},
 }
 
-// Ret returns from a subroutine (RET).
-var Ret = &Instruction{
+// RetInst returns from a subroutine (RET).
+var RetInst = &Instruction{
 	Name:      RetName,
 	Emulation: ret,
 	Addressing: map[Mode]OpcodeInfo{
@@ -132,8 +132,8 @@ var Ret = &Instruction{
 	},
 }
 
-// Rnd sets Vx to random byte AND immediate value (RND Vx, byte).
-var Rnd = &Instruction{
+// RndInst sets Vx to random byte AND immediate value (RND Vx, byte).
+var RndInst = &Instruction{
 	Name:      RndName,
 	Emulation: rnd,
 	Addressing: map[Mode]OpcodeInfo{
@@ -141,8 +141,8 @@ var Rnd = &Instruction{
 	},
 }
 
-// Se skips next instruction if register equals value or register (SE Vx, byte / SE Vx, Vy).
-var Se = &Instruction{
+// SeInst skips next instruction if register equals value or register (SE Vx, byte / SE Vx, Vy).
+var SeInst = &Instruction{
 	Name:      SeName,
 	Emulation: se,
 	Addressing: map[Mode]OpcodeInfo{
@@ -151,8 +151,8 @@ var Se = &Instruction{
 	},
 }
 
-// Shl shifts Vx left by 1, stores MSB in VF (SHL Vx).
-var Shl = &Instruction{
+// ShlInst shifts Vx left by 1, stores MSB in VF (SHL Vx).
+var ShlInst = &Instruction{
 	Name:      ShlName,
 	Emulation: shl,
 	Addressing: map[Mode]OpcodeInfo{
@@ -160,8 +160,8 @@ var Shl = &Instruction{
 	},
 }
 
-// Shr shifts Vx right by 1, stores LSB in VF (SHR Vx).
-var Shr = &Instruction{
+// ShrInst shifts Vx right by 1, stores LSB in VF (SHR Vx).
+var ShrInst = &Instruction{
 	Name:      ShrName,
 	Emulation: shr,
 	Addressing: map[Mode]OpcodeInfo{
@@ -169,8 +169,8 @@ var Shr = &Instruction{
 	},
 }
 
-// Skp skips next instruction if key with value of Vx is pressed (SKP Vx).
-var Skp = &Instruction{
+// SkpInst skips next instruction if key with value of Vx is pressed (SKP Vx).
+var SkpInst = &Instruction{
 	Name:      SkpName,
 	Emulation: skp,
 	Addressing: map[Mode]OpcodeInfo{
@@ -178,8 +178,8 @@ var Skp = &Instruction{
 	},
 }
 
-// Sknp skips next instruction if key with value of Vx is not pressed (SKNP Vx).
-var Sknp = &Instruction{
+// SknpInst skips next instruction if key with value of Vx is not pressed (SKNP Vx).
+var SknpInst = &Instruction{
 	Name:      SknpName,
 	Emulation: sknp,
 	Addressing: map[Mode]OpcodeInfo{
@@ -187,8 +187,8 @@ var Sknp = &Instruction{
 	},
 }
 
-// Sne skips next instruction if register does not equal value or register (SNE Vx, byte / SNE Vx, Vy).
-var Sne = &Instruction{
+// SneInst skips next instruction if register does not equal value or register (SNE Vx, byte / SNE Vx, Vy).
+var SneInst = &Instruction{
 	Name:      SneName,
 	Emulation: sne,
 	Addressing: map[Mode]OpcodeInfo{
@@ -197,8 +197,8 @@ var Sne = &Instruction{
 	},
 }
 
-// Sub subtracts Vy from Vx, sets VF = NOT borrow (SUB Vx, Vy).
-var Sub = &Instruction{
+// SubInst subtracts Vy from Vx, sets VF = NOT borrow (SUB Vx, Vy).
+var SubInst = &Instruction{
 	Name:      SubName,
 	Emulation: sub,
 	Addressing: map[Mode]OpcodeInfo{
@@ -206,8 +206,8 @@ var Sub = &Instruction{
 	},
 }
 
-// Subn subtracts Vx from Vy, stores result in Vx, sets VF = NOT borrow (SUBN Vx, Vy).
-var Subn = &Instruction{
+// SubnInst subtracts Vx from Vy, stores result in Vx, sets VF = NOT borrow (SUBN Vx, Vy).
+var SubnInst = &Instruction{
 	Name:      SubnName,
 	Emulation: subn,
 	Addressing: map[Mode]OpcodeInfo{
@@ -215,8 +215,8 @@ var Subn = &Instruction{
 	},
 }
 
-// Xor performs bitwise XOR on two registers (XOR Vx, Vy).
-var Xor = &Instruction{
+// XorInst performs bitwise XOR on two registers (XOR Vx, Vy).
+var XorInst = &Instruction{
 	Name:      XorName,
 	Emulation: xor,
 	Addressing: map[Mode]OpcodeInfo{
@@ -226,23 +226,23 @@ var Xor = &Instruction{
 
 // Instructions maps instruction names to their information struct.
 var Instructions = map[string]*Instruction{
-	AddName:  Add,
-	AndName:  And,
-	CallName: Call,
-	ClsName:  Cls,
-	DrwName:  Drw,
-	JpName:   Jp,
-	LdName:   Ld,
-	OrName:   Or,
-	RetName:  Ret,
-	RndName:  Rnd,
-	SeName:   Se,
-	ShlName:  Shl,
-	ShrName:  Shr,
-	SkpName:  Skp,
-	SknpName: Sknp,
-	SneName:  Sne,
-	SubName:  Sub,
-	SubnName: Subn,
-	XorName:  Xor,
+	AddName:  AddInst,
+	AndName:  AndInst,
+	CallName: CallInst,
+	ClsName:  ClsInst,
+	DrwName:  DrwInst,
+	JpName:   JpInst,
+	LdName:   LdInst,
+	OrName:   OrInst,
+	RetName:  RetInst,
+	RndName:  RndInst,
+	SeName:   SeInst,
+	ShlName:  ShlInst,
+	ShrName:  ShrInst,
+	SkpName:  SkpInst,
+	SknpName: SknpInst,
+	SneName:  SneInst,
+	SubName:  SubInst,
+	SubnName: SubnInst,
+	XorName:  XorInst,
 }

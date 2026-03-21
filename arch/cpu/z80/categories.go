@@ -4,22 +4,22 @@ import "github.com/retroenv/retrogolib/set"
 
 // BranchingInstructions contains all branching and jumping instructions.
 var BranchingInstructions = set.NewFromSlice([]string{
-	JpAbs.Name, // Jump absolute
-	JrRel.Name, // Jump relative
-	Call.Name,  // Call subroutine
-	Ret.Name,   // Return from subroutine
-	Djnz.Name,  // Decrement B and jump if not zero
-	Rst.Name,   // Restart (call to fixed address)
+	JpAbs.Name,    // Jump absolute
+	JrRel.Name,    // Jump relative
+	CallInst.Name, // Call subroutine
+	RetInst.Name,  // Return from subroutine
+	DjnzInst.Name, // Decrement B and jump if not zero
+	RstInst.Name,  // Restart (call to fixed address)
 })
 
 // NotExecutingFollowingOpcodeInstructions contains all instructions that jump
 // to a different address and do not return to execute the following opcode.
 var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
-	JpAbs.Name,  // Jump absolute (unconditional)
-	Ret.Name,    // Return from subroutine
-	EdReti.Name, // Return from interrupt
-	EdRetn.Name, // Return from non-maskable interrupt
-	Halt.Name,   // Halt execution
+	JpAbs.Name,    // Jump absolute (unconditional)
+	RetInst.Name,  // Return from subroutine
+	EdReti.Name,   // Return from interrupt
+	EdRetn.Name,   // Return from non-maskable interrupt
+	HaltInst.Name, // Halt execution
 })
 
 // MemoryReadInstructions contains all instructions that can read from memory.

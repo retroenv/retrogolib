@@ -66,7 +66,7 @@ var OUTF = &Instruction{
 
 // NopUndoc1 represents undocumented single-byte NOPs using DD prefix alone.
 var NopUndoc1 = &Instruction{
-	Name:       Nop.Name,
+	Name:       NopInst.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: PrefixDD, Size: 1, Cycles: 4}, // DD alone (partial IX prefix)
@@ -76,7 +76,7 @@ var NopUndoc1 = &Instruction{
 
 // NopUndoc2 represents undocumented single-byte NOPs using FD prefix alone.
 var NopUndoc2 = &Instruction{
-	Name:       Nop.Name,
+	Name:       NopInst.Name,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: PrefixFD, Size: 1, Cycles: 4}, // FD alone (partial IY prefix)

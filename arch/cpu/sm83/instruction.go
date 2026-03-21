@@ -113,8 +113,8 @@ const (
 // Implied / simple instructions
 // ---------------------------------------------------------------------------
 
-// Nop - No Operation.
-var Nop = &Instruction{
+// NopInst - No Operation.
+var NopInst = &Instruction{
 	Name: NopName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x00, Size: 1, Cycles: 1},
@@ -122,8 +122,8 @@ var Nop = &Instruction{
 	NoParamFunc: nop,
 }
 
-// Halt - Halt execution until interrupt.
-var Halt = &Instruction{
+// HaltInst - Halt execution until interrupt.
+var HaltInst = &Instruction{
 	Name: HaltName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x76, Size: 1, Cycles: 1},
@@ -131,8 +131,8 @@ var Halt = &Instruction{
 	NoParamFunc: halt,
 }
 
-// Stop - Stop CPU and LCD until button press (SM83-unique).
-var Stop = &Instruction{
+// StopInst - Stop CPU and LCD until button press (SM83-unique).
+var StopInst = &Instruction{
 	Name: StopName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x10, Size: 2, Cycles: 1},
@@ -140,8 +140,8 @@ var Stop = &Instruction{
 	NoParamFunc: stop,
 }
 
-// Rlca - Rotate Left Circular Accumulator.
-var Rlca = &Instruction{
+// RlcaInst - Rotate Left Circular Accumulator.
+var RlcaInst = &Instruction{
 	Name: RlcaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x07, Size: 1, Cycles: 1},
@@ -149,8 +149,8 @@ var Rlca = &Instruction{
 	NoParamFunc: rlcaFunc,
 }
 
-// Rrca - Rotate Right Circular Accumulator.
-var Rrca = &Instruction{
+// RrcaInst - Rotate Right Circular Accumulator.
+var RrcaInst = &Instruction{
 	Name: RrcaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x0F, Size: 1, Cycles: 1},
@@ -158,8 +158,8 @@ var Rrca = &Instruction{
 	NoParamFunc: rrcaFunc,
 }
 
-// Rla - Rotate Left Accumulator through carry.
-var Rla = &Instruction{
+// RlaInst - Rotate Left Accumulator through carry.
+var RlaInst = &Instruction{
 	Name: RlaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x17, Size: 1, Cycles: 1},
@@ -167,8 +167,8 @@ var Rla = &Instruction{
 	NoParamFunc: rlaFunc,
 }
 
-// Rra - Rotate Right Accumulator through carry.
-var Rra = &Instruction{
+// RraInst - Rotate Right Accumulator through carry.
+var RraInst = &Instruction{
 	Name: RraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x1F, Size: 1, Cycles: 1},
@@ -176,8 +176,8 @@ var Rra = &Instruction{
 	NoParamFunc: rraFunc,
 }
 
-// Daa - Decimal Adjust Accumulator.
-var Daa = &Instruction{
+// DaaInst - Decimal Adjust Accumulator.
+var DaaInst = &Instruction{
 	Name: DaaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x27, Size: 1, Cycles: 1},
@@ -185,8 +185,8 @@ var Daa = &Instruction{
 	NoParamFunc: daa,
 }
 
-// Cpl - Complement Accumulator (bitwise NOT).
-var Cpl = &Instruction{
+// CplInst - Complement Accumulator (bitwise NOT).
+var CplInst = &Instruction{
 	Name: CplName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x2F, Size: 1, Cycles: 1},
@@ -194,8 +194,8 @@ var Cpl = &Instruction{
 	NoParamFunc: cpl,
 }
 
-// Scf - Set Carry Flag.
-var Scf = &Instruction{
+// ScfInst - Set Carry Flag.
+var ScfInst = &Instruction{
 	Name: ScfName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x37, Size: 1, Cycles: 1},
@@ -203,8 +203,8 @@ var Scf = &Instruction{
 	NoParamFunc: scf,
 }
 
-// Ccf - Complement Carry Flag.
-var Ccf = &Instruction{
+// CcfInst - Complement Carry Flag.
+var CcfInst = &Instruction{
 	Name: CcfName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0x3F, Size: 1, Cycles: 1},
@@ -212,8 +212,8 @@ var Ccf = &Instruction{
 	NoParamFunc: ccf,
 }
 
-// Di - Disable Interrupts.
-var Di = &Instruction{
+// DiInst - Disable Interrupts.
+var DiInst = &Instruction{
 	Name: DiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xF3, Size: 1, Cycles: 1},
@@ -221,8 +221,8 @@ var Di = &Instruction{
 	NoParamFunc: di,
 }
 
-// Ei - Enable Interrupts.
-var Ei = &Instruction{
+// EiInst - Enable Interrupts.
+var EiInst = &Instruction{
 	Name: EiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xFB, Size: 1, Cycles: 1},
@@ -230,8 +230,8 @@ var Ei = &Instruction{
 	NoParamFunc: ei,
 }
 
-// Reti - Return from Interrupt (SM83: opcode 0xD9, enables interrupts).
-var Reti = &Instruction{
+// RetiInst - Return from Interrupt (SM83: opcode 0xD9, enables interrupts).
+var RetiInst = &Instruction{
 	Name: RetiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xD9, Size: 1, Cycles: 4},
@@ -896,8 +896,8 @@ var JrCond = &Instruction{
 // Call instructions
 // ---------------------------------------------------------------------------
 
-// Call - CALL nn — Call subroutine.
-var Call = &Instruction{
+// CallInst - CALL nn — Call subroutine.
+var CallInst = &Instruction{
 	Name: CallName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ExtendedAddressing: {Opcode: 0xCD, Size: 3, Cycles: 6},
@@ -924,8 +924,8 @@ var CallCond = &Instruction{
 // Return instructions
 // ---------------------------------------------------------------------------
 
-// Ret - RET — Return from subroutine.
-var Ret = &Instruction{
+// RetInst - RET — Return from subroutine.
+var RetInst = &Instruction{
 	Name: RetName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xC9, Size: 1, Cycles: 4},
@@ -952,8 +952,8 @@ var RetCond = &Instruction{
 // RST instructions
 // ---------------------------------------------------------------------------
 
-// Rst - RST n — Restart (call to fixed address).
-var Rst = &Instruction{
+// RstInst - RST n — Restart (call to fixed address).
+var RstInst = &Instruction{
 	Name: RstName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xC7, Size: 1, Cycles: 4},

@@ -127,8 +127,8 @@ const (
 
 // -- Instruction variable definitions --
 
-// Adc - Add with Carry.
-var Adc = &Instruction{
+// AdcInst - Add with Carry.
+var AdcInst = &Instruction{
 	Name: AdcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0x69, BaseSize: 2},
@@ -150,8 +150,8 @@ var Adc = &Instruction{
 	ParamFunc: adc,
 }
 
-// And - AND with Accumulator.
-var And = &Instruction{
+// AndInst - AND with Accumulator.
+var AndInst = &Instruction{
 	Name: AndName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0x29, BaseSize: 2},
@@ -173,8 +173,8 @@ var And = &Instruction{
 	ParamFunc: and,
 }
 
-// Asl - Arithmetic Shift Left.
-var Asl = &Instruction{
+// AslInst - Arithmetic Shift Left.
+var AslInst = &Instruction{
 	Name: AslName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x0A, BaseSize: 1},
@@ -186,29 +186,29 @@ var Asl = &Instruction{
 	ParamFunc: asl,
 }
 
-// Bcc - Branch if Carry Clear.
-var Bcc = &Instruction{
+// BccInst - Branch if Carry Clear.
+var BccInst = &Instruction{
 	Name:       BccName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x90, BaseSize: 2}},
 	ParamFunc:  bcc,
 }
 
-// Bcs - Branch if Carry Set.
-var Bcs = &Instruction{
+// BcsInst - Branch if Carry Set.
+var BcsInst = &Instruction{
 	Name:       BcsName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0xB0, BaseSize: 2}},
 	ParamFunc:  bcs,
 }
 
-// Beq - Branch if Equal (Z=1).
-var Beq = &Instruction{
+// BeqInst - Branch if Equal (Z=1).
+var BeqInst = &Instruction{
 	Name:       BeqName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0xF0, BaseSize: 2}},
 	ParamFunc:  beq,
 }
 
-// Bit - Bit Test.
-var Bit = &Instruction{
+// BitInst - Bit Test.
+var BitInst = &Instruction{
 	Name: BitName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:          {Opcode: 0x89, BaseSize: 2},
@@ -220,92 +220,92 @@ var Bit = &Instruction{
 	ParamFunc: bit,
 }
 
-// Bmi - Branch if Minus (N=1).
-var Bmi = &Instruction{
+// BmiInst - Branch if Minus (N=1).
+var BmiInst = &Instruction{
 	Name:       BmiName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x30, BaseSize: 2}},
 	ParamFunc:  bmi,
 }
 
-// Bne - Branch if Not Equal (Z=0).
-var Bne = &Instruction{
+// BneInst - Branch if Not Equal (Z=0).
+var BneInst = &Instruction{
 	Name:       BneName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0xD0, BaseSize: 2}},
 	ParamFunc:  bne,
 }
 
-// Bpl - Branch if Positive (N=0).
-var Bpl = &Instruction{
+// BplInst - Branch if Positive (N=0).
+var BplInst = &Instruction{
 	Name:       BplName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x10, BaseSize: 2}},
 	ParamFunc:  bpl,
 }
 
-// Bra - Branch Always.
-var Bra = &Instruction{
+// BraInst - Branch Always.
+var BraInst = &Instruction{
 	Name:       BraName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x80, BaseSize: 2}},
 	ParamFunc:  bra,
 }
 
-// Brk - Software Interrupt / Break.
-var Brk = &Instruction{
+// BrkInst - Software Interrupt / Break.
+var BrkInst = &Instruction{
 	Name:        BrkName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImmediateAddressing: {Opcode: 0x00, BaseSize: 2}},
 	NoParamFunc: brk,
 }
 
-// Brl - Branch Long (16-bit offset).
-var Brl = &Instruction{
+// BrlInst - Branch Long (16-bit offset).
+var BrlInst = &Instruction{
 	Name:       BrlName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x82, BaseSize: 3}},
 	ParamFunc:  brl,
 }
 
-// Bvc - Branch if Overflow Clear.
-var Bvc = &Instruction{
+// BvcInst - Branch if Overflow Clear.
+var BvcInst = &Instruction{
 	Name:       BvcName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x50, BaseSize: 2}},
 	ParamFunc:  bvc,
 }
 
-// Bvs - Branch if Overflow Set.
-var Bvs = &Instruction{
+// BvsInst - Branch if Overflow Set.
+var BvsInst = &Instruction{
 	Name:       BvsName,
 	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x70, BaseSize: 2}},
 	ParamFunc:  bvs,
 }
 
-// Clc - Clear Carry Flag.
-var Clc = &Instruction{
+// ClcInst - Clear Carry Flag.
+var ClcInst = &Instruction{
 	Name:        ClcName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x18, BaseSize: 1}},
 	NoParamFunc: clc,
 }
 
-// Cld - Clear Decimal Flag.
-var Cld = &Instruction{
+// CldInst - Clear Decimal Flag.
+var CldInst = &Instruction{
 	Name:        CldName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xD8, BaseSize: 1}},
 	NoParamFunc: cld,
 }
 
-// Cli - Clear Interrupt Disable.
-var Cli = &Instruction{
+// CliInst - Clear Interrupt Disable.
+var CliInst = &Instruction{
 	Name:        CliName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x58, BaseSize: 1}},
 	NoParamFunc: cli,
 }
 
-// Clv - Clear Overflow Flag.
-var Clv = &Instruction{
+// ClvInst - Clear Overflow Flag.
+var ClvInst = &Instruction{
 	Name:        ClvName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xB8, BaseSize: 1}},
 	NoParamFunc: clv,
 }
 
-// Cmp - Compare Accumulator.
-var Cmp = &Instruction{
+// CmpInst - Compare Accumulator.
+var CmpInst = &Instruction{
 	Name: CmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0xC9, BaseSize: 2},
@@ -327,15 +327,15 @@ var Cmp = &Instruction{
 	ParamFunc: cmp,
 }
 
-// Cop - Co-Processor Enable (software interrupt).
-var Cop = &Instruction{
+// CopInst - Co-Processor Enable (software interrupt).
+var CopInst = &Instruction{
 	Name:        CopName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImmediateAddressing: {Opcode: 0x02, BaseSize: 2}},
 	NoParamFunc: cop,
 }
 
-// Cpx - Compare X Register.
-var Cpx = &Instruction{
+// CpxInst - Compare X Register.
+var CpxInst = &Instruction{
 	Name: CpxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:  {Opcode: 0xE0, BaseSize: 2},
@@ -345,8 +345,8 @@ var Cpx = &Instruction{
 	ParamFunc: cpx,
 }
 
-// Cpy - Compare Y Register.
-var Cpy = &Instruction{
+// CpyInst - Compare Y Register.
+var CpyInst = &Instruction{
 	Name: CpyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:  {Opcode: 0xC0, BaseSize: 2},
@@ -356,8 +356,8 @@ var Cpy = &Instruction{
 	ParamFunc: cpy,
 }
 
-// Dec - Decrement.
-var Dec = &Instruction{
+// DecInst - Decrement.
+var DecInst = &Instruction{
 	Name: DecName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x3A, BaseSize: 1},
@@ -369,22 +369,22 @@ var Dec = &Instruction{
 	ParamFunc: dec,
 }
 
-// Dex - Decrement X.
-var Dex = &Instruction{
+// DexInst - Decrement X.
+var DexInst = &Instruction{
 	Name:        DexName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xCA, BaseSize: 1}},
 	NoParamFunc: dex,
 }
 
-// Dey - Decrement Y.
-var Dey = &Instruction{
+// DeyInst - Decrement Y.
+var DeyInst = &Instruction{
 	Name:        DeyName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x88, BaseSize: 1}},
 	NoParamFunc: dey,
 }
 
-// Eor - Exclusive OR with Accumulator.
-var Eor = &Instruction{
+// EorInst - Exclusive OR with Accumulator.
+var EorInst = &Instruction{
 	Name: EorName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0x49, BaseSize: 2},
@@ -406,8 +406,8 @@ var Eor = &Instruction{
 	ParamFunc: eor,
 }
 
-// Inc - Increment.
-var Inc = &Instruction{
+// IncInst - Increment.
+var IncInst = &Instruction{
 	Name: IncName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x1A, BaseSize: 1},
@@ -419,22 +419,22 @@ var Inc = &Instruction{
 	ParamFunc: inc,
 }
 
-// Inx - Increment X.
-var Inx = &Instruction{
+// InxInst - Increment X.
+var InxInst = &Instruction{
 	Name:        InxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xE8, BaseSize: 1}},
 	NoParamFunc: inx,
 }
 
-// Iny - Increment Y.
-var Iny = &Instruction{
+// InyInst - Increment Y.
+var InyInst = &Instruction{
 	Name:        InyName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xC8, BaseSize: 1}},
 	NoParamFunc: iny,
 }
 
-// Jml - Jump Long (sets PB).
-var Jml = &Instruction{
+// JmlInst - Jump Long (sets PB).
+var JmlInst = &Instruction{
 	Name: JmlName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AbsoluteLongAddressing:         {Opcode: 0x5C, BaseSize: 4},
@@ -443,8 +443,8 @@ var Jml = &Instruction{
 	ParamFunc: jml,
 }
 
-// Jmp - Jump.
-var Jmp = &Instruction{
+// JmpInst - Jump.
+var JmpInst = &Instruction{
 	Name: JmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AbsoluteAddressing:                 {Opcode: 0x4C, BaseSize: 3},
@@ -454,15 +454,15 @@ var Jmp = &Instruction{
 	ParamFunc: jmp,
 }
 
-// Jsl - Jump to Subroutine Long.
-var Jsl = &Instruction{
+// JslInst - Jump to Subroutine Long.
+var JslInst = &Instruction{
 	Name:       JslName,
 	Addressing: map[AddressingMode]OpcodeInfo{AbsoluteLongAddressing: {Opcode: 0x22, BaseSize: 4}},
 	ParamFunc:  jsl,
 }
 
-// Jsr - Jump to Subroutine.
-var Jsr = &Instruction{
+// JsrInst - Jump to Subroutine.
+var JsrInst = &Instruction{
 	Name: JsrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AbsoluteAddressing:                 {Opcode: 0x20, BaseSize: 3},
@@ -471,8 +471,8 @@ var Jsr = &Instruction{
 	ParamFunc: jsr,
 }
 
-// Lda - Load Accumulator.
-var Lda = &Instruction{
+// LdaInst - Load Accumulator.
+var LdaInst = &Instruction{
 	Name: LdaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0xA9, BaseSize: 2},
@@ -494,8 +494,8 @@ var Lda = &Instruction{
 	ParamFunc: lda,
 }
 
-// Ldx - Load X Register.
-var Ldx = &Instruction{
+// LdxInst - Load X Register.
+var LdxInst = &Instruction{
 	Name: LdxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:          {Opcode: 0xA2, BaseSize: 2},
@@ -507,8 +507,8 @@ var Ldx = &Instruction{
 	ParamFunc: ldx,
 }
 
-// Ldy - Load Y Register.
-var Ldy = &Instruction{
+// LdyInst - Load Y Register.
+var LdyInst = &Instruction{
 	Name: LdyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:          {Opcode: 0xA0, BaseSize: 2},
@@ -520,8 +520,8 @@ var Ldy = &Instruction{
 	ParamFunc: ldy,
 }
 
-// Lsr - Logical Shift Right.
-var Lsr = &Instruction{
+// LsrInst - Logical Shift Right.
+var LsrInst = &Instruction{
 	Name: LsrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x4A, BaseSize: 1},
@@ -533,29 +533,29 @@ var Lsr = &Instruction{
 	ParamFunc: lsr,
 }
 
-// Mvn - Move Block Next (increment).
-var Mvn = &Instruction{
+// MvnInst - Move Block Next (increment).
+var MvnInst = &Instruction{
 	Name:       MvnName,
 	Addressing: map[AddressingMode]OpcodeInfo{BlockMoveAddressing: {Opcode: 0x54, BaseSize: 3}},
 	ParamFunc:  mvn,
 }
 
-// Mvp - Move Block Previous (decrement).
-var Mvp = &Instruction{
+// MvpInst - Move Block Previous (decrement).
+var MvpInst = &Instruction{
 	Name:       MvpName,
 	Addressing: map[AddressingMode]OpcodeInfo{BlockMoveAddressing: {Opcode: 0x44, BaseSize: 3}},
 	ParamFunc:  mvp,
 }
 
-// Nop - No Operation.
-var Nop = &Instruction{
+// NopInst - No Operation.
+var NopInst = &Instruction{
 	Name:        NopName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xEA, BaseSize: 1}},
 	NoParamFunc: nop,
 }
 
-// Ora - OR with Accumulator.
-var Ora = &Instruction{
+// OraInst - OR with Accumulator.
+var OraInst = &Instruction{
 	Name: OraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0x09, BaseSize: 2},
@@ -577,127 +577,127 @@ var Ora = &Instruction{
 	ParamFunc: ora,
 }
 
-// Pea - Push Effective Absolute Address.
-var Pea = &Instruction{
+// PeaInst - Push Effective Absolute Address.
+var PeaInst = &Instruction{
 	Name:        PeaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{AbsoluteAddressing: {Opcode: 0xF4, BaseSize: 3}},
 	NoParamFunc: pea,
 }
 
-// Pei - Push Effective Indirect Address.
-var Pei = &Instruction{
+// PeiInst - Push Effective Indirect Address.
+var PeiInst = &Instruction{
 	Name:        PeiName,
 	Addressing:  map[AddressingMode]OpcodeInfo{DirectPageIndirectAddressing: {Opcode: 0xD4, BaseSize: 2}},
 	NoParamFunc: pei,
 }
 
-// Per - Push Effective Relative Address.
-var Per = &Instruction{
+// PerInst - Push Effective Relative Address.
+var PerInst = &Instruction{
 	Name:        PerName,
 	Addressing:  map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x62, BaseSize: 3}},
 	NoParamFunc: per,
 }
 
-// Pha - Push Accumulator.
-var Pha = &Instruction{
+// PhaInst - Push Accumulator.
+var PhaInst = &Instruction{
 	Name:        PhaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x48, BaseSize: 1}},
 	NoParamFunc: pha,
 }
 
-// Phb - Push Data Bank Register.
-var Phb = &Instruction{
+// PhbInst - Push Data Bank Register.
+var PhbInst = &Instruction{
 	Name:        PhbName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x8B, BaseSize: 1}},
 	NoParamFunc: phb,
 }
 
-// Phd - Push Direct Page Register.
-var Phd = &Instruction{
+// PhdInst - Push Direct Page Register.
+var PhdInst = &Instruction{
 	Name:        PhdName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x0B, BaseSize: 1}},
 	NoParamFunc: phd,
 }
 
-// Phk - Push Program Bank Register.
-var Phk = &Instruction{
+// PhkInst - Push Program Bank Register.
+var PhkInst = &Instruction{
 	Name:        PhkName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x4B, BaseSize: 1}},
 	NoParamFunc: phk,
 }
 
-// Php - Push Processor Status.
-var Php = &Instruction{
+// PhpInst - Push Processor Status.
+var PhpInst = &Instruction{
 	Name:        PhpName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x08, BaseSize: 1}},
 	NoParamFunc: php,
 }
 
-// Phx - Push X Register.
-var Phx = &Instruction{
+// PhxInst - Push X Register.
+var PhxInst = &Instruction{
 	Name:        PhxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xDA, BaseSize: 1}},
 	NoParamFunc: phx,
 }
 
-// Phy - Push Y Register.
-var Phy = &Instruction{
+// PhyInst - Push Y Register.
+var PhyInst = &Instruction{
 	Name:        PhyName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x5A, BaseSize: 1}},
 	NoParamFunc: phy,
 }
 
-// Pla - Pull Accumulator.
-var Pla = &Instruction{
+// PlaInst - Pull Accumulator.
+var PlaInst = &Instruction{
 	Name:        PlaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x68, BaseSize: 1}},
 	NoParamFunc: pla,
 }
 
-// Plb - Pull Data Bank Register.
-var Plb = &Instruction{
+// PlbInst - Pull Data Bank Register.
+var PlbInst = &Instruction{
 	Name:        PlbName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xAB, BaseSize: 1}},
 	NoParamFunc: plb,
 }
 
-// Pld - Pull Direct Page Register.
-var Pld = &Instruction{
+// PldInst - Pull Direct Page Register.
+var PldInst = &Instruction{
 	Name:        PldName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x2B, BaseSize: 1}},
 	NoParamFunc: pld,
 }
 
-// Plp - Pull Processor Status.
-var Plp = &Instruction{
+// PlpInst - Pull Processor Status.
+var PlpInst = &Instruction{
 	Name:        PlpName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x28, BaseSize: 1}},
 	NoParamFunc: plp,
 }
 
-// Plx - Pull X Register.
-var Plx = &Instruction{
+// PlxInst - Pull X Register.
+var PlxInst = &Instruction{
 	Name:        PlxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xFA, BaseSize: 1}},
 	NoParamFunc: plx,
 }
 
-// Ply - Pull Y Register.
-var Ply = &Instruction{
+// PlyInst - Pull Y Register.
+var PlyInst = &Instruction{
 	Name:        PlyName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x7A, BaseSize: 1}},
 	NoParamFunc: ply,
 }
 
-// Rep - Reset Processor Status Bits.
-var Rep = &Instruction{
+// RepInst - Reset Processor Status Bits.
+var RepInst = &Instruction{
 	Name:       RepName,
 	Addressing: map[AddressingMode]OpcodeInfo{ImmediateAddressing: {Opcode: 0xC2, BaseSize: 2}},
 	ParamFunc:  rep,
 }
 
-// Rol - Rotate Left.
-var Rol = &Instruction{
+// RolInst - Rotate Left.
+var RolInst = &Instruction{
 	Name: RolName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x2A, BaseSize: 1},
@@ -709,8 +709,8 @@ var Rol = &Instruction{
 	ParamFunc: rol,
 }
 
-// Ror - Rotate Right.
-var Ror = &Instruction{
+// RorInst - Rotate Right.
+var RorInst = &Instruction{
 	Name: RorName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AccumulatorAddressing:        {Opcode: 0x6A, BaseSize: 1},
@@ -722,29 +722,29 @@ var Ror = &Instruction{
 	ParamFunc: ror,
 }
 
-// Rti - Return from Interrupt.
-var Rti = &Instruction{
+// RtiInst - Return from Interrupt.
+var RtiInst = &Instruction{
 	Name:        RtiName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x40, BaseSize: 1}},
 	NoParamFunc: rti,
 }
 
-// Rtl - Return from Subroutine Long.
-var Rtl = &Instruction{
+// RtlInst - Return from Subroutine Long.
+var RtlInst = &Instruction{
 	Name:        RtlName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x6B, BaseSize: 1}},
 	NoParamFunc: rtl,
 }
 
-// Rts - Return from Subroutine.
-var Rts = &Instruction{
+// RtsInst - Return from Subroutine.
+var RtsInst = &Instruction{
 	Name:        RtsName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x60, BaseSize: 1}},
 	NoParamFunc: rts,
 }
 
-// Sbc - Subtract with Carry.
-var Sbc = &Instruction{
+// SbcInst - Subtract with Carry.
+var SbcInst = &Instruction{
 	Name: SbcName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing:                      {Opcode: 0xE9, BaseSize: 2},
@@ -766,36 +766,36 @@ var Sbc = &Instruction{
 	ParamFunc: sbc,
 }
 
-// Sec - Set Carry Flag.
-var Sec = &Instruction{
+// SecInst - Set Carry Flag.
+var SecInst = &Instruction{
 	Name:        SecName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x38, BaseSize: 1}},
 	NoParamFunc: sec,
 }
 
-// Sed - Set Decimal Flag.
-var Sed = &Instruction{
+// SedInst - Set Decimal Flag.
+var SedInst = &Instruction{
 	Name:        SedName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xF8, BaseSize: 1}},
 	NoParamFunc: sed,
 }
 
-// Sei - Set Interrupt Disable.
-var Sei = &Instruction{
+// SeiInst - Set Interrupt Disable.
+var SeiInst = &Instruction{
 	Name:        SeiName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x78, BaseSize: 1}},
 	NoParamFunc: sei,
 }
 
-// Sep - Set Processor Status Bits.
-var Sep = &Instruction{
+// SepInst - Set Processor Status Bits.
+var SepInst = &Instruction{
 	Name:       SepName,
 	Addressing: map[AddressingMode]OpcodeInfo{ImmediateAddressing: {Opcode: 0xE2, BaseSize: 2}},
 	ParamFunc:  sep,
 }
 
-// Sta - Store Accumulator.
-var Sta = &Instruction{
+// StaInst - Store Accumulator.
+var StaInst = &Instruction{
 	Name: StaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing:                     {Opcode: 0x85, BaseSize: 2},
@@ -816,15 +816,15 @@ var Sta = &Instruction{
 	ParamFunc: sta,
 }
 
-// Stp - Stop the Processor.
-var Stp = &Instruction{
+// StpInst - Stop the Processor.
+var StpInst = &Instruction{
 	Name:        StpName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xDB, BaseSize: 1}},
 	NoParamFunc: stp,
 }
 
-// Stx - Store X Register.
-var Stx = &Instruction{
+// StxInst - Store X Register.
+var StxInst = &Instruction{
 	Name: StxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing:         {Opcode: 0x86, BaseSize: 2},
@@ -834,8 +834,8 @@ var Stx = &Instruction{
 	ParamFunc: stx,
 }
 
-// Sty - Store Y Register.
-var Sty = &Instruction{
+// StyInst - Store Y Register.
+var StyInst = &Instruction{
 	Name: StyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing:         {Opcode: 0x84, BaseSize: 2},
@@ -845,8 +845,8 @@ var Sty = &Instruction{
 	ParamFunc: sty,
 }
 
-// Stz - Store Zero.
-var Stz = &Instruction{
+// StzInst - Store Zero.
+var StzInst = &Instruction{
 	Name: StzName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing:         {Opcode: 0x64, BaseSize: 2},
@@ -857,43 +857,43 @@ var Stz = &Instruction{
 	ParamFunc: stz,
 }
 
-// Tax - Transfer A to X.
-var Tax = &Instruction{
+// TaxInst - Transfer A to X.
+var TaxInst = &Instruction{
 	Name:        TaxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xAA, BaseSize: 1}},
 	NoParamFunc: tax,
 }
 
-// Tay - Transfer A to Y.
-var Tay = &Instruction{
+// TayInst - Transfer A to Y.
+var TayInst = &Instruction{
 	Name:        TayName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xA8, BaseSize: 1}},
 	NoParamFunc: tay,
 }
 
-// Tcd - Transfer C to Direct Page.
-var Tcd = &Instruction{
+// TcdInst - Transfer C to Direct Page.
+var TcdInst = &Instruction{
 	Name:        TcdName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x5B, BaseSize: 1}},
 	NoParamFunc: tcd,
 }
 
-// Tcs - Transfer C to Stack Pointer.
-var Tcs = &Instruction{
+// TcsInst - Transfer C to Stack Pointer.
+var TcsInst = &Instruction{
 	Name:        TcsName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x1B, BaseSize: 1}},
 	NoParamFunc: tcs,
 }
 
-// Tdc - Transfer Direct Page to C.
-var Tdc = &Instruction{
+// TdcInst - Transfer Direct Page to C.
+var TdcInst = &Instruction{
 	Name:        TdcName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x7B, BaseSize: 1}},
 	NoParamFunc: tdc,
 }
 
-// Trb - Test and Reset Bits.
-var Trb = &Instruction{
+// TrbInst - Test and Reset Bits.
+var TrbInst = &Instruction{
 	Name: TrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing: {Opcode: 0x14, BaseSize: 2},
@@ -902,8 +902,8 @@ var Trb = &Instruction{
 	ParamFunc: trb,
 }
 
-// Tsb - Test and Set Bits.
-var Tsb = &Instruction{
+// TsbInst - Test and Set Bits.
+var TsbInst = &Instruction{
 	Name: TsbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		DirectPageAddressing: {Opcode: 0x04, BaseSize: 2},
@@ -912,78 +912,78 @@ var Tsb = &Instruction{
 	ParamFunc: tsb,
 }
 
-// Tsc - Transfer Stack Pointer to C.
-var Tsc = &Instruction{
+// TscInst - Transfer Stack Pointer to C.
+var TscInst = &Instruction{
 	Name:        TscName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x3B, BaseSize: 1}},
 	NoParamFunc: tsc,
 }
 
-// Tsx - Transfer SP to X.
-var Tsx = &Instruction{
+// TsxInst - Transfer SP to X.
+var TsxInst = &Instruction{
 	Name:        TsxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xBA, BaseSize: 1}},
 	NoParamFunc: tsx,
 }
 
-// Txa - Transfer X to A.
-var Txa = &Instruction{
+// TxaInst - Transfer X to A.
+var TxaInst = &Instruction{
 	Name:        TxaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x8A, BaseSize: 1}},
 	NoParamFunc: txa,
 }
 
-// Txs - Transfer X to SP.
-var Txs = &Instruction{
+// TxsInst - Transfer X to SP.
+var TxsInst = &Instruction{
 	Name:        TxsName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x9A, BaseSize: 1}},
 	NoParamFunc: txs,
 }
 
-// Txy - Transfer X to Y.
-var Txy = &Instruction{
+// TxyInst - Transfer X to Y.
+var TxyInst = &Instruction{
 	Name:        TxyName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x9B, BaseSize: 1}},
 	NoParamFunc: txy,
 }
 
-// Tya - Transfer Y to A.
-var Tya = &Instruction{
+// TyaInst - Transfer Y to A.
+var TyaInst = &Instruction{
 	Name:        TyaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0x98, BaseSize: 1}},
 	NoParamFunc: tya,
 }
 
-// Tyx - Transfer Y to X.
-var Tyx = &Instruction{
+// TyxInst - Transfer Y to X.
+var TyxInst = &Instruction{
 	Name:        TyxName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xBB, BaseSize: 1}},
 	NoParamFunc: tyx,
 }
 
-// Wai - Wait for Interrupt.
-var Wai = &Instruction{
+// WaiInst - Wait for Interrupt.
+var WaiInst = &Instruction{
 	Name:        WaiName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xCB, BaseSize: 1}},
 	NoParamFunc: wai,
 }
 
-// Wdm - Reserved/WDM (2-byte NOP).
-var Wdm = &Instruction{
+// WdmInst - Reserved/WDM (2-byte NOP).
+var WdmInst = &Instruction{
 	Name:       WdmName,
 	Addressing: map[AddressingMode]OpcodeInfo{ImmediateAddressing: {Opcode: 0x42, BaseSize: 2}},
 	ParamFunc:  wdm,
 }
 
-// Xba - Exchange B and A (swap accumulator bytes).
-var Xba = &Instruction{
+// XbaInst - Exchange B and A (swap accumulator bytes).
+var XbaInst = &Instruction{
 	Name:        XbaName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xEB, BaseSize: 1}},
 	NoParamFunc: xba,
 }
 
-// Xce - Exchange Carry and Emulation flags.
-var Xce = &Instruction{
+// XceInst - Exchange Carry and Emulation flags.
+var XceInst = &Instruction{
 	Name:        XceName,
 	Addressing:  map[AddressingMode]OpcodeInfo{ImpliedAddressing: {Opcode: 0xFB, BaseSize: 1}},
 	NoParamFunc: xce,
@@ -991,96 +991,96 @@ var Xce = &Instruction{
 
 // Instructions maps instruction names to their definitions.
 var Instructions = map[string]*Instruction{
-	AdcName: Adc,
-	AndName: And,
-	AslName: Asl,
-	BccName: Bcc,
-	BcsName: Bcs,
-	BeqName: Beq,
-	BitName: Bit,
-	BmiName: Bmi,
-	BneName: Bne,
-	BplName: Bpl,
-	BraName: Bra,
-	BrkName: Brk,
-	BrlName: Brl,
-	BvcName: Bvc,
-	BvsName: Bvs,
-	ClcName: Clc,
-	CldName: Cld,
-	CliName: Cli,
-	ClvName: Clv,
-	CmpName: Cmp,
-	CopName: Cop,
-	CpxName: Cpx,
-	CpyName: Cpy,
-	DecName: Dec,
-	DexName: Dex,
-	DeyName: Dey,
-	EorName: Eor,
-	IncName: Inc,
-	InxName: Inx,
-	InyName: Iny,
-	JmlName: Jml,
-	JmpName: Jmp,
-	JslName: Jsl,
-	JsrName: Jsr,
-	LdaName: Lda,
-	LdxName: Ldx,
-	LdyName: Ldy,
-	LsrName: Lsr,
-	MvnName: Mvn,
-	MvpName: Mvp,
-	NopName: Nop,
-	OraName: Ora,
-	PeaName: Pea,
-	PeiName: Pei,
-	PerName: Per,
-	PhaName: Pha,
-	PhbName: Phb,
-	PhdName: Phd,
-	PhkName: Phk,
-	PhpName: Php,
-	PhxName: Phx,
-	PhyName: Phy,
-	PlaName: Pla,
-	PlbName: Plb,
-	PldName: Pld,
-	PlpName: Plp,
-	PlxName: Plx,
-	PlyName: Ply,
-	RepName: Rep,
-	RolName: Rol,
-	RorName: Ror,
-	RtiName: Rti,
-	RtlName: Rtl,
-	RtsName: Rts,
-	SbcName: Sbc,
-	SecName: Sec,
-	SedName: Sed,
-	SeiName: Sei,
-	SepName: Sep,
-	StaName: Sta,
-	StpName: Stp,
-	StxName: Stx,
-	StyName: Sty,
-	StzName: Stz,
-	TaxName: Tax,
-	TayName: Tay,
-	TcdName: Tcd,
-	TcsName: Tcs,
-	TdcName: Tdc,
-	TrbName: Trb,
-	TsbName: Tsb,
-	TscName: Tsc,
-	TsxName: Tsx,
-	TxaName: Txa,
-	TxsName: Txs,
-	TxyName: Txy,
-	TyaName: Tya,
-	TyxName: Tyx,
-	WaiName: Wai,
-	WdmName: Wdm,
-	XbaName: Xba,
-	XceName: Xce,
+	AdcName: AdcInst,
+	AndName: AndInst,
+	AslName: AslInst,
+	BccName: BccInst,
+	BcsName: BcsInst,
+	BeqName: BeqInst,
+	BitName: BitInst,
+	BmiName: BmiInst,
+	BneName: BneInst,
+	BplName: BplInst,
+	BraName: BraInst,
+	BrkName: BrkInst,
+	BrlName: BrlInst,
+	BvcName: BvcInst,
+	BvsName: BvsInst,
+	ClcName: ClcInst,
+	CldName: CldInst,
+	CliName: CliInst,
+	ClvName: ClvInst,
+	CmpName: CmpInst,
+	CopName: CopInst,
+	CpxName: CpxInst,
+	CpyName: CpyInst,
+	DecName: DecInst,
+	DexName: DexInst,
+	DeyName: DeyInst,
+	EorName: EorInst,
+	IncName: IncInst,
+	InxName: InxInst,
+	InyName: InyInst,
+	JmlName: JmlInst,
+	JmpName: JmpInst,
+	JslName: JslInst,
+	JsrName: JsrInst,
+	LdaName: LdaInst,
+	LdxName: LdxInst,
+	LdyName: LdyInst,
+	LsrName: LsrInst,
+	MvnName: MvnInst,
+	MvpName: MvpInst,
+	NopName: NopInst,
+	OraName: OraInst,
+	PeaName: PeaInst,
+	PeiName: PeiInst,
+	PerName: PerInst,
+	PhaName: PhaInst,
+	PhbName: PhbInst,
+	PhdName: PhdInst,
+	PhkName: PhkInst,
+	PhpName: PhpInst,
+	PhxName: PhxInst,
+	PhyName: PhyInst,
+	PlaName: PlaInst,
+	PlbName: PlbInst,
+	PldName: PldInst,
+	PlpName: PlpInst,
+	PlxName: PlxInst,
+	PlyName: PlyInst,
+	RepName: RepInst,
+	RolName: RolInst,
+	RorName: RorInst,
+	RtiName: RtiInst,
+	RtlName: RtlInst,
+	RtsName: RtsInst,
+	SbcName: SbcInst,
+	SecName: SecInst,
+	SedName: SedInst,
+	SeiName: SeiInst,
+	SepName: SepInst,
+	StaName: StaInst,
+	StpName: StpInst,
+	StxName: StxInst,
+	StyName: StyInst,
+	StzName: StzInst,
+	TaxName: TaxInst,
+	TayName: TayInst,
+	TcdName: TcdInst,
+	TcsName: TcsInst,
+	TdcName: TdcInst,
+	TrbName: TrbInst,
+	TsbName: TsbInst,
+	TscName: TscInst,
+	TsxName: TsxInst,
+	TxaName: TxaInst,
+	TxsName: TxsInst,
+	TxyName: TxyInst,
+	TyaName: TyaInst,
+	TyxName: TyxInst,
+	WaiName: WaiInst,
+	WdmName: WdmInst,
+	XbaName: XbaInst,
+	XceName: XceInst,
 }

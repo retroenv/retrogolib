@@ -6,17 +6,17 @@ import "github.com/retroenv/retrogolib/set"
 var BranchingInstructions = set.NewFromSlice([]string{
 	JpAbs.Name,
 	JrRel.Name,
-	Call.Name,
-	Ret.Name,
-	Rst.Name,
+	CallInst.Name,
+	RetInst.Name,
+	RstInst.Name,
 })
 
 // NotExecutingFollowingOpcodeInstructions contains instructions that don't return to the next opcode.
 var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
 	JpAbs.Name,
-	Ret.Name,
-	Reti.Name,
-	Halt.Name,
+	RetInst.Name,
+	RetiInst.Name,
+	HaltInst.Name,
 })
 
 // MemoryReadInstructions contains instructions that can read from memory.

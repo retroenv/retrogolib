@@ -158,17 +158,17 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 
 // jumpInstructions is a lookup set of instructions that always modify PC.
 var jumpInstructions = set.Set[*Instruction]{
-	Call:     {},
+	CallInst: {},
 	CallCond: {},
 	JpAbs:    {},
 	JpCond:   {},
 	JpHL:     {},
 	JrRel:    {},
 	JrCond:   {},
-	Ret:      {},
+	RetInst:  {},
 	RetCond:  {},
-	Reti:     {},
-	Rst:      {},
+	RetiInst: {},
+	RstInst:  {},
 }
 
 // isJumpInstruction checks if an instruction is a jump/branch instruction that always modifies PC.

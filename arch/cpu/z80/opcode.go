@@ -32,14 +32,14 @@ type OpcodeInfo struct {
 // Opcodes maps the first opcode byte to CPU instruction information.
 // Reference: https://jnz.dk/z80/opref.html
 var Opcodes = [256]Opcode{
-	{Instruction: Nop, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x00 NOP
+	{Instruction: NopInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},             // 0x00 NOP
 	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},          // 0x01 LD BC,nn
 	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x02 LD (BC),A
 	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x03 INC BC
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x04 INC B
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x05 DEC B
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x06 LD B,n
-	{Instruction: Rlca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x07 RLCA
+	{Instruction: RlcaInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},            // 0x07 RLCA
 	{Instruction: ExAf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x08 EX AF,AF'
 	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},             // 0x09 ADD HL,BC
 	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x0A LD A,(BC)
@@ -47,16 +47,16 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x0C INC C
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x0D DEC C
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x0E LD C,n
-	{Instruction: Rrca, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                // 0x0F RRCA
+	{Instruction: RrcaInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},            // 0x0F RRCA
 
-	{Instruction: Djnz, Addressing: RelativeAddressing, Timing: 8, Size: 2},               // 0x10 DJNZ e (8 if not taken, 13 if taken)
+	{Instruction: DjnzInst, Addressing: RelativeAddressing, Timing: 8, Size: 2},           // 0x10 DJNZ e (8 if not taken, 13 if taken)
 	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},          // 0x11 LD DE,nn
 	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x12 LD (DE),A
 	{Instruction: IncReg16, Addressing: RegisterAddressing, Timing: 6, Size: 1},           // 0x13 INC DE
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x14 INC D
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x15 DEC D
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x16 LD D,n
-	{Instruction: Rla, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x17 RLA
+	{Instruction: RlaInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},             // 0x17 RLA
 	{Instruction: JrRel, Addressing: RelativeAddressing, Timing: 12, Size: 2},             // 0x18 JR e
 	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},             // 0x19 ADD HL,DE
 	{Instruction: LdIndirect, Addressing: RegisterIndirectAddressing, Timing: 7, Size: 1}, // 0x1A LD A,(DE)
@@ -64,7 +64,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x1C INC E
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},            // 0x1D DEC E
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},            // 0x1E LD E,n
-	{Instruction: Rra, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x1F RRA
+	{Instruction: RraInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},             // 0x1F RRA
 
 	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},      // 0x20 JR NZ,e (7 if not taken, 12 if taken)
 	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},   // 0x21 LD HL,nn
@@ -73,7 +73,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x24 INC H
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x25 DEC H
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0x26 LD H,n
-	{Instruction: Daa, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0x27 DAA
+	{Instruction: DaaInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},      // 0x27 DAA
 	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},      // 0x28 JR Z,e (7 if not taken, 12 if taken)
 	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},      // 0x29 ADD HL,HL
 	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 16, Size: 3}, // 0x2A LD HL,(nn)
@@ -81,7 +81,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x2C INC L
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0x2D DEC L
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0x2E LD L,n
-	{Instruction: Cpl, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0x2F CPL
+	{Instruction: CplInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},      // 0x2F CPL
 
 	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                 // 0x30 JR NC,e (7 if not taken, 12 if taken)
 	{Instruction: LdReg16, Addressing: ImmediateAddressing, Timing: 10, Size: 3},              // 0x31 LD SP,nn
@@ -90,7 +90,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1},   // 0x34 INC (HL)
 	{Instruction: DecIndirect, Addressing: RegisterIndirectAddressing, Timing: 11, Size: 1},   // 0x35 DEC (HL)
 	{Instruction: LdIndirectImm, Addressing: RegisterIndirectAddressing, Timing: 10, Size: 2}, // 0x36 LD (HL),n
-	{Instruction: Scf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                     // 0x37 SCF
+	{Instruction: ScfInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x37 SCF
 	{Instruction: JrCond, Addressing: RelativeAddressing, Timing: 7, Size: 2},                 // 0x38 JR C,e (7 if not taken, 12 if taken)
 	{Instruction: AddHl, Addressing: RegisterAddressing, Timing: 11, Size: 1},                 // 0x39 ADD HL,SP
 	{Instruction: LdExtended, Addressing: ExtendedAddressing, Timing: 13, Size: 3},            // 0x3A LD A,(nn)
@@ -98,7 +98,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IncReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},                // 0x3C INC A
 	{Instruction: DecReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},                // 0x3D DEC A
 	{Instruction: LdImm8, Addressing: ImmediateAddressing, Timing: 7, Size: 2},                // 0x3E LD A,n
-	{Instruction: Ccf, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                     // 0x3F CCF
+	{Instruction: CcfInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},                 // 0x3F CCF
 
 	// 0x40-0x7F: LD r,r instructions (register to register)
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x40 LD B,B
@@ -152,22 +152,22 @@ var Opcodes = [256]Opcode{
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x6E LD L,(HL)
 	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x6F LD L,A
 
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x70 LD (HL),B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x71 LD (HL),C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x72 LD (HL),D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x73 LD (HL),E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x74 LD (HL),H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x75 LD (HL),L
-	{Instruction: Halt, Addressing: ImpliedAddressing, Timing: 4, Size: 1},    // 0x76 HALT
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x77 LD (HL),A
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x78 LD A,B
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x79 LD A,C
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7A LD A,D
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7B LD A,E
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7C LD A,H
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7D LD A,L
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1}, // 0x7E LD A,(HL)
-	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x7F LD A,A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x70 LD (HL),B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x71 LD (HL),C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x72 LD (HL),D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x73 LD (HL),E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x74 LD (HL),H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x75 LD (HL),L
+	{Instruction: HaltInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1}, // 0x76 HALT
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x77 LD (HL),A
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x78 LD A,B
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x79 LD A,C
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x7A LD A,D
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x7B LD A,E
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x7C LD A,H
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x7D LD A,L
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 7, Size: 1},  // 0x7E LD A,(HL)
+	{Instruction: LdReg8, Addressing: RegisterAddressing, Timing: 4, Size: 1},  // 0x7F LD A,A
 
 	// 0x80-0xBF: ALU operations
 	{Instruction: AddA, Addressing: RegisterAddressing, Timing: 4, Size: 1}, // 0x80 ADD A,B
@@ -246,15 +246,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xC4 CALL NZ,nn (10 if not taken, 17 if taken)
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1}, // 0xC5 PUSH BC
 	{Instruction: AddA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},      // 0xC6 ADD A,n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},        // 0xC7 RST 00H
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},    // 0xC7 RST 00H
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xC8 RET Z (5 if not taken, 11 if taken)
-	{Instruction: Ret, Addressing: ImpliedAddressing, Timing: 10, Size: 1},        // 0xC9 RET
+	{Instruction: RetInst, Addressing: ImpliedAddressing, Timing: 10, Size: 1},    // 0xC9 RET
 	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xCA JP Z,nn
 	{}, // 0xCB - Prefix for bit operations
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3}, // 0xCC CALL Z,nn (10 if not taken, 17 if taken)
-	{Instruction: Call, Addressing: ExtendedAddressing, Timing: 17, Size: 3},     // 0xCD CALL nn
+	{Instruction: CallInst, Addressing: ExtendedAddressing, Timing: 17, Size: 3}, // 0xCD CALL nn
 	{Instruction: AdcA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},     // 0xCE ADC A,n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},       // 0xCF RST 08H
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},   // 0xCF RST 08H
 
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xD0 RET NC (5 if not taken, 11 if taken)
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},  // 0xD1 POP DE
@@ -263,15 +263,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xD4 CALL NC,nn (10 if not taken, 17 if taken)
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1}, // 0xD5 PUSH DE
 	{Instruction: SubA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},      // 0xD6 SUB n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},        // 0xD7 RST 10H
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},    // 0xD7 RST 10H
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xD8 RET C (5 if not taken, 11 if taken)
-	{Instruction: Exx, Addressing: ImpliedAddressing, Timing: 4, Size: 1},         // 0xD9 EXX
+	{Instruction: ExxInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},     // 0xD9 EXX
 	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xDA JP C,nn
 	{Instruction: InPort, Addressing: PortAddressing, Timing: 11, Size: 2},        // 0xDB IN A,(n)
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xDC CALL C,nn (10 if not taken, 17 if taken)
 	{}, // 0xDD - Prefix for IX operations
-	{Instruction: SbcA, Addressing: ImmediateAddressing, Timing: 7, Size: 2}, // 0xDE SBC A,n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},   // 0xDF RST 18H
+	{Instruction: SbcA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},   // 0xDE SBC A,n
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1}, // 0xDF RST 18H
 
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},             // 0xE0 RET PO (5 if not taken, 11 if taken)
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},          // 0xE1 POP HL
@@ -280,32 +280,32 @@ var Opcodes = [256]Opcode{
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},          // 0xE4 CALL PO,nn (10 if not taken, 17 if taken)
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1},         // 0xE5 PUSH HL
 	{Instruction: AndA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},              // 0xE6 AND n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},                // 0xE7 RST 20H
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},            // 0xE7 RST 20H
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},             // 0xE8 RET PE (5 if not taken, 11 if taken)
 	{Instruction: JpIndirect, Addressing: RegisterIndirectAddressing, Timing: 4, Size: 1}, // 0xE9 JP (HL)
 	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},            // 0xEA JP PE,nn
 	{Instruction: ExDeHl, Addressing: ImpliedAddressing, Timing: 4, Size: 1},              // 0xEB EX DE,HL
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},          // 0xEC CALL PE,nn (10 if not taken, 17 if taken)
 	{}, // 0xED - Prefix for extended operations
-	{Instruction: XorA, Addressing: ImmediateAddressing, Timing: 7, Size: 2}, // 0xEE XOR n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},   // 0xEF RST 28H
+	{Instruction: XorA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},   // 0xEE XOR n
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1}, // 0xEF RST 28H
 
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xF0 RET P (5 if not taken, 11 if taken)
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 10, Size: 1},  // 0xF1 POP AF
 	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xF2 JP P,nn
-	{Instruction: Di, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0xF3 DI
+	{Instruction: DiInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},      // 0xF3 DI
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xF4 CALL P,nn (10 if not taken, 17 if taken)
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 11, Size: 1}, // 0xF5 PUSH AF
 	{Instruction: OrA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},       // 0xF6 OR n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},        // 0xF7 RST 30H
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},    // 0xF7 RST 30H
 	{Instruction: RetCond, Addressing: ImpliedAddressing, Timing: 5, Size: 1},     // 0xF8 RET M (5 if not taken, 11 if taken)
 	{Instruction: LdSp, Addressing: RegisterAddressing, Timing: 6, Size: 1},       // 0xF9 LD SP,HL
 	{Instruction: JpCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},    // 0xFA JP M,nn
-	{Instruction: Ei, Addressing: ImpliedAddressing, Timing: 4, Size: 1},          // 0xFB EI
+	{Instruction: EiInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1},      // 0xFB EI
 	{Instruction: CallCond, Addressing: ExtendedAddressing, Timing: 10, Size: 3},  // 0xFC CALL M,nn (10 if not taken, 17 if taken)
 	{}, // 0xFD - Prefix for IY operations
-	{Instruction: CpA, Addressing: ImmediateAddressing, Timing: 7, Size: 2}, // 0xFE CP n
-	{Instruction: Rst, Addressing: ImpliedAddressing, Timing: 11, Size: 1},  // 0xFF RST 38H
+	{Instruction: CpA, Addressing: ImmediateAddressing, Timing: 7, Size: 2},    // 0xFE CP n
+	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 11, Size: 1}, // 0xFF RST 38H
 }
 
 // EDOpcodes maps ED-prefixed opcodes to instruction information.

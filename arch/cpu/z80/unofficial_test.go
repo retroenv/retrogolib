@@ -59,7 +59,7 @@ func TestUndocumentedDDFDPassthrough(t *testing.T) {
 
 func TestUndocumentedNopInstructionDefinitions(t *testing.T) {
 	// Test NopUndoc1 (DD prefix alone)
-	assert.Equal(t, Nop.Name, NopUndoc1.Name, "NopUndoc1 should have same name as regular NOP")
+	assert.Equal(t, NopInst.Name, NopUndoc1.Name, "NopUndoc1 should have same name as regular NOP")
 	assert.True(t, NopUndoc1.Unofficial, "NopUndoc1 should be marked as unofficial")
 
 	opcodeInfo := NopUndoc1.Addressing[ImpliedAddressing]
@@ -68,7 +68,7 @@ func TestUndocumentedNopInstructionDefinitions(t *testing.T) {
 	assert.Equal(t, byte(4), opcodeInfo.Cycles, "NopUndoc1 should take 4 cycles")
 
 	// Test NopUndoc2 (FD prefix alone)
-	assert.Equal(t, Nop.Name, NopUndoc2.Name, "NopUndoc2 should have same name as regular NOP")
+	assert.Equal(t, NopInst.Name, NopUndoc2.Name, "NopUndoc2 should have same name as regular NOP")
 	assert.True(t, NopUndoc2.Unofficial, "NopUndoc2 should be marked as unofficial")
 
 	opcodeInfo2 := NopUndoc2.Addressing[ImpliedAddressing]

@@ -173,11 +173,11 @@ func TestInstructionCoverage(t *testing.T) {
 	t.Parallel()
 
 	majorInstructions := []*Instruction{
-		Nop, LdReg8, LdReg16, LdImm8, IncReg8, IncReg16, DecReg8, DecReg16,
+		NopInst, LdReg8, LdReg16, LdImm8, IncReg8, IncReg16, DecReg8, DecReg16,
 		AddA, AdcA, SubA, SbcA, AndA, XorA, OrA, CpA,
 		JrRel, JrCond, JpAbs, JpCond,
-		Call, CallCond, Ret, RetCond,
-		PushReg16, PopReg16, Rst, Halt, Ei, Di,
+		CallInst, CallCond, RetInst, RetCond,
+		PushReg16, PopReg16, RstInst, HaltInst, EiInst, DiInst,
 	}
 
 	for _, ins := range majorInstructions {
@@ -305,7 +305,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		}
 		foundCount := 0
 		for _, reg := range expectedRst {
-			if _, exists := Rst.GetOpcodeByRegister(reg); exists {
+			if _, exists := RstInst.GetOpcodeByRegister(reg); exists {
 				foundCount++
 			}
 		}
@@ -315,10 +315,10 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 	t.Run("Instruction without RegisterOpcodes", func(t *testing.T) {
 		t.Parallel()
 		// Test that NOP has RegisterOpcodes set to nil
-		assert.Nil(t, Nop.RegisterOpcodes, "NOP should have nil RegisterOpcodes")
+		assert.Nil(t, NopInst.RegisterOpcodes, "NOP should have nil RegisterOpcodes")
 
 		// When RegisterOpcodes is nil, GetOpcodeByRegister falls back to Addressing map
-		_, exists := Nop.GetOpcodeByRegister(RegB)
+		_, exists := NopInst.GetOpcodeByRegister(RegB)
 		assert.True(t, exists, "NOP fallback to Addressing map should work")
 	})
 }
@@ -395,9 +395,9 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 		{"PUSH AF", PushReg16, RegAF, 0xF5},
 
 		// Restart instructions
-		{"RST 00H", Rst, RegRst00, 0xC7},
-		{"RST 08H", Rst, RegRst08, 0xCF},
-		{"RST 38H", Rst, RegRst38, 0xFF},
+		{"RST 00H", RstInst, RegRst00, 0xC7},
+		{"RST 08H", RstInst, RegRst08, 0xCF},
+		{"RST 38H", RstInst, RegRst38, 0xFF},
 	}
 
 	for _, tc := range testCases {
@@ -428,7 +428,7 @@ func getOpcodeByRegisterTests() []opcodeByRegisterTest {
 		{"DecReg8 - DEC C", DecReg8, RegC, 0x0D, true},
 		{"LdReg16 - LD HL,nn", LdReg16, RegHL, 0x21, true},
 		{"IncReg16 - INC SP", IncReg16, RegSP, 0x33, true},
-		{"Rst - RST 08H", Rst, RegRst08, 0xCF, true},
+		{"Rst - RST 08H", RstInst, RegRst08, 0xCF, true},
 		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
 		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
 		{"Non-existent register", IncReg8, RegIX, 0x00, false},
