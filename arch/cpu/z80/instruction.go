@@ -733,7 +733,7 @@ var JpCond = &Instruction{
 	ParamFunc: jpCond,
 }
 
-// CallCond - Conditional Call.
+// CallCond - Conditional CallInst.
 var CallCond = &Instruction{
 	Name: CallName,
 	Addressing: map[AddressingMode]OpcodeInfo{

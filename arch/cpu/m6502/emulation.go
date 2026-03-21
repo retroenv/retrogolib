@@ -159,7 +159,7 @@ func beq(c *CPU, params ...any) error {
 	return nil
 }
 
-// bit - Bit Test.
+// bit - BitInst Test.
 func bit(c *CPU, params ...any) error {
 	value, err := c.memory.ReadAbsolute(params[0], nil)
 	if err != nil {

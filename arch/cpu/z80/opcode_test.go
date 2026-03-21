@@ -296,7 +296,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		assert.Equal(t, 7, foundCount, "Should find 7 register variants for INC")
 	})
 
-	t.Run("Rst variants", func(t *testing.T) {
+	t.Run("RstInst variants", func(t *testing.T) {
 		t.Parallel()
 		// Test that RST variants exist
 		expectedRst := []RegisterParam{
