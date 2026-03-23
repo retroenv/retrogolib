@@ -32,22 +32,6 @@ func TestZexall(t *testing.T) {
 	runZex(t, filepath.Join(dir, "zexall.com"), 67)
 }
 
-// getZexallDir returns the path to the ZEXALL test data directory,
-// skipping the test if it is not found.
-func getZexallDir(t *testing.T) string {
-	t.Helper()
-
-	_, thisFile, _, ok := runtime.Caller(0)
-	assert.True(t, ok)
-
-	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "zexall")
-	if _, err := os.Stat(dir); err != nil {
-		t.Skipf("ZEXALL data not found at %s (run 'make -C testdata zexall' to download)", dir)
-	}
-
-	return dir
-}
-
 // zexOutput tracks output buffering and error counting for ZEX tests.
 type zexOutput struct {
 	buf       bytes.Buffer
@@ -83,6 +67,22 @@ func (z *zexOutput) flush() {
 	if z.buf.Len() > 0 {
 		z.flushLine()
 	}
+}
+
+// getZexallDir returns the path to the ZEXALL test data directory,
+// skipping the test if it is not found.
+func getZexallDir(t *testing.T) string {
+	t.Helper()
+
+	_, thisFile, _, ok := runtime.Caller(0)
+	assert.True(t, ok)
+
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "zexall")
+	if _, err := os.Stat(dir); err != nil {
+		t.Skipf("ZEXALL data not found at %s (run 'make -C testdata zexall' to download)", dir)
+	}
+
+	return dir
 }
 
 // handleBDOS processes CP/M BDOS calls intercepted at address 0x0005.

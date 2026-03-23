@@ -1,5 +1,17 @@
 package sm83
 
+// getALUOperand returns the operand for ALU operations.
+// If an Immediate8 parameter is provided, it returns that value.
+// Otherwise, it reads the register encoded in the lower 3 bits of the current opcode.
+func (c *CPU) getALUOperand(params []any) uint8 {
+	if len(params) > 0 {
+		if v, ok := params[0].(Immediate8); ok {
+			return uint8(v)
+		}
+	}
+	return c.GetRegisterValue(c.currentOpcode & 0x07)
+}
+
 // nop does nothing.
 func nop(_ *CPU) error {
 	return nil
@@ -15,18 +27,6 @@ func halt(c *CPU) error {
 func stop(c *CPU) error {
 	c.halted = true
 	return nil
-}
-
-// getALUOperand returns the operand for ALU operations.
-// If an Immediate8 parameter is provided, it returns that value.
-// Otherwise, it reads the register encoded in the lower 3 bits of the current opcode.
-func (c *CPU) getALUOperand(params []any) uint8 {
-	if len(params) > 0 {
-		if v, ok := params[0].(Immediate8); ok {
-			return uint8(v)
-		}
-	}
-	return c.GetRegisterValue(c.currentOpcode & 0x07)
 }
 
 // addA performs ADD A,r or ADD A,n.
