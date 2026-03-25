@@ -38,6 +38,13 @@ const (
 	// - Apple IIGS
 	M65816 Architecture = "65816"
 
+	// M6809 represents the Motorola 6809 processor used in:
+	// - TRS-80 Color Computer (CoCo)
+	// - Vectrex
+	// - Dragon 32/64
+	// - Williams arcade hardware (Defender, Robotron, Joust)
+	M6809 Architecture = "6809"
+
 	// M68000 represents the Motorola 68000 processor used in:
 	// - Sega Genesis/Mega Drive
 	// - Commodore Amiga
@@ -72,6 +79,7 @@ var allSupportedArchitectures = []Architecture{
 	M6502,
 	M65C02,
 	M65816,
+	M6809,
 	M68000,
 	SM83,
 	X86,

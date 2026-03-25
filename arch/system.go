@@ -25,6 +25,10 @@ const (
 	// Used on COSMAC VIP, Telmac 1800, ETI 660, and modern emulators.
 	CHIP8System System = "chip8"
 
+	// CoCo represents the Tandy TRS-80 Color Computer series.
+	// Uses the Motorola 6809E processor.
+	CoCo System = "coco"
+
 	// DOS represents MS-DOS and compatible systems.
 	DOS System = "dos"
 
@@ -43,6 +47,10 @@ const (
 	// Uses the WDC 65C816 processor.
 	SNES System = "snes"
 
+	// Vectrex represents the GCE/Milton Bradley Vectrex home video game console.
+	// Uses the Motorola 6809 processor with a vector display.
+	Vectrex System = "vectrex"
+
 	// ZXSpectrum represents the Sinclair ZX Spectrum home computer series.
 	ZXSpectrum System = "zx-spectrum"
 )
@@ -53,11 +61,13 @@ var allSupportedSystems = []System{
 	AppleIIGS,
 	Atari2600,
 	CHIP8System,
+	CoCo,
 	DOS,
 	GameBoy,
 	Generic,
 	NES,
 	SNES,
+	Vectrex,
 	ZXSpectrum,
 }
 
