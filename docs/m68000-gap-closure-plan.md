@@ -1,7 +1,7 @@
 # Motorola 68000 Gap Closure Plan
 
-Based on the emulator comparison (`m68000-emulator-comparison.md`), this plan addresses the
-identified accuracy gaps while keeping the existing test suite working.
+This plan addresses the identified accuracy gaps while keeping the existing test suite
+working.
 
 ## Design Principle
 

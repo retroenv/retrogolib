@@ -90,27 +90,19 @@ These areas still differ from `main` and remain on `work2`:
 **Status:** Branch-specific
 **Files:**
 
-- `docs/cpu-implementation-plan-65816.md`
-- `docs/cpu-implementation-plan-65c02-68000.md`
-- `docs/cpu-implementation-plan-sm83.md`
-- `docs/m68000-emulator-comparison.md`
 - `docs/m68000-gap-closure-plan.md`
-- `docs/supported-systems.md`
-- `docs/system-implementation-plan-atari2600.md`
 - `docs/system-implementation-plan-c64.md`
-- `docs/system-implementation-plan-gameboy.md`
-- `docs/z80-emulator-comparison-cross-language.md`
-- `docs/z80-emulator-comparison.md`
 - `docs/z80-gap-closure-plan.md`
 - `docs/work-branch-changelog.md`
 
 ## Merge Summary
 
-Current `main...work2` diff summary:
-
-- 127 files changed
-- 29,084 insertions
-- 5 deletions
-
 Most remaining branch-specific work is additive new-package work. The only small
 follow-up delta inside an existing package is the three-file Z80 change listed above.
+
+The `docs/` directory has been reduced to active planning docs plus this changelog:
+
+- `docs/m68000-gap-closure-plan.md`
+- `docs/system-implementation-plan-c64.md`
+- `docs/z80-gap-closure-plan.md`
+- `docs/work-branch-changelog.md`
