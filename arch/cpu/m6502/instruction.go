@@ -421,16 +421,6 @@ var KilInst = &Instruction{
 	NoParamFunc: kil,
 }
 
-// KilInst - Kill/Jam: halts the CPU. Unofficial opcode that freezes the 6502.
-// The test-visible effect is that PC advances by 1 (past the opcode byte).
-var KilInst = &Instruction{
-	Name: KilName,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x02, Size: 1},
-	},
-	NoParamFunc: kil,
-}
-
 // LdaInst - Load Accumulator - load a byte into A.
 var LdaInst = &Instruction{
 	Name: LdaName,
