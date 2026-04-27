@@ -1,3 +1,9 @@
+// Package z80 provides SingleStepTests/z80 JSON-based single-step tests.
+//
+// To download test data and run:
+//
+//	make -C testdata z80
+//	make test-integration
 package z80
 
 import (

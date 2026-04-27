@@ -363,20 +363,19 @@ func jmp(c *CPU, params ...any) error {
 }
 
 // jsr - jump to subroutine.
-func jsr(c *CPU, params ...any) error {
-	if len(params) == 0 {
-		return fmt.Errorf("%w: jsr missing address parameter", ErrMissingParameter)
-	}
-
-	addr, ok := params[0].(Absolute)
-	if !ok {
-		return fmt.Errorf("%w: jsr invalid address parameter type", ErrInvalidParameterType)
-	}
-
+// The real 6502 reads BAL (low byte), pushes the return address, then reads BAH (high byte).
+// This means a stack push that overlaps with the instruction's high byte operand in memory
+// will affect the jump target — intentional hardware behavior.
+func jsr(c *CPU) error {
+	bal := c.memory.Read(c.PC + 1)
 	returnAddr := c.PC + 2
 	c.push(uint8(returnAddr >> 8))
 	c.push(uint8(returnAddr & 0xFF))
-	c.PC = uint16(addr)
+	bah := c.memory.Read(c.PC + 2)
+	if c.opts.tracing {
+		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, bal, bah)
+	}
+	c.PC = uint16(bah)<<8 | uint16(bal)
 	return nil
 }
 

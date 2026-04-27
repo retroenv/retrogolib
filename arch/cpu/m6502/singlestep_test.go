@@ -1,12 +1,9 @@
-//go:build singlestep
-
 // Package m6502 provides SingleStepTests/65x02 JSON-based single-step tests.
 //
-// To run these tests, download the test data:
+// To download test data and run:
 //
 //	make -C testdata m6502
-//
-// Then run: go test -tags singlestep ./arch/cpu/m6502/...
+//	make test-integration
 package m6502
 
 import (
@@ -27,6 +24,10 @@ const (
 
 // TestSingleStep discovers and runs all SingleStepTests/65x02 JSON test files.
 func TestSingleStep(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long-running single-step integration test in short mode")
+	}
+
 	dataDir := getSingleStepDir(t)
 
 	entries, err := os.ReadDir(dataDir)
@@ -137,7 +138,9 @@ func ssVariantForDir(dir string) CPUVariant {
 	switch dir {
 	case "nes6502":
 		return VariantNES6502
-	case "rockwell65c02", "synertek65c02", "wdc65c02":
+	case "synertek65c02":
+		return VariantSynertek65C02
+	case "rockwell65c02", "wdc65c02":
 		return Variant65C02
 	default:
 		return VariantNMOS6502

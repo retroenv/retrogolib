@@ -1,14 +1,9 @@
-//go:build dormann
-
 // Package m6502 provides Klaus Dormann functional tests for the 6502/65C02 CPU emulator.
 //
-// To download test data, run from the project root:
+// To download test data and run:
 //
 //	make -C testdata m6502
-//
-// Then run:
-//
-//	go test -tags dormann -timeout 30m ./arch/cpu/m6502/...
+//	make test-integration
 package m6502
 
 import (
@@ -64,7 +59,6 @@ func TestDormann(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runDormannTest(t, dataDir, tc)
 		})

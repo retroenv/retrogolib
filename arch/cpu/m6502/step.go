@@ -75,9 +75,12 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
 
 	var opcode Opcode
-	if c.opts.variant >= Variant65C02 {
+	switch {
+	case c.opts.variant == VariantSynertek65C02:
+		opcode = OpcodesSynertek65C02[b]
+	case c.opts.variant >= Variant65C02:
 		opcode = Opcodes65C02[b]
-	} else {
+	default:
 		opcode = Opcodes[b]
 	}
 	if opcode.Instruction == nil {

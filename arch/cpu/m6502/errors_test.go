@@ -10,14 +10,13 @@ func TestErrorConstants(t *testing.T) {
 	basicMem := &errorTestMemory{}
 	memory, err := NewMemory(basicMem)
 	assert.NoError(t, err)
-	cpu := New(memory)
 
-	// Test missing parameter error
-	err = jsr(cpu) // No parameters
+	// Test missing parameter error via zero-page indirect read without resolved address
+	_, err = memory.ReadAddressModes(true, ZeroPageIndirect(0x10))
 	assert.ErrorIs(t, err, ErrMissingParameter, "Should return ErrMissingParameter")
 
-	// Test invalid parameter type error
-	err = jsr(cpu, "invalid") // Wrong type
+	// Test invalid parameter type error via zero-page indirect read with wrong register type
+	_, err = memory.ReadAddressModes(true, ZeroPageIndirect(0x10), "invalid")
 	assert.ErrorIs(t, err, ErrInvalidParameterType, "Should return ErrInvalidParameterType")
 
 	// Test unsupported addressing mode from memory operations
