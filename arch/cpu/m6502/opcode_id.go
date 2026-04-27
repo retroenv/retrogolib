@@ -24,6 +24,7 @@ const (
 	Bmi
 	Bne
 	Bpl
+	Bra // 65C02
 	Brk
 	Bvc
 	Bvs
@@ -45,6 +46,7 @@ const (
 	Isc // unofficial
 	Jmp
 	Jsr
+	Kil // unofficial — halts the CPU
 	Las // unofficial
 	Lax // unofficial
 	Lda
@@ -56,8 +58,12 @@ const (
 	Ora
 	Pha
 	Php
+	Phx // 65C02
+	Phy // 65C02
 	Pla
 	Plp
+	Plx // 65C02
+	Ply // 65C02
 	Rla // unofficial
 	Rol
 	Ror
@@ -77,9 +83,12 @@ const (
 	Sta
 	Stx
 	Sty
+	Stz // 65C02
 	Tas // unofficial
 	Tax
 	Tay
+	Trb // 65C02
+	Tsb // 65C02
 	Tsx
 	Txa
 	Txs
@@ -105,6 +114,7 @@ var NameToOpcodeID = map[string]OpcodeID{
 	BmiName: Bmi,
 	BneName: Bne,
 	BplName: Bpl,
+	BraName: Bra,
 	BrkName: Brk,
 	BvcName: Bvc,
 	BvsName: Bvs,
@@ -126,6 +136,7 @@ var NameToOpcodeID = map[string]OpcodeID{
 	IscName: Isc,
 	JmpName: Jmp,
 	JsrName: Jsr,
+	KilName: Kil,
 	LasName: Las,
 	LaxName: Lax,
 	LdaName: Lda,
@@ -137,8 +148,12 @@ var NameToOpcodeID = map[string]OpcodeID{
 	OraName: Ora,
 	PhaName: Pha,
 	PhpName: Php,
+	PhxName: Phx,
+	PhyName: Phy,
 	PlaName: Pla,
 	PlpName: Plp,
+	PlxName: Plx,
+	PlyName: Ply,
 	RlaName: Rla,
 	RolName: Rol,
 	RorName: Ror,
@@ -158,9 +173,12 @@ var NameToOpcodeID = map[string]OpcodeID{
 	StaName: Sta,
 	StxName: Stx,
 	StyName: Sty,
+	StzName: Stz,
 	TasName: Tas,
 	TaxName: Tax,
 	TayName: Tay,
+	TrbName: Trb,
+	TsbName: Tsb,
 	TsxName: Tsx,
 	TxaName: Txa,
 	TxsName: Txs,
@@ -184,6 +202,7 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Bmi: BmiName,
 	Bne: BneName,
 	Bpl: BplName,
+	Bra: BraName,
 	Brk: BrkName,
 	Bvc: BvcName,
 	Bvs: BvsName,
@@ -205,6 +224,7 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Isc: IscName,
 	Jmp: JmpName,
 	Jsr: JsrName,
+	Kil: KilName,
 	Las: LasName,
 	Lax: LaxName,
 	Lda: LdaName,
@@ -216,8 +236,12 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Ora: OraName,
 	Pha: PhaName,
 	Php: PhpName,
+	Phx: PhxName,
+	Phy: PhyName,
 	Pla: PlaName,
 	Plp: PlpName,
+	Plx: PlxName,
+	Ply: PlyName,
 	Rla: RlaName,
 	Rol: RolName,
 	Ror: RorName,
@@ -237,9 +261,12 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Sta: StaName,
 	Stx: StxName,
 	Sty: StyName,
+	Stz: StzName,
 	Tas: TasName,
 	Tax: TaxName,
 	Tay: TayName,
+	Trb: TrbName,
+	Tsb: TsbName,
 	Tsx: TsxName,
 	Txa: TxaName,
 	Txs: TxsName,

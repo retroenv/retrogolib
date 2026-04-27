@@ -557,7 +557,10 @@ func TestJmp(t *testing.T) {
 func TestJsr(t *testing.T) {
 	t.Parallel()
 	cpu := cpuTestSetup(t)
-	assert.NoError(t, jsr(cpu, Absolute(0x101)))
+	// Write target address 0x0101 at PC+1 (low) and PC+2 (high).
+	cpu.memory.Write(cpu.PC+1, 0x01)
+	cpu.memory.Write(cpu.PC+2, 0x01)
+	assert.NoError(t, jsr(cpu))
 
 	assert.Equal(t, InitialStack-2, cpu.SP)
 	assert.Equal(t, 0x101, cpu.PC)
