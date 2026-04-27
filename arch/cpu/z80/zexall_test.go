@@ -1,3 +1,9 @@
+// Package z80 provides ZEXDOC/ZEXALL exerciser tests for the Z80 CPU emulator.
+//
+// To download test data and run:
+//
+//	make -C testdata z80
+//	make test-integration
 package z80
 
 import (
