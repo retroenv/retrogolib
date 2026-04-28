@@ -11,65 +11,53 @@
 go get github.com/retroenv/retrogolib
 ```
 
-**Requirements:**
-- Go 1.22 or later
-- No CGO dependencies
-
 ## Overview
 
-RetroGoLib is a Golang library designed to simplify the development of tools for retro consoles.
-It provides a comprehensive set of functionalities for creating emulators, debugging tools, and other
-retro console utilities, all while maintaining minimal dependencies and focusing on clean, maintainable code.
+RetroGoLib is a Go library for building retro computing tools such as emulators, debuggers,
+disassemblers, and system-specific utilities. It focuses on small dependencies, reusable CPU and
+system components, and clean APIs that compose well in standalone tools.
 
-### Key Design Principles
-- **Minimal Dependencies**: Only one external dependency (ebitengine/purego)
-- **CGO-Free**: SDL support without CGO for easier cross-compilation
-- **Type Safety**: Extensive use of Go generics for type-safe APIs
-- **Thread Safety**: CPU implementations with proper synchronization patterns
-- **Testing**: Comprehensive test coverage with consistent assertion patterns
+## Highlights
 
-## Supported Systems
+- Go 1.22 or later
+- Single external dependency: [`ebitengine/purego`](https://github.com/ebitengine/purego)
+- No CGO dependencies, including SDL support for easier cross-compilation
+- Reusable CPU emulation packages with tests and system helpers
+- Supporting utility packages for CLI apps, configuration, logging, input, and assertions
 
-### CPUs
-- **6502**: Full instruction set with accurate timing
-- **Chip-8**: Complete virtual machine implementation
-- **Z80**: Complete Z80 CPU emulation with array-based opcode tables
-- **x86**: Real mode instruction set (8086 through 80486)
+## CPU Packages
 
-### Consoles
-- **NES (Nintendo Entertainment System)**: Cartridge formats, memory mapping
+These packages are currently implemented in the repository:
 
-## Features
+- `arch/cpu/chip8`: Chip-8 virtual machine
+- `arch/cpu/m6502`: MOS 6502, including 65C02-related support
+- `arch/cpu/x86`: x86 instruction definitions for 8086 through 80486
+- `arch/cpu/z80`: Zilog Z80, including prefixed and undocumented opcode support
 
-### CPU Emulation
-- **6502 CPU**: Full instruction set with memory management, stack operations, and interrupt support
-- **Chip-8 Virtual CPU**: Complete virtual machine with display, timers, and input handling
-- **Z80 CPU**: Complete Z80 instruction set with 16-bit registers, prefix instructions (ED/DD/FD), and interrupts
-- **x86 CPU**: Real mode instruction set for static analysis (8086, 80186, 80286, 80386, 80486)
+## System Support
 
-### System Support
-- **NES (Nintendo Entertainment System)**: Cartridge handling, memory mapping, and parameter conversion
+Concrete system helper packages currently include:
+
+- `arch/system/nes`: NES cartridge, mapper, register, and parameter helpers
 
 ## Package Overview
 
-    ├─ app              common application/service helpers
-    ├─ arch/cpu/chip8   Chip-8 virtual CPU support
-    ├─ arch/cpu/m6502   6502 CPU support
-    ├─ arch/cpu/x86     x86 real mode CPU support (8086-486)
-    ├─ arch/cpu/z80     Z80 CPU support
-    ├─ arch/system/nes  NES common types and helpers
-    ├─ assert           test assertion helpers
-    ├─ buildinfo        show version info that is embedded in the binary
-    ├─ cli              command-line interface utilities with section-based flag parsing
-    ├─ config           configuration management
-    ├─ gui              GUI support - SDL without need for CGO
-    ├─ input            hardware controller/keyboard helpers
-    ├─ log              fast and structured logging based on slog
-    ├─ set              generic set data structure with comprehensive operations
+    ├─ app               common application and service helpers
+    ├─ arch              shared architecture and system identifiers
+    ├─ arch/cpu/*        CPU emulation and virtual-machine packages
+    ├─ arch/system/*     system-specific constants and helpers
+    ├─ assert            test assertion helpers
+    ├─ buildinfo         version metadata helpers
+    ├─ cli               command-line parsing and related utilities
+    ├─ config            configuration loading, parsing, and persistence
+    ├─ gui               graphical interface helpers with CGO-free SDL integration
+    ├─ input             keyboard and controller input helpers
+    ├─ log               structured logging helpers built on slog
+    └─ set               generic set data structures and operations
 
 ## API Documentation
 
-For detailed API documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com/retroenv/retrogolib).
+For detailed package documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com/retroenv/retrogolib).
 
 ## License
 
