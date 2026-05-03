@@ -374,6 +374,17 @@ func Implements(t Testing, interfaceType, object any, msgAndArgs ...any) {
 	}
 }
 
+// IsType asserts that object has the same type as expectedType.
+func IsType(t Testing, expectedType, object any, msgAndArgs ...any) {
+	t.Helper()
+	expected := reflect.TypeOf(expectedType)
+	actual := reflect.TypeOf(object)
+	if expected != actual {
+		msg := fmt.Sprintf("expected type %v but got %v", expected, actual)
+		Fail(t, msg, msgAndArgs...)
+	}
+}
+
 // equal checks if two values are equal, handling type conversions and nil values efficiently.
 func equal(expected, actual any) bool {
 	// Handle nil cases efficiently

@@ -531,6 +531,32 @@ func TestImplements(t *testing.T) {
 	}
 }
 
+func TestIsType(t *testing.T) {
+	tst := &errorCapture{}
+	IsType(tst, int(0), int(42))
+	if tst.failed {
+		t.Error("IsType failed for matching types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, int(0), "hello")
+	if !tst.failed {
+		t.Error("IsType should have failed for mismatched types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, testImpl{}, testImpl{})
+	if tst.failed {
+		t.Error("IsType failed for matching struct types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, testImpl{}, struct{}{})
+	if !tst.failed {
+		t.Error("IsType should have failed for mismatched struct types")
+	}
+}
+
 type errorCapture struct {
 	errs   []any
 	failed bool
