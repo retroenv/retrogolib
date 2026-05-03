@@ -2,6 +2,111 @@ package m6809
 
 import "fmt"
 
+// decodeIndexedMode decodes the complex indexed addressing modes (bit 7 = 1).
+// Returns the effective address, any extra operand bytes, and error.
+// The extended indirect mode (0x0F) is handled separately by readExtendedIndirect.
+func (c *CPU) decodeIndexedMode(postbyte uint8, baseOffset uint16, reg uint16) (uint16, []byte, error) { //nolint:cyclop,funlen
+	mode := postbyte & 0x0F
+
+	switch mode {
+	case 0x00: // ,R+
+		c.setIndexedRegister(postbyte, reg+1)
+		return reg, nil, nil
+
+	case 0x01: // ,R++
+		c.setIndexedRegister(postbyte, reg+2)
+		return reg, nil, nil
+
+	case 0x02: // ,-R
+		c.setIndexedRegister(postbyte, reg-1)
+		return c.indexedRegister(postbyte), nil, nil
+
+	case 0x03: // ,--R
+		c.setIndexedRegister(postbyte, reg-2)
+		return c.indexedRegister(postbyte), nil, nil
+
+	case 0x04: // ,R (no offset)
+		return reg, nil, nil
+
+	case 0x05: // B,R
+		return uint16(int32(reg) + int32(int8(c.B))), nil, nil
+
+	case 0x06: // A,R
+		return uint16(int32(reg) + int32(int8(c.A))), nil, nil
+
+	case 0x08: // n,R (8-bit offset)
+		b := c.fetchByte(baseOffset + 1)
+		return uint16(int32(reg) + int32(int8(b))), []byte{b}, nil
+
+	case 0x09: // n,R (16-bit offset)
+		hi := c.fetchByte(baseOffset + 1)
+		lo := c.fetchByte(baseOffset + 2)
+		offset := int16(uint16(hi)<<8 | uint16(lo))
+		return uint16(int32(reg) + int32(offset)), []byte{hi, lo}, nil
+
+	case 0x0B: // D,R
+		return uint16(int32(reg) + int32(int16(c.D()))), nil, nil
+
+	case 0x0C: // n,PCR (8-bit offset)
+		b := c.fetchByte(baseOffset + 1)
+		pc := c.PC + baseOffset + 2
+		return uint16(int32(pc) + int32(int8(b))), []byte{b}, nil
+
+	case 0x0D: // n,PCR (16-bit offset)
+		hi := c.fetchByte(baseOffset + 1)
+		lo := c.fetchByte(baseOffset + 2)
+		offset := int16(uint16(hi)<<8 | uint16(lo))
+		pc := c.PC + baseOffset + 3
+		return uint16(int32(pc) + int32(offset)), []byte{hi, lo}, nil
+
+	default:
+		return 0, nil, fmt.Errorf("%w: postbyte 0x%02X", ErrInvalidIndexPostbyte, postbyte)
+	}
+}
+
+// indexedRegister returns the value of the register specified in the postbyte (bits 5-6).
+func (c *CPU) indexedRegister(postbyte uint8) uint16 {
+	switch (postbyte >> 5) & 0x03 {
+	case 0x00:
+		return c.X
+	case 0x01:
+		return c.Y
+	case 0x02:
+		return c.U
+	case 0x03:
+		return c.S
+	}
+	return 0
+}
+
+// setIndexedRegister sets the register specified in the postbyte (bits 5-6).
+func (c *CPU) setIndexedRegister(postbyte uint8, value uint16) {
+	switch (postbyte >> 5) & 0x03 {
+	case 0x00:
+		c.X = value
+	case 0x01:
+		c.Y = value
+	case 0x02:
+		c.U = value
+	case 0x03:
+		c.S = value
+	}
+}
+
+// resolveEA resolves an effective address parameter to a readable 16-bit address.
+func (c *CPU) resolveEA(param any) (uint16, error) {
+	switch p := param.(type) {
+	case DirectPage:
+		return c.dpAddr(uint8(p)), nil
+	case Extended16:
+		return uint16(p), nil
+	case IndexedAddr:
+		return uint16(p), nil
+	default:
+		return 0, fmt.Errorf("%w: type %T", ErrUnsupportedAddressingMode, param)
+	}
+}
+
 // readOpParams reads the instruction operand bytes for the given addressing mode.
 // Returns the decoded params, raw operand bytes, and error.
 func readOpParams(c *CPU, mode AddressingMode, baseOffset uint16) ([]any, []byte, error) {
@@ -121,109 +226,4 @@ func readExtendedIndirect(c *CPU, baseOffset uint16, operands []byte) ([]any, []
 	addr := uint16(hi)<<8 | uint16(lo)
 	addr = c.memory.ReadWord(addr)
 	return []any{IndexedAddr(addr)}, operands, nil
-}
-
-// decodeIndexedMode decodes the complex indexed addressing modes (bit 7 = 1).
-// Returns the effective address, any extra operand bytes, and error.
-// The extended indirect mode (0x0F) is handled separately by readExtendedIndirect.
-func (c *CPU) decodeIndexedMode(postbyte uint8, baseOffset uint16, reg uint16) (uint16, []byte, error) { //nolint:cyclop,funlen
-	mode := postbyte & 0x0F
-
-	switch mode {
-	case 0x00: // ,R+
-		c.setIndexedRegister(postbyte, reg+1)
-		return reg, nil, nil
-
-	case 0x01: // ,R++
-		c.setIndexedRegister(postbyte, reg+2)
-		return reg, nil, nil
-
-	case 0x02: // ,-R
-		c.setIndexedRegister(postbyte, reg-1)
-		return c.indexedRegister(postbyte), nil, nil
-
-	case 0x03: // ,--R
-		c.setIndexedRegister(postbyte, reg-2)
-		return c.indexedRegister(postbyte), nil, nil
-
-	case 0x04: // ,R (no offset)
-		return reg, nil, nil
-
-	case 0x05: // B,R
-		return uint16(int32(reg) + int32(int8(c.B))), nil, nil
-
-	case 0x06: // A,R
-		return uint16(int32(reg) + int32(int8(c.A))), nil, nil
-
-	case 0x08: // n,R (8-bit offset)
-		b := c.fetchByte(baseOffset + 1)
-		return uint16(int32(reg) + int32(int8(b))), []byte{b}, nil
-
-	case 0x09: // n,R (16-bit offset)
-		hi := c.fetchByte(baseOffset + 1)
-		lo := c.fetchByte(baseOffset + 2)
-		offset := int16(uint16(hi)<<8 | uint16(lo))
-		return uint16(int32(reg) + int32(offset)), []byte{hi, lo}, nil
-
-	case 0x0B: // D,R
-		return uint16(int32(reg) + int32(int16(c.D()))), nil, nil
-
-	case 0x0C: // n,PCR (8-bit offset)
-		b := c.fetchByte(baseOffset + 1)
-		pc := c.PC + baseOffset + 2
-		return uint16(int32(pc) + int32(int8(b))), []byte{b}, nil
-
-	case 0x0D: // n,PCR (16-bit offset)
-		hi := c.fetchByte(baseOffset + 1)
-		lo := c.fetchByte(baseOffset + 2)
-		offset := int16(uint16(hi)<<8 | uint16(lo))
-		pc := c.PC + baseOffset + 3
-		return uint16(int32(pc) + int32(offset)), []byte{hi, lo}, nil
-
-	default:
-		return 0, nil, fmt.Errorf("%w: postbyte 0x%02X", ErrInvalidIndexPostbyte, postbyte)
-	}
-}
-
-// indexedRegister returns the value of the register specified in the postbyte (bits 5-6).
-func (c *CPU) indexedRegister(postbyte uint8) uint16 {
-	switch (postbyte >> 5) & 0x03 {
-	case 0x00:
-		return c.X
-	case 0x01:
-		return c.Y
-	case 0x02:
-		return c.U
-	case 0x03:
-		return c.S
-	}
-	return 0
-}
-
-// setIndexedRegister sets the register specified in the postbyte (bits 5-6).
-func (c *CPU) setIndexedRegister(postbyte uint8, value uint16) {
-	switch (postbyte >> 5) & 0x03 {
-	case 0x00:
-		c.X = value
-	case 0x01:
-		c.Y = value
-	case 0x02:
-		c.U = value
-	case 0x03:
-		c.S = value
-	}
-}
-
-// resolveEA resolves an effective address parameter to a readable 16-bit address.
-func (c *CPU) resolveEA(param any) (uint16, error) {
-	switch p := param.(type) {
-	case DirectPage:
-		return c.dpAddr(uint8(p)), nil
-	case Extended16:
-		return uint16(p), nil
-	case IndexedAddr:
-		return uint16(p), nil
-	default:
-		return 0, fmt.Errorf("%w: type %T", ErrUnsupportedAddressingMode, param)
-	}
 }

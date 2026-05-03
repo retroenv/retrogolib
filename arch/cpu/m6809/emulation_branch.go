@@ -2,6 +2,62 @@ package m6809
 
 // Branch and jump instructions.
 
+// getRegisterValue returns the value of a register by its TFR/EXG encoding.
+// 0=D, 1=X, 2=Y, 3=U, 4=S, 5=PC, 8=A, 9=B, 10=CC, 11=DP
+func (c *CPU) getRegisterValue(reg uint8) uint16 {
+	switch reg {
+	case 0x00:
+		return c.D()
+	case 0x01:
+		return c.X
+	case 0x02:
+		return c.Y
+	case 0x03:
+		return c.U
+	case 0x04:
+		return c.S
+	case 0x05:
+		return c.PC
+	case 0x08:
+		return uint16(c.A)
+	case 0x09:
+		return uint16(c.B)
+	case 0x0A:
+		return uint16(c.GetCC())
+	case 0x0B:
+		return uint16(c.DP)
+	default:
+		return 0
+	}
+}
+
+// setRegisterValue sets a register by its TFR/EXG encoding.
+func (c *CPU) setRegisterValue(reg uint8, value uint16) {
+	switch reg {
+	case 0x00:
+		c.SetD(value)
+	case 0x01:
+		c.X = value
+	case 0x02:
+		c.Y = value
+	case 0x03:
+		c.U = value
+	case 0x04:
+		c.S = value
+	case 0x05:
+		c.PC = value
+		c.pcChanged = true
+	case 0x08:
+		c.A = uint8(value)
+	case 0x09:
+		c.B = uint8(value)
+	case 0x0A:
+		c.SetCC(uint8(value))
+	case 0x0B:
+		c.DP = uint8(value)
+	}
+}
+
 func bccFn(c *CPU, params ...any) error {
 	c.branch(c.Flags.C == 0, params[0].(uint16))
 	return nil
@@ -220,60 +276,4 @@ func exgFn(c *CPU, params ...any) error {
 	c.setRegisterValue(srcReg, dst)
 	c.setRegisterValue(dstReg, src)
 	return nil
-}
-
-// getRegisterValue returns the value of a register by its TFR/EXG encoding.
-// 0=D, 1=X, 2=Y, 3=U, 4=S, 5=PC, 8=A, 9=B, 10=CC, 11=DP
-func (c *CPU) getRegisterValue(reg uint8) uint16 {
-	switch reg {
-	case 0x00:
-		return c.D()
-	case 0x01:
-		return c.X
-	case 0x02:
-		return c.Y
-	case 0x03:
-		return c.U
-	case 0x04:
-		return c.S
-	case 0x05:
-		return c.PC
-	case 0x08:
-		return uint16(c.A)
-	case 0x09:
-		return uint16(c.B)
-	case 0x0A:
-		return uint16(c.GetCC())
-	case 0x0B:
-		return uint16(c.DP)
-	default:
-		return 0
-	}
-}
-
-// setRegisterValue sets a register by its TFR/EXG encoding.
-func (c *CPU) setRegisterValue(reg uint8, value uint16) {
-	switch reg {
-	case 0x00:
-		c.SetD(value)
-	case 0x01:
-		c.X = value
-	case 0x02:
-		c.Y = value
-	case 0x03:
-		c.U = value
-	case 0x04:
-		c.S = value
-	case 0x05:
-		c.PC = value
-		c.pcChanged = true
-	case 0x08:
-		c.A = uint8(value)
-	case 0x09:
-		c.B = uint8(value)
-	case 0x0A:
-		c.SetCC(uint8(value))
-	case 0x0B:
-		c.DP = uint8(value)
-	}
 }

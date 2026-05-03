@@ -2,6 +2,19 @@ package m6809
 
 // System instructions: RTS, RTI, SWI, CWAI, SYNC.
 
+// pushEntireState pushes the entire CPU state onto the system stack.
+// Order: PC, U, Y, X, DP, B, A, CC (last pushed = first on stack).
+func (c *CPU) pushEntireState() {
+	c.pushS16(c.PC)
+	c.pushS16(c.U)
+	c.pushS16(c.Y)
+	c.pushS16(c.X)
+	c.pushS8(c.DP)
+	c.pushS8(c.B)
+	c.pushS8(c.A)
+	c.pushS8(c.GetCC())
+}
+
 // rtsFn - Return from Subroutine.
 func rtsFn(c *CPU) error {
 	c.PC = c.popS16()
@@ -87,17 +100,4 @@ func cwaiFn(c *CPU, params ...any) error {
 func syncFn(c *CPU) error {
 	c.waiting = true
 	return nil
-}
-
-// pushEntireState pushes the entire CPU state onto the system stack.
-// Order: PC, U, Y, X, DP, B, A, CC (last pushed = first on stack).
-func (c *CPU) pushEntireState() {
-	c.pushS16(c.PC)
-	c.pushS16(c.U)
-	c.pushS16(c.Y)
-	c.pushS16(c.X)
-	c.pushS8(c.DP)
-	c.pushS8(c.B)
-	c.pushS8(c.A)
-	c.pushS8(c.GetCC())
 }
