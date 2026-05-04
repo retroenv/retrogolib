@@ -3,6 +3,7 @@ package opengl
 import (
 	"fmt"
 	"runtime"
+	"sort"
 
 	"github.com/ebitengine/purego"
 )
@@ -12,13 +13,13 @@ var (
 	glfwSetErrorCallback func(cb uintptr)
 
 	// glfwInit initializes GLFW.
-	glfwInit func() int
+	glfwInit func() int32
 
 	// glfwWindowHint sets hints for the window.
 	glfwWindowHint func(target, hint int32)
 
 	// glfwWindowShouldClose checks if the window should close.
-	glfwWindowShouldClose func(window uintptr) int
+	glfwWindowShouldClose func(window uintptr) int32
 
 	// glfwTerminate terminates GLFW.
 	glfwTerminate func()
@@ -48,7 +49,7 @@ var (
 	glDeleteTextures func(n int32, textures *uint32)
 
 	// glEnable enables a capability.
-	glEnable func(cap int32)
+	glEnable func(capability int32)
 
 	// glGenTextures generates textures.
 	glGenTextures func(n int32, textures *uint32)
@@ -121,7 +122,7 @@ var importsGlfw = map[string]any{
 func registerFunction(lib uintptr, name string, ptr any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("registering function '%s': %v", name, r)
+			err = fmt.Errorf("registering function %q: %v", name, r)
 		}
 	}()
 
@@ -129,14 +130,29 @@ func registerFunction(lib uintptr, name string, ptr any) (err error) {
 	return nil
 }
 
+func registerFunctions(lib uintptr, group string, imports map[string]any) error {
+	names := make([]string, 0, len(imports))
+	for name := range imports {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		if err := registerFunction(lib, name, imports[name]); err != nil {
+			return fmt.Errorf("registering %s function %q: %w", group, name, err)
+		}
+	}
+	return nil
+}
+
 func getOpenGLSystemLibrary() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
-		return "libGL.dylib", nil
+		return "/System/Library/Frameworks/OpenGL.framework/OpenGL", nil
 	case "freebsd":
-		return "libGL.so", nil
+		return "libGL.so.1", nil
 	case "linux":
-		return "libGL.so", nil
+		return "libGL.so.1", nil
 	case "windows":
 		return "opengl32.dll", nil
 	default:

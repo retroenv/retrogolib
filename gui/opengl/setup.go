@@ -19,10 +19,8 @@ func setupLibrary() error {
 		return fmt.Errorf("loading OpenGL library: %w", err)
 	}
 
-	for name, ptr := range importsGl {
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return fmt.Errorf("registering OpenGL function '%s': %w", name, err)
-		}
+	if err := registerFunctions(lib, "OpenGL", importsGl); err != nil {
+		return err
 	}
 
 	libName, err = getGlfwSystemLibrary()
@@ -35,10 +33,8 @@ func setupLibrary() error {
 		return fmt.Errorf("loading GLFW library: %w", err)
 	}
 
-	for name, ptr := range importsGlfw {
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return fmt.Errorf("registering GLFW function '%s': %w", name, err)
-		}
+	if err := registerFunctions(lib, "GLFW", importsGlfw); err != nil {
+		return err
 	}
 	return nil
 }

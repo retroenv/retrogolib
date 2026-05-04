@@ -2,6 +2,7 @@
 package opengl
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"runtime"
@@ -10,11 +11,22 @@ import (
 	"github.com/retroenv/retrogolib/gui"
 )
 
+const bytesPerPixel = 4
+
+// Setup initializes the OpenGL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
+	dimensions := backend.Dimensions()
+	if err := validateDimensions(dimensions); err != nil {
+		return nil, nil, err
+	}
+
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
-
-	dimensions := backend.Dimensions()
+	defer func() {
+		if err != nil {
+			runtime.UnlockOSThread()
+		}
+	}()
 
 	window, texture, err := setupOpenGL(dimensions, backend)
 	if err != nil {
@@ -23,7 +35,9 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 
 	render := func() (bool, error) {
 		img := backend.Image()
-		renderOpenGL(dimensions, img, window, texture)
+		if err := renderOpenGL(dimensions, img, window, texture); err != nil {
+			return false, err
+		}
 		return glfwWindowShouldClose(window) == GLFW_FALSE, nil
 	}
 
@@ -35,12 +49,17 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 }
 
 func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint32, error) {
+	if err := validateDimensions(dimensions); err != nil {
+		return uintptr(0), 0, err
+	}
+
 	if err := setupLibrary(); err != nil {
 		return uintptr(0), 0, fmt.Errorf("setting up OpenGL library: %w", err)
 	}
 
 	setErrorCallback()
 
+	resetLastError()
 	if ret := glfwInit(); ret != GLFW_TRUE {
 		return uintptr(0), 0, fmt.Errorf("initializing GLFW: %w", getLastError())
 	}
@@ -51,8 +70,10 @@ func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint3
 
 	height := int32(float64(dimensions.Height) * dimensions.ScaleFactor)
 	width := int32(float64(dimensions.Width) * dimensions.ScaleFactor)
+	resetLastError()
 	window := glfwCreateWindow(width, height, backend.WindowTitle(), uintptr(0), uintptr(0))
 	if window == 0 {
+		glfwTerminate()
 		return uintptr(0), 0, fmt.Errorf("creating GLFW window: %w", getLastError())
 	}
 
@@ -64,22 +85,37 @@ func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint3
 	glEnable(GL_TEXTURE_2D)
 	var texture uint32
 	glGenTextures(1, &texture)
+	if texture == 0 {
+		glfwTerminate()
+		return uintptr(0), 0, errors.New("generating OpenGL texture")
+	}
 	glBindTexture(GL_TEXTURE_2D, texture)
+	// Disable filtering once to keep emulator pixels crisp.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+
 	img := backend.Image()
+	pixels, err := rgbaPixels(dimensions, img)
+	if err != nil {
+		glDeleteTextures(1, &texture)
+		glfwTerminate()
+		return uintptr(0), 0, fmt.Errorf("getting initial image pixels: %w", err)
+	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, int32(dimensions.Width), int32(dimensions.Height),
-		0, GL_RGBA, GL_UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
+		0, GL_RGBA, GL_UNSIGNED_BYTE, pixels)
 
 	return window, texture, nil
 }
 
-func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, texture uint32) {
+func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, texture uint32) error {
+	pixels, err := rgbaPixels(dimensions, img)
+	if err != nil {
+		return fmt.Errorf("getting image pixels: %w", err)
+	}
+
 	glBindTexture(GL_TEXTURE_2D, texture)
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, int32(dimensions.Width),
-		int32(dimensions.Height), GL_RGBA, GL_UNSIGNED_BYTE, uintptr(unsafe.Pointer(&img.Pix[0])))
-
-	// disable any filtering to avoid blurring the texture
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+		int32(dimensions.Height), GL_RGBA, GL_UNSIGNED_BYTE, pixels)
 
 	// set an orthogonal projection (2D) with the size of the screen
 	glMatrixMode(GL_PROJECTION)
@@ -102,4 +138,40 @@ func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, te
 
 	glfwSwapBuffers(window)
 	glfwPollEvents()
+	return nil
+}
+
+func rgbaPixels(dimensions gui.Dimensions, img *image.RGBA) (uintptr, error) {
+	if err := validateDimensions(dimensions); err != nil {
+		return 0, err
+	}
+	if img == nil {
+		return 0, errors.New("image is nil")
+	}
+	if len(img.Pix) == 0 {
+		return 0, errors.New("image has no pixel data")
+	}
+	if img.Stride != dimensions.Width*bytesPerPixel {
+		return 0, fmt.Errorf("image stride %d does not match expected stride %d",
+			img.Stride, dimensions.Width*bytesPerPixel)
+	}
+
+	minLen := (dimensions.Height-1)*img.Stride + dimensions.Width*bytesPerPixel
+	if len(img.Pix) < minLen {
+		return 0, fmt.Errorf("image pixel data has length %d, need at least %d", len(img.Pix), minLen)
+	}
+	return uintptr(unsafe.Pointer(&img.Pix[0])), nil
+}
+
+func validateDimensions(dimensions gui.Dimensions) error {
+	if dimensions.Width <= 0 {
+		return fmt.Errorf("width must be positive, got %d", dimensions.Width)
+	}
+	if dimensions.Height <= 0 {
+		return fmt.Errorf("height must be positive, got %d", dimensions.Height)
+	}
+	if !(dimensions.ScaleFactor > 0) {
+		return fmt.Errorf("scale factor must be positive, got %f", dimensions.ScaleFactor)
+	}
+	return nil
 }
