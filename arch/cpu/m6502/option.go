@@ -12,6 +12,8 @@ const (
 	VariantSynertek65C02                   // Synertek 65C02: 65C02 without Rockwell bit-manipulation extensions
 )
 
+type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
+
 // Options contains options for the CPU.
 type Options struct {
 	variant          CPUVariant
@@ -52,5 +54,3 @@ func WithVariant(v CPUVariant) func(*Options) {
 		options.variant = v
 	}
 }
-
-type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
