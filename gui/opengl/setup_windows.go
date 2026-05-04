@@ -4,7 +4,8 @@ package opengl
 
 import (
 	"fmt"
-	"syscall"
+
+	"github.com/retroenv/retrogolib/gui/internal/dynlib"
 )
 
 func setupLibrary() error {
@@ -13,13 +14,13 @@ func setupLibrary() error {
 		return fmt.Errorf("getting OpenGL library: %w", err)
 	}
 
-	lib, err := loadLibrary(libName)
+	lib, err := dynlib.Open(libName)
 	if err != nil {
 		return fmt.Errorf("loading OpenGL library: %w", err)
 	}
 
-	if err := registerFunctions(lib, "OpenGL", importsGl); err != nil {
-		return err
+	if err := dynlib.RegisterFunctions(lib, "OpenGL", importsGl); err != nil {
+		return fmt.Errorf("registering OpenGL functions: %w", err)
 	}
 
 	libName, err = getGlfwSystemLibrary()
@@ -27,24 +28,13 @@ func setupLibrary() error {
 		return fmt.Errorf("getting GLFW library: %w", err)
 	}
 
-	lib, err = loadLibrary(libName)
+	lib, err = dynlib.Open(libName)
 	if err != nil {
 		return fmt.Errorf("loading GLFW library: %w", err)
 	}
 
-	if err := registerFunctions(lib, "GLFW", importsGlfw); err != nil {
-		return err
+	if err := dynlib.RegisterFunctions(lib, "GLFW", importsGlfw); err != nil {
+		return fmt.Errorf("registering GLFW functions: %w", err)
 	}
 	return nil
-}
-
-func loadLibrary(libName string) (handle uintptr, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("loading library '%s': %v", libName, r)
-		}
-	}()
-
-	handle = syscall.NewLazyDLL(libName).Handle()
-	return handle, err
 }

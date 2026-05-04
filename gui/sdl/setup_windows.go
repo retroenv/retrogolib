@@ -4,8 +4,8 @@ package sdl
 
 import (
 	"fmt"
-	"sort"
-	"syscall"
+
+	"github.com/retroenv/retrogolib/gui/internal/dynlib"
 )
 
 func setupLibrary() error {
@@ -14,33 +14,13 @@ func setupLibrary() error {
 		return fmt.Errorf("getting SDL library: %w", err)
 	}
 
-	lib, err := loadLibrary(libName)
+	lib, err := dynlib.Open(libName)
 	if err != nil {
 		return fmt.Errorf("loading SDL library: %w", err)
 	}
 
-	names := make([]string, 0, len(imports))
-	for name := range imports {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	for _, name := range names {
-		ptr := imports[name]
-		if err := registerFunction(lib, name, ptr); err != nil {
-			return err
-		}
+	if err := dynlib.RegisterFunctions(lib, "SDL", imports); err != nil {
+		return fmt.Errorf("registering SDL functions: %w", err)
 	}
 	return nil
-}
-
-func loadLibrary(libName string) (handle uintptr, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("loading library '%s': %v", libName, r)
-		}
-	}()
-
-	handle = syscall.NewLazyDLL(libName).Handle()
-	return handle, err
 }

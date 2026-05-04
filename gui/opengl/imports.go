@@ -3,9 +3,6 @@ package opengl
 import (
 	"fmt"
 	"runtime"
-	"sort"
-
-	"github.com/ebitengine/purego"
 )
 
 var (
@@ -117,32 +114,6 @@ var importsGlfw = map[string]any{
 	"glfwTerminate":            &glfwTerminate,
 	"glfwWindowHint":           &glfwWindowHint,
 	"glfwWindowShouldClose":    &glfwWindowShouldClose,
-}
-
-func registerFunction(lib uintptr, name string, ptr any) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("registering function %q: %v", name, r)
-		}
-	}()
-
-	purego.RegisterLibFunc(ptr, lib, name)
-	return nil
-}
-
-func registerFunctions(lib uintptr, group string, imports map[string]any) error {
-	names := make([]string, 0, len(imports))
-	for name := range imports {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-
-	for _, name := range names {
-		if err := registerFunction(lib, name, imports[name]); err != nil {
-			return fmt.Errorf("registering %s function %q: %w", group, name, err)
-		}
-	}
-	return nil
 }
 
 func getOpenGLSystemLibrary() (string, error) {

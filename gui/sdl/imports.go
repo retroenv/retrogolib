@@ -3,8 +3,6 @@ package sdl
 import (
 	"fmt"
 	"runtime"
-
-	"github.com/ebitengine/purego"
 )
 
 var (
@@ -54,17 +52,6 @@ var imports = map[string]any{
 	"SDL_RenderCopy":      &RenderCopy,
 	"SDL_RenderPresent":   &RenderPresent,
 	"SDL_UpdateTexture":   &UpdateTexture,
-}
-
-func registerFunction(lib uintptr, name string, ptr any) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("registering function '%s': %v", name, r)
-		}
-	}()
-
-	purego.RegisterLibFunc(ptr, lib, name)
-	return nil
 }
 
 func getSDLSystemLibrary() (string, error) {

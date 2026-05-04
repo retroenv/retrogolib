@@ -6,18 +6,16 @@ import (
 	"fmt"
 	"image"
 	"runtime"
-	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
+	"github.com/retroenv/retrogolib/gui/internal/framebuffer"
 )
-
-const bytesPerPixel = 4
 
 // Setup initializes the OpenGL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
 	dimensions := backend.Dimensions()
-	if err := validateDimensions(dimensions); err != nil {
-		return nil, nil, err
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return nil, nil, fmt.Errorf("validating dimensions: %w", err)
 	}
 
 	// GLFW event handling must run on the main OS thread
@@ -49,8 +47,8 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 }
 
 func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint32, error) {
-	if err := validateDimensions(dimensions); err != nil {
-		return uintptr(0), 0, err
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return uintptr(0), 0, fmt.Errorf("validating dimensions: %w", err)
 	}
 
 	if err := setupLibrary(); err != nil {
@@ -95,7 +93,7 @@ func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint3
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
 
 	img := backend.Image()
-	pixels, err := rgbaPixels(dimensions, img)
+	pixels, err := framebuffer.RGBAPointer(dimensions, img)
 	if err != nil {
 		glDeleteTextures(1, &texture)
 		glfwTerminate()
@@ -108,7 +106,7 @@ func setupOpenGL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uint3
 }
 
 func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, texture uint32) error {
-	pixels, err := rgbaPixels(dimensions, img)
+	pixels, err := framebuffer.RGBAPointer(dimensions, img)
 	if err != nil {
 		return fmt.Errorf("getting image pixels: %w", err)
 	}
@@ -138,40 +136,5 @@ func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, te
 
 	glfwSwapBuffers(window)
 	glfwPollEvents()
-	return nil
-}
-
-func rgbaPixels(dimensions gui.Dimensions, img *image.RGBA) (uintptr, error) {
-	if err := validateDimensions(dimensions); err != nil {
-		return 0, err
-	}
-	if img == nil {
-		return 0, errors.New("image is nil")
-	}
-	if len(img.Pix) == 0 {
-		return 0, errors.New("image has no pixel data")
-	}
-	if img.Stride != dimensions.Width*bytesPerPixel {
-		return 0, fmt.Errorf("image stride %d does not match expected stride %d",
-			img.Stride, dimensions.Width*bytesPerPixel)
-	}
-
-	minLen := (dimensions.Height-1)*img.Stride + dimensions.Width*bytesPerPixel
-	if len(img.Pix) < minLen {
-		return 0, fmt.Errorf("image pixel data has length %d, need at least %d", len(img.Pix), minLen)
-	}
-	return uintptr(unsafe.Pointer(&img.Pix[0])), nil
-}
-
-func validateDimensions(dimensions gui.Dimensions) error {
-	if dimensions.Width <= 0 {
-		return fmt.Errorf("width must be positive, got %d", dimensions.Width)
-	}
-	if dimensions.Height <= 0 {
-		return fmt.Errorf("height must be positive, got %d", dimensions.Height)
-	}
-	if !(dimensions.ScaleFactor > 0) {
-		return fmt.Errorf("scale factor must be positive, got %f", dimensions.ScaleFactor)
-	}
 	return nil
 }

@@ -2,22 +2,19 @@
 package sdl
 
 import (
-	"errors"
 	"fmt"
-	"image"
 	"runtime"
 	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
+	"github.com/retroenv/retrogolib/gui/internal/framebuffer"
 )
-
-const bytesPerPixel = 4
 
 // Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
 	dimensions := backend.Dimensions()
-	if err := validateDimensions(dimensions); err != nil {
-		return nil, nil, err
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return nil, nil, fmt.Errorf("validating dimensions: %w", err)
 	}
 
 	runtime.LockOSThread()
@@ -44,8 +41,8 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 
 // setupSDL initializes the SDL library and creates the window, renderer, and texture.
 func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr, uintptr, error) {
-	if err := validateDimensions(dimensions); err != nil {
-		return 0, 0, 0, err
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return 0, 0, 0, fmt.Errorf("validating dimensions: %w", err)
 	}
 
 	if err := setupLibrary(); err != nil {
@@ -111,12 +108,12 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 		}
 	}
 
-	pixels, err := rgbaPixels(dimensions, backend.Image())
+	pixels, err := framebuffer.RGBABytes(dimensions, backend.Image())
 	if err != nil {
 		return false, fmt.Errorf("getting image pixels: %w", err)
 	}
 
-	if ret := UpdateTexture(tex, 0, pixels, dimensions.Width*bytesPerPixel); ret != 0 {
+	if ret := UpdateTexture(tex, 0, pixels, dimensions.Width*framebuffer.BytesPerPixel); ret != 0 {
 		return false, fmt.Errorf("updating SDL texture: %s", GetError())
 	}
 
@@ -139,39 +136,4 @@ func cleanupSDL(window, renderer, tex uintptr) {
 		DestroyWindow(window)
 	}
 	Quit()
-}
-
-func rgbaPixels(dimensions gui.Dimensions, img *image.RGBA) ([]byte, error) {
-	if err := validateDimensions(dimensions); err != nil {
-		return nil, err
-	}
-	if img == nil {
-		return nil, errors.New("image is nil")
-	}
-	if len(img.Pix) == 0 {
-		return nil, errors.New("image has no pixel data")
-	}
-	if img.Stride != dimensions.Width*bytesPerPixel {
-		return nil, fmt.Errorf("image stride %d does not match expected stride %d",
-			img.Stride, dimensions.Width*bytesPerPixel)
-	}
-
-	minLen := (dimensions.Height-1)*img.Stride + dimensions.Width*bytesPerPixel
-	if len(img.Pix) < minLen {
-		return nil, fmt.Errorf("image pixel data has length %d, need at least %d", len(img.Pix), minLen)
-	}
-	return img.Pix, nil
-}
-
-func validateDimensions(dimensions gui.Dimensions) error {
-	if dimensions.Width <= 0 {
-		return fmt.Errorf("width must be positive, got %d", dimensions.Width)
-	}
-	if dimensions.Height <= 0 {
-		return fmt.Errorf("height must be positive, got %d", dimensions.Height)
-	}
-	if !(dimensions.ScaleFactor > 0) {
-		return fmt.Errorf("scale factor must be positive, got %f", dimensions.ScaleFactor)
-	}
-	return nil
 }
