@@ -18,8 +18,12 @@ func TestVerifyOpcodes(t *testing.T) {
 		if ins == nil {
 			continue
 		}
-		if ins.Unofficial && ins.Name == Nop.Name {
+		if ins.Unofficial && ins.Name == NopInst.Name {
 			// Unofficial NOPs share opcodes with different addressing modes
+			continue
+		}
+		if ins.Name == KilName {
+			// KIL/JAM instructions share the same addressing mode across multiple opcodes
 			continue
 		}
 
@@ -47,11 +51,11 @@ func TestInstructionCoverage(t *testing.T) {
 	t.Parallel()
 
 	majorInstructions := []*Instruction{
-		Adc, And, Asl, Bcc, Bcs, Beq, Bit, Bmi, Bne, Bpl, Brk, Bvc, Bvs,
-		Clc, Cld, Cli, Clv, Cmp, Cpx, Cpy, Dec, Dex, Dey, Eor, Inc, Inx,
-		Iny, Jmp, Jsr, Lda, Ldx, Ldy, Lsr, Nop, Ora, Pha, Php, Pla, Plp,
-		Rol, Ror, Rti, Rts, Sbc, Sec, Sed, Sei, Sta, Stx, Sty, Tax, Tay,
-		Tsx, Txa, Txs, Tya,
+		AdcInst, AndInst, AslInst, BccInst, BcsInst, BeqInst, BitInst, BmiInst, BneInst, BplInst, BrkInst, BvcInst, BvsInst,
+		ClcInst, CldInst, CliInst, ClvInst, CmpInst, CpxInst, CpyInst, DecInst, DexInst, DeyInst, EorInst, IncInst, InxInst,
+		InyInst, JmpInst, JsrInst, LdaInst, LdxInst, LdyInst, LsrInst, NopInst, OraInst, PhaInst, PhpInst, PlaInst, PlpInst,
+		RolInst, RorInst, RtiInst, RtsInst, SbcInst, SecInst, SedInst, SeiInst, StaInst, StxInst, StyInst, TaxInst, TayInst,
+		TsxInst, TxaInst, TxsInst, TyaInst,
 	}
 
 	for _, ins := range majorInstructions {

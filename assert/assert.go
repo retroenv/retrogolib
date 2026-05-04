@@ -23,7 +23,7 @@ func Fail(t Testing, message string, msgAndArgs ...any) {
 		var builder strings.Builder
 		builder.WriteString(message)
 		builder.WriteByte('\n')
-		builder.WriteString(fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...))
+		fmt.Fprintf(&builder, msgAndArgs[0].(string), msgAndArgs[1:]...)
 		message = builder.String()
 	}
 	t.Error(message)
@@ -374,6 +374,17 @@ func Implements(t Testing, interfaceType, object any, msgAndArgs ...any) {
 	}
 }
 
+// IsType asserts that object has the same type as expectedType.
+func IsType(t Testing, expectedType, object any, msgAndArgs ...any) {
+	t.Helper()
+	expected := reflect.TypeOf(expectedType)
+	actual := reflect.TypeOf(object)
+	if expected != actual {
+		msg := fmt.Sprintf("expected type %v but got %v", expected, actual)
+		Fail(t, msg, msgAndArgs...)
+	}
+}
+
 // equal checks if two values are equal, handling type conversions and nil values efficiently.
 func equal(expected, actual any) bool {
 	// Handle nil cases efficiently
@@ -413,7 +424,7 @@ func isNil(value any) bool {
 	}
 
 	switch reflect.TypeOf(value).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Chan, reflect.Slice, reflect.Interface, reflect.Func:
+	case reflect.Pointer, reflect.Map, reflect.Chan, reflect.Slice, reflect.Interface, reflect.Func:
 		return reflect.ValueOf(value).IsNil()
 	default:
 		return false

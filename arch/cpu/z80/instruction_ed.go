@@ -484,6 +484,42 @@ var EdOtdr = &Instruction{
 	NoParamFunc: edOtdr,
 }
 
+// EdInFC inputs to flags from port C (IN F,(C), ED prefix, undocumented).
+// Reads port C, sets flags, discards the result.
+var EdInFC = &Instruction{
+	Name:       InName,
+	Unofficial: true,
+	ParamFunc:  edInFC,
+}
+
+// EdOut0C outputs 0 to port C (OUT (C),0, ED prefix, undocumented).
+var EdOut0C = &Instruction{
+	Name:       OutName,
+	Unofficial: true,
+	ParamFunc:  edOut0C,
+}
+
+// EdNop is an undocumented ED NOP instruction.
+var EdNop = &Instruction{
+	Name:       NopName,
+	Unofficial: true,
+	ParamFunc:  edNop,
+}
+
+// Undocumented aliases for IM 0 (ED 4E, ED 6E).
+var edIm0Alias = &Instruction{
+	Name:       ImName,
+	Unofficial: true,
+	ParamFunc:  edIm0,
+}
+
+// Undocumented aliases for RETN (ED 5D, ED 6D, ED 7D).
+var edRetnAlias = &Instruction{
+	Name:        RetnName,
+	Unofficial:  true,
+	NoParamFunc: edRetn,
+}
+
 // EdInBC inputs to B from port C (IN B,(C), ED prefix).
 var EdInBC = &Instruction{
 	Name: InName,

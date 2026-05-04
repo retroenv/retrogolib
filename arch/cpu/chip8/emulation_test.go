@@ -207,11 +207,29 @@ func TestSknp(t *testing.T) {
 }
 
 func TestSubn(t *testing.T) {
+	t.Parallel()
 	c := New()
+
+	// Test SUBN without borrow (Vy > Vx)
 	c.V[0] = 0x12
 	c.V[1] = 0x34
 	assert.NoError(t, subn(c, 0x0010))
 	assert.Equal(t, uint8(0x22), c.V[0])
+	assert.Equal(t, uint8(0x01), c.V[0xF], "No borrow flag should be set")
+
+	// Test SUBN with borrow (Vy < Vx)
+	c.V[0] = 0x34
+	c.V[1] = 0x12
+	assert.NoError(t, subn(c, 0x0010))
+	assert.Equal(t, uint8(0xDE), c.V[0])
+	assert.Equal(t, uint8(0x00), c.V[0xF], "Borrow flag should be cleared")
+
+	// Test SUBN with equal values (Vy == Vx, no borrow)
+	c.V[0] = 0x42
+	c.V[1] = 0x42
+	assert.NoError(t, subn(c, 0x0010))
+	assert.Equal(t, uint8(0x00), c.V[0])
+	assert.Equal(t, uint8(0x01), c.V[0xF], "No borrow flag should be set when equal")
 }
 
 func TestErrorConditions(t *testing.T) {
@@ -303,19 +321,26 @@ func TestSubBorrow(t *testing.T) {
 	t.Parallel()
 	c := New()
 
-	// Test subtraction without borrow
+	// Test subtraction without borrow (Vx > Vy)
 	c.V[0] = 0x30
 	c.V[1] = 0x10
 	assert.NoError(t, sub(c, 0x8015))
 	assert.Equal(t, uint8(0x20), c.V[0])
 	assert.Equal(t, uint8(0x01), c.V[0xF], "No borrow flag should be set")
 
-	// Test subtraction with borrow
+	// Test subtraction with borrow (Vx < Vy)
 	c.V[0] = 0x10
 	c.V[1] = 0x30
 	assert.NoError(t, sub(c, 0x8015))
 	assert.Equal(t, uint8(0xE0), c.V[0])
 	assert.Equal(t, uint8(0x00), c.V[0xF], "Borrow flag should be cleared")
+
+	// Test subtraction with equal values (Vx == Vy, no borrow)
+	c.V[0] = 0x42
+	c.V[1] = 0x42
+	assert.NoError(t, sub(c, 0x8015))
+	assert.Equal(t, uint8(0x00), c.V[0])
+	assert.Equal(t, uint8(0x01), c.V[0xF], "No borrow flag should be set when equal")
 }
 
 func TestRandomization(t *testing.T) {

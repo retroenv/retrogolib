@@ -31,10 +31,11 @@ type State struct {
 	IY uint16
 
 	// Program flow and memory
-	SP uint16 // Stack pointer
-	PC uint16 // Program counter
-	I  uint8  // Interrupt vector base
-	R  uint8  // Memory refresh counter
+	SP     uint16 // Stack pointer
+	PC     uint16 // Program counter
+	I      uint8  // Interrupt vector base
+	R      uint8  // Memory refresh counter
+	MEMPTR uint16 // Internal WZ register, its high byte provides the X/Y flag bits for BIT n,(HL) and indexed BIT instructions
 
 	Cycles     uint64
 	Flags      Flags
@@ -71,10 +72,11 @@ type CPU struct {
 	IY uint16
 
 	// Program control registers
-	SP uint16 // Stack pointer
-	PC uint16 // Program counter
-	I  uint8  // Interrupt vector base register
-	R  uint8  // Memory refresh register (auto-incremented)
+	SP     uint16 // Stack pointer
+	PC     uint16 // Program counter
+	I      uint8  // Interrupt vector base register
+	R      uint8  // Memory refresh register (auto-incremented)
+	MEMPTR uint16 // Internal WZ register, its high byte provides the X/Y flag bits for BIT n,(HL) and indexed BIT instructions
 
 	Flags    Flags // Main flag register
 	AltFlags Flags // Shadow flag register
@@ -95,7 +97,18 @@ type CPU struct {
 
 	currentOpcode uint8 // opcode being executed (for instruction functions to access)
 
-	memory Memory
+	// Q register: tracks previous flag state so SCF/CCF can set the
+	// undocumented X/Y flag bits (bits 3 and 5) correctly.
+	// After each instruction, Q captures the flags byte. SCF/CCF then
+	// compute X/Y as: (A | (F & ~Q)) & 0x28.
+	q uint8
+
+	// lastWasLdAIR tracks if the previous instruction was LD A,I or LD A,R.
+	// Used to emulate the Zilog NMOS bug where P/V is reset if an IRQ fires
+	// during these instructions.
+	lastWasLdAIR bool
+
+	bus Bus
 }
 
 // Interrupts holds the current interrupt state.
@@ -107,39 +120,30 @@ type Interrupts struct {
 	IrqTriggered bool
 }
 
-const (
-	initialCycles = 0
-)
-
 // New creates a new Z80 CPU with a memory controller.
-// This allows different hardware implementations (Game Boy, MSX, ZX Spectrum, etc.)
-// to provide their own memory mapping logic.
+// For simple use cases where full bus emulation is not needed.
+// I/O ports can optionally be handled via WithIOHandler.
 func New(memory Memory, options ...Option) (*CPU, error) {
 	if memory == nil {
 		return nil, ErrNilMemory
 	}
 
 	opts := NewOptions(options...)
+	bus := &legacyBusAdapter{Memory: memory, ioHandler: opts.ioHandler}
+	return newCPU(bus, opts)
+}
 
-	// Default to generic system
-	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
-		opts.systemType = arch.Generic
-		opts.initialPC = 0x0000
-		opts.initialSP = 0xFFFF
+// NewWithBus creates a new Z80 CPU with a full bus interface.
+// The Bus interface provides memory, I/O ports, and interrupt acknowledgment,
+// enabling accurate emulation of systems with interrupt daisy chains and
+// full 16-bit I/O port addressing.
+func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
+	if bus == nil {
+		return nil, ErrNilMemory
 	}
 
-	c := &CPU{
-		PC:     opts.initialPC,
-		SP:     opts.initialSP,
-		cycles: initialCycles,
-		opts:   opts,
-		memory: memory,
-		iff1:   false,
-		iff2:   false,
-		im:     0,
-	}
-
-	return c, nil
+	opts := NewOptions(options...)
+	return newCPU(bus, opts)
 }
 
 // Cycles returns total CPU cycles executed.
@@ -196,6 +200,7 @@ func (c *CPU) State() State {
 		PC:       c.PC,
 		I:        c.I,
 		R:        c.R,
+		MEMPTR:   c.MEMPTR,
 		Cycles:   c.cycles,
 		Flags:    c.Flags,
 		AltFlags: c.AltFlags,
@@ -212,11 +217,20 @@ func (c *CPU) State() State {
 
 // Memory returns the attached memory controller.
 //
-//nolint:ireturn // Returning interface is intentional for flexibility
+//nolint:ireturn // intentional: Memory is the public API interface
 func (c *CPU) Memory() Memory {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.memory
+	return c.bus
+}
+
+// Bus returns the attached bus interface.
+//
+//nolint:ireturn // intentional: Bus is the public API interface
+func (c *CPU) Bus() Bus {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.bus
 }
 
 // BC returns the BC register pair as a 16-bit value.
@@ -307,7 +321,7 @@ func (c *CPU) setAF(value uint16) {
 
 // pop pops a byte from the stack and updates the stack pointer.
 func (c *CPU) pop() uint8 {
-	value := c.memory.Read(c.SP)
+	value := c.bus.Read(c.SP)
 	c.SP++
 	return value
 }
@@ -322,7 +336,7 @@ func (c *CPU) pop16() uint16 {
 // push pushes a byte to the stack and updates the stack pointer.
 func (c *CPU) push(value uint8) {
 	c.SP--
-	c.memory.Write(c.SP, value)
+	c.bus.Write(c.SP, value)
 }
 
 // push16 pushes a word to the stack and updates the stack pointer.
@@ -335,7 +349,8 @@ func (c *CPU) push16(value uint16) {
 
 // inPortToRegister reads from port C to a register and sets flags.
 func (c *CPU) inPortToRegister(regPtr *uint8) {
-	value := c.readPort(c.C)
+	c.MEMPTR = c.bc() + 1
+	value := c.readPort(c.bc())
 	*regPtr = value
 	c.setSZP(value)
 	c.setH(false)
@@ -345,14 +360,14 @@ func (c *CPU) inPortToRegister(regPtr *uint8) {
 // applyCBOperation applies a CB prefix operation to a register or (HL).
 // Used by rotate, shift, RES, and SET instructions.
 func (c *CPU) applyCBOperation(operation func(uint8) uint8) {
-	opcodeByte := c.memory.Read(c.PC + 1)
+	opcodeByte := c.bus.Read(c.PC + 1)
 	reg := opcodeByte & 0x07
 
 	if reg == 6 { // Operation on (HL)
 		addr := c.hl()
-		value := c.memory.Read(addr)
+		value := c.bus.Read(addr)
 		result := operation(value)
-		c.memory.Write(addr, result)
+		c.bus.Write(addr, result)
 	} else { // Operation on register
 		value := c.GetRegisterValue(reg)
 		result := operation(value)
@@ -360,30 +375,27 @@ func (c *CPU) applyCBOperation(operation func(uint8) uint8) {
 	}
 }
 
-// calculateIndexedAddress extracts displacement from params and calculates indexed address.
-// Used by DD (IX) and FD (IY) prefix instructions.
-func (c *CPU) calculateIndexedAddress(indexReg uint16, params ...any) uint16 {
-	displacement := int8(params[0].(uint8))
-	return uint16(int32(indexReg) + int32(displacement))
-}
-
-// extractExtendedAddress extracts 16-bit address from instruction parameters (little-endian).
-// Used by instructions that take a 16-bit address operand.
-func extractExtendedAddress(params ...any) uint16 {
-	return uint16(params[1].(uint8))<<8 | uint16(params[0].(uint8))
+// calculateIndexedAddress reads displacement byte from memory at PC+2 and calculates indexed address.
+// Used by DD (IX) and FD (IY) prefix instructions where PC points to the prefix byte.
+// Also sets MEMPTR to the calculated address.
+func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
+	displacement := int8(c.bus.Read(c.PC + 2))
+	addr := uint16(int32(indexReg) + int32(displacement))
+	c.MEMPTR = addr
+	return addr
 }
 
 // read16 reads a 16-bit value from memory at addr (little-endian).
 func (c *CPU) read16(addr uint16) uint16 {
-	low := c.memory.Read(addr)
-	high := c.memory.Read(addr + 1)
+	low := c.bus.Read(addr)
+	high := c.bus.Read(addr + 1)
 	return uint16(high)<<8 | uint16(low)
 }
 
 // writeRegisterPair writes a register pair to memory at addr (little-endian).
 func (c *CPU) writeRegisterPair(addr uint16, low, high uint8) {
-	c.memory.Write(addr, low)
-	c.memory.Write(addr+1, high)
+	c.bus.Write(addr, low)
+	c.bus.Write(addr+1, high)
 }
 
 // setLogicalFlags sets flags for logical operations (AND/OR/XOR).
@@ -393,4 +405,22 @@ func (c *CPU) setLogicalFlags(result uint8, hFlag bool) {
 	c.setH(hFlag)
 	c.setN(false)
 	c.setC(false)
+}
+
+func newCPU(bus Bus, opts Options) (*CPU, error) {
+	// Default to generic system
+	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
+		opts.systemType = arch.Generic
+		opts.initialPC = 0x0000
+		opts.initialSP = 0xFFFF
+	}
+
+	c := &CPU{
+		PC:   opts.initialPC,
+		SP:   opts.initialSP,
+		opts: opts,
+		bus:  bus,
+	}
+
+	return c, nil
 }

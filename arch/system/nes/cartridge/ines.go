@@ -13,17 +13,6 @@ const (
 	trainerFlag = 1 << 3
 )
 
-type header struct {
-	Magic       [4]byte // iNES magic number
-	NumPRG      byte    // number of PRG-ROM banks (16KB each)
-	NumCHR      byte    // number of CHR-ROM banks (8KB each)
-	Control1    byte    // control bits
-	Control2    byte    // control bits
-	NumRAM      byte    // PRG-RAM size (x 8KB)
-	VideoFormat byte    // 0 NTSC, 1 PAL
-	Reserved    [6]byte // unused padding
-}
-
 // LoadFile loads an .nes file in iNES format.
 func LoadFile(reader io.Reader) (*Cartridge, error) {
 	var header header
@@ -35,7 +24,13 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		return nil, errors.New("invalid file header magic")
 	}
 
-	mapper := mergeNibbles(highNibble(header.Control2), highNibble(header.Control1))
+	mapper := uint16(mergeNibbles(highNibble(header.Control2), highNibble(header.Control1)))
+
+	// NES 2.0: if bits 2-3 of Control2 == 0b10, read extended mapper bits from byte 8.
+	if header.Control2&0x0C == 0x08 {
+		mapper |= uint16(header.NumRAM&0x0F) << 8
+		header.NumRAM = 0 // byte 8 is not RAM size in NES 2.0
+	}
 
 	mirror1 := header.Control1 & 1
 	mirror2 := (header.Control1 >> 3) & 1
@@ -102,4 +97,15 @@ func LoadBuffer(reader io.Reader) (*Cartridge, error) {
 		Battery:     0,
 		VideoFormat: 0,
 	}, nil
+}
+
+type header struct {
+	Magic       [4]byte // iNES magic number
+	NumPRG      byte    // number of PRG-ROM banks (16KB each)
+	NumCHR      byte    // number of CHR-ROM banks (8KB each)
+	Control1    byte    // control bits
+	Control2    byte    // control bits
+	NumRAM      byte    // PRG-RAM size (x 8KB)
+	VideoFormat byte    // 0 NTSC, 1 PAL
+	Reserved    [6]byte // unused padding
 }

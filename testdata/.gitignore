@@ -1,0 +1,5 @@
+# External test data managed by testdata/Makefile.
+# Run 'make -C testdata' to download.
+*
+!.gitignore
+!Makefile

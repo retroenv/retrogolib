@@ -20,30 +20,6 @@ const (
 	closingTimeoutMsg = "closing with timeout"
 )
 
-type testCloser struct {
-	err error
-}
-
-func (t testCloser) Close() error {
-	return t.err
-}
-
-type testCloserCtx struct {
-	err       error
-	sleepTime time.Duration
-}
-
-func (t testCloserCtx) Close(ctx context.Context) error {
-	if t.sleepTime > 0 {
-		select {
-		case <-time.After(t.sleepTime):
-		case <-ctx.Done():
-			return fmt.Errorf("context done: %w", ctx.Err())
-		}
-	}
-	return t.err
-}
-
 func TestLoggerCloser(t *testing.T) {
 	cfg := DefaultConfig()
 	var buf bytes.Buffer
@@ -376,8 +352,32 @@ func TestLoggerCloserIntegrationWithRealTypes(t *testing.T) {
 	assert.NotContains(t, output, "ERROR")
 }
 
+type testCloser struct {
+	err error
+}
+
+type testCloserCtx struct {
+	err       error
+	sleepTime time.Duration
+}
+
 // closerFunc is a function type that implements io.Closer
 type closerFunc func() error
+
+func (t testCloser) Close() error {
+	return t.err
+}
+
+func (t testCloserCtx) Close(ctx context.Context) error {
+	if t.sleepTime > 0 {
+		select {
+		case <-time.After(t.sleepTime):
+		case <-ctx.Done():
+			return fmt.Errorf("context done: %w", ctx.Err())
+		}
+	}
+	return t.err
+}
 
 func (f closerFunc) Close() error {
 	return f()

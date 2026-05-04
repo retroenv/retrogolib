@@ -1,19 +1,25 @@
-GOLANGCI_VERSION = v2.8.0
+GOLANGCI_VERSION = v2.12.1
+RETROGOLINT_VERSION = v1.0.2
 
 help: ## show help, shown by default if no target is specified
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 lint: ## run code linters
 	golangci-lint run
+	retrogolint
 
 build: ## build code
 	CGO_ENABLED=0 go build ./...
 
 test: ## run tests
-	go test -timeout 10s -race ./...
+	go test -short -timeout 10s -race ./...
+
+test-integration: ## run long-running integration tests (SingleStepTests, Dormann, ZEXDOC, ZEXALL)
+	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/m6502/
+	go test -v -run 'TestSingleStep|TestZexdoc|TestZexall' -timeout 0 -race ./arch/cpu/z80/
 
 test-coverage: ## run unit tests and create test coverage
-	go test -timeout 10s ./... -coverprofile coverage.txt
+	go test -short -timeout 10s ./... -coverprofile coverage.txt
 
 test-coverage-web: test-coverage ## run unit tests and show test coverage in browser
 	go tool cover -func coverage.txt | grep total | awk '{print "Total coverage: "$$3}'
@@ -21,3 +27,4 @@ test-coverage-web: test-coverage ## run unit tests and show test coverage in bro
 
 install-linters: ## install all used linters
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${GOLANGCI_VERSION}
+	go install github.com/retroenv/retrogolint/cmd/retrogolint@${RETROGOLINT_VERSION}

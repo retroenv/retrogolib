@@ -5,6 +5,21 @@ import (
 	"sync"
 )
 
+// CPUState represents complete Chip-8 VM state for save/load and debugging.
+type CPUState struct {
+	Memory       [4096]byte                         // Full 4KB memory
+	V            [16]byte                           // General-purpose registers V0-VF
+	Stack        [16]uint16                         // Call stack
+	Display      [displayWidth * displayHeight]byte // Display buffer
+	Key          [16]bool                           // Keypad state
+	I            uint16                             // Index register
+	PC           uint16                             // Program counter
+	SP           uint8                              // Stack pointer
+	DelayTimer   byte                               // Delay timer value
+	SoundTimer   byte                               // Sound timer value
+	RedrawScreen bool                               // Screen redraw flag
+}
+
 // CPU represents a thread-safe Chip-8 virtual machine with full instruction set emulation.
 type CPU struct {
 	// Memory and registers
@@ -170,19 +185,4 @@ func (c *CPU) updatePC(skipInstruction bool) {
 	} else {
 		c.PC += 2
 	}
-}
-
-// CPUState represents complete Chip-8 VM state for save/load and debugging.
-type CPUState struct {
-	Memory       [4096]byte                         // Full 4KB memory
-	V            [16]byte                           // General-purpose registers V0-VF
-	Stack        [16]uint16                         // Call stack
-	Display      [displayWidth * displayHeight]byte // Display buffer
-	Key          [16]bool                           // Keypad state
-	I            uint16                             // Index register
-	PC           uint16                             // Program counter
-	SP           uint8                              // Stack pointer
-	DelayTimer   byte                               // Delay timer value
-	SoundTimer   byte                               // Sound timer value
-	RedrawScreen bool                               // Screen redraw flag
 }

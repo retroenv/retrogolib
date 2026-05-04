@@ -14,7 +14,7 @@ type Cartridge struct {
 	RAM     byte   // PRG-RAM banks
 	Trainer []byte
 
-	Mapper      byte       // mapper type
+	Mapper      uint16     // mapper type
 	Mirror      MirrorMode // mirroring mode
 	Battery     byte       // battery present
 	VideoFormat byte       // 0 NTSC, 1 PAL
@@ -42,6 +42,13 @@ func (c *Cartridge) Save(writer io.Writer) error {
 	}
 
 	header.Control1, header.Control2 = ControlBytes(c.Battery, byte(c.Mirror), c.Mapper, len(c.Trainer) > 0)
+
+	// iNES 2.0 stores mapper bits 8-11 in header byte 8 low nibble.
+	// High nibble of byte 8 is the submapper number (0 = none).
+	if c.Mapper > 0xFF {
+		header.Control2 = (header.Control2 &^ 0x0C) | 0x08
+		header.NumRAM = byte((c.Mapper >> 8) & 0x0F)
+	}
 
 	if err := binary.Write(writer, binary.LittleEndian, header); err != nil {
 		return fmt.Errorf("writing header: %w", err)

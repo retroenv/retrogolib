@@ -43,6 +43,10 @@ type testHandler struct {
 	t       TestingT
 }
 
+type testingWriter struct {
+	t TestingT
+}
+
 func newTestHandler(t TestingT) *testHandler {
 	writer := &testingWriter{
 		t: t,
@@ -83,10 +87,6 @@ func (t testHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // nolint: ireturn
 func (t testHandler) WithGroup(name string) slog.Handler {
 	return t.handler.WithGroup(name)
-}
-
-type testingWriter struct {
-	t TestingT
 }
 
 func (w testingWriter) Write(p []byte) (int, error) {

@@ -531,6 +531,32 @@ func TestImplements(t *testing.T) {
 	}
 }
 
+func TestIsType(t *testing.T) {
+	tst := &errorCapture{}
+	IsType(tst, int(0), int(42))
+	if tst.failed {
+		t.Error("IsType failed for matching types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, int(0), "hello")
+	if !tst.failed {
+		t.Error("IsType should have failed for mismatched types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, testImpl{}, testImpl{})
+	if tst.failed {
+		t.Error("IsType failed for matching struct types")
+	}
+
+	tst = &errorCapture{}
+	IsType(tst, testImpl{}, struct{}{})
+	if !tst.failed {
+		t.Error("IsType should have failed for mismatched struct types")
+	}
+}
+
 type errorCapture struct {
 	errs   []any
 	failed bool
@@ -575,22 +601,6 @@ func TestEqual_EdgeCases(t *testing.T) {
 	}
 }
 
-func TestErrorAs_EdgeCases(t *testing.T) {
-	tst := &errorCapture{}
-	var pathErr *AssertTestError
-	ErrorAs(tst, &AssertTestError{msg: "test"}, &pathErr)
-	if tst.failed {
-		t.Error("ErrorAs should pass for matching error type")
-	}
-
-	tst = &errorCapture{}
-	var wrongType *AssertTestSecondError
-	ErrorAs(tst, &AssertTestError{msg: "test"}, &wrongType)
-	if !tst.failed {
-		t.Error("ErrorAs should fail for non-matching error type")
-	}
-}
-
 type AssertTestError struct {
 	msg string
 }
@@ -605,4 +615,20 @@ type AssertTestSecondError struct {
 
 func (e *AssertTestSecondError) Error() string {
 	return e.msg
+}
+
+func TestErrorAs_EdgeCases(t *testing.T) {
+	tst := &errorCapture{}
+	var pathErr *AssertTestError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &pathErr)
+	if tst.failed {
+		t.Error("ErrorAs should pass for matching error type")
+	}
+
+	tst = &errorCapture{}
+	var wrongType *AssertTestSecondError
+	ErrorAs(tst, &AssertTestError{msg: "test"}, &wrongType)
+	if !tst.failed {
+		t.Error("ErrorAs should fail for non-matching error type")
+	}
 }

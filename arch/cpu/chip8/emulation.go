@@ -6,6 +6,72 @@ import (
 	"math/rand/v2"
 )
 
+// ldVxK implements LD Vx, K instruction (wait for key press)
+func (c *CPU) ldVxK(reg uint16) error {
+	keyPressed := -1
+	for i, isKeyPressed := range c.Key {
+		if isKeyPressed {
+			keyPressed = i
+			break
+		}
+	}
+	if keyPressed == -1 {
+		return nil // do not update program counter and wait for a key press
+	}
+	c.V[reg] = byte(keyPressed)
+	c.PC += 2
+	return nil
+}
+
+// ldFVx implements LD F, Vx instruction (set I to font location)
+func (c *CPU) ldFVx(reg uint16) error {
+	fontIndex := c.V[reg]
+	if fontIndex > 15 {
+		return fmt.Errorf("%w: 0x%X", ErrFontIndexOutOfBounds, fontIndex)
+	}
+	c.I = uint16(fontIndex) * 0x5
+	c.PC += 2
+	return nil
+}
+
+// ldBVx implements LD B, Vx instruction (store BCD representation)
+func (c *CPU) ldBVx(reg uint16) error {
+	if c.I+2 >= uint16(len(c.Memory)) {
+		return fmt.Errorf("%w: I=0x%03X", ErrMemoryOutOfBounds, c.I)
+	}
+	bcd := c.V[reg]
+	for i := 2; i >= 0; i-- {
+		c.Memory[c.I+uint16(i)] = bcd % 10
+		bcd /= 10
+	}
+	c.PC += 2
+	return nil
+}
+
+// ldIVx implements LD [I], Vx instruction (store registers V0 through Vx in memory)
+func (c *CPU) ldIVx(reg uint16) error {
+	if c.I+reg >= uint16(len(c.Memory)) {
+		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
+	}
+	for i := range reg + 1 {
+		c.Memory[c.I+i] = c.V[i]
+	}
+	c.PC += 2
+	return nil
+}
+
+// ldVxI implements LD Vx, [I] instruction (read registers V0 through Vx from memory)
+func (c *CPU) ldVxI(reg uint16) error {
+	if c.I+reg >= uint16(len(c.Memory)) {
+		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
+	}
+	for i := range reg + 1 {
+		c.V[i] = c.Memory[c.I+i]
+	}
+	c.PC += 2
+	return nil
+}
+
 // cls clears the display.
 func cls(c *CPU, _ uint16) error {
 	for i := range c.Display {
@@ -176,7 +242,7 @@ func sub(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg1] > c.V[reg2] {
+	if c.V[reg1] >= c.V[reg2] {
 		c.V[0xf] = 1
 	} else {
 		c.V[0xf] = 0
@@ -250,72 +316,6 @@ func ldF(c *CPU, param uint16) error {
 		return fmt.Errorf("invalid value for ldF: %04X", value)
 	}
 
-	c.PC += 2
-	return nil
-}
-
-// ldVxK implements LD Vx, K instruction (wait for key press)
-func (c *CPU) ldVxK(reg uint16) error {
-	keyPressed := -1
-	for i, isKeyPressed := range c.Key {
-		if isKeyPressed {
-			keyPressed = i
-			break
-		}
-	}
-	if keyPressed == -1 {
-		return nil // do not update program counter and wait for a key press
-	}
-	c.V[reg] = byte(keyPressed)
-	c.PC += 2
-	return nil
-}
-
-// ldFVx implements LD F, Vx instruction (set I to font location)
-func (c *CPU) ldFVx(reg uint16) error {
-	fontIndex := c.V[reg]
-	if fontIndex > 15 {
-		return fmt.Errorf("%w: 0x%X", ErrFontIndexOutOfBounds, fontIndex)
-	}
-	c.I = uint16(fontIndex) * 0x5
-	c.PC += 2
-	return nil
-}
-
-// ldBVx implements LD B, Vx instruction (store BCD representation)
-func (c *CPU) ldBVx(reg uint16) error {
-	if c.I+2 >= uint16(len(c.Memory)) {
-		return fmt.Errorf("%w: I=0x%03X", ErrMemoryOutOfBounds, c.I)
-	}
-	bcd := c.V[reg]
-	for i := 2; i >= 0; i-- {
-		c.Memory[c.I+uint16(i)] = bcd % 10
-		bcd /= 10
-	}
-	c.PC += 2
-	return nil
-}
-
-// ldIVx implements LD [I], Vx instruction (store registers V0 through Vx in memory)
-func (c *CPU) ldIVx(reg uint16) error {
-	if c.I+reg >= uint16(len(c.Memory)) {
-		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
-	}
-	for i := range reg + 1 {
-		c.Memory[c.I+i] = c.V[i]
-	}
-	c.PC += 2
-	return nil
-}
-
-// ldVxI implements LD Vx, [I] instruction (read registers V0 through Vx from memory)
-func (c *CPU) ldVxI(reg uint16) error {
-	if c.I+reg >= uint16(len(c.Memory)) {
-		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
-	}
-	for i := range reg + 1 {
-		c.V[i] = c.Memory[c.I+i]
-	}
 	c.PC += 2
 	return nil
 }
@@ -458,7 +458,7 @@ func subn(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg2] > c.V[reg1] {
+	if c.V[reg2] >= c.V[reg1] {
 		c.V[0xf] = 1
 	} else {
 		c.V[0xf] = 0

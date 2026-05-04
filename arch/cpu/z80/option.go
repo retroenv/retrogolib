@@ -2,13 +2,13 @@ package z80
 
 import "github.com/retroenv/retrogolib/arch"
 
-type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
-
 // IOHandler defines the interface for handling I/O port operations.
 type IOHandler interface {
 	ReadPort(port uint8) uint8
 	WritePort(port uint8, value uint8)
 }
+
+type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 
 // Options contains options for the CPU.
 type Options struct {

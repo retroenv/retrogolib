@@ -2,7 +2,6 @@ package z80
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -43,8 +42,8 @@ func TestVerifyOpcodes(t *testing.T) {
 			if ins == nil {
 				continue
 			}
-			if ins.Unofficial && ins.Name == Nop.Name {
-				// Unofficial NOPs share opcodes with different addressing modes
+			if ins.Unofficial {
+				// Unofficial instructions don't need reverse mappings for disassembly
 				continue
 			}
 
@@ -55,10 +54,7 @@ func TestVerifyOpcodes(t *testing.T) {
 			}
 		}
 
-		if len(missingMappings) > 0 {
-			t.Errorf("%s: Found %d opcodes with missing reverse mappings:\n  %s",
-				name, len(missingMappings), strings.Join(missingMappings, "\n  "))
-		}
+		assert.Empty(t, missingMappings, "%s", name)
 	}
 
 	verifyOpcodeArray("Opcodes", Opcodes)
@@ -86,8 +82,90 @@ func TestOpcodeProperties(t *testing.T) {
 
 	verifyOpcodeProperties(Opcodes, "Opcode")
 	verifyOpcodeProperties(EDOpcodes, "ED")
+	verifyOpcodeProperties(CBOpcodes, "CB")
 	verifyOpcodeProperties(DDOpcodes, "DD")
 	verifyOpcodeProperties(FDOpcodes, "FD")
+}
+
+// TestCBOpcodeCoverage verifies all 256 CB-prefixed opcodes are defined.
+func TestCBOpcodeCoverage(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		assert.NotNil(t, opcode.Instruction,
+			"CB opcode 0x%02X should be defined", i)
+	}
+}
+
+// TestCBOpcodeMapping verifies CB opcodes map to the correct instructions.
+func TestCBOpcodeMapping(t *testing.T) {
+	t.Parallel()
+
+	ranges := []struct {
+		start, end  byte
+		instruction *Instruction
+		name        string
+	}{
+		{0x00, 0x07, CBRlc, "RLC"},
+		{0x08, 0x0F, CBRrc, "RRC"},
+		{0x10, 0x17, CBRl, "RL"},
+		{0x18, 0x1F, CBRr, "RR"},
+		{0x20, 0x27, CBSla, "SLA"},
+		{0x28, 0x2F, CBSra, "SRA"},
+		{0x30, 0x37, CBSll, "SLL"},
+		{0x38, 0x3F, CBSrl, "SRL"},
+		{0x40, 0x7F, CBBit, "BIT"},
+		{0x80, 0xBF, CBRes, "RES"},
+		{0xC0, 0xFF, CBSet, "SET"},
+	}
+
+	for _, r := range ranges {
+		for op := int(r.start); op <= int(r.end); op++ {
+			assert.Equal(t, r.instruction, CBOpcodes[op].Instruction,
+				"CB opcode 0x%02X should be %s", op, r.name)
+		}
+	}
+}
+
+// TestCBOpcodeTiming verifies CB opcode timing follows the Z80 pattern:
+// register operations use 8 T-states, (HL) operations use 12 (BIT) or 15 (others).
+func TestCBOpcodeTiming(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		if opcode.Instruction == nil {
+			continue
+		}
+
+		reg := i & 0x07
+		isHL := reg == 6
+
+		var expectedTiming byte
+		switch {
+		case !isHL:
+			expectedTiming = 8
+		case i >= 0x40 && i <= 0x7F: // BIT n,(HL)
+			expectedTiming = 12
+		default: // rotate/shift/RES/SET (HL)
+			expectedTiming = 15
+		}
+
+		assert.Equal(t, expectedTiming, opcode.Timing,
+			"CB opcode 0x%02X timing: got %d, want %d", i, opcode.Timing, expectedTiming)
+	}
+}
+
+// TestCBOpcodeSize verifies all CB opcodes have size 2.
+func TestCBOpcodeSize(t *testing.T) {
+	t.Parallel()
+
+	for i, opcode := range CBOpcodes {
+		if opcode.Instruction == nil {
+			continue
+		}
+		assert.Equal(t, byte(2), opcode.Size,
+			"CB opcode 0x%02X should have size 2", i)
+	}
 }
 
 // TestInstructionCoverage verifies essential Z80 instructions are present in opcode tables.
@@ -95,11 +173,11 @@ func TestInstructionCoverage(t *testing.T) {
 	t.Parallel()
 
 	majorInstructions := []*Instruction{
-		Nop, LdReg8, LdReg16, LdImm8, IncReg8, IncReg16, DecReg8, DecReg16,
+		NopInst, LdReg8, LdReg16, LdImm8, IncReg8, IncReg16, DecReg8, DecReg16,
 		AddA, AdcA, SubA, SbcA, AndA, XorA, OrA, CpA,
 		JrRel, JrCond, JpAbs, JpCond,
-		Call, CallCond, Ret, RetCond,
-		PushReg16, PopReg16, Rst, Halt, Ei, Di,
+		CallInst, CallCond, RetInst, RetCond,
+		PushReg16, PopReg16, RstInst, HaltInst, EiInst, DiInst,
 	}
 
 	for _, ins := range majorInstructions {
@@ -186,28 +264,6 @@ func TestRegisterDecoding(t *testing.T) {
 // Instruction API Testing
 // =============================================================================
 
-type opcodeByRegisterTest struct {
-	name        string
-	instruction *Instruction
-	register    RegisterParam
-	wantOpcode  byte
-	wantExists  bool
-}
-
-func getOpcodeByRegisterTests() []opcodeByRegisterTest {
-	return []opcodeByRegisterTest{
-		{"IncReg8 - INC B", IncReg8, RegB, 0x04, true},
-		{"IncReg8 - INC A", IncReg8, RegA, 0x3C, true},
-		{"DecReg8 - DEC C", DecReg8, RegC, 0x0D, true},
-		{"LdReg16 - LD HL,nn", LdReg16, RegHL, 0x21, true},
-		{"IncReg16 - INC SP", IncReg16, RegSP, 0x33, true},
-		{"Rst - RST 08H", Rst, RegRst08, 0xCF, true},
-		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
-		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
-		{"Non-existent register", IncReg8, RegIX, 0x00, false},
-	}
-}
-
 func TestInstruction_GetOpcodeByRegister(t *testing.T) {
 	t.Parallel()
 
@@ -240,7 +296,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		assert.Equal(t, 7, foundCount, "Should find 7 register variants for INC")
 	})
 
-	t.Run("Rst variants", func(t *testing.T) {
+	t.Run("RstInst variants", func(t *testing.T) {
 		t.Parallel()
 		// Test that RST variants exist
 		expectedRst := []RegisterParam{
@@ -249,7 +305,7 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 		}
 		foundCount := 0
 		for _, reg := range expectedRst {
-			if _, exists := Rst.GetOpcodeByRegister(reg); exists {
+			if _, exists := RstInst.GetOpcodeByRegister(reg); exists {
 				foundCount++
 			}
 		}
@@ -259,10 +315,10 @@ func TestInstruction_GetAllRegisterVariants(t *testing.T) {
 	t.Run("Instruction without RegisterOpcodes", func(t *testing.T) {
 		t.Parallel()
 		// Test that NOP has RegisterOpcodes set to nil
-		assert.Nil(t, Nop.RegisterOpcodes, "NOP should have nil RegisterOpcodes")
+		assert.Nil(t, NopInst.RegisterOpcodes, "NOP should have nil RegisterOpcodes")
 
 		// When RegisterOpcodes is nil, GetOpcodeByRegister falls back to Addressing map
-		_, exists := Nop.GetOpcodeByRegister(RegB)
+		_, exists := NopInst.GetOpcodeByRegister(RegB)
 		assert.True(t, exists, "NOP fallback to Addressing map should work")
 	})
 }
@@ -339,9 +395,9 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 		{"PUSH AF", PushReg16, RegAF, 0xF5},
 
 		// Restart instructions
-		{"RST 00H", Rst, RegRst00, 0xC7},
-		{"RST 08H", Rst, RegRst08, 0xCF},
-		{"RST 38H", Rst, RegRst38, 0xFF},
+		{"RST 00H", RstInst, RegRst00, 0xC7},
+		{"RST 08H", RstInst, RegRst08, 0xCF},
+		{"RST 38H", RstInst, RegRst38, 0xFF},
 	}
 
 	for _, tc := range testCases {
@@ -354,5 +410,27 @@ func TestInstructionRegisterOpcodes_CompareWithOldOpcodeMap(t *testing.T) {
 					"Opcode for %s should match expected value", tc.name)
 			}
 		})
+	}
+}
+
+type opcodeByRegisterTest struct {
+	name        string
+	instruction *Instruction
+	register    RegisterParam
+	wantOpcode  byte
+	wantExists  bool
+}
+
+func getOpcodeByRegisterTests() []opcodeByRegisterTest {
+	return []opcodeByRegisterTest{
+		{"IncReg8 - INC B", IncReg8, RegB, 0x04, true},
+		{"IncReg8 - INC A", IncReg8, RegA, 0x3C, true},
+		{"DecReg8 - DEC C", DecReg8, RegC, 0x0D, true},
+		{"LdReg16 - LD HL,nn", LdReg16, RegHL, 0x21, true},
+		{"IncReg16 - INC SP", IncReg16, RegSP, 0x33, true},
+		{"RstInst - RST 08H", RstInst, RegRst08, 0xCF, true},
+		{"PopReg16 - POP AF", PopReg16, RegAF, 0xF1, true},
+		{"PushReg16 - PUSH DE", PushReg16, RegDE, 0xD5, true},
+		{"Non-existent register", IncReg8, RegIX, 0x00, false},
 	}
 }

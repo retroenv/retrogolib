@@ -22,10 +22,40 @@ const (
 
 	// M6502 represents the MOS Technology 6502 processor used in:
 	// - Apple II series
-	// - Commodore 64/128/VIC-20
 	// - Atari 2600/5200/8-bit computers
+	// - Commodore 64/128/VIC-20
 	// - Nintendo Entertainment System (NES/Famicom)
 	M6502 Architecture = "6502"
+
+	// M65C02 represents the WDC 65C02 processor used in:
+	// - Apple IIe/IIc
+	// - Atari Lynx
+	// - TurboGrafx-16/PC Engine
+	M65C02 Architecture = "65c02"
+
+	// M65816 represents the WDC 65C816 (65816) processor used in:
+	// - Apple IIGS
+	// - Super Nintendo Entertainment System (SNES/Super Famicom)
+	M65816 Architecture = "65816"
+
+	// M6809 represents the Motorola 6809 processor used in:
+	// - Dragon 32/64
+	// - TRS-80 Color Computer (CoCo)
+	// - Vectrex
+	// - Williams arcade hardware (Defender, Robotron, Joust)
+	M6809 Architecture = "6809"
+
+	// M68000 represents the Motorola 68000 processor used in:
+	// - Apple Macintosh (original)
+	// - Atari ST
+	// - Commodore Amiga
+	// - Sega Genesis/Mega Drive
+	M68000 Architecture = "m68000"
+
+	// SM83 represents the Sharp SM83 (LR35902) processor used in:
+	// - Nintendo Game Boy
+	// - Nintendo Game Boy Color
+	SM83 Architecture = "sm83"
 
 	// X86 represents the Intel x86 processor family used in:
 	// - IBM PC and compatibles
@@ -38,7 +68,6 @@ const (
 	// - ZX Spectrum
 	// - Amstrad CPC
 	// - MSX computers
-	// - Game Boy (modified Z80)
 	// - Sega Master System/Game Gear
 	Z80 Architecture = "z80"
 )
@@ -48,6 +77,11 @@ const (
 var allSupportedArchitectures = []Architecture{
 	CHIP8,
 	M6502,
+	M65C02,
+	M65816,
+	M6809,
+	M68000,
+	SM83,
 	X86,
 	Z80,
 }

@@ -7,37 +7,6 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-type cpuTest struct {
-	Name  string
-	Setup func(cpu *CPU)
-	Check func(cpu *CPU)
-}
-
-const testIrqAddress = 0x9000
-
-func cpuTestSetup(t *testing.T) *CPU {
-	t.Helper()
-	memory, err := NewMemory(&testMemory{})
-	assert.NoError(t, err)
-	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
-	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory)
-	return cpu
-}
-
-func runCPUTest(t *testing.T, tests []cpuTest) {
-	t.Helper()
-
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			t.Parallel()
-			cpu := cpuTestSetup(t)
-			test.Setup(cpu)
-			test.Check(cpu)
-		})
-	}
-}
-
 func TestAdc(t *testing.T) {
 	t.Parallel()
 	tests := []cpuTest{
@@ -588,7 +557,10 @@ func TestJmp(t *testing.T) {
 func TestJsr(t *testing.T) {
 	t.Parallel()
 	cpu := cpuTestSetup(t)
-	assert.NoError(t, jsr(cpu, Absolute(0x101)))
+	// Write target address 0x0101 at PC+1 (low) and PC+2 (high).
+	cpu.memory.Write(cpu.PC+1, 0x01)
+	cpu.memory.Write(cpu.PC+2, 0x01)
+	assert.NoError(t, jsr(cpu))
 
 	assert.Equal(t, InitialStack-2, cpu.SP)
 	assert.Equal(t, 0x101, cpu.PC)
@@ -1081,6 +1053,253 @@ func TestTya(t *testing.T) {
 	assert.Equal(t, 2, cpu.A)
 }
 
+// Tests for unofficial instructions
+
+func TestAne(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "basic",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0x55
+				cpu.X = 0xCC
+				assert.NoError(t, ane(cpu, 0x0F))
+			},
+			Check: func(cpu *CPU) {
+				// (0x55 | 0xFF) & 0xCC & 0x0F = 0xFF & 0xCC & 0x0F = 0x0C
+				assert.Equal(t, 0x0C, cpu.A)
+				assert.Equal(t, 0, cpu.Flags.Z)
+				assert.Equal(t, 0, cpu.Flags.N)
+			},
+		},
+		{
+			Name: "zero flag",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0x00
+				assert.NoError(t, ane(cpu, 0xFF))
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 0, cpu.A)
+				assert.Equal(t, 1, cpu.Flags.Z)
+			},
+		},
+		{
+			Name: "negative flag",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0xFF
+				assert.NoError(t, ane(cpu, 0xFF))
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 0xFF, cpu.A)
+				assert.Equal(t, 1, cpu.Flags.N)
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestLas(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "basic",
+			Setup: func(cpu *CPU) {
+				cpu.Y = 0x10
+				cpu.memory.Write(0x0210, 0xF0)
+				cpu.SP = 0xAB
+				assert.NoError(t, las(cpu, Absolute(0x0200), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// 0xF0 & 0xAB = 0xA0
+				assert.Equal(t, 0xA0, cpu.A)
+				assert.Equal(t, 0xA0, cpu.X)
+				assert.Equal(t, 0xA0, cpu.SP)
+				assert.Equal(t, 1, cpu.Flags.N)
+				assert.Equal(t, 0, cpu.Flags.Z)
+			},
+		},
+		{
+			Name: "zero flag",
+			Setup: func(cpu *CPU) {
+				cpu.Y = 0x10
+				cpu.memory.Write(0x0210, 0x00)
+				cpu.SP = 0xFF
+				assert.NoError(t, las(cpu, Absolute(0x0200), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				assert.Equal(t, 0, cpu.A)
+				assert.Equal(t, 0, cpu.X)
+				assert.Equal(t, 0, cpu.SP)
+				assert.Equal(t, 1, cpu.Flags.Z)
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestSha(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "absolute y no page cross",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0x0A
+				cpu.Y = 0x10
+				assert.NoError(t, sha(cpu, Absolute(0x0200), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// value = 0xFF & 0x0A & (0x02+1) = 0x0A & 0x03 = 0x02
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+			},
+		},
+		{
+			Name: "absolute y page cross corrupts address",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0x0A
+				cpu.Y = 0x20
+				assert.NoError(t, sha(cpu, Absolute(0x02F0), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// effective = 0x02F0+0x20 = 0x0310, page crossed
+				// value = 0xFF & 0x0A & (0x02+1) = 0x02
+				// write_addr = (0x02<<8)|0x10 = 0x0210, not 0x0310
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+				assert.Equal(t, 0x00, cpu.memory.Read(0x0310))
+			},
+		},
+		{
+			Name: "indirect y",
+			Setup: func(cpu *CPU) {
+				// cpu.PC = 0x8000; PC+1 holds the zero-page pointer byte
+				cpu.memory.Write(0x8001, 0x50)
+				cpu.memory.Write(0x0050, 0x00) // base addr low
+				cpu.memory.Write(0x0051, 0x02) // base addr high → base = 0x0200
+				cpu.A = 0xFF
+				cpu.X = 0x0A
+				cpu.Y = 0x10
+				assert.NoError(t, sha(cpu, IndirectResolved(0x0210), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// value = 0xFF & 0x0A & (0x02+1) = 0x02
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestShx(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "no page cross",
+			Setup: func(cpu *CPU) {
+				cpu.X = 0x0A
+				cpu.Y = 0x10
+				assert.NoError(t, shx(cpu, Absolute(0x0200), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// value = 0x0A & (0x02+1) = 0x0A & 0x03 = 0x02
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+			},
+		},
+		{
+			Name: "page cross corrupts address",
+			Setup: func(cpu *CPU) {
+				cpu.X = 0x0A
+				cpu.Y = 0x20
+				assert.NoError(t, shx(cpu, Absolute(0x02F0), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// effective = 0x02F0+0x20 = 0x0310, page crossed
+				// value = 0x0A & 0x03 = 0x02
+				// write_addr = (0x02<<8)|0x10 = 0x0210, not 0x0310
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+				assert.Equal(t, 0x00, cpu.memory.Read(0x0310))
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestShy(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "no page cross",
+			Setup: func(cpu *CPU) {
+				cpu.Y = 0x0A
+				cpu.X = 0x10
+				assert.NoError(t, shy(cpu, Absolute(0x0200), &cpu.X))
+			},
+			Check: func(cpu *CPU) {
+				// value = 0x0A & (0x02+1) = 0x0A & 0x03 = 0x02
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+			},
+		},
+		{
+			Name: "page cross corrupts address",
+			Setup: func(cpu *CPU) {
+				cpu.Y = 0x0A
+				cpu.X = 0x20
+				assert.NoError(t, shy(cpu, Absolute(0x02F0), &cpu.X))
+			},
+			Check: func(cpu *CPU) {
+				// effective = 0x02F0+0x20 = 0x0310, page crossed
+				// value = 0x0A & 0x03 = 0x02
+				// write_addr = (0x02<<8)|0x10 = 0x0210, not 0x0310
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+				assert.Equal(t, 0x00, cpu.memory.Read(0x0310))
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
+func TestTas(t *testing.T) {
+	t.Parallel()
+	tests := []cpuTest{
+		{
+			Name: "basic",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0xAA
+				cpu.Y = 0x10
+				assert.NoError(t, tas(cpu, Absolute(0x0200), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// SP = A & X = 0xFF & 0xAA = 0xAA
+				// value = 0xAA & (0x02+1) = 0xAA & 0x03 = 0x02
+				assert.Equal(t, 0xAA, cpu.SP)
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+			},
+		},
+		{
+			Name: "page cross corrupts address",
+			Setup: func(cpu *CPU) {
+				cpu.A = 0xFF
+				cpu.X = 0x0A
+				cpu.Y = 0x20
+				assert.NoError(t, tas(cpu, Absolute(0x02F0), &cpu.Y))
+			},
+			Check: func(cpu *CPU) {
+				// SP = 0xFF & 0x0A = 0x0A
+				// effective = 0x02F0+0x20 = 0x0310, page crossed
+				// value = 0x0A & 0x03 = 0x02
+				// write_addr = (0x02<<8)|0x10 = 0x0210, not 0x0310
+				assert.Equal(t, 0x0A, cpu.SP)
+				assert.Equal(t, 0x02, cpu.memory.Read(0x0210))
+				assert.Equal(t, 0x00, cpu.memory.Read(0x0310))
+			},
+		},
+	}
+	runCPUTest(t, tests)
+}
+
 // Tests for validation functions
 
 func TestGetFlags(t *testing.T) {
@@ -1204,4 +1423,35 @@ func TestGetInstructionCount(t *testing.T) {
 	cpu.cycles = 100
 	count = cpu.GetInstructionCount()
 	assert.Equal(t, uint64(25), count)
+}
+
+type cpuTest struct {
+	Name  string
+	Setup func(cpu *CPU)
+	Check func(cpu *CPU)
+}
+
+const testIrqAddress = 0x9000
+
+func cpuTestSetup(t *testing.T) *CPU {
+	t.Helper()
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
+	memory.WriteWord(IrqAddress, testIrqAddress)
+	cpu := New(memory)
+	return cpu
+}
+
+func runCPUTest(t *testing.T, tests []cpuTest) {
+	t.Helper()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Parallel()
+			cpu := cpuTestSetup(t)
+			test.Setup(cpu)
+			test.Check(cpu)
+		})
+	}
 }

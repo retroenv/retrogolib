@@ -34,6 +34,9 @@ const (
 	IndirectXAddressing
 	IndirectYAddressing
 	RelativeAddressing
+	ZeroPageIndirectAddressing  // 65C02: (zp) - zero page indirect without indexing
+	AbsoluteXIndirectAddressing // 65C02: (abs,X) - absolute indexed indirect
+	ZeroPageRelativeAddressing  // 65C02 Rockwell: zp + rel - used by BBR/BBS instructions
 )
 
 // AccessMode specifies how memory is accessed during instruction execution.
@@ -88,3 +91,29 @@ type IndirectResolved uint16
 // Accumulator represents the accumulator register as an instruction operand.
 // Used for instructions that operate on the accumulator (e.g., ASL A, ROL A).
 type Accumulator int
+
+// ZeroPageIndirect represents an 8-bit zero page address used for indirect addressing
+// without indexing. The 16-bit target address is read from the zero page location.
+// Used by 65C02 instructions like LDA ($10).
+type ZeroPageIndirect uint8
+
+// AbsoluteXIndirect represents absolute indexed indirect addressing.
+// The effective address is read from (operand + X). Used by 65C02 JMP (abs,X).
+type AbsoluteXIndirect uint16
+
+// addressingModeSize returns the total instruction size in bytes for a given addressing mode.
+func addressingModeSize(mode AddressingMode) int {
+	switch mode {
+	case ImpliedAddressing, AccumulatorAddressing:
+		return 1
+	case AbsoluteAddressing, AbsoluteXAddressing, AbsoluteYAddressing,
+		IndirectAddressing, AbsoluteXIndirectAddressing:
+		return 3
+	case ZeroPageRelativeAddressing:
+		return 3
+	default:
+		// ImmediateAddressing, ZeroPageAddressing, ZeroPageXAddressing, ZeroPageYAddressing,
+		// IndirectXAddressing, IndirectYAddressing, RelativeAddressing, ZeroPageIndirectAddressing
+		return 2
+	}
+}

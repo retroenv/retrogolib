@@ -1,6 +1,7 @@
 package arch
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -121,31 +122,19 @@ func TestFromString(t *testing.T) {
 
 func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
-	expected := []Architecture{CHIP8, M6502, Z80, X86}
+	expected := []Architecture{CHIP8, M6502, M65C02, M65816, M6809, M68000, SM83, X86, Z80}
 
-	assert.Equal(t, len(expected), len(got))
+	assert.Len(t, expected, len(got))
 
 	// Check that all expected architectures are present
 	for _, expectedArch := range expected {
-		found := false
-		for _, gotArch := range got {
-			if gotArch == expectedArch {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(got, expectedArch)
 		assert.True(t, found, "Expected architecture %s not found in supported architectures", expectedArch)
 	}
 
 	// Verify no unexpected architectures are present
 	for _, gotArch := range got {
-		found := false
-		for _, expectedArch := range expected {
-			if gotArch == expectedArch {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(expected, gotArch)
 		assert.True(t, found, "Unexpected architecture %s found in supported architectures", gotArch)
 	}
 }

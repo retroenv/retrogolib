@@ -1,5 +1,32 @@
 package config
 
+// section represents a configuration section with key-value pairs.
+type section map[string]value
+
+// comment represents a comment in the configuration file.
+type comment struct {
+	Line    int    // Line number where comment appears
+	Text    string // Comment text without # prefix
+	Section string // Section this comment belongs to (empty for global)
+}
+
+// structureElement represents elements in the original file structure.
+type structureElement struct {
+	Type    elementType // Comment, Section, KeyValue, EmptyLine
+	Line    int         // Original line number
+	Content string      // Original content
+	Section string      // Current section context
+	Key     string      // Key name (for KeyValue elements)
+}
+
+// Config represents a loaded configuration with sections and values.
+type Config struct {
+	sections  map[string]section
+	filename  string
+	comments  []comment          // Preserved comments from original file
+	structure []structureElement // Original file structure for write operations
+}
+
 // valueType represents the type of configuration value.
 type valueType int
 
@@ -21,38 +48,11 @@ const (
 	emptyLineElement
 )
 
-// Config represents a loaded configuration with sections and values.
-type Config struct {
-	sections  map[string]section
-	filename  string
-	comments  []comment          // Preserved comments from original file
-	structure []structureElement // Original file structure for write operations
-}
-
-// section represents a configuration section with key-value pairs.
-type section map[string]value
-
 // value represents a configuration value with type information.
 type value struct {
 	Raw    string
 	parsed any
 	vtype  valueType
-}
-
-// comment represents a comment in the configuration file.
-type comment struct {
-	Line    int    // Line number where comment appears
-	Text    string // Comment text without # prefix
-	Section string // Section this comment belongs to (empty for global)
-}
-
-// structureElement represents elements in the original file structure.
-type structureElement struct {
-	Type    elementType // Comment, Section, KeyValue, EmptyLine
-	Line    int         // Original line number
-	Content string      // Original content
-	Section string      // Current section context
-	Key     string      // Key name (for KeyValue elements)
 }
 
 // tagInfo contains parsed tag information including default values and required flag.

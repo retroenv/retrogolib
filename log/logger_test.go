@@ -33,11 +33,11 @@ func TestLoggerFatal(t *testing.T) {
 		exited = true
 	}
 
-	logger.Fatal("something bad happened", Err(errors.New("network error")))
+	logger.Fatal("Something bad happened", Err(errors.New("network error")))
 
 	assert.True(t, exited)
 	output := buf.String()
-	assert.Equal(t, "FATAL   something bad happened {\"error\":\"network error\"}\n", output)
+	assert.Equal(t, "FATAL   Something bad happened {\"error\":\"network error\"}\n", output)
 }
 
 func TestLoggerTrace(t *testing.T) {

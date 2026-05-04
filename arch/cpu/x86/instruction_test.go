@@ -7,7 +7,7 @@ import (
 )
 
 func TestOpcodes(t *testing.T) {
-	assert.Equal(t, 256, len(Opcodes))
+	assert.Len(t, Opcodes, 256)
 
 	// ADD r/m8, r8
 	assert.Equal(t, "add", Opcodes[0x00].Instruction.Name)

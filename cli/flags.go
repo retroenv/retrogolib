@@ -99,7 +99,7 @@ func (fs *FlagSet) AddSection(name string, opts any) {
 	section := Section{Name: name}
 
 	v := reflect.ValueOf(opts)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	t := v.Type()
@@ -136,7 +136,7 @@ func (fs *FlagSet) AddSection(name string, opts any) {
 // Optional: `required:"true"`. The last field can be []string for variadic args.
 func (fs *FlagSet) AddPositional(opts any) {
 	v := reflect.ValueOf(opts)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	t := v.Type()
@@ -204,9 +204,9 @@ func (fs *FlagSet) parseFlagField(field reflect.StructField, fieldVal reflect.Va
 
 	// Parse short,long format (e.g., "v,verbose").
 	var short, long string
-	if idx := strings.Index(flagTag, ","); idx != -1 {
-		short = flagTag[:idx]
-		long = flagTag[idx+1:]
+	if before, after, ok := strings.Cut(flagTag, ","); ok {
+		short = before
+		long = after
 	} else {
 		long = flagTag
 	}

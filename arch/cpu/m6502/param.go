@@ -7,19 +7,22 @@ import (
 type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
 
 var paramReader = map[AddressingMode]paramReaderFunc{
-	ImpliedAddressing:     paramReaderImplied,
-	ImmediateAddressing:   paramReaderImmediate,
-	AccumulatorAddressing: paramReaderAccumulator,
-	AbsoluteAddressing:    paramReaderAbsolute,
-	AbsoluteXAddressing:   paramReaderAbsoluteX,
-	AbsoluteYAddressing:   paramReaderAbsoluteY,
-	ZeroPageAddressing:    paramReaderZeroPage,
-	ZeroPageXAddressing:   paramReaderZeroPageX,
-	ZeroPageYAddressing:   paramReaderZeroPageY,
-	RelativeAddressing:    paramReaderRelative,
-	IndirectAddressing:    paramReaderIndirect,
-	IndirectXAddressing:   paramReaderIndirectX,
-	IndirectYAddressing:   paramReaderIndirectY,
+	ImpliedAddressing:           paramReaderImplied,
+	ImmediateAddressing:         paramReaderImmediate,
+	AccumulatorAddressing:       paramReaderAccumulator,
+	AbsoluteAddressing:          paramReaderAbsolute,
+	AbsoluteXAddressing:         paramReaderAbsoluteX,
+	AbsoluteYAddressing:         paramReaderAbsoluteY,
+	ZeroPageAddressing:          paramReaderZeroPage,
+	ZeroPageXAddressing:         paramReaderZeroPageX,
+	ZeroPageYAddressing:         paramReaderZeroPageY,
+	RelativeAddressing:          paramReaderRelative,
+	IndirectAddressing:          paramReaderIndirect,
+	IndirectXAddressing:         paramReaderIndirectX,
+	IndirectYAddressing:         paramReaderIndirectY,
+	ZeroPageIndirectAddressing:  paramReaderZeroPageIndirect,
+	AbsoluteXIndirectAddressing: paramReaderAbsoluteXIndirect,
+	ZeroPageRelativeAddressing:  paramReaderZeroPageRelative,
 }
 
 // readOpParams reads the opcode parameters after the first opcode byte
@@ -121,12 +124,15 @@ func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
 }
 
 func paramReaderIndirect(c *CPU) ([]any, []byte, bool) {
-	address := c.memory.ReadWordBug(c.PC + 1)
-	b1 := uint16(c.memory.Read(c.PC + 1))
-	b2 := uint16(c.memory.Read(c.PC + 2))
+	// Read the pointer address from the instruction stream sequentially (no page-wrap bug here).
+	// The NMOS page-wrap bug only applies when reading the jump target FROM the pointer address,
+	// which is handled in jmp() via ReadWordBug.
+	b1 := c.memory.Read(c.PC + 1)
+	b2 := c.memory.Read(c.PC + 2)
+	address := uint16(b1) | uint16(b2)<<8
 
 	params := []any{Indirect(address)}
-	opcodes := []byte{byte(b1), byte(b2)}
+	opcodes := []byte{b1, b2}
 	return params, opcodes, false
 }
 
@@ -152,6 +158,48 @@ func paramReaderIndirectY(c *CPU) ([]any, []byte, bool) {
 
 	opcodes := []byte{b}
 	return params, opcodes, pageCrossed
+}
+
+// paramReaderZeroPageIndirect reads the zero page indirect addressing mode (zp).
+// Reads a zero-page address byte, then reads the 16-bit pointer at that zero-page location.
+// Uses ReadWordBug to wrap within the zero page (e.g., zp=0xFF reads lo from 0xFF, hi from 0x00).
+func paramReaderZeroPageIndirect(c *CPU) ([]any, []byte, bool) {
+	b := c.memory.Read(c.PC + 1)
+	address := c.memory.ReadWordBug(uint16(b))
+	params := []any{ZeroPageIndirect(b), IndirectResolved(address)}
+	opcodes := []byte{b}
+	return params, opcodes, false
+}
+
+// paramReaderAbsoluteXIndirect reads the absolute indexed indirect addressing mode (abs,X).
+// Used by 65C02 JMP (abs,X): reads abs+X as a 16-bit pointer.
+func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
+	b1 := uint16(c.memory.Read(c.PC + 1))
+	b2 := uint16(c.memory.Read(c.PC + 2))
+	base := b2<<8 | b1
+	address := c.memory.ReadWord(base + uint16(c.X))
+	params := []any{AbsoluteXIndirect(base), Absolute(address)}
+	opcodes := []byte{byte(b1), byte(b2)}
+	return params, opcodes, false
+}
+
+// paramReaderZeroPageRelative reads the zero-page + relative addressing mode.
+// Used by 65C02 Rockwell BBR/BBS instructions: opcode zp rel (3 bytes total).
+// Returns the zero-page address (to test a bit) and the branch target address.
+func paramReaderZeroPageRelative(c *CPU) ([]any, []byte, bool) {
+	zp := c.memory.Read(c.PC + 1)
+	rel := c.memory.Read(c.PC + 2)
+
+	var target uint16
+	if rel < 0x80 {
+		target = c.PC + 3 + uint16(rel)
+	} else {
+		target = c.PC + 3 + uint16(rel) - 0x100
+	}
+
+	params := []any{ZeroPage(zp), Absolute(target)}
+	opcodes := []byte{zp, rel}
+	return params, opcodes, false
 }
 
 // offsetAddress returns the offset address and whether it crosses a page boundary.

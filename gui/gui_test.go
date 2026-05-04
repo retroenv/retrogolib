@@ -100,7 +100,7 @@ func TestBackend_KeyEvents(t *testing.T) {
 	backend.KeyDown(input.Space)
 	backend.KeyDown(input.Enter)
 
-	assert.Equal(t, 3, len(backend.downKeys), "Should have recorded 3 key down events")
+	assert.Len(t, backend.downKeys, 3, "Should have recorded 3 key down events")
 	assert.Equal(t, input.A, backend.downKeys[0], "First key down should be A")
 	assert.Equal(t, input.Space, backend.downKeys[1], "Second key down should be Space")
 	assert.Equal(t, input.Enter, backend.downKeys[2], "Third key down should be Enter")
@@ -109,7 +109,7 @@ func TestBackend_KeyEvents(t *testing.T) {
 	backend.KeyUp(input.A)
 	backend.KeyUp(input.Escape)
 
-	assert.Equal(t, 2, len(backend.upKeys), "Should have recorded 2 key up events")
+	assert.Len(t, backend.upKeys, 2, "Should have recorded 2 key up events")
 	assert.Equal(t, input.A, backend.upKeys[0], "First key up should be A")
 	assert.Equal(t, input.Escape, backend.upKeys[1], "Second key up should be Escape")
 }
@@ -123,8 +123,8 @@ func TestBackend_KeyEventSequence(t *testing.T) {
 	backend.KeyDown(input.B)
 	backend.KeyUp(input.B)
 
-	assert.Equal(t, 2, len(backend.downKeys), "Should have 2 key down events")
-	assert.Equal(t, 2, len(backend.upKeys), "Should have 2 key up events")
+	assert.Len(t, backend.downKeys, 2, "Should have 2 key down events")
+	assert.Len(t, backend.upKeys, 2, "Should have 2 key up events")
 
 	assert.Equal(t, input.A, backend.downKeys[0], "First down should be A")
 	assert.Equal(t, input.B, backend.downKeys[1], "Second down should be B")
@@ -209,8 +209,8 @@ func TestBackend_MultipleKeyEvents(t *testing.T) {
 		backend.KeyUp(key)
 	}
 
-	assert.Equal(t, len(keys), len(backend.downKeys), "All key down events should be recorded")
-	assert.Equal(t, len(keys), len(backend.upKeys), "All key up events should be recorded")
+	assert.Len(t, keys, len(backend.downKeys), "All key down events should be recorded")
+	assert.Len(t, keys, len(backend.upKeys), "All key up events should be recorded")
 
 	// Verify order is preserved
 	for i, key := range keys {

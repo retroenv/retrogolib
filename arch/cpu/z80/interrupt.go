@@ -70,7 +70,7 @@ func (c *CPU) executeNMI() {
 
 	// Push PC to stack
 	c.SP -= 2
-	c.memory.WriteWord(c.SP, c.PC)
+	c.bus.WriteWord(c.SP, c.PC)
 
 	// Jump to NMI vector
 	c.PC = 0x0066
@@ -87,7 +87,7 @@ func (c *CPU) executeIRQ() {
 
 	// Push PC to stack
 	c.SP -= 2
-	c.memory.WriteWord(c.SP, c.PC)
+	c.bus.WriteWord(c.SP, c.PC)
 
 	// NOTE: Interrupt handling is simplified. In real hardware:
 	// - IM 0: Device places instruction on data bus, CPU executes it
@@ -106,8 +106,8 @@ func (c *CPU) executeIRQ() {
 
 	case InterruptMode2:
 		// Simplified: reads vector low byte from 0xFFFF instead of data bus
-		vector := uint16(c.I)<<8 | uint16(c.memory.Read(0xFFFF))
-		c.PC = c.memory.ReadWord(vector)
+		vector := uint16(c.I)<<8 | uint16(c.bus.Read(0xFFFF))
+		c.PC = c.bus.ReadWord(vector)
 		c.cycles += 19
 	}
 }
