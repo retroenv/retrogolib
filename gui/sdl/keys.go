@@ -128,6 +128,7 @@ const (
 	K_KP_9         = 1073741921
 	K_KP_0         = 1073741922
 	K_KP_PERIOD    = 1073741923
+	K_APPLICATION  = 1073741925
 	K_KP_COMMA     = 1073741957
 	K_KP_EQUALS    = 1073741927
 	K_LCTRL        = 1073742048
@@ -147,8 +148,10 @@ var keyMapping = map[keycode]input.Key{
 	K_BACKSPACE:    input.Backspace,
 	K_TAB:          input.Tab,
 	K_SPACE:        input.Space,
+	K_QUOTE:        input.Apostrophe,
 	K_COMMA:        input.Comma,
 	K_MINUS:        input.Minus,
+	K_PERIOD:       input.Period,
 	K_SLASH:        input.Slash,
 	K_0:            input.Key0,
 	K_1:            input.Key1,
@@ -204,8 +207,10 @@ var keyMapping = map[keycode]input.Key{
 	K_F10:          input.F10,
 	K_F11:          input.F11,
 	K_F12:          input.F12,
+	K_CAPSLOCK:     input.CapsLock,
 	K_PRINTSCREEN:  input.PrintScreen,
 	K_SCROLLLOCK:   input.ScrollLock,
+	K_NUMLOCKCLEAR: input.NumLock,
 	K_PAUSE:        input.Pause,
 	K_INSERT:       input.Insert,
 	K_HOME:         input.Home,
@@ -233,6 +238,8 @@ var keyMapping = map[keycode]input.Key{
 	K_KP_9:         input.KP9,
 	K_KP_0:         input.KP0,
 	K_KP_PERIOD:    input.KPDecimal,
+	K_KP_EQUALS:    input.KPEqual,
+	K_APPLICATION:  input.Menu,
 	K_F13:          input.F13,
 	K_F14:          input.F14,
 	K_F15:          input.F15,
