@@ -3,6 +3,8 @@ package opengl
 import (
 	"fmt"
 	"runtime"
+
+	"github.com/retroenv/retrogolib/gui/internal/dynlib"
 )
 
 var (
@@ -144,4 +146,25 @@ func getGlfwSystemLibrary() (string, error) {
 	default:
 		return "", fmt.Errorf("GOOS=%s is not supported", runtime.GOOS)
 	}
+}
+
+func setupLibrary() error {
+	libName, err := getOpenGLSystemLibrary()
+	if err != nil {
+		return fmt.Errorf("getting OpenGL library: %w", err)
+	}
+
+	if _, err := dynlib.LoadFunctions(libName, importsGl); err != nil {
+		return fmt.Errorf("loading OpenGL functions: %w", err)
+	}
+
+	libName, err = getGlfwSystemLibrary()
+	if err != nil {
+		return fmt.Errorf("getting GLFW library: %w", err)
+	}
+
+	if _, err := dynlib.LoadFunctions(libName, importsGlfw); err != nil {
+		return fmt.Errorf("loading GLFW functions: %w", err)
+	}
+	return nil
 }
