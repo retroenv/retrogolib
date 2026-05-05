@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"unsafe"
 	"math"
+	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
 )
@@ -44,6 +44,7 @@ func RGBAPointer(dimensions gui.Dimensions, img *image.RGBA) (uintptr, error) {
 	}
 	return uintptr(unsafe.Pointer(&pixels[0])), nil
 }
+
 // ValidateDimensions validates renderer frame-buffer dimensions.
 func ValidateDimensions(dimensions gui.Dimensions) error {
 	if dimensions.Width <= 0 {
