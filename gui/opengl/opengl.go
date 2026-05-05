@@ -40,8 +40,7 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	}
 
 	cleanup := func() {
-		glDeleteTextures(1, &texture)
-		glfwTerminate()
+		cleanupOpenGL(texture)
 	}
 	return render, cleanup, nil
 }
@@ -137,4 +136,11 @@ func renderOpenGL(dimensions gui.Dimensions, img *image.RGBA, window uintptr, te
 	glfwSwapBuffers(window)
 	glfwPollEvents()
 	return nil
+}
+
+func cleanupOpenGL(texture uint32) {
+	if texture != 0 {
+		glDeleteTextures(1, &texture)
+	}
+	glfwTerminate()
 }

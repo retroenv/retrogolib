@@ -118,6 +118,8 @@ var importsGlfw = map[string]any{
 	"glfwWindowShouldClose":    &glfwWindowShouldClose,
 }
 
+var loadFunctions = dynlib.LoadFunctions
+
 func getOpenGLSystemLibrary() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
@@ -154,7 +156,7 @@ func setupLibrary() error {
 		return fmt.Errorf("getting OpenGL library: %w", err)
 	}
 
-	if _, err := dynlib.LoadFunctions(libName, importsGl); err != nil {
+	if _, err := loadFunctions(libName, importsGl); err != nil {
 		return fmt.Errorf("loading OpenGL functions: %w", err)
 	}
 
@@ -163,7 +165,7 @@ func setupLibrary() error {
 		return fmt.Errorf("getting GLFW library: %w", err)
 	}
 
-	if _, err := dynlib.LoadFunctions(libName, importsGlfw); err != nil {
+	if _, err := loadFunctions(libName, importsGlfw); err != nil {
 		return fmt.Errorf("loading GLFW functions: %w", err)
 	}
 	return nil
