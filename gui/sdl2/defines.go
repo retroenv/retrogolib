@@ -1,4 +1,4 @@
-package sdl
+package sdl2
 
 const (
 	SDL_INIT_TIMER          = 0x00000001

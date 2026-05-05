@@ -1,4 +1,4 @@
-package sdl
+package sdl2
 
 import "github.com/retroenv/retrogolib/input"
 
