@@ -44,5 +44,6 @@ func TestCleanupSDL(t *testing.T) {
 	}
 
 	cleanupSDL(1, 2, 3)
+
 	assert.Equal(t, []string{"texture", "renderer", "window", "quit"}, calls)
 }

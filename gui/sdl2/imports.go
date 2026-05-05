@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/ebitengine/purego"
+	"github.com/retroenv/retrogolib/gui/internal/dynlib"
 )
 
 var (
@@ -56,17 +56,6 @@ var imports = map[string]any{
 	"SDL_UpdateTexture":   &UpdateTexture,
 }
 
-func registerFunction(lib uintptr, name string, ptr any) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("registering function '%s': %v", name, r)
-		}
-	}()
-
-	purego.RegisterLibFunc(ptr, lib, name)
-	return nil
-}
-
 func getSDLSystemLibrary() (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
@@ -80,4 +69,16 @@ func getSDLSystemLibrary() (string, error) {
 	default:
 		return "", fmt.Errorf("GOOS=%s is not supported", runtime.GOOS)
 	}
+}
+
+func setupLibrary() error {
+	libName, err := getSDLSystemLibrary()
+	if err != nil {
+		return fmt.Errorf("getting SDL library: %w", err)
+	}
+
+	if _, err := dynlib.LoadFunctions(libName, imports); err != nil {
+		return fmt.Errorf("loading SDL functions: %w", err)
+	}
+	return nil
 }
