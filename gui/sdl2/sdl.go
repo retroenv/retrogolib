@@ -1,5 +1,5 @@
-// Package sdl provides a SDL GUI renderer.
-package sdl
+// Package sdl2 provides a SDL2 GUI renderer.
+package sdl2
 
 import (
 	"errors"

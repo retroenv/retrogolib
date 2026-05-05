@@ -1,11 +1,12 @@
-//go:build windows
+//go:build !windows
 
-package sdl
+package sdl2
 
 import (
 	"fmt"
 	"sort"
-	"syscall"
+
+	"github.com/ebitengine/purego"
 )
 
 func setupLibrary() error {
@@ -14,7 +15,7 @@ func setupLibrary() error {
 		return fmt.Errorf("getting SDL library: %w", err)
 	}
 
-	lib, err := loadLibrary(libName)
+	lib, err := purego.Dlopen(libName, purego.RTLD_NOW|purego.RTLD_GLOBAL)
 	if err != nil {
 		return fmt.Errorf("loading SDL library: %w", err)
 	}
@@ -32,15 +33,4 @@ func setupLibrary() error {
 		}
 	}
 	return nil
-}
-
-func loadLibrary(libName string) (handle uintptr, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("loading library '%s': %v", libName, r)
-		}
-	}()
-
-	handle = syscall.NewLazyDLL(libName).Handle()
-	return handle, err
 }
