@@ -1,53 +1,48 @@
-//go:build manualtest
-
 package sdl
 
 import (
-	"image"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
-	"github.com/retroenv/retrogolib/gui"
 	"github.com/retroenv/retrogolib/input"
 )
 
-const height = 240
-const width = 256
-
-func TestSetupGoSDL(t *testing.T) {
-	b := &backend{}
-	render, cleanup, err := Setup(b)
-	assert.NoError(t, err)
-	_, err = render()
-	assert.NoError(t, err)
-	cleanup()
+func TestKeyMapping(t *testing.T) {
+	assert.Equal(t, input.Apostrophe, keyMapping[K_QUOTE])
+	assert.Equal(t, input.Period, keyMapping[K_PERIOD])
+	assert.Equal(t, input.CapsLock, keyMapping[K_CAPSLOCK])
+	assert.Equal(t, input.NumLock, keyMapping[K_NUMLOCKCLEAR])
+	assert.Equal(t, input.KPEqual, keyMapping[K_KP_EQUALS])
+	assert.Equal(t, input.Menu, keyMapping[K_APPLICATION])
 }
 
-type backend struct {
-	img *image.RGBA
-}
+func TestCleanupSDL(t *testing.T) {
+	var calls []string
 
-func (b *backend) Image() *image.RGBA {
-	if b.img == nil {
-		b.img = image.NewRGBA(image.Rect(0, 0, width, height))
+	originalDestroyTexture := DestroyTexture
+	originalDestroyRenderer := DestroyRenderer
+	originalDestroyWindow := DestroyWindow
+	originalQuit := Quit
+	defer func() {
+		DestroyTexture = originalDestroyTexture
+		DestroyRenderer = originalDestroyRenderer
+		DestroyWindow = originalDestroyWindow
+		Quit = originalQuit
+	}()
+
+	DestroyTexture = func(uintptr) {
+		calls = append(calls, "texture")
 	}
-	return b.img
-}
-
-func (b *backend) Dimensions() gui.Dimensions {
-	return gui.Dimensions{
-		ScaleFactor: 2.0,
-		Height:      height,
-		Width:       width,
+	DestroyRenderer = func(uintptr) {
+		calls = append(calls, "renderer")
 	}
-}
+	DestroyWindow = func(uintptr) {
+		calls = append(calls, "window")
+	}
+	Quit = func() {
+		calls = append(calls, "quit")
+	}
 
-func (b *backend) WindowTitle() string {
-	return "unit-test"
-}
-
-func (b *backend) KeyDown(_ input.Key) {
-}
-
-func (b *backend) KeyUp(_ input.Key) {
+	cleanupSDL(1, 2, 3)
+	assert.Equal(t, []string{"texture", "renderer", "window", "quit"}, calls)
 }

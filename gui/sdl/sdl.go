@@ -2,7 +2,9 @@
 package sdl
 
 import (
+	"errors"
 	"fmt"
+	"image"
 	"runtime"
 	"unsafe"
 
@@ -13,9 +15,17 @@ const bytesPerPixel = 4
 
 // Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
-	runtime.LockOSThread()
-
 	dimensions := backend.Dimensions()
+	if err := validateDimensions(dimensions); err != nil {
+		return nil, nil, fmt.Errorf("validating dimensions: %w", err)
+	}
+
+	runtime.LockOSThread()
+	defer func() {
+		if err != nil {
+			runtime.UnlockOSThread()
+		}
+	}()
 
 	window, renderer, tex, err := setupSDL(dimensions, backend)
 	if err != nil {
@@ -27,16 +37,17 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	}
 
 	cleanup := func() {
-		DestroyTexture(tex)
-		DestroyRenderer(renderer)
-		DestroyWindow(window)
-		Quit()
+		cleanupSDL(window, renderer, tex)
 	}
 	return render, cleanup, nil
 }
 
 // setupSDL initializes the SDL library and creates the window, renderer, and texture.
 func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr, uintptr, error) {
+	if err := validateDimensions(dimensions); err != nil {
+		return 0, 0, 0, fmt.Errorf("validating dimensions: %w", err)
+	}
+
 	if err := setupLibrary(); err != nil {
 		return 0, 0, 0, fmt.Errorf("setting up SDL library: %w", err)
 	}
@@ -52,17 +63,20 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 		SDL_WINDOWPOS_CENTERED, width, height,
 		SDL_WINDOW_SHOWN|SDL_WINDOW_ALLOW_HIGHDPI)
 	if window == 0 {
+		Quit()
 		return 0, 0, 0, fmt.Errorf("creating SDL window: %s", GetError())
 	}
 
 	renderer := CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED)
 	if renderer == 0 {
+		cleanupSDL(window, 0, 0)
 		return 0, 0, 0, fmt.Errorf("creating SDL renderer: %s", GetError())
 	}
 
 	tex := CreateTexture(renderer, uint32(SDL_PIXELFORMAT_ABGR8888),
 		SDL_TEXTUREACCESS_STREAMING, int32(dimensions.Width), int32(dimensions.Height))
 	if tex == 0 {
+		cleanupSDL(window, renderer, 0)
 		return 0, 0, 0, fmt.Errorf("creating SDL texture: %s", GetError())
 	}
 
@@ -97,8 +111,12 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 		}
 	}
 
-	image := backend.Image()
-	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width*bytesPerPixel); ret != 0 {
+	pixels, err := rgbaBytes(dimensions, backend.Image())
+	if err != nil {
+		return false, fmt.Errorf("getting image pixels: %w", err)
+	}
+
+	if ret := UpdateTexture(tex, 0, pixels, dimensions.Width*bytesPerPixel); ret != 0 {
 		return false, fmt.Errorf("updating SDL texture: %s", GetError())
 	}
 
@@ -108,4 +126,52 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 	RenderPresent(renderer)
 
 	return true, nil
+}
+
+func cleanupSDL(window, renderer, tex uintptr) {
+	if tex != 0 {
+		DestroyTexture(tex)
+	}
+	if renderer != 0 {
+		DestroyRenderer(renderer)
+	}
+	if window != 0 {
+		DestroyWindow(window)
+	}
+	Quit()
+}
+
+func rgbaBytes(dimensions gui.Dimensions, img *image.RGBA) ([]byte, error) {
+	if err := validateDimensions(dimensions); err != nil {
+		return nil, err
+	}
+	if img == nil {
+		return nil, errors.New("image is nil")
+	}
+	if len(img.Pix) == 0 {
+		return nil, errors.New("image has no pixel data")
+	}
+	expectedStride := dimensions.Width * bytesPerPixel
+	if img.Stride != expectedStride {
+		return nil, fmt.Errorf("image stride %d does not match expected stride %d", img.Stride, expectedStride)
+	}
+
+	minLen := (dimensions.Height-1)*img.Stride + dimensions.Width*bytesPerPixel
+	if len(img.Pix) < minLen {
+		return nil, fmt.Errorf("image pixel data has length %d, need at least %d", len(img.Pix), minLen)
+	}
+	return img.Pix, nil
+}
+
+func validateDimensions(dimensions gui.Dimensions) error {
+	if dimensions.Width <= 0 {
+		return fmt.Errorf("width must be positive, got %d", dimensions.Width)
+	}
+	if dimensions.Height <= 0 {
+		return fmt.Errorf("height must be positive, got %d", dimensions.Height)
+	}
+	if !(dimensions.ScaleFactor > 0) {
+		return fmt.Errorf("scale factor must be positive, got %f", dimensions.ScaleFactor)
+	}
+	return nil
 }
