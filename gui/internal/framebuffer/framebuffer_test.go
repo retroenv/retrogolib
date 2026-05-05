@@ -2,6 +2,7 @@ package framebuffer
 
 import (
 	"image"
+	"math"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -33,7 +34,6 @@ func TestRGBAPointer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEqual(t, uintptr(0), ptr)
 }
-
 func TestRGBABytesRejectsInvalidImages(t *testing.T) {
 	dimensions := gui.Dimensions{
 		ScaleFactor: 2,
@@ -106,12 +106,30 @@ func TestValidateDimensions(t *testing.T) {
 			want: "height must be positive",
 		},
 		{
-			name: "scale",
+			name: "zero scale",
 			dimensions: gui.Dimensions{
 				Height: 1,
 				Width:  1,
 			},
-			want: "scale factor must be positive",
+			want: "scale factor must be positive and finite",
+		},
+		{
+			name: "nan scale",
+			dimensions: gui.Dimensions{
+				ScaleFactor: math.NaN(),
+				Height:      1,
+				Width:       1,
+			},
+			want: "scale factor must be positive and finite",
+		},
+		{
+			name: "infinite scale",
+			dimensions: gui.Dimensions{
+				ScaleFactor: math.Inf(1),
+				Height:      1,
+				Width:       1,
+			},
+			want: "scale factor must be positive and finite",
 		},
 	}
 

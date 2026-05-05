@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"unsafe"
+	"math"
 
 	"github.com/retroenv/retrogolib/gui"
 )
@@ -43,7 +44,6 @@ func RGBAPointer(dimensions gui.Dimensions, img *image.RGBA) (uintptr, error) {
 	}
 	return uintptr(unsafe.Pointer(&pixels[0])), nil
 }
-
 // ValidateDimensions validates renderer frame-buffer dimensions.
 func ValidateDimensions(dimensions gui.Dimensions) error {
 	if dimensions.Width <= 0 {
@@ -52,8 +52,8 @@ func ValidateDimensions(dimensions gui.Dimensions) error {
 	if dimensions.Height <= 0 {
 		return fmt.Errorf("height must be positive, got %d", dimensions.Height)
 	}
-	if !(dimensions.ScaleFactor > 0) {
-		return fmt.Errorf("scale factor must be positive, got %f", dimensions.ScaleFactor)
+	if !(dimensions.ScaleFactor > 0) || math.IsInf(dimensions.ScaleFactor, 0) {
+		return fmt.Errorf("scale factor must be positive and finite, got %f", dimensions.ScaleFactor)
 	}
 	return nil
 }
