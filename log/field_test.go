@@ -198,6 +198,68 @@ func TestStringFunc(t *testing.T) {
 	})
 }
 
+func TestAdditionalLazyFieldFuncs(t *testing.T) {
+	t.Run("Int64Func", func(t *testing.T) {
+		calls := 0
+		field := Int64Func("lazy", func() int64 {
+			calls++
+			return 99
+		})
+		assert.Equal(t, 0, calls)
+		value := field.Value.Any().(int64Func).LogValue()
+		assert.Equal(t, int64(99), value.Int64())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("Float64Func", func(t *testing.T) {
+		calls := 0
+		field := Float64Func("lazy", func() float64 {
+			calls++
+			return 1.5
+		})
+		assert.Equal(t, 0, calls)
+		value := field.Value.Any().(float64Func).LogValue()
+		assert.Equal(t, 1.5, value.Float64())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("BoolFunc", func(t *testing.T) {
+		calls := 0
+		field := BoolFunc("lazy", func() bool {
+			calls++
+			return true
+		})
+		assert.Equal(t, 0, calls)
+		value := field.Value.Any().(boolFunc).LogValue()
+		assert.True(t, value.Bool())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("DurationFunc", func(t *testing.T) {
+		calls := 0
+		field := DurationFunc("lazy", func() time.Duration {
+			calls++
+			return 3 * time.Second
+		})
+		assert.Equal(t, 0, calls)
+		value := field.Value.Any().(durationFunc).LogValue()
+		assert.Equal(t, int64(3*time.Second), value.Duration().Nanoseconds())
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("StringerFunc", func(t *testing.T) {
+		calls := 0
+		field := StringerFunc("lazy", func() fmt.Stringer {
+			calls++
+			return testStringer{value: "computed"}
+		})
+		assert.Equal(t, 0, calls)
+		value := field.Value.Any().(stringerFunc).LogValue()
+		assert.Equal(t, "computed", value.String())
+		assert.Equal(t, 1, calls)
+	})
+}
+
 // TestIntFunc tests the IntFunc field function and lazy evaluation.
 func TestIntFunc(t *testing.T) {
 	t.Run("lazy evaluation", func(t *testing.T) {

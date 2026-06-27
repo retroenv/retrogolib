@@ -51,6 +51,31 @@ func IntFunc(key string, f func() int) Field {
 	return slog.Any(key, intFunc{f: f})
 }
 
+// Int64Func constructs a Field with the given key and a function that returns an int64.
+func Int64Func(key string, f func() int64) Field {
+	return slog.Any(key, int64Func{f: f})
+}
+
+// Float64Func constructs a Field with the given key and a function that returns a float64.
+func Float64Func(key string, f func() float64) Field {
+	return slog.Any(key, float64Func{f: f})
+}
+
+// BoolFunc constructs a Field with the given key and a function that returns a bool.
+func BoolFunc(key string, f func() bool) Field {
+	return slog.Any(key, boolFunc{f: f})
+}
+
+// DurationFunc constructs a Field with the given key and a function that returns a duration.
+func DurationFunc(key string, f func() time.Duration) Field {
+	return slog.Any(key, durationFunc{f: f})
+}
+
+// StringerFunc constructs a Field with the given key and a function that returns a Stringer.
+func StringerFunc(key string, f func() fmt.Stringer) Field {
+	return slog.Any(key, stringerFunc{f: f})
+}
+
 // Err constructs a Field with the given key and value.
 func Err(err error) Field {
 	return slog.Any("error", err)
@@ -171,6 +196,31 @@ type intFunc struct {
 	f func() int
 }
 
+// int64Func implements slog.LogValuer for lazy int64 evaluation.
+type int64Func struct {
+	f func() int64
+}
+
+// float64Func implements slog.LogValuer for lazy float64 evaluation.
+type float64Func struct {
+	f func() float64
+}
+
+// boolFunc implements slog.LogValuer for lazy bool evaluation.
+type boolFunc struct {
+	f func() bool
+}
+
+// durationFunc implements slog.LogValuer for lazy duration evaluation.
+type durationFunc struct {
+	f func() time.Duration
+}
+
+// stringerFunc implements slog.LogValuer for lazy Stringer evaluation.
+type stringerFunc struct {
+	f func() fmt.Stringer
+}
+
 // hex implements slog.LogValuer for lazy hex formatting.
 type hex struct {
 	val any
@@ -191,6 +241,36 @@ func (sf stringFunc) LogValue() slog.Value {
 // when the log record is actually processed.
 func (inf intFunc) LogValue() slog.Value {
 	return slog.IntValue(inf.f())
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (inf int64Func) LogValue() slog.Value {
+	return slog.Int64Value(inf.f())
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (ff float64Func) LogValue() slog.Value {
+	return slog.Float64Value(ff.f())
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (bf boolFunc) LogValue() slog.Value {
+	return slog.BoolValue(bf.f())
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (df durationFunc) LogValue() slog.Value {
+	return slog.DurationValue(df.f())
+}
+
+// LogValue implements slog.LogValuer, ensuring the function is only called
+// when the log record is actually processed.
+func (sf stringerFunc) LogValue() slog.Value {
+	return slog.StringValue(sf.f().String())
 }
 
 // LogValue implements slog.LogValuer, ensuring the hex formatting is only performed
