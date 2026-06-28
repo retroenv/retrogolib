@@ -41,7 +41,7 @@ func TestSingleStep(t *testing.T) {
 		})
 	}
 
-	t.Logf("overall: %d passed, %d failed out of %d total",
+	t.Logf("Overall: %d passed, %d failed out of %d total",
 		totalPass, totalFail, totalPass+totalFail)
 }
 
@@ -205,7 +205,7 @@ func runTestFile(t *testing.T, path string) (pass, fail int) {
 			fail++
 			reported++
 			if reported >= maxFailures {
-				t.Logf("stopping after %d failures (of %d tests)", maxFailures, len(cases))
+				t.Logf("Stopping after %d failures (of %d tests)", maxFailures, len(cases))
 				break
 			}
 		}

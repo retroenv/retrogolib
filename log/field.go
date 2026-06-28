@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
 	"time"
 )
 
@@ -11,11 +12,8 @@ import (
 // to disabled debug-level log statements.
 type Field = slog.Attr
 
-// Object constructs a Field with the given key and value.
-// It should be used for types that are not represented by a specialized Field
-// function. If the passed value type does not implement a custom array or
-// object marshaller, reflection will be used for the fields of the type.
-// Using reflection for performance critical code paths should be avoided.
+// Object constructs a Field for values without a specialized constructor.
+// Prefer typed constructors on hot paths to avoid handler-side reflection.
 func Object(key string, val any) Field {
 	return slog.Any(key, val)
 }
@@ -76,7 +74,7 @@ func StringerFunc(key string, f func() fmt.Stringer) Field {
 	return slog.Any(key, stringerFunc{f: f})
 }
 
-// Err constructs a Field with the given key and value.
+// Err constructs an error Field with key "error".
 func Err(err error) Field {
 	return slog.Any("error", err)
 }
@@ -186,103 +184,88 @@ func Type(key string, val any) Field {
 	return slog.Any(key, typeOf{val: val})
 }
 
-// stringFunc implements slog.LogValuer for lazy string evaluation.
-type stringFunc struct {
-	f func() string
-}
+type (
+	stringFunc struct {
+		f func() string
+	}
 
-// intFunc implements slog.LogValuer for lazy int evaluation.
-type intFunc struct {
-	f func() int
-}
+	intFunc struct {
+		f func() int
+	}
 
-// int64Func implements slog.LogValuer for lazy int64 evaluation.
-type int64Func struct {
-	f func() int64
-}
+	int64Func struct {
+		f func() int64
+	}
 
-// float64Func implements slog.LogValuer for lazy float64 evaluation.
-type float64Func struct {
-	f func() float64
-}
+	float64Func struct {
+		f func() float64
+	}
 
-// boolFunc implements slog.LogValuer for lazy bool evaluation.
-type boolFunc struct {
-	f func() bool
-}
+	boolFunc struct {
+		f func() bool
+	}
 
-// durationFunc implements slog.LogValuer for lazy duration evaluation.
-type durationFunc struct {
-	f func() time.Duration
-}
+	durationFunc struct {
+		f func() time.Duration
+	}
 
-// stringerFunc implements slog.LogValuer for lazy Stringer evaluation.
-type stringerFunc struct {
-	f func() fmt.Stringer
-}
+	stringerFunc struct {
+		f func() fmt.Stringer
+	}
 
-// hex implements slog.LogValuer for lazy hex formatting.
-type hex struct {
-	val any
-}
+	hex struct {
+		val any
+	}
 
-// typeOf implements slog.LogValuer for lazy type name formatting.
-type typeOf struct {
-	val any
-}
+	typeOf struct {
+		val any
+	}
+)
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (sf stringFunc) LogValue() slog.Value {
 	return slog.StringValue(sf.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (inf intFunc) LogValue() slog.Value {
 	return slog.IntValue(inf.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (inf int64Func) LogValue() slog.Value {
 	return slog.Int64Value(inf.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (ff float64Func) LogValue() slog.Value {
 	return slog.Float64Value(ff.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (bf boolFunc) LogValue() slog.Value {
 	return slog.BoolValue(bf.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (df durationFunc) LogValue() slog.Value {
 	return slog.DurationValue(df.f())
 }
 
-// LogValue implements slog.LogValuer, ensuring the function is only called
-// when the log record is actually processed.
 func (sf stringerFunc) LogValue() slog.Value {
-	return slog.StringValue(sf.f().String())
+	val := sf.f()
+	if val == nil {
+		return slog.StringValue("<nil>")
+	}
+
+	return slog.StringValue(val.String())
 }
 
-// LogValue implements slog.LogValuer, ensuring the hex formatting is only performed
-// when the log record is actually processed.
 func (hf hex) LogValue() slog.Value {
 	return slog.StringValue(formatHex(hf.val))
 }
 
-// LogValue implements slog.LogValuer, ensuring the type reflection is only performed
-// when the log record is actually processed.
 func (tf typeOf) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("%T", tf.val))
+	typ := reflect.TypeOf(tf.val)
+	if typ == nil {
+		return slog.StringValue("<nil>")
+	}
+
+	return slog.StringValue(typ.String())
 }
 
 // formatHex formats integer values as hex strings with appropriate zero-padding.

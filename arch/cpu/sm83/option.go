@@ -1,5 +1,7 @@
 package sm83
 
+type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
+
 // Options contains options for the CPU.
 type Options struct {
 	tracing bool
@@ -52,5 +54,3 @@ func WithInitialSP(sp uint16) func(*Options) {
 		options.initialSP = sp
 	}
 }
-
-type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)

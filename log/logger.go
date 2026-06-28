@@ -251,13 +251,7 @@ func (l *Logger) Log(ctx context.Context, level Level, msg string, args ...Field
 		r.PC = pcs[0]
 	}
 
-	// Convert fields to interface slice
-	fields := make([]any, len(args))
-	for i, arg := range args {
-		fields[i] = arg
-	}
-	// Add fields to record
-	r.Add(fields...)
+	r.AddAttrs(args...)
 	// Send to handler (ignore error)
 	_ = l.handler.Handle(ctx, r)
 }

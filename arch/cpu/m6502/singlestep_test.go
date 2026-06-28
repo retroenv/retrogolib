@@ -114,7 +114,7 @@ func runSingleStepSubdir(t *testing.T, dir, variant string) {
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		t.Logf("skipping %s: cannot read directory: %v", variant, err)
+		t.Logf("Skipping %s: cannot read directory: %v", variant, err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func runSingleStepFile(t *testing.T, path string, variant CPUVariant) {
 		if !runSingleStepCase(t, tc, variant) {
 			failures++
 			if failures >= ssMaxFailures {
-				t.Logf("stopping after %d failures", failures)
+				t.Logf("Stopping after %d failures", failures)
 				return
 			}
 		}

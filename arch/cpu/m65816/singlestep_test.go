@@ -135,7 +135,7 @@ func runSS65816File(t *testing.T, path string) {
 		} else {
 			fail++
 			if fail >= ssMaxFailures {
-				t.Logf("stopping after %d failures", fail)
+				t.Logf("Stopping after %d failures", fail)
 				break
 			}
 		}
