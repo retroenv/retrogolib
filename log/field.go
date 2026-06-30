@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const upperHexDigits = "0123456789ABCDEF"
+
 // A Field is a marshaling operation used to add a key-value pair to a logger's
 // context. Most fields are lazily marshaled, so it's inexpensive to add fields
 // to disabled debug-level log statements.
@@ -76,7 +78,11 @@ func StringerFunc(key string, f func() fmt.Stringer) Field {
 
 // Err constructs an error Field with key "error".
 func Err(err error) Field {
-	return slog.Any("error", err)
+	if err == nil {
+		return slog.String("error", "<nil>")
+	}
+
+	return slog.String("error", err.Error())
 }
 
 // Int constructs a Field with the given key and value.
@@ -272,26 +278,54 @@ func (tf typeOf) LogValue() slog.Value {
 func formatHex(val any) string {
 	switch v := val.(type) {
 	case uint8:
-		return fmt.Sprintf("0x%02X", v)
+		return formatHexUint(uint64(v), 2)
 	case int8:
-		return fmt.Sprintf("0x%02X", uint8(v))
+		return formatHexUint(uint64(uint8(v)), 2)
 	case uint16:
-		return fmt.Sprintf("0x%04X", v)
+		return formatHexUint(uint64(v), 4)
 	case int16:
-		return fmt.Sprintf("0x%04X", uint16(v))
+		return formatHexUint(uint64(uint16(v)), 4)
 	case uint32:
-		return fmt.Sprintf("0x%08X", v)
+		return formatHexUint(uint64(v), 8)
 	case int32:
-		return fmt.Sprintf("0x%08X", uint32(v))
+		return formatHexUint(uint64(uint32(v)), 8)
 	case uint64:
-		return fmt.Sprintf("0x%016X", v)
+		return formatHexUint(v, 16)
 	case int64:
-		return fmt.Sprintf("0x%016X", uint64(v))
+		return formatHexUint(uint64(v), 16)
 	case uint:
-		return fmt.Sprintf("0x%X", v)
+		return formatHexUint(uint64(v), 0)
 	case int:
-		return fmt.Sprintf("0x%X", uint(v))
+		return formatHexUint(uint64(uint(v)), 0)
 	default:
 		return fmt.Sprintf("0x%X", val)
 	}
+}
+
+func formatHexUint(val uint64, width int) string {
+	if width == 0 {
+		width = minHexDigits(val)
+	}
+
+	var buf [18]byte
+	start := len(buf) - width - 2
+	buf[start] = '0'
+	buf[start+1] = 'x'
+
+	for i := width - 1; i >= 0; i-- {
+		buf[start+2+i] = upperHexDigits[val&0xF]
+		val >>= 4
+	}
+
+	return string(buf[start:])
+}
+
+func minHexDigits(val uint64) int {
+	digits := 1
+	for val >= 16 {
+		digits++
+		val >>= 4
+	}
+
+	return digits
 }
