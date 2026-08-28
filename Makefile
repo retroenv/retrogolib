@@ -15,7 +15,7 @@ test: ## run tests
 	go test -short -timeout 10s -race ./...
 
 test-integration: ## run long-running integration tests (SingleStepTests, Dormann, ZEXDOC, ZEXALL)
-	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/m6502/
+	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/cpu6502/
 	go test -v -run 'TestSingleStep|TestZexdoc|TestZexall' -timeout 0 -race ./arch/cpu/z80/
 
 test-coverage: ## run unit tests and create test coverage

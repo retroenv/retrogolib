@@ -1,5 +1,13 @@
 package config
 
+// Config represents a loaded configuration with sections and values.
+type Config struct {
+	sections  map[string]section
+	filename  string
+	comments  []comment          // Preserved comments from original file
+	structure []structureElement // Original file structure for write operations
+}
+
 // section represents a configuration section with key-value pairs.
 type section map[string]value
 
@@ -17,14 +25,6 @@ type structureElement struct {
 	Content string      // Original content
 	Section string      // Current section context
 	Key     string      // Key name (for KeyValue elements)
-}
-
-// Config represents a loaded configuration with sections and values.
-type Config struct {
-	sections  map[string]section
-	filename  string
-	comments  []comment          // Preserved comments from original file
-	structure []structureElement // Original file structure for write operations
 }
 
 // valueType represents the type of configuration value.

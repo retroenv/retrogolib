@@ -59,18 +59,6 @@ type PositionalInfo struct {
 	Variadic bool // True for []string fields (consumes remaining args)
 }
 
-// requiredFlag tracks a required flag for validation.
-type requiredFlag struct {
-	name string
-	ptr  any
-}
-
-// positionalArg tracks a positional argument for assignment.
-type positionalArg struct {
-	info PositionalInfo
-	ptr  any
-}
-
 // FlagSet wraps flag.FlagSet with section-based usage generation.
 type FlagSet struct {
 	flags      *flag.FlagSet
@@ -460,6 +448,18 @@ func (fs *FlagSet) printFlag(fl FlagInfo) {
 		usage += " (default: " + fl.Default + ")"
 	}
 	fmt.Printf("    \t%s\n", usage)
+}
+
+// requiredFlag tracks a required flag for validation.
+type requiredFlag struct {
+	name string
+	ptr  any
+}
+
+// positionalArg tracks a positional argument for assignment.
+type positionalArg struct {
+	info PositionalInfo
+	ptr  any
 }
 
 func formatPositionalUsage(pos PositionalInfo) string {

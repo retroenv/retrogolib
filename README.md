@@ -30,7 +30,11 @@ system components, and clean APIs that compose well in standalone tools.
 These packages are currently implemented in the repository:
 
 - `arch/cpu/chip8`: Chip-8 virtual machine
-- `arch/cpu/m6502`: MOS 6502, including 65C02-related support
+- `arch/cpu/cpu6502`: 6502 family, including NMOS and 65C02 variants
+- `arch/cpu/cpu65816`: WDC 65C816/65816
+- `arch/cpu/cpu6809`: Motorola 6809
+- `arch/cpu/cpu68000`: Motorola 68000
+- `arch/cpu/sm83`: Sharp SM83 for Game Boy systems
 - `arch/cpu/x86`: x86 instruction definitions for 8086 through 80486
 - `arch/cpu/z80`: Zilog Z80, including prefixed and undocumented opcode support
 

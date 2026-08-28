@@ -4,7 +4,7 @@
 
 - **Status:** PLANNED
 - **Last Updated:** 2026-03-11
-- **Dependencies:** m6502 package (complete)
+- **Dependencies:** cpu6502 package (complete)
 
 ## Context
 
@@ -47,9 +47,9 @@ opcodes. The only hardware difference is the built-in I/O port.
 
 ## Part 1: CPU Variant -- MOS 6510
 
-### 1.1 Approach: Extend m6502 Package with Variant
+### 1.1 Approach: Extend cpu6502 Package with Variant
 
-Since the instruction set is identical, the 6510 is a variant of the existing m6502 package.
+Since the instruction set is identical, the 6510 is a variant of the existing cpu6502 package.
 The I/O port at $0000-$0001 is handled by the Memory implementation, not the CPU.
 
 ### 1.2 The I/O Port
@@ -81,7 +81,7 @@ The lower 3 bits control bank switching. All 8 combinations produce different me
 #### Phase 1: Add Variant Constant
 
 **Files to modify:**
-- `arch/cpu/m6502/option.go` -- Add `Variant6510` constant
+- `arch/cpu/cpu6502/option.go` -- Add `Variant6510` constant
 
 ```go
 const (
@@ -100,7 +100,7 @@ const (
 #### Phase 2: Architecture Registration
 
 **Files to modify:**
-- `arch/arch.go` -- Add `M6510 Architecture = "6510"` (optional)
+- `arch/arch.go` -- Add `CPU6510 Architecture = "6510"` (optional)
 
 This is optional because the 6510 is instruction-identical to the 6502. However, having
 the constant allows tools to distinguish the variant.
@@ -294,8 +294,8 @@ arch/system/c64/
 ## Part 3: Implementation Phases
 
 ### Phase 1: CPU Variant (6510)
-- Add `Variant6510` to m6502 option.go
-- Add `M6510` architecture constant (optional)
+- Add `Variant6510` to cpu6502 option.go
+- Add `CPU6510` architecture constant (optional)
 - Unit tests confirming correct opcode table selection
 
 ### Phase 2: System Registration
@@ -332,7 +332,7 @@ arch/system/c64/
 ## Part 4: Design Decisions
 
 ### 6510 as Variant vs Separate Package
-**Decision: Variant within m6502**
+**Decision: Variant within cpu6502**
 - Rationale: The instruction set (including all undocumented opcodes) is byte-for-byte
   identical to the NMOS 6502. The only addition is the I/O port at $0000-$0001, which
   is properly handled by the Memory implementation. Creating a separate package would
@@ -361,7 +361,7 @@ arch/system/c64/
 
 | Component | New LOC |
 |-----------|---------|
-| CPU variant (6510 in m6502) | ~50 |
+| CPU variant (6510 in cpu6502) | ~50 |
 | System package (constants, memory map, bank switching) | ~400 |
 | VIC-II register definitions | ~150 |
 | SID register definitions | ~100 |
