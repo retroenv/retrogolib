@@ -1,5 +1,5 @@
-// Package sdl provides a SDL GUI renderer.
-package sdl
+// Package sdl2 provides a SDL2 GUI renderer.
+package sdl2
 
 import (
 	"fmt"
@@ -7,15 +7,22 @@ import (
 	"unsafe"
 
 	"github.com/retroenv/retrogolib/gui"
+	"github.com/retroenv/retrogolib/gui/internal/framebuffer"
 )
-
-const bytesPerPixel = 4
 
 // Setup initializes the SDL library and returns a render and cleanup function.
 func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func(), err error) {
-	runtime.LockOSThread()
-
 	dimensions := backend.Dimensions()
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return nil, nil, fmt.Errorf("validating dimensions: %w", err)
+	}
+
+	runtime.LockOSThread()
+	defer func() {
+		if err != nil {
+			runtime.UnlockOSThread()
+		}
+	}()
 
 	window, renderer, tex, err := setupSDL(dimensions, backend)
 	if err != nil {
@@ -27,16 +34,17 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 	}
 
 	cleanup := func() {
-		DestroyTexture(tex)
-		DestroyRenderer(renderer)
-		DestroyWindow(window)
-		Quit()
+		cleanupSDL(window, renderer, tex)
 	}
 	return render, cleanup, nil
 }
 
 // setupSDL initializes the SDL library and creates the window, renderer, and texture.
 func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr, uintptr, error) {
+	if err := framebuffer.ValidateDimensions(dimensions); err != nil {
+		return 0, 0, 0, fmt.Errorf("validating dimensions: %w", err)
+	}
+
 	if err := setupLibrary(); err != nil {
 		return 0, 0, 0, fmt.Errorf("setting up SDL library: %w", err)
 	}
@@ -52,17 +60,20 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 		SDL_WINDOWPOS_CENTERED, width, height,
 		SDL_WINDOW_SHOWN|SDL_WINDOW_ALLOW_HIGHDPI)
 	if window == 0 {
+		Quit()
 		return 0, 0, 0, fmt.Errorf("creating SDL window: %s", GetError())
 	}
 
 	renderer := CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED)
 	if renderer == 0 {
+		cleanupSDL(window, 0, 0)
 		return 0, 0, 0, fmt.Errorf("creating SDL renderer: %s", GetError())
 	}
 
 	tex := CreateTexture(renderer, uint32(SDL_PIXELFORMAT_ABGR8888),
 		SDL_TEXTUREACCESS_STREAMING, int32(dimensions.Width), int32(dimensions.Height))
 	if tex == 0 {
+		cleanupSDL(window, renderer, 0)
 		return 0, 0, 0, fmt.Errorf("creating SDL texture: %s", GetError())
 	}
 
@@ -97,8 +108,12 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 		}
 	}
 
-	image := backend.Image()
-	if ret := UpdateTexture(tex, 0, image.Pix, dimensions.Width*bytesPerPixel); ret != 0 {
+	pixels, err := framebuffer.RGBABytes(dimensions, backend.Image())
+	if err != nil {
+		return false, fmt.Errorf("getting image pixels: %w", err)
+	}
+
+	if ret := UpdateTexture(tex, 0, pixels, dimensions.Width*framebuffer.BytesPerPixel); ret != 0 {
 		return false, fmt.Errorf("updating SDL texture: %s", GetError())
 	}
 
@@ -108,4 +123,17 @@ func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr,
 	RenderPresent(renderer)
 
 	return true, nil
+}
+
+func cleanupSDL(window, renderer, tex uintptr) {
+	if tex != 0 {
+		DestroyTexture(tex)
+	}
+	if renderer != 0 {
+		DestroyRenderer(renderer)
+	}
+	if window != 0 {
+		DestroyWindow(window)
+	}
+	Quit()
 }

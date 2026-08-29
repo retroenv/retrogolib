@@ -1,62 +1,62 @@
 package config
 
-// Config represents a loaded configuration with sections and values.
-type Config struct {
-	sections  map[string]section
-	filename  string
-	comments  []comment          // Preserved comments from original file
-	structure []structureElement // Original file structure for write operations
-}
-
-// section represents a configuration section with key-value pairs.
-type section map[string]value
-
-// comment represents a comment in the configuration file.
-type comment struct {
-	Line    int    // Line number where comment appears
-	Text    string // Comment text without # prefix
-	Section string // Section this comment belongs to (empty for global)
-}
-
-// structureElement represents elements in the original file structure.
-type structureElement struct {
-	Type    elementType // Comment, Section, KeyValue, EmptyLine
-	Line    int         // Original line number
-	Content string      // Original content
-	Section string      // Current section context
-	Key     string      // Key name (for KeyValue elements)
-}
-
-// valueType represents the type of configuration value.
-type valueType int
+// ValueType represents the type of configuration value.
+type ValueType int
 
 const (
-	stringType valueType = iota
+	stringType ValueType = iota
 	intType
 	boolType
 	floatType
 	hexType
 )
 
-// elementType represents the type of structural element.
-type elementType int
+// ElementType represents the type of structural element.
+type ElementType int
 
 const (
-	commentElement elementType = iota
+	commentElement ElementType = iota
 	sectionElement
 	keyValueElement
 	emptyLineElement
 )
 
-// value represents a configuration value with type information.
-type value struct {
+// Value represents a configuration value with type information.
+type Value struct {
 	Raw    string
 	parsed any
-	vtype  valueType
+	vtype  ValueType
 }
 
-// tagInfo contains parsed tag information including default values and required flag.
-type tagInfo struct {
+// Section represents a configuration section with key-value pairs.
+type Section map[string]Value
+
+// Comment represents a comment in the configuration file.
+type Comment struct {
+	Line    int    // Line number where comment appears
+	Text    string // Comment text without # prefix
+	Section string // Section this comment belongs to (empty for global)
+}
+
+// StructureElement represents an element in the original file structure.
+type StructureElement struct {
+	Type    ElementType // Comment, Section, KeyValue, EmptyLine
+	Line    int         // Original line number
+	Content string      // Original content
+	Section string      // Current section context
+	Key     string      // Key name (for KeyValue elements)
+}
+
+// Config represents a loaded configuration with sections and values.
+type Config struct {
+	sections  map[string]Section
+	filename  string
+	comments  []Comment          // Preserved comments from original file
+	structure []StructureElement // Original file structure for write operations
+}
+
+// TagInfo contains parsed tag information including default values and required flag.
+type TagInfo struct {
 	Section      string
 	Key          string
 	DefaultValue string
@@ -64,8 +64,8 @@ type tagInfo struct {
 	Required     bool
 }
 
-// String returns the string representation of valueType.
-func (vt valueType) String() string {
+// String returns the string representation of ValueType.
+func (vt ValueType) String() string {
 	switch vt {
 	case stringType:
 		return "string"

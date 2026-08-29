@@ -49,7 +49,7 @@ func (p *parser) parseLine(line string) error {
 	trimmed := strings.TrimSpace(line)
 
 	// Track original structure element
-	element := structureElement{
+	element := StructureElement{
 		Line:    p.line,
 		Content: original,
 		Section: p.currentSection,
@@ -61,7 +61,7 @@ func (p *parser) parseLine(line string) error {
 
 	case strings.HasPrefix(trimmed, "#"):
 		element.Type = commentElement
-		comment := comment{
+		comment := Comment{
 			Line:    p.line,
 			Text:    strings.TrimSpace(trimmed[1:]),
 			Section: p.currentSection,
@@ -89,7 +89,7 @@ func (p *parser) parseLine(line string) error {
 }
 
 // parseSection parses a section header and validates it.
-func (p *parser) parseSection(trimmed string, element *structureElement) error {
+func (p *parser) parseSection(trimmed string, element *StructureElement) error {
 	sectionName := strings.TrimSpace(trimmed[1 : len(trimmed)-1])
 	if sectionName == "" {
 		return errors.New("empty section name")
@@ -114,14 +114,14 @@ func (p *parser) parseSection(trimmed string, element *structureElement) error {
 	p.currentSection = normalizedSection
 	element.Section = normalizedSection
 	if p.config.sections[normalizedSection] == nil {
-		p.config.sections[normalizedSection] = make(section)
+		p.config.sections[normalizedSection] = make(Section)
 	}
 
 	return nil
 }
 
 // parseKeyValue parses a key-value pair.
-func (p *parser) parseKeyValue(line string, element *structureElement) error {
+func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 	parts := strings.SplitN(line, "=", 2)
 	if len(parts) != 2 {
 		return fmt.Errorf("invalid key-value format: %s", line)
@@ -167,7 +167,7 @@ func (p *parser) parseKeyValue(line string, element *structureElement) error {
 	}
 
 	if p.config.sections[sectionName] == nil {
-		p.config.sections[sectionName] = make(section)
+		p.config.sections[sectionName] = make(Section)
 	}
 
 	p.config.sections[sectionName][normalizedKey] = value
@@ -175,45 +175,45 @@ func (p *parser) parseKeyValue(line string, element *structureElement) error {
 }
 
 // parseValue parses a configuration value and determines its type.
-func (p *parser) parseValue(valueStr string) (value, error) {
+func (p *parser) parseValue(valueStr string) (Value, error) {
 	if valueStr == "" {
-		return value{Raw: "", parsed: "", vtype: stringType}, nil
+		return Value{Raw: "", parsed: "", vtype: stringType}, nil
 	}
 
 	// Check for quoted string
 	if strings.HasPrefix(valueStr, `"`) {
 		unquoted, err := strconv.Unquote(valueStr)
 		if err != nil {
-			return value{}, fmt.Errorf("invalid quoted string: %w", err)
+			return Value{}, fmt.Errorf("invalid quoted string: %w", err)
 		}
-		return value{Raw: unquoted, parsed: unquoted, vtype: stringType}, nil
+		return Value{Raw: unquoted, parsed: unquoted, vtype: stringType}, nil
 	}
 
 	// Check for boolean
 	if valueStr == "true" || valueStr == "false" {
 		parsed, _ := strconv.ParseBool(valueStr)
-		return value{Raw: valueStr, parsed: parsed, vtype: boolType}, nil
+		return Value{Raw: valueStr, parsed: parsed, vtype: boolType}, nil
 	}
 
 	// Check for hexadecimal
 	if strings.HasPrefix(valueStr, "0x") || strings.HasPrefix(valueStr, "0X") {
 		parsed, err := strconv.ParseInt(valueStr, 0, 64)
 		if err != nil {
-			return value{}, fmt.Errorf("invalid hex value: %w", err)
+			return Value{}, fmt.Errorf("invalid hex value: %w", err)
 		}
-		return value{Raw: valueStr, parsed: int(parsed), vtype: hexType}, nil
+		return Value{Raw: valueStr, parsed: int(parsed), vtype: hexType}, nil
 	}
 
 	// Check for integer
 	if intVal, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
-		return value{Raw: valueStr, parsed: int(intVal), vtype: intType}, nil
+		return Value{Raw: valueStr, parsed: int(intVal), vtype: intType}, nil
 	}
 
 	// Check for float
 	if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
-		return value{Raw: valueStr, parsed: floatVal, vtype: floatType}, nil
+		return Value{Raw: valueStr, parsed: floatVal, vtype: floatType}, nil
 	}
 
 	// Default to string
-	return value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
+	return Value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
 }

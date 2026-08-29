@@ -1,6 +1,6 @@
 //go:build manualtest
 
-package sdl
+package sdl2
 
 import (
 	"image"

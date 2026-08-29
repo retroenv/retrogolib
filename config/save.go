@@ -69,7 +69,7 @@ func (c *Config) SaveBytes() ([]byte, error) {
 }
 
 // formatKeyValue formats a key-value pair matching original style.
-func (c *Config) formatKeyValue(key string, value value) string {
+func (c *Config) formatKeyValue(key string, value Value) string {
 	switch value.vtype {
 	case stringType:
 		// Always quote strings to maintain consistency and handle spaces
