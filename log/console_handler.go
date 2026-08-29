@@ -12,71 +12,76 @@ import (
 	"time"
 )
 
+const consoleLevelWidth = 8
+
 var _ slog.Handler = &ConsoleHandler{}
 
-// consoleLevelString translates a level to a padded string ready for printing on the console.
-var consoleLevelString = map[Level]string{
-	TraceLevel: "TRACE   ",
-	DebugLevel: "DEBUG   ",
-	InfoLevel:  "INFO    ",
-	WarnLevel:  "WARN    ",
-	ErrorLevel: "ERROR   ",
-	FatalLevel: "FATAL   ",
+// ConsoleHandlerOptions configures a ConsoleHandler.
+// Nil SlogOptions uses the slog defaults.
+type ConsoleHandlerOptions struct {
+	// SlogOptions controls level filtering, source reporting, and attribute replacement.
+	SlogOptions *slog.HandlerOptions
+
+	// TimeFormat controls timestamps. Its zero value uses time.RFC3339; "-" disables timestamps.
+	TimeFormat string
 }
 
-// ConsoleHandler formats the logger output in a better human-readable way.
-type ConsoleHandler struct {
-	opts            ConsoleHandlerOptions
-	internalHandler slog.Handler
-
+// consoleOutput keeps the text prefix and JSON attributes atomic across handler clones.
+type consoleOutput struct {
 	mu sync.Mutex
 	w  io.Writer
 }
 
-// ConsoleHandlerOptions are options for a ConsoleHandler.
-// A zero HandlerOptions consists entirely of default values.
-type ConsoleHandlerOptions struct {
-	SlogOptions *slog.HandlerOptions
-
-	TimeFormat string
+// ConsoleHandler formats records for human-readable console output.
+type ConsoleHandler struct {
+	opts            ConsoleHandlerOptions
+	internalHandler slog.Handler
+	// Inherited attributes require a JSON suffix even when a record has none.
+	hasAttrs bool
+	output   *consoleOutput
 }
 
 // NewConsoleHandler returns a new console handler.
 func NewConsoleHandler(w io.Writer, opts *ConsoleHandlerOptions) *ConsoleHandler {
-	if opts == nil {
-		opts = &ConsoleHandlerOptions{
-			SlogOptions: &slog.HandlerOptions{},
+	var slogOpts slog.HandlerOptions
+	timeFormat := time.RFC3339
+	if opts != nil {
+		if opts.SlogOptions != nil {
+			slogOpts = *opts.SlogOptions
+		}
+		if opts.TimeFormat != "" {
+			timeFormat = opts.TimeFormat
 		}
 	}
 
 	internalOpts := slog.HandlerOptions{
-		AddSource:   opts.SlogOptions.AddSource,
-		Level:       opts.SlogOptions.Level,
-		ReplaceAttr: opts.SlogOptions.ReplaceAttr,
-	}
-	timeFormat := opts.TimeFormat
-	if timeFormat == "" {
-		opts.TimeFormat = time.RFC3339
+		AddSource: slogOpts.AddSource,
+		Level:     slogOpts.Level,
 	}
 
 	internalOpts.ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
 		if a.Key == slog.TimeKey || a.Key == slog.LevelKey || a.Key == slog.MessageKey {
 			return slog.Attr{}
 		}
-		if opts.SlogOptions.AddSource && a.Key == slog.SourceKey {
+		if slogOpts.AddSource && a.Key == slog.SourceKey {
 			return slog.Attr{}
 		}
 
-		if opts.SlogOptions.ReplaceAttr != nil {
-			return opts.SlogOptions.ReplaceAttr(groups, a)
+		if slogOpts.ReplaceAttr != nil {
+			return slogOpts.ReplaceAttr(groups, a)
 		}
 		return a
 	}
 
+	stableOpts := ConsoleHandlerOptions{
+		SlogOptions: &slogOpts,
+		TimeFormat:  timeFormat,
+	}
+
 	return &ConsoleHandler{
-		opts:            *opts,
-		w:               w,
+		opts:            stableOpts,
 		internalHandler: slog.NewJSONHandler(w, &internalOpts),
+		output:          &consoleOutput{w: w},
 	}
 }
 
@@ -88,16 +93,16 @@ func (h *ConsoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 // Handle handles the Record.
 func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
-	// Pre-allocate buffer with estimated capacity for better performance
-	b := make([]byte, 0, 256)
-	buf := bytes.NewBuffer(b)
+	var buf bytes.Buffer
+	// Most console records fit without growing the buffer again.
+	buf.Grow(256)
 
 	if h.opts.TimeFormat != "-" {
 		buf.WriteString(r.Time.Format(h.opts.TimeFormat))
 		buf.WriteString("  ")
 	}
 
-	buf.WriteString(consoleLevelString[r.Level])
+	writeConsoleLevel(&buf, r.Level)
 
 	if h.opts.SlogOptions.AddSource {
 		fs := runtime.CallersFrames([]uintptr{r.PC})
@@ -112,9 +117,9 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	buf.WriteString(r.Message)
 
-	hasEntries := false
+	hasEntries := h.hasAttrs
 	r.Attrs(func(a slog.Attr) bool {
-		if a.Key != "" {
+		if !a.Equal(slog.Attr{}) {
 			hasEntries = true
 			return false
 		}
@@ -126,12 +131,12 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 		buf.WriteRune('\n')
 	}
 
-	h.mu.Lock()
-	_, err := h.w.Write(buf.Bytes())
-	h.mu.Unlock()
+	h.output.mu.Lock()
+	defer h.output.mu.Unlock()
 
+	_, err := h.output.w.Write(buf.Bytes())
 	if err != nil {
-		return fmt.Errorf("writing to buffer: %w", err)
+		return fmt.Errorf("writing log prefix: %w", err)
 	}
 
 	if hasEntries {
@@ -144,22 +149,51 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 
 // WithAttrs returns a new Handler whose attributes consist of
 // both the receiver's attributes and the arguments.
-// nolint: ireturn
+//
+//nolint:ireturn // Required by slog.Handler.
 func (h *ConsoleHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return &ConsoleHandler{
 		opts:            h.opts,
 		internalHandler: h.internalHandler.WithAttrs(attrs),
-		w:               h.w,
+		hasAttrs:        h.hasAttrs || hasAttrs(attrs),
+		output:          h.output,
 	}
 }
 
 // WithGroup returns a new Handler with the given group appended to
 // the receiver's existing groups.
-// nolint: ireturn
+//
+//nolint:ireturn // Required by slog.Handler.
 func (h *ConsoleHandler) WithGroup(name string) slog.Handler {
 	return &ConsoleHandler{
 		opts:            h.opts,
 		internalHandler: h.internalHandler.WithGroup(name),
-		w:               h.w,
+		hasAttrs:        h.hasAttrs,
+		output:          h.output,
 	}
+}
+
+func writeConsoleLevel(buf *bytes.Buffer, level slog.Level) {
+	text := level.String()
+	switch level {
+	case TraceLevel:
+		text = "TRACE"
+	case FatalLevel:
+		text = "FATAL"
+	}
+
+	buf.WriteString(text)
+	for range max(consoleLevelWidth-len(text), 1) {
+		buf.WriteByte(' ')
+	}
+}
+
+func hasAttrs(attrs []slog.Attr) bool {
+	for _, attr := range attrs {
+		if !attr.Equal(slog.Attr{}) {
+			return true
+		}
+	}
+
+	return false
 }

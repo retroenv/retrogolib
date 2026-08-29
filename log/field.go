@@ -9,9 +9,8 @@ import (
 
 const upperHexDigits = "0123456789ABCDEF"
 
-// A Field is a marshaling operation used to add a key-value pair to a logger's
-// context. Most fields are lazily marshaled, so it's inexpensive to add fields
-// to disabled debug-level log statements.
+// Field is a structured logging attribute. Fields backed by slog.LogValuer are
+// resolved only after a handler accepts the record.
 type Field = slog.Attr
 
 // Object constructs a Field for values without a specialized constructor.
@@ -20,283 +19,241 @@ func Object(key string, val any) Field {
 	return slog.Any(key, val)
 }
 
-// String constructs a Field with the given key and value.
+// String constructs a string Field.
 func String(key, val string) Field {
 	return slog.String(key, val)
 }
 
-// Strings constructs a Field with the given key and value.
+// Strings constructs a string-slice Field.
 func Strings(key string, val []string) Field {
 	return slog.Any(key, val)
 }
 
-// Stringer constructs a Field with the given key and value.
+// Stringer constructs a lazily resolved fmt.Stringer Field.
 func Stringer(key string, val fmt.Stringer) Field {
-	return slog.Any(key, val)
+	return lazyField(key, func() slog.Value {
+		return stringerValue(val)
+	})
 }
 
-// StringFunc constructs a Field with the given key and a function that returns a string.
-// The function is evaluated lazily - only when the log level is enabled and the
-// handler processes the record. This provides significant performance benefits
-// for expensive string operations when logging is disabled.
+// StringFunc constructs a lazily evaluated string Field.
+// The function runs only when a handler processes an enabled record.
 func StringFunc(key string, f func() string) Field {
-	return slog.Any(key, stringFunc{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.StringValue(f())
+	})
 }
 
-// IntFunc constructs a Field with the given key and a function that returns an int.
-// The function is evaluated lazily - only when the log level is enabled and the
-// handler processes the record. This provides significant performance benefits
-// for expensive int computations when logging is disabled.
+// IntFunc constructs a lazily evaluated int Field.
+// The function runs only when a handler processes an enabled record.
 func IntFunc(key string, f func() int) Field {
-	return slog.Any(key, intFunc{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.IntValue(f())
+	})
 }
 
-// Int64Func constructs a Field with the given key and a function that returns an int64.
+// Int64Func constructs a lazily evaluated int64 Field.
+// The function runs only when a handler processes an enabled record.
 func Int64Func(key string, f func() int64) Field {
-	return slog.Any(key, int64Func{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.Int64Value(f())
+	})
 }
 
-// Float64Func constructs a Field with the given key and a function that returns a float64.
+// Float64Func constructs a lazily evaluated float64 Field.
+// The function runs only when a handler processes an enabled record.
 func Float64Func(key string, f func() float64) Field {
-	return slog.Any(key, float64Func{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.Float64Value(f())
+	})
 }
 
-// BoolFunc constructs a Field with the given key and a function that returns a bool.
+// BoolFunc constructs a lazily evaluated bool Field.
+// The function runs only when a handler processes an enabled record.
 func BoolFunc(key string, f func() bool) Field {
-	return slog.Any(key, boolFunc{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.BoolValue(f())
+	})
 }
 
-// DurationFunc constructs a Field with the given key and a function that returns a duration.
+// DurationFunc constructs a lazily evaluated duration Field.
+// The function runs only when a handler processes an enabled record.
 func DurationFunc(key string, f func() time.Duration) Field {
-	return slog.Any(key, durationFunc{f: f})
+	return lazyField(key, func() slog.Value {
+		return slog.DurationValue(f())
+	})
 }
 
-// StringerFunc constructs a Field with the given key and a function that returns a Stringer.
+// StringerFunc constructs a lazily evaluated fmt.Stringer Field.
+// The function runs only when a handler processes an enabled record.
 func StringerFunc(key string, f func() fmt.Stringer) Field {
-	return slog.Any(key, stringerFunc{f: f})
+	return lazyField(key, func() slog.Value {
+		return stringerValue(f())
+	})
 }
 
 // Err constructs an error Field with key "error".
 func Err(err error) Field {
-	if err == nil {
-		return slog.String("error", "<nil>")
-	}
-
-	return slog.String("error", err.Error())
+	return slog.Any("error", err)
 }
 
-// Int constructs a Field with the given key and value.
+// Int constructs an int Field.
 func Int(key string, val int) Field {
 	return slog.Int(key, val)
 }
 
-// Int64 constructs a Field with the given key and value.
+// Int64 constructs an int64 Field.
 func Int64(key string, val int64) Field {
 	return slog.Int64(key, val)
 }
 
-// Int32 constructs a Field with the given key and value.
+// Int32 constructs an int32 Field.
 func Int32(key string, val int32) Field {
 	return slog.Int64(key, int64(val))
 }
 
-// Int16 constructs a Field with the given key and value.
+// Int16 constructs an int16 Field.
 func Int16(key string, val int16) Field {
 	return slog.Int64(key, int64(val))
 }
 
-// Int8 constructs a Field with the given key and value.
+// Int8 constructs an int8 Field.
 func Int8(key string, val int8) Field {
 	return slog.Int64(key, int64(val))
 }
 
-// Uint constructs a Field with the given key and value.
+// Uint constructs a uint Field.
 func Uint(key string, val uint) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
-// Uint64 constructs a Field with the given key and value.
+// Uint64 constructs a uint64 Field.
 func Uint64(key string, val uint64) Field {
 	return slog.Uint64(key, val)
 }
 
-// Uint32 constructs a Field with the given key and value.
+// Uint32 constructs a uint32 Field.
 func Uint32(key string, val uint32) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
-// Uint16 constructs a Field with the given key and value.
+// Uint16 constructs a uint16 Field.
 func Uint16(key string, val uint16) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
-// Uint8 constructs a Field with the given key and value.
+// Uint8 constructs a uint8 Field.
 func Uint8(key string, val uint8) Field {
 	return slog.Uint64(key, uint64(val))
 }
 
-// Time constructs a Field with the given key and value.
+// Time constructs a time Field.
 func Time(key string, val time.Time) Field {
 	return slog.Time(key, val)
 }
 
-// Duration constructs a Field with the given key and value.
+// Duration constructs a duration Field.
 func Duration(key string, val time.Duration) Field {
 	return slog.Duration(key, val)
 }
 
-// Bool constructs a Field with the given key and value.
+// Bool constructs a bool Field.
 func Bool(key string, val bool) Field {
 	return slog.Bool(key, val)
 }
 
-// Float32 constructs a Field with the given key and value.
+// Float32 constructs a float32 Field.
 func Float32(key string, val float32) Field {
 	return slog.Float64(key, float64(val))
 }
 
-// Float64 constructs a Field with the given key and value.
+// Float64 constructs a float64 Field.
 func Float64(key string, val float64) Field {
 	return slog.Float64(key, val)
 }
 
-// Hex constructs a Field with the given key and formats integer values in hex format.
-// The hex formatting is evaluated lazily - only when the log level is enabled and the
-// handler processes the record. This provides significant performance benefits for
-// expensive hex formatting when logging is disabled.
+// Hex constructs a lazily formatted hexadecimal Field.
+// Fixed-width integer types are zero-padded to their full width.
 //
-// Supports signed and unsigned integers of various bit widths with appropriate zero-padding.
-//
-// Examples:
-//
-//	log.Hex("addr", uint16(0x1234))  // "addr": "0x1234"
-//	log.Hex("byte", uint8(0xFF))     // "byte": "0xFF"
-//	log.Hex("opcode", 0x4C)          // "opcode": "0x4C"
+//	log.Hex("addr", uint16(0x1234)) // "0x1234"
+//	log.Hex("byte", uint8(0xFF))    // "0xFF"
+//	log.Hex("opcode", 0x4C)         // "0x4C"
 func Hex(key string, val any) Field {
-	return slog.Any(key, hex{val: val})
+	return lazyField(key, func() slog.Value {
+		return slog.StringValue(formatHex(val))
+	})
 }
 
-// Type constructs a Field with the given key and formats the value's type name.
-// The type reflection is evaluated lazily - only when the log level is enabled and the
-// handler processes the record. This provides significant performance benefits by
-// avoiding reflection overhead when logging is disabled.
+// Type constructs a lazily resolved type-name Field.
 //
-// Examples:
-//
-//	log.Type("addr_type", typedInstr.Addr)  // "addr_type": "*nes.IndirectX"
-//	log.Type("value_type", myVar)           // "value_type": "int"
-//	log.Type("handler_type", handler)       // "handler_type": "*http.Handler"
+//	log.Type("addr_type", typedInstr.Addr) // "*nes.IndirectX"
+//	log.Type("value_type", value)          // "int"
+//	log.Type("handler_type", handler)      // "*http.Handler"
 func Type(key string, val any) Field {
-	return slog.Any(key, typeOf{val: val})
+	return lazyField(key, func() slog.Value {
+		typ := reflect.TypeOf(val)
+		if typ == nil {
+			return slog.StringValue("<nil>")
+		}
+
+		return slog.StringValue(typ.String())
+	})
 }
 
-type (
-	stringFunc struct {
-		f func() string
-	}
+type lazyValue func() slog.Value
 
-	intFunc struct {
-		f func() int
-	}
-
-	int64Func struct {
-		f func() int64
-	}
-
-	float64Func struct {
-		f func() float64
-	}
-
-	boolFunc struct {
-		f func() bool
-	}
-
-	durationFunc struct {
-		f func() time.Duration
-	}
-
-	stringerFunc struct {
-		f func() fmt.Stringer
-	}
-
-	hex struct {
-		val any
-	}
-
-	typeOf struct {
-		val any
-	}
-)
-
-func (sf stringFunc) LogValue() slog.Value {
-	return slog.StringValue(sf.f())
+func (f lazyValue) LogValue() slog.Value {
+	return f()
 }
 
-func (inf intFunc) LogValue() slog.Value {
-	return slog.IntValue(inf.f())
+func lazyField(key string, f lazyValue) Field {
+	return slog.Any(key, f)
 }
 
-func (inf int64Func) LogValue() slog.Value {
-	return slog.Int64Value(inf.f())
-}
-
-func (ff float64Func) LogValue() slog.Value {
-	return slog.Float64Value(ff.f())
-}
-
-func (bf boolFunc) LogValue() slog.Value {
-	return slog.BoolValue(bf.f())
-}
-
-func (df durationFunc) LogValue() slog.Value {
-	return slog.DurationValue(df.f())
-}
-
-func (sf stringerFunc) LogValue() slog.Value {
-	val := sf.f()
-	if val == nil {
+func stringerValue(val fmt.Stringer) slog.Value {
+	if isNil(val) {
 		return slog.StringValue("<nil>")
 	}
 
 	return slog.StringValue(val.String())
 }
 
-func (hf hex) LogValue() slog.Value {
-	return slog.StringValue(formatHex(hf.val))
-}
-
-func (tf typeOf) LogValue() slog.Value {
-	typ := reflect.TypeOf(tf.val)
-	if typ == nil {
-		return slog.StringValue("<nil>")
+func isNil(val any) bool {
+	if val == nil {
+		return true
 	}
 
-	return slog.StringValue(typ.String())
+	value := reflect.ValueOf(val)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
+	}
 }
 
-// formatHex formats integer values as hex strings with appropriate zero-padding.
 func formatHex(val any) string {
-	switch v := val.(type) {
+	switch value := val.(type) {
 	case uint8:
-		return formatHexUint(uint64(v), 2)
+		return formatHexUint(uint64(value), 2)
 	case int8:
-		return formatHexUint(uint64(uint8(v)), 2)
+		return formatHexUint(uint64(uint8(value)), 2)
 	case uint16:
-		return formatHexUint(uint64(v), 4)
+		return formatHexUint(uint64(value), 4)
 	case int16:
-		return formatHexUint(uint64(uint16(v)), 4)
+		return formatHexUint(uint64(uint16(value)), 4)
 	case uint32:
-		return formatHexUint(uint64(v), 8)
+		return formatHexUint(uint64(value), 8)
 	case int32:
-		return formatHexUint(uint64(uint32(v)), 8)
+		return formatHexUint(uint64(uint32(value)), 8)
 	case uint64:
-		return formatHexUint(v, 16)
+		return formatHexUint(value, 16)
 	case int64:
-		return formatHexUint(uint64(v), 16)
+		return formatHexUint(uint64(value), 16)
 	case uint:
-		return formatHexUint(uint64(v), 0)
+		return formatHexUint(uint64(value), 0)
 	case int:
-		return formatHexUint(uint64(uint(v)), 0)
+		return formatHexUint(uint64(uint(value)), 0)
 	default:
 		return fmt.Sprintf("0x%X", val)
 	}

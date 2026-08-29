@@ -34,7 +34,7 @@ const (
 type Level = slog.Level
 
 var (
-	defaultLevel   = uintptr(InfoLevel)
+	defaultLevel   atomic.Int64
 	fatalLevelText = slog.StringValue("FATAL")
 	traceLevelText = slog.StringValue("TRACE")
 )
@@ -42,12 +42,12 @@ var (
 // DefaultLevel returns the current default level for all loggers
 // newly created with New().
 func DefaultLevel() Level {
-	return Level(atomic.LoadUintptr(&defaultLevel))
+	return Level(defaultLevel.Load())
 }
 
 // SetDefaultLevel sets the default level for all newly created loggers.
 func SetDefaultLevel(level Level) {
-	atomic.StoreUintptr(&defaultLevel, uintptr(level))
+	defaultLevel.Store(int64(level))
 }
 
 // ReplaceLevelName sets custom defined level names for outputting.

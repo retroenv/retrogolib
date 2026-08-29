@@ -6,32 +6,40 @@ import (
 	"io"
 	"net"
 	"os"
-	"slices"
 	"syscall"
 )
 
-// Closer calls the closer function and if an error gets returned it logs an error.
-// This function is useful when using patterns like defer resp.Body.Close() which now become:
-// defer logger.Closer(resp.Body, "closing body").
-// It filters out common expected errors like os.ErrClosed and network connection errors.
+// Closer closes a resource and logs unexpected errors. It is useful for
+// deferred cleanup:
+//
+//	defer logger.Closer(resp.Body, "Closing response body")
+//
+// Common close errors such as os.ErrClosed and network disconnects are ignored.
 func (l *Logger) Closer(closer io.Closer, msg string) {
+	if closer == nil {
+		return
+	}
+
 	err := closer.Close()
-	if l.shouldIgnoreCloseError(err) {
+	if shouldIgnoreCloseError(err) {
 		return
 	}
 
 	l.Error(msg, Err(err))
 }
 
-// CloserCtx calls the closer function and if an error gets returned it logs an error.
-// It respects context deadlines and cancellation, logging timeout errors appropriately.
+// CloserCtx closes a context-aware resource and logs unexpected errors.
+// Deadline and cancellation errors include a "reason" field in the log record.
 func (l *Logger) CloserCtx(ctx context.Context, closer closerCtx, msg string) {
-	err := closer.Close(ctx)
-	if l.shouldIgnoreCloseError(err) {
+	if closer == nil {
 		return
 	}
 
-	// Add context information for timeout/cancellation errors
+	err := closer.Close(ctx)
+	if shouldIgnoreCloseError(err) {
+		return
+	}
+
 	if errors.Is(err, context.DeadlineExceeded) {
 		l.ErrorContext(ctx, msg, Err(err), String("reason", "context deadline exceeded"))
 		return
@@ -44,15 +52,15 @@ func (l *Logger) CloserCtx(ctx context.Context, closer closerCtx, msg string) {
 	l.ErrorContext(ctx, msg, Err(err))
 }
 
-// MultiCloser calls multiple closer functions and logs any errors.
-// It continues closing all resources even if some fail, logging each error separately.
+// MultiCloser attempts every resource even after a close fails, logging each
+// unexpected error with its position in closers.
 func (l *Logger) MultiCloser(msg string, closers ...io.Closer) {
 	for i, closer := range closers {
 		if closer == nil {
 			continue
 		}
 		err := closer.Close()
-		if l.shouldIgnoreCloseError(err) {
+		if shouldIgnoreCloseError(err) {
 			continue
 		}
 
@@ -60,8 +68,8 @@ func (l *Logger) MultiCloser(msg string, closers ...io.Closer) {
 	}
 }
 
-// MultiCloserCtx calls multiple context-aware closer functions and logs any errors.
-// It continues closing all resources even if some fail, logging each error separately.
+// MultiCloserCtx attempts every context-aware resource even after a close
+// fails, logging each unexpected error with its position in closers.
 func (l *Logger) MultiCloserCtx(ctx context.Context, msg string, closers ...closerCtx) {
 	for i, closer := range closers {
 		if closer == nil {
@@ -69,11 +77,10 @@ func (l *Logger) MultiCloserCtx(ctx context.Context, msg string, closers ...clos
 		}
 
 		err := closer.Close(ctx)
-		if l.shouldIgnoreCloseError(err) {
+		if shouldIgnoreCloseError(err) {
 			continue
 		}
 
-		// Add context information for timeout/cancellation errors
 		if errors.Is(err, context.DeadlineExceeded) {
 			l.ErrorContext(ctx, msg, Err(err), Int("closer_index", i), String("reason", "context deadline exceeded"))
 			continue
@@ -87,51 +94,30 @@ func (l *Logger) MultiCloserCtx(ctx context.Context, msg string, closers ...clos
 	}
 }
 
-// shouldIgnoreCloseError returns true for errors that are expected and should not be logged.
-func (l *Logger) shouldIgnoreCloseError(err error) bool {
+type closerCtx interface {
+	Close(ctx context.Context) error
+}
+
+func shouldIgnoreCloseError(err error) bool {
 	if err == nil {
 		return true
 	}
 
-	// Check common expected errors using pre-allocated slice
-	for _, expectedErr := range expectedCloseErrors {
-		if errors.Is(err, expectedErr) {
-			return true
-		}
+	if errors.Is(err, os.ErrClosed) || errors.Is(err, net.ErrClosed) {
+		return true
+	}
+	if errors.Is(err, io.EOF) || errors.Is(err, syscall.EBADF) || errors.Is(err, syscall.EINVAL) {
+		return true
 	}
 
-	// Check for network operation errors with expected strings
-	// This is necessary because Go's net package doesn't always wrap these properly
+	// Some net.OpError values expose only platform error text instead of a sentinel.
 	var opErr *net.OpError
 	if errors.As(err, &opErr) && opErr.Err != nil {
-		errStr := opErr.Err.Error()
-		if slices.Contains(expectedCloseErrorStrings, errStr) {
+		switch opErr.Err.Error() {
+		case "use of closed network connection", "broken pipe", "connection reset by peer":
 			return true
 		}
 	}
 
 	return false
-}
-
-// closerCtx is the interface that wraps the extended Close method.
-type closerCtx interface {
-	Close(ctx context.Context) error
-}
-
-// expectedCloseErrors contains error types that are expected during normal close operations.
-// Pre-allocated as package-level variable for performance.
-var expectedCloseErrors = []error{
-	os.ErrClosed,
-	net.ErrClosed,
-	io.EOF,
-	syscall.EBADF,
-	syscall.EINVAL,
-}
-
-// expectedCloseErrorStrings contains error strings that indicate expected close conditions.
-// Pre-allocated as package-level variable for performance.
-var expectedCloseErrorStrings = []string{
-	"use of closed network connection",
-	"broken pipe",
-	"connection reset by peer",
 }

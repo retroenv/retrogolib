@@ -209,6 +209,12 @@ func TestLoggerMultiCloserWithNilClosers(t *testing.T) {
 	assert.Contains(t, output, "2") // Failure at index 2
 }
 
+func TestLoggerCloserWithNilCloser(t *testing.T) {
+	logger := NewNop()
+	logger.Closer(nil, "ignored")
+	logger.CloserCtx(context.Background(), nil, "ignored")
+}
+
 func TestLoggerMultiCloserCtx(t *testing.T) {
 	cfg := DefaultConfig()
 	var buf bytes.Buffer
@@ -271,10 +277,8 @@ func TestLoggerMultiCloserCtxTimeout(t *testing.T) {
 }
 
 func TestShouldIgnoreCloseError(t *testing.T) {
-	logger := New()
-
 	// Test nil error
-	assert.True(t, logger.shouldIgnoreCloseError(nil))
+	assert.True(t, shouldIgnoreCloseError(nil))
 
 	// Test expected errors
 	expectedErrors := []error{
@@ -286,7 +290,7 @@ func TestShouldIgnoreCloseError(t *testing.T) {
 	}
 
 	for _, err := range expectedErrors {
-		assert.True(t, logger.shouldIgnoreCloseError(err), "Should ignore %v", err)
+		assert.True(t, shouldIgnoreCloseError(err), "Should ignore %v", err)
 	}
 
 	// Test network operation errors
@@ -297,7 +301,7 @@ func TestShouldIgnoreCloseError(t *testing.T) {
 	}
 
 	for _, err := range networkErrors {
-		assert.True(t, logger.shouldIgnoreCloseError(err), "Should ignore %v", err)
+		assert.True(t, shouldIgnoreCloseError(err), "Should ignore %v", err)
 	}
 
 	// Test errors that should NOT be ignored
@@ -307,7 +311,7 @@ func TestShouldIgnoreCloseError(t *testing.T) {
 	}
 
 	for _, err := range unexpectedErrors {
-		assert.False(t, logger.shouldIgnoreCloseError(err), "Should NOT ignore %v", err)
+		assert.False(t, shouldIgnoreCloseError(err), "Should NOT ignore %v", err)
 	}
 }
 
