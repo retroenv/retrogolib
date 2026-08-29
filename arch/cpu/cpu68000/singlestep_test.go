@@ -17,7 +17,7 @@ import (
 )
 
 // TestSingleStep runs the SingleStepTests/680x0 JSON test suite.
-// Download test data: git clone https://github.com/SingleStepTests/680x0.git testdata/680x0
+// Download test data: make -C testdata cpu68000
 func TestSingleStep(t *testing.T) {
 	testDir := getTestDataDir(t)
 
@@ -157,7 +157,7 @@ func getTestDataDir(t *testing.T) string {
 	_, thisFile, _, ok := runtime.Caller(0)
 	assert.True(t, ok)
 
-	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "cpu68000", "680x0")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "cpu68000", "680x0", "68000", "v1")
 	if _, err := os.Stat(dir); err != nil {
 		t.Skip("test data not found; run 'make -C testdata cpu68000' to download")
 	}
@@ -227,6 +227,8 @@ func runSingleTest(t *testing.T, tc *testCase) bool {
 	for _, entry := range tc.Initial.RAM {
 		mem.data[entry[0]&addressMask] = uint8(entry[1])
 	}
+	mem.WriteWord(tc.Initial.PC, tc.Initial.Prefetch[0])
+	mem.WriteWord(tc.Initial.PC+2, tc.Initial.Prefetch[1])
 
 	cpu := &CPU{
 		bus: bus,

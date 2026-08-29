@@ -2,19 +2,20 @@
 
 Tracks the changes introduced by `work2` since its common ancestor with `main`.
 
-**Last Updated:** 2026-08-28
+**Last Updated:** 2026-08-29
 
 ---
 
 ## Current Branch State
 
-- Comparison of local refs: `main...work2` (`100fb04...91d5f7e`).
-- Merge base: `100fb04`; this revision of `main` was merged into `work2` by
-  `4d9767c` on 2026-08-28. Earlier merges remain part of the branch history.
-- Committed baseline delta: 122 files, with 115 added and 7 modified; 24,474
-  insertions and 54 deletions.
-- The source of truth for this document is the current `main...work2` diff plus
-  the branch history, not older merge-plan assumptions.
+- Comparison of current remote-tracking refs: `origin/main...work2`
+  (`e7fb46b...af3c5fd`).
+- Merge base: `e7fb46b`; this revision of `main` was merged into `work2` by
+  `af3c5fd` on 2026-08-29. Earlier merges remain part of the branch history.
+- Committed baseline delta: 119 files, with 118 added and 1 modified; 24,259
+  insertions and 5 deletions.
+- The source of truth for this document is the current `origin/main...work2`
+  diff plus the branch history, not older merge-plan assumptions.
 
 ## Changes Already Absorbed From `main`
 
@@ -23,24 +24,14 @@ they were present at the latest merge base:
 
 - Test infrastructure changes in `Makefile` and `testdata/`.
 - Architecture registration updates in `arch/`.
-- 6502/65C02 implementation and integration-test work, apart from the package
-  rename and small housekeeping changes listed below.
+- 6502/65C02 implementation, package rename, and integration-test work.
 - Most Z80 bus, opcode, and integration-test work, apart from the three-file
   documentation and declaration-order cleanup listed below.
 - x86 support in `arch/cpu/x86/`.
 - CLI and configuration declaration-order cleanup.
+- Logging safety, formatting, and handler-consistency changes under `log/`.
 
 ## Branch-Specific Changes
-
-### CPU Naming
-
-- Renames numeric-leading CPU packages from the ambiguous `m` prefix to the
-  vendor-neutral `cpu` prefix: `cpu6502`, `cpu65816`, `cpu6809`, and `cpu68000`.
-- Renames the corresponding architecture constants to `CPU6502`, `CPU65C02`,
-  `CPU65816`, `CPU6809`, and `CPU68000` without compatibility aliases.
-- Normalizes the Motorola 68000 architecture value from `m68000` to `68000`.
-- Applies the package names consistently to imports, test-data targets and
-  directories, environment variables, plans, examples, and package docs.
 
 ### CPU Emulators
 
@@ -67,16 +58,6 @@ they were present at the latest merge base:
 - **Vectrex:** Adds Vectrex memory-map, hardware, interrupt, and VIA definitions
   under `arch/system/vectrex/`, with tests.
 
-### Logging
-
-- Adds lazy `Int64Func`, `Float64Func`, `BoolFunc`, `DurationFunc`, and
-  `StringerFunc` field constructors, including nil handling for lazy stringers.
-- Makes `Err` and `Type` produce explicit `<nil>` values, replaces integer hex
-  formatting with a fixed-width uppercase formatter, and tests the added and
-  revised field behavior.
-- Passes fields to `slog.Record.AddAttrs` directly instead of allocating and
-  populating an intermediate `[]any` slice.
-
 ### Small Follow-Up Cleanups
 
 - `arch/cpu/cpu68000/instruction.go` and `arch/cpu/sm83/option.go` order private
@@ -86,6 +67,7 @@ they were present at the latest merge base:
 
 ### Documentation
 
+- Updates `README.md` to list the newly added CPU packages.
 - Adds active gap-closure plans for the Motorola 68000 and Z80.
 - Adds the planned Commodore 64 system implementation document.
 - Maintains this branch changelog.
@@ -94,26 +76,23 @@ they were present at the latest merge base:
 
 | Status | Files | Purpose |
 | --- | --- | --- |
-| Renamed | `arch/cpu/{m6502 => cpu6502}/`, `arch/cpu/{m65816 => cpu65816}/`, `arch/cpu/{m6809 => cpu6809}/`, `arch/cpu/{m68000 => cpu68000}/` | Vendor-neutral package names for numeric-leading CPU architectures. |
-| Modified | `arch/arch.go`, `arch/arch_test.go` | Renamed architecture constants and normalized the 68000 identifier. |
+| Modified | `README.md` | Lists the newly added CPU packages. |
 | Added | `arch/cpu/cpu65816/`, `arch/cpu/cpu68000/`, `arch/cpu/cpu6809/`, `arch/cpu/sm83/` | New CPU emulator packages and tests relative to the merge base. |
 | Added | `arch/system/atari2600/`, `arch/system/coco/`, `arch/system/vectrex/` | New system, cartridge, memory-map, and register definitions with tests. |
-| Modified | `log/field.go`, `log/field_test.go`, `log/logger.go` | Expanded lazy fields, revised formatting and nil handling, and reduced record-building allocation. |
 | Modified | `arch/cpu/cpu68000/instruction.go`, `arch/cpu/sm83/option.go`, `arch/cpu/z80/` | Non-behavioral declaration, comment, and label cleanup. |
-| Added/Renamed | `docs/cpu68000-gap-closure-plan.md`, `docs/system-implementation-plan-c64.md`, `docs/z80-gap-closure-plan.md`, `docs/work-branch-changelog.md` | Active plans and branch tracking. |
+| Added | `docs/cpu68000-gap-closure-plan.md`, `docs/system-implementation-plan-c64.md`, `docs/z80-gap-closure-plan.md`, `docs/work-branch-changelog.md` | Active plans and branch tracking. |
 
 ## Merge Summary
 
-Most of the remaining branch delta is additive CPU and system-package work. CPU
-package and architecture names now follow one vendor-neutral rule; this is an
-intentional breaking API and import-path change. The logging changes are the
-other main behavioral modification to an existing package, while the Z80, CLI,
-and configuration differences are small cleanups.
+Most of the remaining branch delta is additive CPU and system-package work. The
+only remaining changes to existing files are the README package list and the
+small Z80 cleanups.
 
 ## Verification
 
-- Inspected: `git status --short`, `git diff --stat main...work2`,
-  `git diff --name-status main...work2`, and the substantive branch-side diffs.
+- Inspected: `git status --short`, `git diff --stat origin/main...work2`,
+  `git diff --name-status origin/main...work2`, and the substantive
+  branch-side diffs.
 - Passed: `go fmt ./...`.
 - Passed: `make lint`.
 - Passed: `make test`.
