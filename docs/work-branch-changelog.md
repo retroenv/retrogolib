@@ -8,14 +8,13 @@ Tracks the changes introduced by `work2` since its common ancestor with `main`.
 
 ## Current Branch State
 
-- Comparison of local refs: `main...work2` (`ea7c09d...feac27c`).
-- Merge base: `316c334`; this revision of `main` was merged into `work2` by
-  `f6f724a` on 2026-05-03. The earlier `6042731` and `85d794f` merges are also
-  part of the branch history.
-- Committed baseline delta: 126 files, with 115 added and 11 modified; 24,493
-  insertions and 91 deletions.
+- Comparison of local refs: `main...work2` (`100fb04...91d5f7e`).
+- Merge base: `100fb04`; this revision of `main` was merged into `work2` by
+  `4d9767c` on 2026-08-28. Earlier merges remain part of the branch history.
+- Committed baseline delta: 122 files, with 115 added and 7 modified; 24,474
+  insertions and 54 deletions.
 - The source of truth for this document is the current `main...work2` diff plus
-  the package-naming changes in the worktree, not older merge-plan assumptions.
+  the branch history, not older merge-plan assumptions.
 
 ## Changes Already Absorbed From `main`
 
@@ -26,9 +25,10 @@ they were present at the latest merge base:
 - Architecture registration updates in `arch/`.
 - 6502/65C02 implementation and integration-test work, apart from the package
   rename and small housekeeping changes listed below.
-- Most Z80 bus, opcode, and integration-test work, apart from the four-file
+- Most Z80 bus, opcode, and integration-test work, apart from the three-file
   documentation and declaration-order cleanup listed below.
 - x86 support in `arch/cpu/x86/`.
+- CLI and configuration declaration-order cleanup.
 
 ## Branch-Specific Changes
 
@@ -79,13 +79,10 @@ they were present at the latest merge base:
 
 ### Small Follow-Up Cleanups
 
-- `arch/cpu/cpu6502/option.go` and `arch/cpu/cpu6502/singlestep_test.go` move a
-  private hook declaration and normalize test log capitalization.
-- `arch/cpu/z80/categories.go`, `instruction.go`, `opcode_test.go`, and
-  `option.go` clean up comments and test labels and move a private hook
-  declaration; they do not change opcode behavior.
-- `cli/flags.go` and `config/config.go` move private type declarations closer to
-  their owning types without changing their data shapes.
+- `arch/cpu/cpu68000/instruction.go` and `arch/cpu/sm83/option.go` order private
+  function types before their exported dependents to satisfy lint rules.
+- `arch/cpu/z80/categories.go`, `instruction.go`, and `opcode_test.go` clean up
+  comments and test labels without changing opcode behavior.
 
 ### Documentation
 
@@ -102,7 +99,7 @@ they were present at the latest merge base:
 | Added | `arch/cpu/cpu65816/`, `arch/cpu/cpu68000/`, `arch/cpu/cpu6809/`, `arch/cpu/sm83/` | New CPU emulator packages and tests relative to the merge base. |
 | Added | `arch/system/atari2600/`, `arch/system/coco/`, `arch/system/vectrex/` | New system, cartridge, memory-map, and register definitions with tests. |
 | Modified | `log/field.go`, `log/field_test.go`, `log/logger.go` | Expanded lazy fields, revised formatting and nil handling, and reduced record-building allocation. |
-| Modified | `arch/cpu/cpu6502/`, `arch/cpu/z80/`, `cli/flags.go`, `config/config.go` | Non-behavioral declaration, comment, label, and capitalization cleanup. |
+| Modified | `arch/cpu/cpu68000/instruction.go`, `arch/cpu/sm83/option.go`, `arch/cpu/z80/` | Non-behavioral declaration, comment, and label cleanup. |
 | Added/Renamed | `docs/cpu68000-gap-closure-plan.md`, `docs/system-implementation-plan-c64.md`, `docs/z80-gap-closure-plan.md`, `docs/work-branch-changelog.md` | Active plans and branch tracking. |
 
 ## Merge Summary
