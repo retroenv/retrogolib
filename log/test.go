@@ -13,9 +13,6 @@ type TestingT interface {
 	// Logf logs the given message without failing the test.
 	Logf(string, ...any)
 
-	// Errorf logs the given message and marks the test as failed.
-	Errorf(string, ...any)
-
 	// FailNow marks the test as failed and stops execution of that test.
 	FailNow()
 
@@ -32,7 +29,7 @@ func NewTestLogger(t TestingT) *Logger {
 	handler := newTestHandler(t)
 	cfg := Config{
 		CallerInfo: true,
-		Level:      DebugLevel,
+		Level:      TraceLevel,
 		Handler:    handler,
 	}
 	return NewWithConfig(cfg)
@@ -53,7 +50,7 @@ func newTestHandler(t TestingT) *testHandler {
 	}
 	return &testHandler{
 		t:       t,
-		handler: slog.NewTextHandler(writer, nil),
+		handler: slog.NewTextHandler(writer, &slog.HandlerOptions{Level: TraceLevel}),
 	}
 }
 
@@ -77,23 +74,30 @@ func (t testHandler) Handle(ctx context.Context, r slog.Record) error {
 
 // WithAttrs returns a new Handler whose attributes consist of
 // both the receiver's attributes and the arguments.
-// nolint: ireturn
+//
+//nolint:ireturn // Required by slog.Handler.
 func (t testHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return t.handler.WithAttrs(attrs)
+	return testHandler{
+		handler: t.handler.WithAttrs(attrs),
+		t:       t.t,
+	}
 }
 
 // WithGroup returns a new Handler with the given group appended to
 // the receiver's existing groups.
-// nolint: ireturn
+//
+//nolint:ireturn // Required by slog.Handler.
 func (t testHandler) WithGroup(name string) slog.Handler {
-	return t.handler.WithGroup(name)
+	return testHandler{
+		handler: t.handler.WithGroup(name),
+		t:       t.t,
+	}
 }
 
 func (w testingWriter) Write(p []byte) (int, error) {
 	n := len(p)
-	// Strip trailing newline because t.Log always adds one
-	// Use TrimRight for better performance with multiple trailing newlines
-	p = bytes.TrimRight(p, "\n")
+	// testing.T adds its own newline.
+	p = bytes.TrimSuffix(p, []byte{'\n'})
 
 	w.t.Logf("%s", p)
 	return n, nil

@@ -1,67 +1,26 @@
-// Package log provides fast, structured logging based on Go's slog package.
+// Package log provides nil-safe, leveled structured logging built on log/slog.
 //
-// This package wraps Go's standard slog library with additional convenience
-// functions and configuration options specifically designed for retro console
-// emulation and tooling development.
+// A Logger created with New writes human-readable records to standard output.
+// Typed fields avoid reflection, and the Func field constructors defer expensive
+// values until a handler accepts the record.
 //
-// # Features
+//	logger := log.New()
+//	logger.Info("Starting emulation",
+//		log.String("system", "NES"),
+//		log.Int("rom_size", 32768),
+//	)
 //
-//   - Structured logging with key-value pairs
-//   - Multiple output formats (text, JSON)
-//   - Configurable log levels
-//   - High performance with minimal allocations
-//   - Console-friendly formatting
-//   - Testing utilities for log verification
+// Use NewWithConfig to change the level, destination, timestamp format, source
+// reporting, or handler.
 //
-// # Basic Usage
+//	cfg := log.DefaultConfig()
+//	cfg.Level = log.DebugLevel
+//	cfg.Output = os.Stderr
+//	logger := log.NewWithConfig(cfg)
 //
-//	import "github.com/retroenv/retrogolib/log"
-//
-//	func main() {
-//		logger := log.New(log.Config{
-//			Level:  log.LevelInfo,
-//			Format: log.FormatText,
-//		})
-//
-//		logger.Info("Starting emulation",
-//			log.String("system", "NES"),
-//			log.Int("rom_size", 32768),
-//		)
-//
-//		logger.Error("Failed to load ROM",
-//			log.String("filename", "game.nes"),
-//			log.String("error", err.Error()),
-//		)
-//	}
-//
-// # Log Levels
-//
-//   - Debug: Detailed diagnostic information
-//   - Info: General operational messages
-//   - Warn: Warning conditions that don't halt operation
-//   - Error: Error conditions that may affect functionality
-//
-// # Output Formats
-//
-//   - Text: Human-readable console output
-//   - JSON: Structured JSON for log aggregation systems
-//
-// # Performance
-//
-// The logging system is designed for high performance:
-//   - Zero allocation for disabled log levels
-//   - Efficient field handling
-//   - Minimal overhead in hot paths like CPU emulation loops
-//
-// # Testing Support
-//
-// The package includes utilities for testing log output:
-//   - Capture log messages in tests
-//   - Verify specific log entries were written
-//   - Mock logging for isolated unit tests
-//
-// # Thread Safety
-//
-// All logging operations are thread-safe and can be used concurrently
-// from multiple goroutines without external synchronization.
+// Logger methods are safe for concurrent use. Methods on a nil *Logger are
+// no-ops, except Fatal and FatalContext, which still terminate the process.
+// Context-taking methods treat a nil context as context.Background.
+// NewTestLogger routes records through testing.TB and fails the test immediately
+// when an error-level record is emitted.
 package log

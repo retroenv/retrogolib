@@ -153,7 +153,7 @@ func TestStringer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			field := Stringer(tt.key, tt.value)
 			assert.Equal(t, tt.key, field.Key)
-			assert.Equal(t, tt.expected, field.Value.String())
+			assert.Equal(t, tt.expected, field.Value.Resolve().String())
 		})
 	}
 }
@@ -174,12 +174,12 @@ func TestStringFunc(t *testing.T) {
 		assert.Equal(t, 0, callCount)
 
 		// Force evaluation by accessing the value
-		value := field.Value.Any().(stringFunc).LogValue()
+		value := field.Value.Resolve()
 		assert.Equal(t, "computed", value.String())
 		assert.Equal(t, 1, callCount)
 
 		// Second access should call function again
-		value2 := field.Value.Any().(stringFunc).LogValue()
+		value2 := field.Value.Resolve()
 		assert.Equal(t, "computed", value2.String())
 		assert.Equal(t, 2, callCount)
 	})
@@ -192,10 +192,91 @@ func TestStringFunc(t *testing.T) {
 		assert.Equal(t, "expensive", field.Key)
 
 		// Verify the function produces expected result
-		value := field.Value.Any().(stringFunc).LogValue()
+		value := field.Value.Resolve()
 		assert.Len(t, value.String(), 1000)
 		assert.True(t, strings.HasPrefix(value.String(), "xxx"))
 	})
+}
+
+func TestInt64FuncLazy(t *testing.T) {
+	calls := 0
+	field := Int64Func("lazy", func() int64 {
+		calls++
+		return 99
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.Equal(t, int64(99), value.Int64())
+	assert.Equal(t, 1, calls)
+}
+
+func TestFloat64FuncLazy(t *testing.T) {
+	calls := 0
+	field := Float64Func("lazy", func() float64 {
+		calls++
+		return 1.5
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.Equal(t, 1.5, value.Float64())
+	assert.Equal(t, 1, calls)
+}
+
+func TestBoolFuncLazy(t *testing.T) {
+	calls := 0
+	field := BoolFunc("lazy", func() bool {
+		calls++
+		return true
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.True(t, value.Bool())
+	assert.Equal(t, 1, calls)
+}
+
+func TestDurationFuncLazy(t *testing.T) {
+	calls := 0
+	field := DurationFunc("lazy", func() time.Duration {
+		calls++
+		return 3 * time.Second
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.Equal(t, int64(3*time.Second), value.Duration().Nanoseconds())
+	assert.Equal(t, 1, calls)
+}
+
+func TestStringerFuncLazy(t *testing.T) {
+	calls := 0
+	field := StringerFunc("lazy", func() fmt.Stringer {
+		calls++
+		return testStringer{value: "computed"}
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.Equal(t, "computed", value.String())
+	assert.Equal(t, 1, calls)
+}
+
+func TestStringerFuncLazyNilResult(t *testing.T) {
+	calls := 0
+	field := StringerFunc("lazy", func() fmt.Stringer {
+		calls++
+		return nil
+	})
+	assert.Equal(t, 0, calls)
+	value := field.Value.Resolve()
+	assert.Equal(t, "<nil>", value.String())
+	assert.Equal(t, 1, calls)
+}
+
+func TestStringerFuncLazyTypedNilResult(t *testing.T) {
+	var value *testStringer
+	field := StringerFunc("lazy", func() fmt.Stringer {
+		return value
+	})
+
+	assert.Equal(t, "<nil>", field.Value.Resolve().String())
 }
 
 // TestIntFunc tests the IntFunc field function and lazy evaluation.
@@ -214,7 +295,7 @@ func TestIntFunc(t *testing.T) {
 		assert.Equal(t, 0, callCount)
 
 		// Force evaluation by accessing the value
-		value := field.Value.Any().(intFunc).LogValue()
+		value := field.Value.Resolve()
 		assert.Equal(t, int64(42), value.Int64())
 		assert.Equal(t, 1, callCount)
 	})
@@ -231,7 +312,7 @@ func TestIntFunc(t *testing.T) {
 		assert.Equal(t, "expensive", field.Key)
 
 		// Verify the function produces expected result
-		value := field.Value.Any().(intFunc).LogValue()
+		value := field.Value.Resolve()
 		assert.Equal(t, int64(1000), value.Int64()) // sum of 1000 ones
 	})
 }
@@ -799,7 +880,7 @@ func TestHex_UnsignedIntegers(t *testing.T) {
 			assert.Equal(t, tt.key, field.Key)
 
 			// Force evaluation by accessing the LogValue
-			hexValue := field.Value.Any().(hex).LogValue()
+			hexValue := field.Value.Resolve()
 			actual := hexValue.String()
 			assert.Equal(t, tt.expected, actual)
 		})
@@ -852,7 +933,7 @@ func TestHex_SignedIntegers(t *testing.T) {
 			assert.Equal(t, tt.key, field.Key)
 
 			// Force evaluation by accessing the LogValue
-			hexValue := field.Value.Any().(hex).LogValue()
+			hexValue := field.Value.Resolve()
 			actual := hexValue.String()
 			assert.Equal(t, tt.expected, actual)
 		})
@@ -865,7 +946,7 @@ func TestHex_UnsupportedTypes(t *testing.T) {
 	assert.Equal(t, "float", field.Key)
 
 	// Force evaluation by accessing the LogValue
-	hexValue := field.Value.Any().(hex).LogValue()
+	hexValue := field.Value.Resolve()
 	actual := hexValue.String()
 
 	// For unsupported types, just check it starts with "0x"
@@ -878,13 +959,12 @@ func TestHex_LazyEvaluation(t *testing.T) {
 	field := Hex("test", uint8(0xFF))
 	assert.Equal(t, "test", field.Key)
 
-	// The value should be stored as a hex struct, not the formatted string
-	hexStruct, ok := field.Value.Any().(hex)
-	assert.True(t, ok, "Expected hex struct")
-	assert.Equal(t, uint8(0xFF), hexStruct.val)
+	// The formatter remains unresolved until the handler processes the Field.
+	_, ok := field.Value.Any().(lazyValue)
+	assert.True(t, ok, "expected lazy value")
 
 	// Only when we call LogValue should it format
-	logValue := hexStruct.LogValue()
+	logValue := field.Value.Resolve()
 	assert.Equal(t, "0xFF", logValue.String())
 }
 
@@ -996,7 +1076,7 @@ func TestType_BasicTypes(t *testing.T) {
 			assert.Equal(t, tt.key, field.Key)
 
 			// Force evaluation by accessing the LogValue
-			typeValue := field.Value.Any().(typeOf).LogValue()
+			typeValue := field.Value.Resolve()
 			actual := typeValue.String()
 			assert.Equal(t, tt.expected, actual)
 		})
@@ -1041,7 +1121,7 @@ func TestType_ComplexTypes(t *testing.T) {
 			assert.Equal(t, tt.key, field.Key)
 
 			// Force evaluation by accessing the LogValue
-			typeValue := field.Value.Any().(typeOf).LogValue()
+			typeValue := field.Value.Resolve()
 			actual := typeValue.String()
 			assert.Equal(t, tt.expected, actual)
 		})
@@ -1059,13 +1139,12 @@ func TestType_LazyEvaluation(t *testing.T) {
 	field := Type("test", ts)
 	assert.Equal(t, "test", field.Key)
 
-	// The value should be stored as a typeOf struct, not the formatted string
-	typeStruct, ok := field.Value.Any().(typeOf)
-	assert.True(t, ok, "Expected typeOf struct")
-	assert.Equal(t, ts, typeStruct.val)
+	// The type remains unresolved until the handler processes the Field.
+	_, ok := field.Value.Any().(lazyValue)
+	assert.True(t, ok, "expected lazy value")
 
 	// Only when we call LogValue should it format the type
-	logValue := typeStruct.LogValue()
+	logValue := field.Value.Resolve()
 	assert.Equal(t, "log.testStruct", logValue.String())
 }
 
@@ -1074,6 +1153,6 @@ type testStringer struct {
 	value string
 }
 
-func (ts testStringer) String() string {
-	return ts.value
+func (s testStringer) String() string {
+	return s.value
 }
