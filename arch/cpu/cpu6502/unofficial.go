@@ -1,7 +1,7 @@
 // This file contains support for unofficial CPU instructions.
 // Reference https://www.nesdev.org/wiki/Programming_with_unofficial_opcodes
 
-package m6502
+package cpu6502
 
 // DcpInst ...
 var DcpInst = &Instruction{

@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // Flags contains the status flags of the CPU.
 // Bit No.   7   6   5   4   3   2   1   0

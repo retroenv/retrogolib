@@ -1,6 +1,6 @@
 // This file contains 65C02 specific instruction handlers.
 
-package m6502
+package cpu6502
 
 import "fmt"
 

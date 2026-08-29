@@ -61,7 +61,7 @@ func LoadConfigBytes(data []byte) (*Config, error) {
 	}
 
 	config := &Config{
-		sections: make(map[string]section),
+		sections: make(map[string]Section),
 	}
 
 	parser := &parser{

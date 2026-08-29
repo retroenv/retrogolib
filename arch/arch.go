@@ -20,37 +20,37 @@ const (
 	// - Modern homebrew systems and emulators
 	CHIP8 Architecture = "chip8"
 
-	// M6502 represents the MOS Technology 6502 processor used in:
+	// CPU6502 represents the MOS Technology 6502 processor used in:
 	// - Apple II series
 	// - Atari 2600/5200/8-bit computers
 	// - Commodore 64/128/VIC-20
 	// - Nintendo Entertainment System (NES/Famicom)
-	M6502 Architecture = "6502"
+	CPU6502 Architecture = "6502"
 
-	// M65C02 represents the WDC 65C02 processor used in:
+	// CPU65C02 represents the WDC 65C02 processor used in:
 	// - Apple IIe/IIc
 	// - Atari Lynx
 	// - TurboGrafx-16/PC Engine
-	M65C02 Architecture = "65c02"
+	CPU65C02 Architecture = "65c02"
 
-	// M65816 represents the WDC 65C816 (65816) processor used in:
+	// CPU65816 represents the WDC 65C816 (65816) processor used in:
 	// - Apple IIGS
 	// - Super Nintendo Entertainment System (SNES/Super Famicom)
-	M65816 Architecture = "65816"
+	CPU65816 Architecture = "65816"
 
-	// M6809 represents the Motorola 6809 processor used in:
+	// CPU6809 represents the Motorola 6809 processor used in:
 	// - Dragon 32/64
 	// - TRS-80 Color Computer (CoCo)
 	// - Vectrex
 	// - Williams arcade hardware (Defender, Robotron, Joust)
-	M6809 Architecture = "6809"
+	CPU6809 Architecture = "6809"
 
-	// M68000 represents the Motorola 68000 processor used in:
+	// CPU68000 represents the Motorola 68000 processor used in:
 	// - Apple Macintosh (original)
 	// - Atari ST
 	// - Commodore Amiga
 	// - Sega Genesis/Mega Drive
-	M68000 Architecture = "m68000"
+	CPU68000 Architecture = "68000"
 
 	// SM83 represents the Sharp SM83 (LR35902) processor used in:
 	// - Nintendo Game Boy
@@ -76,11 +76,11 @@ const (
 // Adding a new architecture requires updating only this slice.
 var allSupportedArchitectures = []Architecture{
 	CHIP8,
-	M6502,
-	M65C02,
-	M65816,
-	M6809,
-	M68000,
+	CPU6502,
+	CPU65C02,
+	CPU65816,
+	CPU6809,
+	CPU68000,
 	SM83,
 	X86,
 	Z80,

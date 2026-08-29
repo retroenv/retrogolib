@@ -4,7 +4,7 @@
 // include the Rockwell extensions (RMB/SMB/BBR/BBS). Those opcodes are treated
 // as NOPs of the same byte length: 2-byte for RMBx/SMBx, 3-byte for BBRx/BBSx.
 
-package m6502
+package cpu6502
 
 // OpcodesSynertek65C02 is the opcode table for the Synertek 65C02 variant.
 // Identical to Opcodes65C02 except that the 32 Rockwell bit-manipulation

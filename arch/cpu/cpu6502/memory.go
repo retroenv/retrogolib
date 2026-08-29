@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 import (
 	"errors"

@@ -421,7 +421,7 @@ func TestDefaultValueTypes(t *testing.T) {
 		{"invalid hex default", "test.field,default=0xGG", true},
 	}
 
-	config := &Config{sections: make(map[string]section)}
+	config := &Config{sections: make(map[string]Section)}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -459,13 +459,13 @@ func TestTagInfoParsing_Basic(t *testing.T) {
 		name     string
 		tag      string
 		parent   string
-		expected tagInfo
+		expected TagInfo
 	}{
 		{
 			name:   "simple key with default",
 			tag:    "key,default=value",
 			parent: "section",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "section",
 				Key:          "key",
 				DefaultValue: "value",
@@ -476,7 +476,7 @@ func TestTagInfoParsing_Basic(t *testing.T) {
 			name:   "section.key with default",
 			tag:    "test.field,default=123",
 			parent: "",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "test",
 				Key:          "field",
 				DefaultValue: "123",
@@ -487,7 +487,7 @@ func TestTagInfoParsing_Basic(t *testing.T) {
 			name:   "no default value",
 			tag:    "test.field",
 			parent: "",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "test",
 				Key:          "field",
 				DefaultValue: "",
@@ -511,13 +511,13 @@ func TestTagInfoParsing_Advanced(t *testing.T) {
 		name     string
 		tag      string
 		parent   string
-		expected tagInfo
+		expected TagInfo
 	}{
 		{
 			name:   "root level with default",
 			tag:    "global_key,default=global_value",
 			parent: "",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "", // Root level uses empty section
 				Key:          "global_key",
 				DefaultValue: "global_value",
@@ -528,7 +528,7 @@ func TestTagInfoParsing_Advanced(t *testing.T) {
 			name:   "whitespace handling",
 			tag:    " section.key , default=spaced value ",
 			parent: "",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "section",
 				Key:          "key",
 				DefaultValue: "spaced value ",
@@ -552,13 +552,13 @@ func TestTagInfoParsing_EdgeCases(t *testing.T) {
 		name     string
 		tag      string
 		parent   string
-		expected tagInfo
+		expected TagInfo
 	}{
 		{
 			name:   "empty default value",
 			tag:    "key,default=",
 			parent: "section",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "section",
 				Key:          "key",
 				DefaultValue: "",
@@ -678,12 +678,12 @@ func TestTagParsingRequired(t *testing.T) {
 	tests := []struct {
 		name     string
 		tag      string
-		expected tagInfo
+		expected TagInfo
 	}{
 		{
 			name: "required flag only",
 			tag:  "db.url,required",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "db",
 				Key:          "url",
 				DefaultValue: "",
@@ -694,7 +694,7 @@ func TestTagParsingRequired(t *testing.T) {
 		{
 			name: "required with default",
 			tag:  "server.port,required,default=8080",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "server",
 				Key:          "port",
 				DefaultValue: "8080",
@@ -705,7 +705,7 @@ func TestTagParsingRequired(t *testing.T) {
 		{
 			name: "default with required (different order)",
 			tag:  "api.key,default=dev-key,required",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "api",
 				Key:          "key",
 				DefaultValue: "dev-key",
@@ -716,7 +716,7 @@ func TestTagParsingRequired(t *testing.T) {
 		{
 			name: "no required flag",
 			tag:  "optional.setting,default=value",
-			expected: tagInfo{
+			expected: TagInfo{
 				Section:      "optional",
 				Key:          "setting",
 				DefaultValue: "value",
@@ -1281,7 +1281,7 @@ func TestAutomaticFieldMapping_Marshal(t *testing.T) {
 		Enabled: true,
 	}
 
-	config := &Config{sections: make(map[string]section)}
+	config := &Config{sections: make(map[string]Section)}
 	err := config.Marshal(&cfg)
 	assert.NoError(t, err)
 

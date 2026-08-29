@@ -59,25 +59,19 @@ type PositionalInfo struct {
 	Variadic bool // True for []string fields (consumes remaining args)
 }
 
-// requiredFlag tracks a required flag for validation.
-type requiredFlag struct {
-	name string
-	ptr  any
-}
-
-// positionalArg tracks a positional argument for assignment.
-type positionalArg struct {
-	info PositionalInfo
-	ptr  any
-}
-
 // FlagSet wraps flag.FlagSet with section-based usage generation.
 type FlagSet struct {
-	flags      *flag.FlagSet
-	sections   []Section
-	name       string
-	required   []requiredFlag
-	positional []positionalArg
+	flags    *flag.FlagSet
+	sections []Section
+	name     string
+	required []struct {
+		name string
+		ptr  any
+	}
+	positional []struct {
+		info PositionalInfo
+		ptr  any
+	}
 }
 
 // NewFlagSet creates a new FlagSet with the given program name.
@@ -122,7 +116,10 @@ func (fs *FlagSet) AddSection(name string, opts any) {
 		}
 
 		if info.Required {
-			fs.required = append(fs.required, requiredFlag{name: info.Name, ptr: fieldVal.Addr().Interface()})
+			fs.required = append(fs.required, struct {
+				name string
+				ptr  any
+			}{name: info.Name, ptr: fieldVal.Addr().Interface()})
 		}
 
 		section.Flags = append(section.Flags, *info)
@@ -169,7 +166,10 @@ func (fs *FlagSet) AddPositional(opts any) {
 			continue
 		}
 
-		fs.positional = append(fs.positional, positionalArg{info: info, ptr: ptr})
+		fs.positional = append(fs.positional, struct {
+			info PositionalInfo
+			ptr  any
+		}{info: info, ptr: ptr})
 	}
 }
 

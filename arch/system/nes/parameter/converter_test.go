@@ -3,7 +3,7 @@ package parameter
 import (
 	"testing"
 
-	"github.com/retroenv/retrogolib/arch/cpu/m6502"
+	"github.com/retroenv/retrogolib/arch/cpu/cpu6502"
 	"github.com/retroenv/retrogolib/assert"
 )
 
@@ -15,15 +15,15 @@ func TestParameterAbsolute(t *testing.T) {
 	var s string
 	var err error
 
-	s, err = conv.Absolute(m6502.Absolute(0x1000))
+	s, err = conv.Absolute(cpu6502.Absolute(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000", s)
 
-	s, err = conv.AbsoluteX(m6502.Absolute(0x1000))
+	s, err = conv.AbsoluteX(cpu6502.Absolute(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000,X", s)
 
-	s, err = conv.AbsoluteY(m6502.Absolute(0x1000))
+	s, err = conv.AbsoluteY(cpu6502.Absolute(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "a:$1000,Y", s)
 }
@@ -36,15 +36,15 @@ func TestParameterZeroPage(t *testing.T) {
 	var s string
 	var err error
 
-	s, err = conv.ZeroPage(m6502.ZeroPage(0x10))
+	s, err = conv.ZeroPage(cpu6502.ZeroPage(0x10))
 	assert.NoError(t, err)
 	assert.Equal(t, "<$10", s)
 
-	s, err = conv.ZeroPageX(m6502.ZeroPage(0x10))
+	s, err = conv.ZeroPageX(cpu6502.ZeroPage(0x10))
 	assert.NoError(t, err)
 	assert.Equal(t, "<$10,X", s)
 
-	s, err = conv.ZeroPageY(m6502.ZeroPage(0x10))
+	s, err = conv.ZeroPageY(cpu6502.ZeroPage(0x10))
 	assert.NoError(t, err)
 	assert.Equal(t, "<$10,Y", s)
 }
@@ -58,15 +58,15 @@ func TestParameterIndirect(t *testing.T) {
 	var s string
 	var err error
 
-	s, err = conv.Indirect(m6502.Indirect(0x1000))
+	s, err = conv.Indirect(cpu6502.Indirect(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "[$1000]", s)
 
-	s, err = conv.IndirectX(m6502.Indirect(0x1000))
+	s, err = conv.IndirectX(cpu6502.Indirect(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "[$1000,X]", s)
 
-	s, err = conv.IndirectY(m6502.Indirect(0x1000))
+	s, err = conv.IndirectY(cpu6502.Indirect(0x1000))
 	assert.NoError(t, err)
 	assert.Equal(t, "[$1000],Y", s)
 }
@@ -163,7 +163,7 @@ func TestConverterConfiguration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "ZP:$80", s)
 
-	s, err = conv1.Indirect(m6502.Indirect(0x3000))
+	s, err = conv1.Indirect(cpu6502.Indirect(0x3000))
 	assert.NoError(t, err)
 	assert.Equal(t, "<$3000>", s)
 
@@ -181,27 +181,27 @@ func TestParameterIntTypes(t *testing.T) {
 	conv := New(Config{})
 
 	// Test different addressing mode types
-	s, err := conv.AbsoluteX(m6502.AbsoluteX(0x5000))
+	s, err := conv.AbsoluteX(cpu6502.AbsoluteX(0x5000))
 	assert.NoError(t, err)
 	assert.Equal(t, "$5000,X", s)
 
-	s, err = conv.AbsoluteY(m6502.AbsoluteY(0x6000))
+	s, err = conv.AbsoluteY(cpu6502.AbsoluteY(0x6000))
 	assert.NoError(t, err)
 	assert.Equal(t, "$6000,Y", s)
 
-	s, err = conv.ZeroPageX(m6502.ZeroPageX(0x70))
+	s, err = conv.ZeroPageX(cpu6502.ZeroPageX(0x70))
 	assert.NoError(t, err)
 	assert.Equal(t, "$70,X", s)
 
-	s, err = conv.ZeroPageY(m6502.ZeroPageY(0x80))
+	s, err = conv.ZeroPageY(cpu6502.ZeroPageY(0x80))
 	assert.NoError(t, err)
 	assert.Equal(t, "$80,Y", s)
 
-	s, err = conv.IndirectX(m6502.IndirectX(0x7000))
+	s, err = conv.IndirectX(cpu6502.IndirectX(0x7000))
 	assert.NoError(t, err)
 	assert.Equal(t, "$7000,X", s)
 
-	s, err = conv.IndirectY(m6502.IndirectY(0x8000))
+	s, err = conv.IndirectY(cpu6502.IndirectY(0x8000))
 	assert.NoError(t, err)
 	assert.Equal(t, "$8000,Y", s)
 }

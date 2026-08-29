@@ -1,6 +1,6 @@
 // This file contains the 65C02 opcode table.
 
-package m6502
+package cpu6502
 
 // Nop65C02Inst is a NOP instruction used in the 65C02 opcode table for slots that
 // were undocumented instructions on the NMOS 6502.

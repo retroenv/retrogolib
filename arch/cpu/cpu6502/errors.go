@@ -1,8 +1,8 @@
-package m6502
+package cpu6502
 
 import "errors"
 
-// Common errors for M6502 emulation
+// Common 6502 emulation errors.
 var (
 	ErrInvalidParameterType      = errors.New("invalid parameter type")
 	ErrInvalidRegisterType       = errors.New("invalid register type")

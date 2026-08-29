@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // Instruction defines a 6502 CPU instruction with its opcodes and execution logic.
 // Instructions support multiple addressing modes through the Addressing map that

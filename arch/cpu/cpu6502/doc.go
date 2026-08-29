@@ -1,4 +1,4 @@
-// Package m6502 provides a complete MOS Technology 6502 CPU emulation.
+// Package cpu6502 provides a complete MOS Technology 6502 CPU emulation.
 //
 // The 6502 is an 8-bit microprocessor that was widely used in home computers,
 // video game consoles, and other systems in the 1970s and 1980s. This package
@@ -12,15 +12,15 @@
 //
 // # Basic Usage
 //
-//	memory := m6502.NewMemory()
-//	cpu := m6502.New(memory)
+//	memory := cpu6502.NewMemory()
+//	cpu := cpu6502.New(memory)
 //
 //	// Load program
 //	memory.Write(0x8000, 0xA9) // LDA #$42
 //	memory.Write(0x8001, 0x42)
 //
 //	// Set reset vector
-//	memory.WriteWord(m6502.ResetAddress, 0x8000)
+//	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
 //
 //	// Execute instructions
 //	for {
@@ -69,4 +69,4 @@
 // This implementation includes cycle-accurate timing and historically accurate
 // behavior, including the famous JMP ($xxFF) page boundary bug for maximum
 // compatibility with original 6502 software.
-package m6502
+package cpu6502

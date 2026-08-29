@@ -1,5 +1,5 @@
-GOLANGCI_VERSION = v2.12.1
-RETROGOLINT_VERSION = v1.0.2
+GOLANGCI_VERSION = v2.13.2
+RETROGOLINT_VERSION = v1.0.3
 
 help: ## show help, shown by default if no target is specified
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -15,7 +15,7 @@ test: ## run tests
 	go test -short -timeout 10s -race ./...
 
 test-integration: ## run long-running integration tests (SingleStepTests, Dormann, ZEXDOC, ZEXALL)
-	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/m6502/
+	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/cpu6502/
 	go test -v -run 'TestSingleStep|TestZexdoc|TestZexall' -timeout 0 -race ./arch/cpu/z80/
 
 test-coverage: ## run unit tests and create test coverage

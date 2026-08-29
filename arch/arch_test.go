@@ -14,9 +14,14 @@ func TestArchitecture_String(t *testing.T) {
 		want string
 	}{
 		{
-			name: "M6502",
-			arch: M6502,
+			name: "CPU6502",
+			arch: CPU6502,
 			want: "6502",
+		},
+		{
+			name: "CPU68000",
+			arch: CPU68000,
+			want: "68000",
 		},
 		{
 			name: "Z80",
@@ -50,8 +55,8 @@ func TestArchitecture_IsValid(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "M6502 is valid",
-			arch: M6502,
+			name: "CPU6502 is valid",
+			arch: CPU6502,
 			want: true,
 		},
 		{
@@ -101,11 +106,13 @@ func TestFromString(t *testing.T) {
 		want   Architecture
 		wantOk bool
 	}{
-		{"valid 6502", "6502", M6502, true},
+		{"valid 6502", "6502", CPU6502, true},
+		{"valid 68000", "68000", CPU68000, true},
 		{"valid z80", "z80", Z80, true},
 		{"valid chip8", "chip8", CHIP8, true},
 		{"valid x86", "x86", X86, true},
 		{"invalid architecture", "invalid", "", false},
+		{"legacy m68000 identifier is invalid", "m68000", "", false},
 		{"empty string", "", "", false},
 		{"uppercase Z80 now valid (case-insensitive)", "Z80", Z80, true},
 		{"mixed case CHIP8 now valid (case-insensitive)", "CHIP8", CHIP8, true},
@@ -122,7 +129,7 @@ func TestFromString(t *testing.T) {
 
 func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
-	expected := []Architecture{CHIP8, M6502, M65C02, M65816, M6809, M68000, SM83, X86, Z80}
+	expected := []Architecture{CHIP8, CPU6502, CPU65C02, CPU65816, CPU6809, CPU68000, SM83, X86, Z80}
 
 	assert.Len(t, expected, len(got))
 
@@ -141,7 +148,11 @@ func TestSupportedArchitectures(t *testing.T) {
 
 func TestConstants(t *testing.T) {
 	// Verify the constant values are as expected
-	assert.Equal(t, "6502", string(M6502))
+	assert.Equal(t, "6502", string(CPU6502))
+	assert.Equal(t, "65c02", string(CPU65C02))
+	assert.Equal(t, "65816", string(CPU65816))
+	assert.Equal(t, "6809", string(CPU6809))
+	assert.Equal(t, "68000", string(CPU68000))
 	assert.Equal(t, "chip8", string(CHIP8))
 	assert.Equal(t, "x86", string(X86))
 	assert.Equal(t, "z80", string(Z80))

@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // CPUVariant represents a CPU variant within the 6502 family.
 type CPUVariant int

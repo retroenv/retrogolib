@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // Interrupts contains the CPU interrupt info.
 type Interrupts struct {

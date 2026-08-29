@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // OpcodeID is a compact numeric identifier for a 6502 instruction mnemonic.
 // Using OpcodeID instead of string comparisons eliminates hot-path string hashing overhead.

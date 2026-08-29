@@ -1,4 +1,4 @@
-package m6502
+package cpu6502
 
 // AddressingMode specifies how a 6502 instruction accesses its operands.
 // Multiple modes can be combined using bitwise OR for instructions that support variants.

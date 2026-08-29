@@ -1,10 +1,10 @@
-// Package m6502 provides Klaus Dormann functional tests for the 6502/65C02 CPU emulator.
+// Package cpu6502 provides Klaus Dormann functional tests for the 6502/65C02 CPU emulator.
 //
 // To download test data and run:
 //
-//	make -C testdata m6502
+//	make -C testdata cpu6502
 //	make test-integration
-package m6502
+package cpu6502
 
 import (
 	"fmt"
@@ -82,7 +82,7 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	path := filepath.Join(dataDir, tc.binary)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		t.Skipf("test binary not found at %s (run 'make -C testdata m6502' to download): %v", path, err)
+		t.Skipf("test binary not found at %s (run 'make -C testdata cpu6502' to download): %v", path, err)
 	}
 
 	assert.LessOrEqual(t, len(data), 0x10000)
@@ -137,16 +137,16 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 func getDormannDataDir(t *testing.T) string {
 	t.Helper()
 
-	if dir := os.Getenv("M6502_DORMANN_TESTDATA"); dir != "" {
+	if dir := os.Getenv("CPU6502_DORMANN_TESTDATA"); dir != "" {
 		return dir
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
 	assert.True(t, ok)
 
-	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "dormann")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "cpu6502", "dormann")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		t.Skipf("Klaus Dormann test data not found at %s (run 'make -C testdata m6502' to download)", dir)
+		t.Skipf("Klaus Dormann test data not found at %s (run 'make -C testdata cpu6502' to download)", dir)
 	}
 
 	return dir

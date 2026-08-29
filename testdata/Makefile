@@ -4,89 +4,89 @@
 # All cloned repositories are excluded from git via .gitignore.
 #
 # Usage:
-#   make all        - download/update all test data
-#   make m6502      - 65x02 SingleStepTests + Klaus Dormann functional tests
-#   make m65816     - 65816 SingleStepTests (with open PR fixes applied)
-#   make m68000     - 680x0 SingleStepTests
-#   make sm83       - SM83 (Game Boy) SingleStepTests
-#   make z80        - Z80 SingleStepTests + ZEXALL exerciser
-#   make clean      - remove all downloaded test data
+#   make all       - download/update all test data
+#   make cpu6502   - 65x02 SingleStepTests + Klaus Dormann functional tests
+#   make cpu65816  - 65816 SingleStepTests (with open PR fixes applied)
+#   make cpu68000  - 680x0 SingleStepTests
+#   make sm83      - SM83 (Game Boy) SingleStepTests
+#   make z80       - Z80 SingleStepTests + ZEXALL exerciser
+#   make clean     - remove all downloaded test data
 
 REPO_ROOT := $(shell git -C $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) rev-parse --show-toplevel)
 
-TESTDATA_ROOT    := $(REPO_ROOT)/testdata
+TESTDATA_ROOT := $(REPO_ROOT)/testdata
 
-M6502_TESTDATA   := $(TESTDATA_ROOT)/m6502
-M65816_TESTDATA  := $(TESTDATA_ROOT)/m65816
-M68000_TESTDATA  := $(TESTDATA_ROOT)/m68000
-SM83_TESTDATA    := $(TESTDATA_ROOT)/sm83
-Z80_TESTDATA     := $(TESTDATA_ROOT)/z80
-ZEXALL_TESTDATA  := $(TESTDATA_ROOT)/zexall
+CPU6502_TESTDATA  := $(TESTDATA_ROOT)/cpu6502
+CPU65816_TESTDATA := $(TESTDATA_ROOT)/cpu65816
+CPU68000_TESTDATA := $(TESTDATA_ROOT)/cpu68000
+SM83_TESTDATA     := $(TESTDATA_ROOT)/sm83
+Z80_TESTDATA      := $(TESTDATA_ROOT)/z80
+ZEXALL_TESTDATA   := $(TESTDATA_ROOT)/zexall
 
 DIRTYHAIRY_65816 := https://github.com/DirtyHairy/65816.git
 DORMANN_REPO     := https://github.com/Klaus2m5/6502_65C02_functional_tests
 SINGLESTEP_BASE  := https://github.com/SingleStepTests
 ZEXALL_REPO      := https://github.com/agn453/ZEXALL
 
-.PHONY: all m6502 m6502-dormann m6502-singlestep m65816 m68000 sm83 z80 z80-singlestep zexall clean
+.PHONY: all cpu6502 cpu6502-dormann cpu6502-singlestep cpu65816 cpu68000 sm83 z80 z80-singlestep zexall clean
 
-all: m6502 m65816 m68000 sm83 z80
+all: cpu6502 cpu65816 cpu68000 sm83 z80
 
-# m6502/65C02: SingleStepTests/65x02 + Klaus Dormann functional tests
-m6502: m6502-singlestep m6502-dormann
+# 6502/65C02: SingleStepTests/65x02 + Klaus Dormann functional tests
+cpu6502: cpu6502-singlestep cpu6502-dormann
 
-m6502-singlestep:
-	@echo "==> m6502: SingleStepTests/65x02"
-	@if [ -d "$(M6502_TESTDATA)/65x02/.git" ]; then \
+cpu6502-singlestep:
+	@echo "==> CPU 6502: SingleStepTests/65x02"
+	@if [ -d "$(CPU6502_TESTDATA)/65x02/.git" ]; then \
 		echo "  Updating..."; \
-		git -C "$(M6502_TESTDATA)/65x02" pull --ff-only; \
+		git -C "$(CPU6502_TESTDATA)/65x02" pull --ff-only; \
 	else \
 		echo "  Cloning..."; \
-		mkdir -p "$(M6502_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/65x02.git "$(M6502_TESTDATA)/65x02"; \
+		mkdir -p "$(CPU6502_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/65x02.git "$(CPU6502_TESTDATA)/65x02"; \
 	fi
 
-m6502-dormann:
-	@echo "==> m6502: Klaus Dormann functional tests"
-	@mkdir -p "$(M6502_TESTDATA)/dormann"
-	@if [ -d "$(M6502_TESTDATA)/dormann/.git" ]; then \
+cpu6502-dormann:
+	@echo "==> CPU 6502: Klaus Dormann functional tests"
+	@mkdir -p "$(CPU6502_TESTDATA)/dormann"
+	@if [ -d "$(CPU6502_TESTDATA)/dormann/.git" ]; then \
 		echo "  Updating..."; \
-		git -C "$(M6502_TESTDATA)/dormann" pull --ff-only; \
+		git -C "$(CPU6502_TESTDATA)/dormann" pull --ff-only; \
 	else \
 		echo "  Cloning (sparse, bin_files only)..."; \
-		git clone --depth=1 --filter=blob:none --sparse $(DORMANN_REPO).git "$(M6502_TESTDATA)/dormann" && \
-		git -C "$(M6502_TESTDATA)/dormann" sparse-checkout set bin_files && \
-		git -C "$(M6502_TESTDATA)/dormann" checkout; \
+		git clone --depth=1 --filter=blob:none --sparse $(DORMANN_REPO).git "$(CPU6502_TESTDATA)/dormann" && \
+		git -C "$(CPU6502_TESTDATA)/dormann" sparse-checkout set bin_files && \
+		git -C "$(CPU6502_TESTDATA)/dormann" checkout; \
 	fi
 
-# m65816: SingleStepTests/65816 with open PR fix applied
+# 65816: SingleStepTests/65816 with open PR fix applied
 # PR #5 (DirtyHairy/fix_sbc_direct_x): fix SBC (dp,X) page wrap in emulation mode (v1/e1.e.json)
 # PR #7 (DirtyHairy/fix_sbc_indirect_absolute_x): NOT applied — incorrect fix (final.ram vs cycles inconsistency)
-m65816:
-	@echo "==> m65816: SingleStepTests/65816"
-	@if [ -d "$(M65816_TESTDATA)/65816/.git" ]; then \
+cpu65816:
+	@echo "==> CPU 65816: SingleStepTests/65816"
+	@if [ -d "$(CPU65816_TESTDATA)/65816/.git" ]; then \
 		echo "  Updating..."; \
-		git -C "$(M65816_TESTDATA)/65816" pull --ff-only; \
+		git -C "$(CPU65816_TESTDATA)/65816" pull --ff-only; \
 	else \
 		echo "  Cloning..."; \
-		mkdir -p "$(M65816_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/65816.git "$(M65816_TESTDATA)/65816"; \
+		mkdir -p "$(CPU65816_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/65816.git "$(CPU65816_TESTDATA)/65816"; \
 	fi
 	@echo "  Applying PR #5 fix (SBC dp,X page wrap in emulation mode)..."
-	@if ! git -C "$(M65816_TESTDATA)/65816" remote | grep -q dirtyhairy; then \
-		git -C "$(M65816_TESTDATA)/65816" remote add dirtyhairy $(DIRTYHAIRY_65816); \
+	@if ! git -C "$(CPU65816_TESTDATA)/65816" remote | grep -q dirtyhairy; then \
+		git -C "$(CPU65816_TESTDATA)/65816" remote add dirtyhairy $(DIRTYHAIRY_65816); \
 	fi
-	@git -C "$(M65816_TESTDATA)/65816" fetch --depth=1 dirtyhairy fix_sbc_direct_x
-	@git -C "$(M65816_TESTDATA)/65816" checkout dirtyhairy/fix_sbc_direct_x -- v1/e1.e.json
+	@git -C "$(CPU65816_TESTDATA)/65816" fetch --depth=1 dirtyhairy fix_sbc_direct_x
+	@git -C "$(CPU65816_TESTDATA)/65816" checkout dirtyhairy/fix_sbc_direct_x -- v1/e1.e.json
 	@echo "  Done."
 
-# m68000: SingleStepTests/680x0
-m68000:
-	@echo "==> m68000: SingleStepTests/680x0"
-	@if [ -d "$(M68000_TESTDATA)/680x0/.git" ]; then \
+# 68000: SingleStepTests/680x0
+cpu68000:
+	@echo "==> CPU 68000: SingleStepTests/680x0"
+	@if [ -d "$(CPU68000_TESTDATA)/680x0/.git" ]; then \
 		echo "  Updating..."; \
-		git -C "$(M68000_TESTDATA)/680x0" pull --ff-only; \
+		git -C "$(CPU68000_TESTDATA)/680x0" pull --ff-only; \
 	else \
 		echo "  Cloning..."; \
-		mkdir -p "$(M68000_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/680x0.git "$(M68000_TESTDATA)/680x0"; \
+		mkdir -p "$(CPU68000_TESTDATA)" && git clone --depth=1 $(SINGLESTEP_BASE)/680x0.git "$(CPU68000_TESTDATA)/680x0"; \
 	fi
 
 # SM83: SingleStepTests/sm83
@@ -127,10 +127,10 @@ zexall:
 
 clean:
 	@echo "==> Removing all downloaded test data"
-	rm -rf "$(M6502_TESTDATA)/65x02"
-	rm -rf "$(M6502_TESTDATA)/dormann"
-	rm -rf "$(M65816_TESTDATA)/65816"
-	rm -rf "$(M68000_TESTDATA)/680x0"
+	rm -rf "$(CPU6502_TESTDATA)/65x02"
+	rm -rf "$(CPU6502_TESTDATA)/dormann"
+	rm -rf "$(CPU65816_TESTDATA)/65816"
+	rm -rf "$(CPU68000_TESTDATA)/680x0"
 	rm -rf "$(SM83_TESTDATA)"
 	rm -rf "$(Z80_TESTDATA)"
 	rm -rf "$(ZEXALL_TESTDATA)"

@@ -1,10 +1,10 @@
-// Package m6502 provides SingleStepTests/65x02 JSON-based single-step tests.
+// Package cpu6502 provides SingleStepTests/65x02 JSON-based single-step tests.
 //
 // To download test data and run:
 //
-//	make -C testdata m6502
+//	make -C testdata cpu6502
 //	make test-integration
-package m6502
+package cpu6502
 
 import (
 	"encoding/json"
@@ -68,7 +68,7 @@ type ss6502TestCase struct {
 	Cycles  [][]any     `json:"cycles"`
 }
 
-// getSingleStepDir returns the path to the m6502 SingleStepTests data directory,
+// getSingleStepDir returns the path to the 6502 SingleStepTests data directory,
 // skipping the test if it is not found.
 // ssSparseMemory implements BasicMemory using a sparse map for test isolation.
 type ssSparseMemory struct {
@@ -88,16 +88,16 @@ func (m *ssSparseMemory) Write(address uint16, value uint8) {
 func getSingleStepDir(t *testing.T) string {
 	t.Helper()
 
-	if dir := os.Getenv("M6502_TESTDATA"); dir != "" {
+	if dir := os.Getenv("CPU6502_TESTDATA"); dir != "" {
 		return dir
 	}
 
 	_, thisFile, _, ok := runtime.Caller(0)
 	assert.True(t, ok)
 
-	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "m6502", "65x02")
+	dir := filepath.Join(filepath.Dir(thisFile), "..", "..", "..", "testdata", "cpu6502", "65x02")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		t.Skipf("SingleStepTests m6502 data not found at %s (run 'make -C testdata m6502' to download)", dir)
+		t.Skipf("SingleStepTests 6502 data not found at %s (run 'make -C testdata cpu6502' to download)", dir)
 	}
 
 	return dir
@@ -114,7 +114,7 @@ func runSingleStepSubdir(t *testing.T, dir, variant string) {
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		t.Logf("skipping %s: cannot read directory: %v", variant, err)
+		t.Logf("Skipping %s: cannot read directory: %v", variant, err)
 		return
 	}
 
@@ -166,7 +166,7 @@ func runSingleStepFile(t *testing.T, path string, variant CPUVariant) {
 		if !runSingleStepCase(t, tc, variant) {
 			failures++
 			if failures >= ssMaxFailures {
-				t.Logf("stopping after %d failures", failures)
+				t.Logf("Stopping after %d failures", failures)
 				return
 			}
 		}

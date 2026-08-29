@@ -1,18 +1,46 @@
 package config
 
-// section represents a configuration section with key-value pairs.
-type section map[string]value
+// ValueType represents the type of configuration value.
+type ValueType int
 
-// comment represents a comment in the configuration file.
-type comment struct {
+const (
+	stringType ValueType = iota
+	intType
+	boolType
+	floatType
+	hexType
+)
+
+// ElementType represents the type of structural element.
+type ElementType int
+
+const (
+	commentElement ElementType = iota
+	sectionElement
+	keyValueElement
+	emptyLineElement
+)
+
+// Value represents a configuration value with type information.
+type Value struct {
+	Raw    string
+	parsed any
+	vtype  ValueType
+}
+
+// Section represents a configuration section with key-value pairs.
+type Section map[string]Value
+
+// Comment represents a comment in the configuration file.
+type Comment struct {
 	Line    int    // Line number where comment appears
 	Text    string // Comment text without # prefix
 	Section string // Section this comment belongs to (empty for global)
 }
 
-// structureElement represents elements in the original file structure.
-type structureElement struct {
-	Type    elementType // Comment, Section, KeyValue, EmptyLine
+// StructureElement represents an element in the original file structure.
+type StructureElement struct {
+	Type    ElementType // Comment, Section, KeyValue, EmptyLine
 	Line    int         // Original line number
 	Content string      // Original content
 	Section string      // Current section context
@@ -21,42 +49,14 @@ type structureElement struct {
 
 // Config represents a loaded configuration with sections and values.
 type Config struct {
-	sections  map[string]section
+	sections  map[string]Section
 	filename  string
-	comments  []comment          // Preserved comments from original file
-	structure []structureElement // Original file structure for write operations
+	comments  []Comment          // Preserved comments from original file
+	structure []StructureElement // Original file structure for write operations
 }
 
-// valueType represents the type of configuration value.
-type valueType int
-
-const (
-	stringType valueType = iota
-	intType
-	boolType
-	floatType
-	hexType
-)
-
-// elementType represents the type of structural element.
-type elementType int
-
-const (
-	commentElement elementType = iota
-	sectionElement
-	keyValueElement
-	emptyLineElement
-)
-
-// value represents a configuration value with type information.
-type value struct {
-	Raw    string
-	parsed any
-	vtype  valueType
-}
-
-// tagInfo contains parsed tag information including default values and required flag.
-type tagInfo struct {
+// TagInfo contains parsed tag information including default values and required flag.
+type TagInfo struct {
 	Section      string
 	Key          string
 	DefaultValue string
@@ -64,8 +64,8 @@ type tagInfo struct {
 	Required     bool
 }
 
-// String returns the string representation of valueType.
-func (vt valueType) String() string {
+// String returns the string representation of ValueType.
+func (vt ValueType) String() string {
 	switch vt {
 	case stringType:
 		return "string"

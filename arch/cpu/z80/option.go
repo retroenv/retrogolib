@@ -8,13 +8,11 @@ type IOHandler interface {
 	WritePort(port uint8, value uint8)
 }
 
-type preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
-
 // Options contains options for the CPU.
 type Options struct {
 	tracing bool
 
-	preExecutionHook preExecutionHook
+	preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 	ioHandler        IOHandler
 	systemType       arch.System
 
@@ -43,7 +41,7 @@ func WithTracing() func(*Options) {
 
 // WithPreExecutionHook sets a hook that is called before each instruction is executed.
 // It can be used to read a memory value before the instruction overwrites it.
-func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
+func WithPreExecutionHook(hook func(cpu *CPU, opcode uint8, params ...any)) func(*Options) {
 	return func(options *Options) {
 		options.preExecutionHook = hook
 	}

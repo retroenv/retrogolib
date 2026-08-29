@@ -1,6 +1,6 @@
 // This file contains 65C02 specific instruction definitions.
 
-package m6502
+package cpu6502
 
 // 65C02 instruction name constants (sorted alphabetically).
 const (
