@@ -2,7 +2,16 @@ package cpu6502
 
 import (
 	"errors"
+	"fmt"
 	"sync"
+)
+
+const (
+	initialCycles = 7
+	initialFlags  = 0b0010_0100 // I and U flags are set after reset.
+
+	// InitialStack is the stack pointer value after reset.
+	InitialStack = 0xFD
 )
 
 // State represents complete 6502 CPU state for save/load and debugging.
@@ -19,7 +28,9 @@ type State struct {
 	Interrupts Interrupts // Interrupt state
 }
 
-// CPU represents a thread-safe 6502 microprocessor with full instruction set emulation.
+// CPU represents a 6502 microprocessor with full instruction set emulation.
+// Instruction execution must be driven by one goroutine; interrupt requests may
+// be triggered concurrently.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -48,19 +59,17 @@ type CPU struct {
 	opts      Options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
-	branchTaken bool // set by branch() to distinguish taken vs not-taken
+	branchTaken bool // Set by branch to distinguish a self-loop from a fallthrough.
 
 	memory *Memory
 }
 
-const (
-	initialCycles = 7
-	initialFlags  = 0b0010_0100 // I and U flags are 1, the rest 0
-	InitialStack  = 0xFD
-)
-
-// New creates a new CPU.
+// New creates a new CPU. It panics with ErrNilMemory when memory is nil.
 func New(memory *Memory, options ...Option) *CPU {
+	if memory == nil {
+		panic(ErrNilMemory)
+	}
+
 	opts := NewOptions(options...)
 	c := &CPU{
 		SP:     InitialStack,
@@ -85,6 +94,8 @@ func (c *CPU) Cycles() uint64 {
 
 // StallCycles stalls the CPU for the given amount of cycles. This is used for DMA transfer in the PPU.
 func (c *CPU) StallCycles(cycles uint16) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.stallCycles = cycles
 }
 
@@ -93,22 +104,14 @@ func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	state := State{
+	return State{
 		A:      c.A,
 		X:      c.X,
 		Y:      c.Y,
 		PC:     c.PC,
 		SP:     c.SP,
 		Cycles: c.cycles,
-		Flags: Flags{
-			C: c.Flags.C,
-			Z: c.Flags.Z,
-			I: c.Flags.I,
-			D: c.Flags.D,
-			B: c.Flags.B,
-			V: c.Flags.V,
-			N: c.Flags.N,
-		},
+		Flags:  c.Flags,
 		Interrupts: Interrupts{
 			NMITriggered: c.triggerNmi,
 			NMIRunning:   c.nmiRunning,
@@ -116,7 +119,6 @@ func (c *CPU) State() State {
 			IrqRunning:   c.irqRunning,
 		},
 	}
-	return state
 }
 
 // Memory returns the CPU memory.
@@ -139,7 +141,7 @@ func (c *CPU) ValidateState() error {
 
 	// Validate memory is not nil
 	if c.memory == nil {
-		return errors.New("CPU memory is nil")
+		return ErrNilMemory
 	}
 
 	// Validate interrupt addresses are reasonable
@@ -173,6 +175,8 @@ func (c *CPU) Reset() {
 	// Reset cycles
 	c.cycles = initialCycles
 	c.stallCycles = 0
+	c.branchTaken = false
+	c.TraceStep = TraceStep{}
 
 	// Reload interrupt vectors
 	if c.memory != nil {
@@ -190,27 +194,28 @@ func (c *CPU) GetInstructionCount() uint64 {
 }
 
 // execute branch jump if the branching op result is true.
-func (c *CPU) branch(branchTo bool, param any) {
-	if !branchTo {
-		return
+func (c *CPU) branch(branchTo bool, params ...any) error {
+	if len(params) == 0 {
+		return ErrMissingParameter
 	}
 
-	addr, ok := param.(Absolute)
+	addr, ok := params[0].(Absolute)
 	if !ok {
-		// This should never happen in normal operation, but provides safety
-		return
+		return fmt.Errorf("%w: branch target type %T", ErrInvalidParameterType, params[0])
+	}
+	if !branchTo {
+		return nil
 	}
 
 	c.PC = uint16(addr)
 	c.branchTaken = true
 	c.cycles++
+	return nil
 }
 
 // pop pops a byte from the stack and update the stack pointer.
 func (c *CPU) pop() byte {
-	// Note: Stack underflow check - SP == 0xFF indicates potential stack underflow
-	// In real 6502 hardware this wraps around, so we maintain that behavior for accuracy
-	_ = c.SP == 0xFF // Explicit check for documentation purposes
+	// The 8-bit stack pointer wraps within page one, matching the hardware.
 	c.SP++
 	return c.memory.Read(uint16(StackBase + int(c.SP)))
 }
@@ -225,9 +230,6 @@ func (c *CPU) pop16() uint16 {
 // push a value to the stack and update the stack pointer.
 func (c *CPU) push(value byte) {
 	c.memory.Write(uint16(StackBase+int(c.SP)), value)
-	// Note: Stack overflow check - SP == 0x00 indicates potential stack overflow
-	// In real 6502 hardware this wraps around, so we maintain that behavior for accuracy
-	_ = c.SP == 0x00 // Explicit check for documentation purposes
 	c.SP--
 }
 
@@ -237,4 +239,17 @@ func (c *CPU) push16(value uint16) {
 	low := byte(value)
 	c.push(high)
 	c.push(low)
+}
+
+func (c *CPU) consumeStallCycle() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.stallCycles == 0 {
+		return false
+	}
+
+	c.stallCycles--
+	c.cycles++
+	return true
 }

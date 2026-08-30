@@ -84,3 +84,42 @@ func TestUnofficialInstructions(t *testing.T) {
 	assert.True(t, unofficialCount > 0, "Expected some unofficial instructions")
 	assert.True(t, unofficialCount < len(Opcodes)/2, "Too many unofficial instructions")
 }
+
+func TestInstructionRegistriesCoverOpcodeTables(t *testing.T) {
+	t.Parallel()
+
+	tables := map[string][256]Opcode{
+		"NMOS":     Opcodes,
+		"65C02":    Opcodes65C02,
+		"Synertek": OpcodesSynertek65C02,
+	}
+	for name, table := range tables {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			for opcode, info := range table {
+				assert.NotNil(t, info.Instruction, "opcode 0x%02x", opcode)
+				assert.NotNil(t, Instructions[info.Instruction.Name], "instruction %s", info.Instruction.Name)
+			}
+		})
+	}
+
+	for id := OpcodeID(1); id <= OpcodeIDMax; id++ {
+		assert.NotNil(t, InstructionsByID[id], "opcode ID %d (%s)", id, OpcodeIDToName[id])
+	}
+}
+
+func TestOpcodeMemoryCategories(t *testing.T) {
+	t.Parallel()
+
+	assert.False(t, (Opcode{}).ReadsMemory(MemoryReadInstructions))
+	assert.False(t, (Opcode{}).WritesMemory(MemoryWriteInstructions))
+	assert.False(t, (Opcode{}).ReadWritesMemory(MemoryReadWriteInstructions))
+
+	assert.True(t, Opcodes[0x6d].ReadsMemory(MemoryReadInstructions))
+	assert.False(t, Opcodes[0x6d].ReadWritesMemory(MemoryReadWriteInstructions))
+	assert.True(t, Opcodes[0x0e].ReadWritesMemory(MemoryReadWriteInstructions))
+	assert.False(t, Opcodes[0x0a].ReadWritesMemory(MemoryReadWriteInstructions))
+	assert.True(t, Opcodes65C02[0x0f].ReadsMemory(MemoryReadInstructions))
+	assert.Equal(t, Bbr0.Name, Opcodes65C02[0x0f].Instruction.Name)
+}

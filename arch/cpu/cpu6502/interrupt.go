@@ -14,6 +14,8 @@ func (c *CPU) TriggerIrq() {
 	if c.opts.variant == Variant6507 {
 		return
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.triggerIrq = true
 }
 
@@ -23,52 +25,46 @@ func (c *CPU) TriggerNMI() {
 	if c.opts.variant == Variant6507 {
 		return
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.triggerNmi = true
 }
 
 // CheckInterrupts checks if an interrupt is triggered and executes it.
 // It returns true if an interrupt was executed.
 func (c *CPU) CheckInterrupts() bool {
-	if c.triggerNmi {
-		c.nmi()
-		return true
-	}
-	if c.triggerIrq {
-		c.irq()
-		return true
-	}
-	return false
-}
-
-func (c *CPU) nmi() {
 	c.mu.Lock()
-	c.triggerNmi = false
-	c.nmiRunning = true
+	var address uint16
+	switch {
+	case c.triggerNmi:
+		c.triggerNmi = false
+		c.nmiRunning = true
+		address = c.nmiAddress
+	case c.triggerIrq && c.Flags.I == 0:
+		c.triggerIrq = false
+		c.irqRunning = true
+		address = c.irqAddress
+	default:
+		c.mu.Unlock()
+		return false
+	}
 	c.mu.Unlock()
 
-	c.executeInterrupt(c.nmiAddress)
-}
-
-func (c *CPU) irq() {
-	c.mu.Lock()
-	c.triggerIrq = false
-	c.irqRunning = true
-	c.mu.Unlock()
-
-	c.executeInterrupt(c.irqAddress)
+	c.executeInterrupt(address)
+	return true
 }
 
 func (c *CPU) executeInterrupt(funAddress uint16) {
 	c.push16(c.PC)
-	_ = php(c)
 
-	if funAddress != 0 {
-		c.Flags.I = 1
-		// 65C02: Clear D flag after pushing status on interrupt
-		if c.opts.variant >= Variant65C02 {
-			c.Flags.D = 0
-		}
-		c.cycles += 7
-		c.PC = funAddress
+	// Hardware interrupts push B clear and U set; PHP and BRK push B set.
+	status := c.GetFlags() &^ 0b0001_0000
+	status |= 0b0010_0000
+	c.push(status)
+	c.Flags.I = 1
+	if c.opts.variant >= Variant65C02 {
+		c.Flags.D = 0
 	}
+	c.cycles += 7
+	c.PC = funAddress
 }

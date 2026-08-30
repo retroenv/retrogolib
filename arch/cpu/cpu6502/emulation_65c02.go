@@ -6,8 +6,7 @@ import "fmt"
 
 // bra - Branch Always.
 func bra(c *CPU, params ...any) error {
-	c.branch(true, params[0])
-	return nil
+	return c.branch(true, params...)
 }
 
 // bit65c02 - Bit Test (65C02 extended).
@@ -160,10 +159,7 @@ func bbrFunc(bit uint8) func(c *CPU, params ...any) error {
 	return func(c *CPU, params ...any) error {
 		zpAddr := uint16(params[0].(ZeroPage))
 		v := c.memory.Read(zpAddr)
-		if v&(1<<bit) == 0 {
-			c.branch(true, params[1])
-		}
-		return nil
+		return c.branch(v&(1<<bit) == 0, params[1:]...)
 	}
 }
 
@@ -173,9 +169,6 @@ func bbsFunc(bit uint8) func(c *CPU, params ...any) error {
 	return func(c *CPU, params ...any) error {
 		zpAddr := uint16(params[0].(ZeroPage))
 		v := c.memory.Read(zpAddr)
-		if v&(1<<bit) != 0 {
-			c.branch(true, params[1])
-		}
-		return nil
+		return c.branch(v&(1<<bit) != 0, params[1:]...)
 	}
 }

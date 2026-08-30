@@ -143,20 +143,17 @@ func asl(c *CPU, params ...any) error {
 
 // bcc - Branch if Carry Clear.
 func bcc(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0, params[0])
-	return nil
+	return c.branch(c.Flags.C == 0, params...)
 }
 
 // bcs - Branch if Carry Set.
 func bcs(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0, params[0])
-	return nil
+	return c.branch(c.Flags.C != 0, params...)
 }
 
 // beq - Branch if Equal.
 func beq(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0, params[0])
-	return nil
+	return c.branch(c.Flags.Z != 0, params...)
 }
 
 // bit - BitInst Test.
@@ -173,20 +170,17 @@ func bit(c *CPU, params ...any) error {
 
 // bmi - Branch if Minus.
 func bmi(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != 0, params[0])
-	return nil
+	return c.branch(c.Flags.N != 0, params...)
 }
 
 // bne - Branch if Not Equal.
 func bne(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0, params[0])
-	return nil
+	return c.branch(c.Flags.Z == 0, params...)
 }
 
 // bpl - Branch if Positive.
 func bpl(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == 0, params[0])
-	return nil
+	return c.branch(c.Flags.N == 0, params...)
 }
 
 // brk - Force Interrupt.
@@ -194,11 +188,9 @@ func brk(c *CPU) error {
 	// BRK is a 2-byte instruction, the second byte is a signature/padding byte
 	c.push16(c.PC + 2) // Push PC+2 to skip the signature byte
 
-	// The B flag should be set when pushing the status to distinguish BRK from IRQ
-	c.Flags.B = 1
-	f := c.GetFlags()
-	f |= 0b0010_0000 // Ensure unused flag is set
-	c.push(f)
+	// B exists only in the stacked status value and distinguishes BRK from IRQ/NMI.
+	status := c.GetFlags() | 0b0011_0000
+	c.push(status)
 	c.Flags.I = 1 // Disable interrupts
 
 	// 65C02: Clear D flag after pushing status on BRK
@@ -217,14 +209,12 @@ func brk(c *CPU) error {
 
 // bvc - Branch if Overflow Clear.
 func bvc(c *CPU, params ...any) error {
-	c.branch(c.Flags.V == 0, params[0])
-	return nil
+	return c.branch(c.Flags.V == 0, params...)
 }
 
 // bvs - Branch if Overflow Set.
 func bvs(c *CPU, params ...any) error {
-	c.branch(c.Flags.V != 0, params[0])
-	return nil
+	return c.branch(c.Flags.V != 0, params...)
 }
 
 // clc - Clear Carry Flag.
@@ -531,9 +521,10 @@ func rti(c *CPU) error {
 	c.setFlags(b)
 	c.PC = c.pop16()
 
-	// lock is already taken
+	c.mu.Lock()
 	c.irqRunning = false
 	c.nmiRunning = false
+	c.mu.Unlock()
 	return nil
 }
 
@@ -713,273 +704,5 @@ func txs(c *CPU) error {
 func tya(c *CPU) error {
 	c.A = c.Y
 	c.setZN(c.A)
-	return nil
-}
-
-// unofficial instructions
-
-func dcp(c *CPU, params ...any) error {
-	if err := dec(c, params...); err != nil {
-		return err
-	}
-	val, err := c.memory.ReadAddressModes(false, params...)
-	if err != nil {
-		return err
-	}
-	c.compare(c.A, val)
-	return nil
-}
-
-func isc(c *CPU, params ...any) error {
-	if err := inc(c, params...); err != nil {
-		return err
-	}
-	return sbc(c, params...)
-}
-
-// las implements LAS/LAR (0xBB): result = mem & SP; A = X = SP = result.
-func las(c *CPU, params ...any) error {
-	val, err := c.memory.ReadAddressModes(false, params...)
-	if err != nil {
-		return err
-	}
-	result := val & c.SP
-	c.A = result
-	c.X = result
-	c.SP = result
-	c.setZN(result)
-	return nil
-}
-
-func lax(c *CPU, params ...any) error {
-	val, err := c.memory.ReadAddressModes(false, params...)
-	if err != nil {
-		return err
-	}
-	c.A = val
-	c.X = c.A
-	c.setZN(c.A)
-	return nil
-}
-
-// lxa implements LXA (0xAB): A = X = (A | magic) & imm.
-// This is a highly unstable instruction; the magic constant varies by chip
-// (observed values: 0x00, 0xEE, 0xFF). Using 0xFF makes the result deterministic.
-func lxa(c *CPU, params ...any) error {
-	val, err := c.memory.ReadAddressModes(true, params...)
-	if err != nil {
-		return err
-	}
-	// Magic constant 0xEE matches SingleStepTests/65x02 hardware captures.
-	const magicConstant = 0xEE
-	c.A = (c.A | magicConstant) & val
-	c.X = c.A
-	c.setZN(c.A)
-	return nil
-}
-
-func nopUnofficial(c *CPU, params ...any) error {
-	if len(params) > 0 {
-		_, err := c.memory.ReadAddressModes(false, params...)
-		return err
-	}
-	return nil
-}
-
-func rla(c *CPU, params ...any) error {
-	if err := rol(c, params...); err != nil {
-		return err
-	}
-	return and(c, params...)
-}
-
-func rra(c *CPU, params ...any) error {
-	if err := ror(c, params...); err != nil {
-		return err
-	}
-	return adc(c, params...)
-}
-
-func sax(c *CPU, params ...any) error {
-	val := c.A & c.X
-	return c.memory.WriteAddressModes(val, params...)
-}
-
-// sha implements SHA/AHX: stores A & X & (base_addr_hi + 1).
-// Handles both AbsoluteY (0x9F) and IndirectY (0x93) addressing.
-// On page cross the write address high byte is replaced by the stored value.
-func sha(c *CPU, params ...any) error {
-	baseAddr, indexReg := shBaseAddr(c, params)
-	shWrite(c, c.A&c.X, baseAddr, indexReg)
-	return nil
-}
-
-// shBaseAddr extracts the base address (before indexing) and index register value
-// for SHA which supports both AbsoluteY and IndirectY addressing modes.
-// For IndirectY the PC is re-read because params already carry the resolved address.
-func shBaseAddr(c *CPU, params []any) (uint16, uint8) {
-	if _, ok := params[0].(Absolute); ok {
-		return uint16(params[0].(Absolute)), *params[1].(*uint8)
-	}
-	// IndirectY: params[0] is IndirectResolved (already has Y added), re-read base.
-	zp := c.memory.Read(c.PC + 1)
-	baseAddr := c.memory.ReadWordBug(uint16(zp))
-	return baseAddr, c.Y
-}
-
-// shWrite performs the "SH" store with page-crossing address corruption.
-// value is ANDed with (base_addr_hi + 1). On page cross the write address
-// high byte is replaced by the stored value (hardware bus conflict behavior).
-func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
-	andValue := value & (byte(baseAddr>>8) + 1)
-	effectiveAddr := baseAddr + uint16(indexReg)
-	pageCrossed := effectiveAddr&0xFF00 != baseAddr&0xFF00
-
-	var writeAddr uint16
-	if pageCrossed {
-		writeAddr = (uint16(andValue) << 8) | (effectiveAddr & 0xFF)
-	} else {
-		writeAddr = effectiveAddr
-	}
-	c.memory.Write(writeAddr, andValue)
-}
-
-// shx implements SHX/SXA (0x9E): stores X & (base_addr_hi + 1).
-func shx(c *CPU, params ...any) error {
-	baseAddr := uint16(params[0].(Absolute))
-	indexReg := *params[1].(*uint8) // Y
-	shWrite(c, c.X, baseAddr, indexReg)
-	return nil
-}
-
-// shy implements SHY/SYA (0x9C): stores Y & (base_addr_hi + 1).
-func shy(c *CPU, params ...any) error {
-	baseAddr := uint16(params[0].(Absolute))
-	indexReg := *params[1].(*uint8) // X
-	shWrite(c, c.Y, baseAddr, indexReg)
-	return nil
-}
-
-func slo(c *CPU, params ...any) error {
-	if err := asl(c, params...); err != nil {
-		return err
-	}
-	return ora(c, params...)
-}
-
-func sre(c *CPU, params ...any) error {
-	if err := lsr(c, params...); err != nil {
-		return err
-	}
-	return eor(c, params...)
-}
-
-// tas implements TAS/XAS (0x9B): SP = A & X, then stores SP & (base_addr_hi + 1).
-func tas(c *CPU, params ...any) error {
-	c.SP = c.A & c.X
-	baseAddr := uint16(params[0].(Absolute))
-	indexReg := *params[1].(*uint8) // Y
-	shWrite(c, c.SP, baseAddr, indexReg)
-	return nil
-}
-
-// alr - AND with accumulator, then LSR.
-func alr(c *CPU, params ...any) error {
-	if err := and(c, params...); err != nil {
-		return err
-	}
-	// LSR on accumulator
-	c.Flags.C = c.A & 1
-	c.A >>= 1
-	c.setZN(c.A)
-	return nil
-}
-
-// anc - AND with accumulator, copy N flag to C flag.
-func anc(c *CPU, params ...any) error {
-	if err := and(c, params...); err != nil {
-		return err
-	}
-	// Copy N flag to C flag
-	c.Flags.C = c.Flags.N
-	return nil
-}
-
-// ane implements ANE/XAA (0x8B): A = (A | magic) & X & imm.
-// This is a highly unstable instruction; the magic constant varies by chip
-// (observed values: 0x00, 0xEE, 0xFF). Using 0xFF makes the result deterministic.
-func ane(c *CPU, params ...any) error {
-	val, err := c.memory.ReadAddressModes(true, params...)
-	if err != nil {
-		return err
-	}
-	// Magic constant 0xEE matches SingleStepTests/65x02 hardware captures.
-	const magicConstant = 0xEE
-	c.A = (c.A | magicConstant) & c.X & val
-	c.setZN(c.A)
-	return nil
-}
-
-// arr - AND with accumulator, then ROR with special flag behavior.
-// In binary mode (D=0): C = bit6(result), V = bit6 XOR bit5.
-// In decimal mode (D=1): BCD corrections are applied but conditioned on the AND
-// result (pre-ROR), matching observed NMOS 6502 hardware behavior.
-func arr(c *CPU, params ...any) error {
-	if err := and(c, params...); err != nil {
-		return err
-	}
-	// After and(), c.A holds the AND result. Save it for decimal correction conditions.
-	andResult := c.A
-
-	// ROR on accumulator using pre-AND carry as bit 7.
-	oldCarry := c.Flags.C
-	c.A = (andResult >> 1) | (oldCarry << 7)
-	c.setZN(c.A)
-
-	// ARR-specific V flag: XOR of bits 6 and 5 of the ROR result.
-	c.Flags.V = (c.A>>6)&1 ^ (c.A>>5)&1
-
-	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
-		// Decimal mode: nibble corrections conditioned on the AND result,
-		// applied to the ROR result (N/V/Z already set from ROR result above).
-		r := c.A
-		if (andResult & 0x0F) >= 5 {
-			r = (r & 0xF0) | ((r&0x0F + 6) & 0x0F)
-		}
-		if (andResult & 0xF0) >= 0x50 {
-			r += 0x60
-			c.Flags.C = 1
-		} else {
-			c.Flags.C = 0
-		}
-		c.A = r
-	} else {
-		// Binary mode (or NES which disables decimal): C = bit6 of ROR result.
-		c.Flags.C = (c.A >> 6) & 1
-	}
-	return nil
-}
-
-// axs - (A AND X) minus immediate, store in X.
-func axs(c *CPU, params ...any) error {
-	value, err := c.memory.ReadAddressModes(true, params...)
-	if err != nil {
-		return err
-	}
-
-	// Calculate (A AND X) - immediate
-	val := c.A & c.X
-	result := int(val) - int(value)
-
-	// Set carry if no borrow (result >= 0)
-	if result >= 0 {
-		c.Flags.C = 1
-	} else {
-		c.Flags.C = 0
-	}
-
-	// Store result in X
-	c.X = uint8(result)
-	c.setZN(c.X)
 	return nil
 }

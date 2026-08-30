@@ -14,7 +14,8 @@ var Nop65C02Inst = &Instruction{
 
 // Opcodes65C02 maps the first opcode byte to CPU instruction information for the 65C02.
 // Based on the NMOS 6502 table with undocumented opcodes replaced by NOPs and
-// new 65C02 instructions/addressing modes added.
+// new instructions added. Absolute,X read-modify-write operations take six base
+// cycles and one more when indexing crosses a page; NMOS uses a fixed seven.
 var Opcodes65C02 = [256]Opcode{
 	{Instruction: BrkInst, Addressing: ImpliedAddressing, Timing: 7},                              // 0x00
 	{Instruction: Ora65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0x01
@@ -46,7 +47,7 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0x1b - NOP (was SLO)
 	{Instruction: TrbInst, Addressing: AbsoluteAddressing, Timing: 6},                             // 0x1c - TRB abs
 	{Instruction: Ora65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x1d
-	{Instruction: AslInst, Addressing: AbsoluteXAddressing, Timing: 7},                            // 0x1e
+	{Instruction: AslInst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true},      // 0x1e
 	{Instruction: Bbr1, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0x1f - BBR1 zp,rel
 	{Instruction: JsrInst, Addressing: AbsoluteAddressing, Timing: 6},                             // 0x20
 	{Instruction: And65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0x21
@@ -78,7 +79,7 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0x3b - NOP (was RLA)
 	{Instruction: Bit65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x3c - BIT abs,X
 	{Instruction: And65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x3d
-	{Instruction: RolInst, Addressing: AbsoluteXAddressing, Timing: 7},                            // 0x3e
+	{Instruction: RolInst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true},      // 0x3e
 	{Instruction: Bbr3, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0x3f - BBR3 zp,rel
 	{Instruction: RtiInst, Addressing: ImpliedAddressing, Timing: 6},                              // 0x40
 	{Instruction: Eor65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0x41
@@ -110,7 +111,7 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0x5b - NOP (was SRE)
 	{Instruction: Nop65C02Inst, Addressing: AbsoluteAddressing, Timing: 8},                        // 0x5c - NOP abs (8 cycles)
 	{Instruction: Eor65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x5d
-	{Instruction: LsrInst, Addressing: AbsoluteXAddressing, Timing: 7},                            // 0x5e
+	{Instruction: LsrInst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true},      // 0x5e
 	{Instruction: Bbr5, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0x5f - BBR5 zp,rel
 	{Instruction: RtsInst, Addressing: ImpliedAddressing, Timing: 6},                              // 0x60
 	{Instruction: Adc65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0x61
@@ -142,9 +143,9 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0x7b - NOP (was RRA)
 	{Instruction: Jmp65C02Inst, Addressing: AbsoluteXIndirectAddressing, Timing: 6},               // 0x7c - JMP (abs,X)
 	{Instruction: Adc65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x7d
-	{Instruction: RorInst, Addressing: AbsoluteXAddressing, Timing: 7},                            // 0x7e
+	{Instruction: RorInst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true},      // 0x7e
 	{Instruction: Bbr7, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0x7f - BBR7 zp,rel
-	{Instruction: BraInst, Addressing: RelativeAddressing, Timing: 3},                             // 0x80 - BRA
+	{Instruction: BraInst, Addressing: RelativeAddressing, Timing: 2},                             // 0x80 - BRA
 	{Instruction: Sta65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0x81
 	{Instruction: Nop65C02Inst, Addressing: ImmediateAddressing, Timing: 2},                       // 0x82 - NOP (was NOP imm)
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0x83 - NOP (was SAX)
@@ -238,7 +239,7 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImmediateAddressing, Timing: 4},                       // 0xdb - NOP imm (STP on WDC)
 	{Instruction: Nop65C02Inst, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xdc - NOP abs
 	{Instruction: Cmp65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xdd
-	{Instruction: Dec65C02Inst, Addressing: AbsoluteXAddressing, Timing: 7},                       // 0xde
+	{Instruction: Dec65C02Inst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true}, // 0xde
 	{Instruction: Bbs5, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0xdf - BBS5 zp,rel
 	{Instruction: CpxInst, Addressing: ImmediateAddressing, Timing: 2},                            // 0xe0
 	{Instruction: Sbc65C02Inst, Addressing: IndirectXAddressing, Timing: 6},                       // 0xe1
@@ -270,6 +271,6 @@ var Opcodes65C02 = [256]Opcode{
 	{Instruction: Nop65C02Inst, Addressing: ImpliedAddressing, Timing: 1},                         // 0xfb - NOP (was ISC)
 	{Instruction: Nop65C02Inst, Addressing: AbsoluteAddressing, Timing: 4},                        // 0xfc - NOP abs
 	{Instruction: Sbc65C02Inst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xfd
-	{Instruction: Inc65C02Inst, Addressing: AbsoluteXAddressing, Timing: 7},                       // 0xfe
+	{Instruction: Inc65C02Inst, Addressing: AbsoluteXAddressing, Timing: 6, PageCrossCycle: true}, // 0xfe
 	{Instruction: Bbs7, Addressing: ZeroPageRelativeAddressing, Timing: 5},                        // 0xff - BBS7 zp,rel
 }

@@ -2,25 +2,28 @@
 //
 // The 6502 is an 8-bit microprocessor that was widely used in home computers,
 // video game consoles, and other systems in the 1970s and 1980s. This package
-// implements a cycle-accurate emulation including:
+// implements instruction-level emulation including:
 //
 //   - Full instruction set with all addressing modes
 //   - Accurate flag handling (N, V, Z, C, I, D, B)
 //   - Stack operations and interrupt handling
-//   - Memory management with configurable backends
+//   - Memory access through a configurable backend
 //   - Debugging and tracing capabilities
 //
 // # Basic Usage
 //
-//	memory := cpu6502.NewMemory()
+//	memory, err := cpu6502.NewMemory(bus)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Set the reset vector before constructing the CPU.
+//	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
 //	cpu := cpu6502.New(memory)
 //
 //	// Load program
 //	memory.Write(0x8000, 0xA9) // LDA #$42
 //	memory.Write(0x8001, 0x42)
-//
-//	// Set reset vector
-//	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
 //
 //	// Execute instructions
 //	for {
@@ -33,7 +36,7 @@
 //
 //   - 0x0000-0x00FF: Zero page (fast access)
 //   - 0x0100-0x01FF: Stack
-//   - 0x0200-0xFFEF: General memory
+//   - 0x0200-0xFFF9: Backend-defined memory and I/O
 //   - 0xFFFA-0xFFFB: NMI vector
 //   - 0xFFFC-0xFFFD: Reset vector
 //   - 0xFFFE-0xFFFF: IRQ/BRK vector
@@ -61,12 +64,11 @@
 //
 // # Thread Safety
 //
-// CPU operations are protected by a read-write mutex, allowing concurrent
-// read access to CPU state while ensuring exclusive access for modifications.
+// Drive instruction execution from one goroutine. TriggerIrq, TriggerNMI, and
+// StallCycles may be called concurrently to request asynchronous events.
 //
 // # Accuracy
 //
-// This implementation includes cycle-accurate timing and historically accurate
-// behavior, including the famous JMP ($xxFF) page boundary bug for maximum
-// compatibility with original 6502 software.
+// This implementation tracks instruction-level cycle counts and historically
+// significant behavior, including the JMP ($xxFF) page boundary bug.
 package cpu6502

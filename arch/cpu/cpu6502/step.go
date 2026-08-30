@@ -14,8 +14,16 @@ type TraceStep struct {
 	PageCrossed bool
 }
 
-// Step executes the next instruction in the CPU.
+// Step consumes one stall cycle, services one pending interrupt, or executes
+// the next instruction.
 func (c *CPU) Step() error {
+	if c.consumeStallCycle() {
+		return nil
+	}
+	if c.CheckInterrupts() {
+		return nil
+	}
+
 	c.branchTaken = false
 	oldPC := c.PC
 	opcode, err := c.decodeNextInstruction()
@@ -57,7 +65,7 @@ func (c *CPU) Step() error {
 		c.opts.preExecutionHook(c, ins, params...)
 	}
 
-	if pageCrossed && c.TraceStep.Opcode.PageCrossCycle {
+	if pageCrossed && opcode.PageCrossCycle {
 		c.cycles++
 	}
 

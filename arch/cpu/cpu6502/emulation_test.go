@@ -457,8 +457,12 @@ func TestEor(t *testing.T) {
 	t.Parallel()
 	cpu := cpuTestSetup(t)
 
-	// TODO add test
-	assert.NoError(t, eor(cpu, 0))
+	cpu.A = 0xff
+	assert.NoError(t, eor(cpu, 0x55))
+
+	assert.Equal(t, 0xaa, cpu.A)
+	assert.Equal(t, 0, cpu.Flags.Z)
+	assert.Equal(t, 1, cpu.Flags.N)
 }
 
 func TestInc(t *testing.T) {
@@ -712,8 +716,12 @@ func TestOra(t *testing.T) {
 	t.Parallel()
 	cpu := cpuTestSetup(t)
 
-	// TODO add test
-	assert.NoError(t, ora(cpu, 0))
+	cpu.A = 0x0f
+	assert.NoError(t, ora(cpu, 0xf0))
+
+	assert.Equal(t, 0xff, cpu.A)
+	assert.Equal(t, 0, cpu.Flags.Z)
+	assert.Equal(t, 1, cpu.Flags.N)
 }
 
 func TestPha(t *testing.T) {
@@ -1386,7 +1394,7 @@ func TestValidateState(t *testing.T) {
 	// Test nil memory
 	cpu = cpuTestSetup(t)
 	cpu.memory = nil
-	assert.ErrorContains(t, cpu.ValidateState(), "CPU memory is nil")
+	assert.ErrorIs(t, cpu.ValidateState(), ErrNilMemory)
 }
 
 func TestCPUReset(t *testing.T) {

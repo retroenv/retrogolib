@@ -1,9 +1,9 @@
 package cpu6502
 
 import (
-	"errors"
 	"fmt"
 	"math"
+	"reflect"
 )
 
 const (
@@ -31,8 +31,8 @@ type Memory struct {
 
 // NewMemory returns a new memory instance.
 func NewMemory(mem BasicMemory) (*Memory, error) {
-	if mem == nil {
-		return nil, errors.New("BasicMemory cannot be nil")
+	if isNilBasicMemory(mem) {
+		return nil, ErrNilMemory
 	}
 	return &Memory{BasicMemory: mem}, nil
 }
@@ -70,6 +70,10 @@ func (m *Memory) WriteWord(address, value uint16) {
 // (Indirect), Y: the pointer to the memory address is read from the indirect parameter and adjusted after
 // reading it by adding Y. The value is written to this pointer.
 func (m *Memory) WriteAddressModes(value byte, params ...any) error {
+	if len(params) == 0 {
+		return ErrMissingParameter
+	}
+
 	param := params[0]
 	var register any
 	if len(params) > 1 {
@@ -113,6 +117,10 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 // (Indirect), Y: the pointer to the memory address is read from the indirect parameter and adjusted after
 // reading it by adding Y. The value is read from this pointer.
 func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
+	if len(params) == 0 {
+		return 0, ErrMissingParameter
+	}
+
 	param := params[0]
 	var register any
 	if len(params) > 1 {
@@ -121,10 +129,7 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 
 	switch address := param.(type) {
 	case int:
-		if immediate && register == nil && address <= math.MaxUint8 {
-			return uint8(address), nil // immediate, not an address
-		}
-		return m.ReadAbsolute(address, register)
+		return m.readIntAddress(address, register, immediate)
 	case uint8:
 		return address, nil // immediate, not an address
 	case *uint8: // variable
@@ -136,15 +141,7 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 	case Indirect, IndirectResolved:
 		return m.readMemoryIndirect(address, register)
 	case ZeroPageIndirect:
-		// Zero page indirect: the resolved address is in the next param
-		if register == nil {
-			return 0, fmt.Errorf("%w: zero page indirect read missing resolved address", ErrMissingParameter)
-		}
-		resolved, ok := register.(IndirectResolved)
-		if !ok {
-			return 0, fmt.Errorf("%w: zero page indirect read type %T", ErrInvalidParameterType, register)
-		}
-		return m.Read(uint16(resolved)), nil
+		return m.readZeroPageIndirect(register)
 	default:
 		return 0, fmt.Errorf("%w: read mode type %T", ErrUnsupportedAddressingMode, param)
 	}
@@ -188,6 +185,24 @@ func (m *Memory) ReadMemoryZeroPage(address ZeroPage, register any) (byte, error
 	return m.readAbsoluteOffset(addr, 0)
 }
 
+func (m *Memory) readIntAddress(address int, register any, immediate bool) (byte, error) {
+	if immediate && register == nil && address >= 0 && address <= math.MaxUint8 {
+		return uint8(address), nil
+	}
+	return m.ReadAbsolute(address, register)
+}
+
+func (m *Memory) readZeroPageIndirect(resolvedAddress any) (byte, error) {
+	if resolvedAddress == nil {
+		return 0, fmt.Errorf("%w: zero page indirect read missing resolved address", ErrMissingParameter)
+	}
+	resolved, ok := resolvedAddress.(IndirectResolved)
+	if !ok {
+		return 0, fmt.Errorf("%w: zero page indirect read type %T", ErrInvalidParameterType, resolvedAddress)
+	}
+	return m.Read(uint16(resolved)), nil
+}
+
 func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 	switch addr := address.(type) {
 	case *uint8:
@@ -202,17 +217,13 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 	case Absolute:
 		return m.Read(uint16(addr) + offset), nil
 	case AbsoluteX:
-		val := m.Read(uint16(addr))
-		val += byte(offset)
-		return val, nil
+		return m.Read(uint16(addr) + offset), nil
 	case AbsoluteY:
-		val := m.Read(uint16(addr))
-		val += byte(offset)
-		return val, nil
+		return m.Read(uint16(addr) + offset), nil
 	case ZeroPage:
 		return m.Read(uint16(addr) + offset), nil
 	default:
-		return 0, fmt.Errorf("%w: absolute write address type %T", ErrUnsupportedAddressingMode, address)
+		return 0, fmt.Errorf("%w: absolute read address type %T", ErrUnsupportedAddressingMode, address)
 	}
 }
 
@@ -315,4 +326,13 @@ func (m *Memory) writeMemoryAbsoluteOffset(address any, value byte, offset uint1
 		return fmt.Errorf("%w: absolute write address type %T", ErrUnsupportedAddressingMode, address)
 	}
 	return nil
+}
+
+func isNilBasicMemory(mem BasicMemory) bool {
+	if mem == nil {
+		return true
+	}
+
+	value := reflect.ValueOf(mem)
+	return value.Kind() == reflect.Pointer && value.IsNil()
 }

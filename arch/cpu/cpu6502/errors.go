@@ -7,6 +7,7 @@ var (
 	ErrInvalidParameterType      = errors.New("invalid parameter type")
 	ErrInvalidRegisterType       = errors.New("invalid register type")
 	ErrMissingParameter          = errors.New("missing required parameter")
+	ErrNilMemory                 = errors.New("memory cannot be nil")
 	ErrUnknownOpcode             = errors.New("unknown opcode")
 	ErrUnsupportedAddressingMode = errors.New("unsupported addressing mode")
 )

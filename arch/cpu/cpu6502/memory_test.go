@@ -44,6 +44,33 @@ func TestMemoryAbsoluteInt(t *testing.T) {
 	assert.Equal(t, 1, val)
 }
 
+func TestMemoryRequiresAddressParameter(t *testing.T) {
+	t.Parallel()
+
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+
+	_, err = memory.ReadAddressModes(false)
+	assert.ErrorIs(t, err, ErrMissingParameter)
+	assert.ErrorIs(t, memory.WriteAddressModes(0), ErrMissingParameter)
+}
+
+func TestReadAbsoluteIndexedTypesOffsetAddress(t *testing.T) {
+	t.Parallel()
+
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.Write(0x1236, 0x42)
+
+	value, err := memory.ReadAbsolute(AbsoluteX(0x1234), uint8(2))
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0x42), value)
+
+	value, err = memory.ReadAbsolute(AbsoluteY(0x1234), uint8(2))
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0x42), value)
+}
+
 func TestReadWord(t *testing.T) {
 	m, err := NewMemory(&testMemory{})
 	assert.NoError(t, err)
@@ -70,12 +97,13 @@ func TestWriteWord(t *testing.T) {
 func TestNewMemoryValidation(t *testing.T) {
 	t.Parallel()
 
-	// Test that nil memory returns error
 	_, err := NewMemory(nil)
-	assert.Error(t, err, "BasicMemory cannot be nil", "Should return error for nil memory")
-	assert.Contains(t, err.Error(), "BasicMemory cannot be nil", "Should contain specific error message")
+	assert.ErrorIs(t, err, ErrNilMemory)
 
-	// Test that valid memory works
+	var typedNil *testMemory
+	_, err = NewMemory(typedNil)
+	assert.ErrorIs(t, err, ErrNilMemory)
+
 	mem := &testMemory{}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)

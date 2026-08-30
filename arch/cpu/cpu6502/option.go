@@ -12,29 +12,33 @@ const (
 	VariantSynertek65C02                   // Synertek 65C02: 65C02 without Rockwell bit-manipulation extensions
 )
 
-type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
+// PreExecutionHook is called after instruction decoding and before execution.
+type PreExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
 
 // Options contains options for the CPU.
 type Options struct {
 	variant          CPUVariant
 	tracing          bool
-	preExecutionHook preExecutionHook
+	preExecutionHook PreExecutionHook
 }
 
-// Option defines a Start parameter.
+// Option configures a CPU constructor option.
 type Option func(*Options)
 
 // NewOptions creates a new options instance from the passed options.
 func NewOptions(optionList ...Option) Options {
 	opts := Options{}
 	for _, option := range optionList {
+		if option == nil {
+			continue
+		}
 		option(&opts)
 	}
 	return opts
 }
 
 // WithTracing enables tracing for the program.
-func WithTracing() func(*Options) {
+func WithTracing() Option {
 	return func(options *Options) {
 		options.tracing = true
 	}
@@ -42,14 +46,14 @@ func WithTracing() func(*Options) {
 
 // WithPreExecutionHook sets a hook that is called before each instruction is executed.
 // It can be used to read a memory value before the instruction overwrites it.
-func WithPreExecutionHook(hook preExecutionHook) func(*Options) {
+func WithPreExecutionHook(hook PreExecutionHook) Option {
 	return func(options *Options) {
 		options.preExecutionHook = hook
 	}
 }
 
 // WithVariant sets the CPU variant.
-func WithVariant(v CPUVariant) func(*Options) {
+func WithVariant(v CPUVariant) Option {
 	return func(options *Options) {
 		options.variant = v
 	}
