@@ -283,6 +283,7 @@ func TestIndexed_ConstantOffset(t *testing.T) {
 	err := cpu.Step()
 	assert.NoError(t, err)
 	assert.Equal(t, uint8(0x42), cpu.A)
+	assert.Equal(t, uint64(5), cpu.Cycles())
 }
 
 func TestIndexed_AutoIncrement(t *testing.T) {
@@ -295,6 +296,7 @@ func TestIndexed_AutoIncrement(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint8(0x42), cpu.A)
 	assert.Equal(t, uint16(0x1001), cpu.X) // X incremented
+	assert.Equal(t, uint64(6), cpu.Cycles())
 }
 
 func TestLEAX(t *testing.T) {
@@ -312,4 +314,105 @@ func TestInvalidOpcode(t *testing.T) {
 	mem.data[0x8000] = 0x01 // illegal opcode
 	err := cpu.Step()
 	assert.Error(t, err)
+}
+
+func TestCMPACarryRepresentsBorrow(t *testing.T) {
+	tests := []struct {
+		name      string
+		register  uint8
+		operand   uint8
+		wantCarry uint8
+		wantZero  uint8
+	}{
+		{name: "lower", register: 0x10, operand: 0x20, wantCarry: 1},
+		{name: "equal", register: 0x20, operand: 0x20, wantZero: 1},
+		{name: "higher", register: 0x30, operand: 0x20},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu, mem := newTestCPU(t)
+			cpu.A = tt.register
+			mem.data[0x8000] = 0x81 // CMPA immediate
+			mem.data[0x8001] = tt.operand
+
+			err := cpu.Step()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.register, cpu.A)
+			assert.Equal(t, tt.wantCarry, cpu.Flags.C)
+			assert.Equal(t, tt.wantZero, cpu.Flags.Z)
+		})
+	}
+
+	cpu, _ := newTestCPU(t)
+	cpu.compare16(0x1000, 0x2000)
+	assert.Equal(t, uint8(1), cpu.Flags.C)
+}
+
+func TestSEXClearsOverflow(t *testing.T) {
+	cpu, mem := newTestCPU(t)
+	cpu.B = 0x80
+	cpu.Flags.V = 1
+	mem.data[0x8000] = 0x1D // SEX
+
+	err := cpu.Step()
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0), cpu.Flags.V)
+}
+
+func TestSWIRTIReturnsToFollowingInstruction(t *testing.T) {
+	cpu, mem := newTestCPU(t)
+	cpu.S = 0x0200
+	mem.WriteWord(VectorSWI, 0x9000)
+	mem.data[0x8000] = 0x3F // SWI
+	mem.data[0x9000] = 0x3B // RTI
+
+	err := cpu.Step()
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(0x9000), cpu.PC)
+
+	err = cpu.Step()
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(0x8001), cpu.PC)
+	assert.Equal(t, uint64(34), cpu.Cycles())
+}
+
+func TestPSHSPushesFollowingPCAndCountsBytes(t *testing.T) {
+	cpu, mem := newTestCPU(t)
+	cpu.S = 0x0200
+	mem.data[0x8000] = 0x34 // PSHS
+	mem.data[0x8001] = 0x80 // PC
+
+	err := cpu.Step()
+	assert.NoError(t, err)
+	assert.Equal(t, uint16(0x8002), cpu.popS16())
+	assert.Equal(t, uint64(7), cpu.Cycles())
+}
+
+func TestLongConditionalBranchTakenCycle(t *testing.T) {
+	tests := []struct {
+		name       string
+		zero       uint8
+		wantPC     uint16
+		wantCycles uint64
+	}{
+		{name: "taken", wantPC: 0x8005, wantCycles: 6},
+		{name: "not taken", zero: 1, wantPC: 0x8004, wantCycles: 5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu, mem := newTestCPU(t)
+			cpu.Flags.Z = tt.zero
+			mem.data[0x8000] = 0x10 // page 2
+			mem.data[0x8001] = 0x26 // LBNE
+			mem.data[0x8002] = 0x00
+			mem.data[0x8003] = 0x01
+
+			err := cpu.Step()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantPC, cpu.PC)
+			assert.Equal(t, tt.wantCycles, cpu.Cycles())
+		})
+	}
 }

@@ -1,87 +1,106 @@
 package cpu6809
 
-// Interrupt state and external interrupt triggering.
-
-// TriggerNMI causes a non-maskable interrupt on the next Step.
+// TriggerNMI requests a non-maskable interrupt on the next Step.
 func (c *CPU) TriggerNMI() {
-	c.mu.Lock()
-	c.triggerNMI = true
-	c.waiting = false // SYNC exits on interrupt
-	c.mu.Unlock()
+	c.requestInterrupt(&c.triggerNMI)
 }
 
-// TriggerIRQ causes an IRQ interrupt request on the next Step (if I flag permits).
+// TriggerIRQ requests an IRQ on the next Step when the I flag permits it.
 func (c *CPU) TriggerIRQ() {
-	c.mu.Lock()
-	c.triggerIRQ = true
-	c.waiting = false
-	c.mu.Unlock()
+	c.requestInterrupt(&c.triggerIRQ)
 }
 
-// TriggerFIRQ causes a fast IRQ interrupt request on the next Step (if F flag permits).
+// TriggerFIRQ requests a fast IRQ on the next Step when the F flag permits it.
 func (c *CPU) TriggerFIRQ() {
-	c.mu.Lock()
-	c.triggerFIRQ = true
-	c.waiting = false
-	c.mu.Unlock()
+	c.requestInterrupt(&c.triggerFIRQ)
 }
 
-// CheckInterrupts processes any pending interrupts.
-// Returns true if an interrupt was handled.
+// CheckInterrupts services the highest-priority pending interrupt.
 func (c *CPU) CheckInterrupts() bool {
-	if c.triggerNMI {
-		c.handleNMI()
-		return true
+	kind, stackState := c.takePendingInterrupt()
+	switch kind {
+	case interruptNMI:
+		c.handleNMI(stackState)
+	case interruptFIRQ:
+		c.handleFIRQ(stackState)
+	case interruptIRQ:
+		c.handleIRQ(stackState)
+	default:
+		return false
 	}
-	if c.triggerFIRQ && c.Flags.F == 0 {
-		c.handleFIRQ()
-		return true
-	}
-	if c.triggerIRQ && c.Flags.I == 0 {
-		c.handleIRQ()
-		return true
-	}
-	return false
+
+	return true
 }
 
-func (c *CPU) handleNMI() {
-	c.mu.Lock()
-	c.triggerNMI = false
-	c.nmiRunning = true
-	c.mu.Unlock()
+func (c *CPU) requestInterrupt(pending *bool) {
+	c.interruptMu.Lock()
+	*pending = true
+	// Any interrupt releases SYNC, even when its mask prevents servicing.
+	if c.waitMode == waitSync {
+		c.waitMode = waitNone
+	}
+	c.interruptMu.Unlock()
+}
 
-	// NMI saves entire state (E=1)
-	c.Flags.E = 1
-	c.pushEntireState()
+func (c *CPU) takePendingInterrupt() (interruptKind, bool) {
+	c.interruptMu.Lock()
+	defer c.interruptMu.Unlock()
+
+	if c.waitMode == waitSync && (c.triggerNMI || c.triggerFIRQ || c.triggerIRQ) {
+		c.waitMode = waitNone
+	}
+
+	kind := interruptNone
+	switch {
+	case c.triggerNMI:
+		c.triggerNMI = false
+		kind = interruptNMI
+	case c.triggerFIRQ && c.Flags.F == 0:
+		c.triggerFIRQ = false
+		kind = interruptFIRQ
+	case c.triggerIRQ && c.Flags.I == 0:
+		c.triggerIRQ = false
+		kind = interruptIRQ
+	}
+
+	if kind == interruptNone {
+		return interruptNone, false
+	}
+
+	// CWAI stacked the entire state before sleeping, so interrupt acceptance
+	// only needs to load the vector and update masks.
+	stackState := c.waitMode != waitCWAI
+	c.waitMode = waitNone
+
+	return kind, stackState
+}
+
+func (c *CPU) handleNMI(stackState bool) {
+	if stackState {
+		c.Flags.E = 1
+		c.pushEntireState(c.PC)
+	}
 	c.Flags.I = 1
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorNMI)
 }
 
-func (c *CPU) handleFIRQ() {
-	c.mu.Lock()
-	c.triggerFIRQ = false
-	c.irqRunning = true
-	c.mu.Unlock()
-
-	// FIRQ saves only CC and PC (E=0)
-	c.Flags.E = 0
-	c.pushS16(c.PC)
-	c.pushS8(c.GetCC())
+func (c *CPU) handleFIRQ(stackState bool) {
+	if stackState {
+		c.Flags.E = 0
+		c.pushS16(c.PC)
+		c.pushS8(c.GetCC())
+	}
 	c.Flags.I = 1
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorFIRQ)
 }
 
-func (c *CPU) handleIRQ() {
-	c.mu.Lock()
-	c.triggerIRQ = false
-	c.irqRunning = true
-	c.mu.Unlock()
-
-	// IRQ saves entire state (E=1)
-	c.Flags.E = 1
-	c.pushEntireState()
+func (c *CPU) handleIRQ(stackState bool) {
+	if stackState {
+		c.Flags.E = 1
+		c.pushEntireState(c.PC)
+	}
 	c.Flags.I = 1
 	c.PC = c.memory.ReadVector(VectorIRQ)
 }

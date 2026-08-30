@@ -1,7 +1,5 @@
 package cpu6809
 
-import "errors"
-
 // Interrupt vector addresses (all big-endian, 16-bit address space).
 const (
 	VectorReserved = uint16(0xFFF0)
@@ -33,7 +31,7 @@ type Memory struct {
 // NewMemory creates a new Memory wrapper.
 func NewMemory(mem BasicMemory) (*Memory, error) {
 	if mem == nil {
-		return nil, errors.New("BasicMemory cannot be nil")
+		return nil, ErrNilMemory
 	}
 	return &Memory{BasicMemory: mem}, nil
 }

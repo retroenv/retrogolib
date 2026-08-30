@@ -57,8 +57,8 @@ func (c *CPU) sub8(a, b uint8, carry uint8) uint8 {
 
 // -- Instruction handlers --
 
-func adca(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func adca(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func adca(c *CPU, params ...any) error {
 	return nil
 }
 
-func adcb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func adcb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func adcb(c *CPU, params ...any) error {
 	return nil
 }
 
-func adda(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func adda(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -84,8 +84,8 @@ func adda(c *CPU, params ...any) error {
 	return nil
 }
 
-func addb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func addb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -93,8 +93,8 @@ func addb(c *CPU, params ...any) error {
 	return nil
 }
 
-func addd(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func addd(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -109,8 +109,8 @@ func addd(c *CPU, params ...any) error {
 	return nil
 }
 
-func anda(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func anda(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -120,8 +120,8 @@ func anda(c *CPU, params ...any) error {
 	return nil
 }
 
-func andb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func andb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -131,20 +131,32 @@ func andb(c *CPU, params ...any) error {
 	return nil
 }
 
-func andcc(c *CPU, params ...any) error {
-	mask := uint8(params[0].(Immediate8))
+func andcc(c *CPU, param any) error {
+	value, err := immediate8Param(param)
+	if err != nil {
+		return err
+	}
+
+	mask := uint8(value)
 	c.SetCC(c.GetCC() & mask)
+
 	return nil
 }
 
-func orcc(c *CPU, params ...any) error {
-	mask := uint8(params[0].(Immediate8))
+func orcc(c *CPU, param any) error {
+	value, err := immediate8Param(param)
+	if err != nil {
+		return err
+	}
+
+	mask := uint8(value)
 	c.SetCC(c.GetCC() | mask)
+
 	return nil
 }
 
-func bita(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func bita(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -154,8 +166,8 @@ func bita(c *CPU, params ...any) error {
 	return nil
 }
 
-func bitb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func bitb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -165,8 +177,8 @@ func bitb(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpa(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func cmpa(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -174,8 +186,8 @@ func cmpa(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func cmpb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -183,8 +195,8 @@ func cmpb(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpd(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func cmpd(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -192,8 +204,8 @@ func cmpd(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmps(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func cmps(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -201,8 +213,8 @@ func cmps(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpu(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func cmpu(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -210,8 +222,8 @@ func cmpu(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpx(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func cmpx(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -219,8 +231,8 @@ func cmpx(c *CPU, params ...any) error {
 	return nil
 }
 
-func cmpy(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func cmpy(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -228,8 +240,8 @@ func cmpy(c *CPU, params ...any) error {
 	return nil
 }
 
-func eora(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func eora(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -239,8 +251,8 @@ func eora(c *CPU, params ...any) error {
 	return nil
 }
 
-func eorb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func eorb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -250,8 +262,8 @@ func eorb(c *CPU, params ...any) error {
 	return nil
 }
 
-func ora(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func ora(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -261,8 +273,8 @@ func ora(c *CPU, params ...any) error {
 	return nil
 }
 
-func orb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func orb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -272,8 +284,8 @@ func orb(c *CPU, params ...any) error {
 	return nil
 }
 
-func suba(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func suba(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -281,8 +293,8 @@ func suba(c *CPU, params ...any) error {
 	return nil
 }
 
-func subb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func subb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -290,8 +302,8 @@ func subb(c *CPU, params ...any) error {
 	return nil
 }
 
-func subd(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func subd(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -306,8 +318,8 @@ func subd(c *CPU, params ...any) error {
 	return nil
 }
 
-func sbca(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func sbca(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -315,8 +327,8 @@ func sbca(c *CPU, params ...any) error {
 	return nil
 }
 
-func sbcb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func sbcb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -326,8 +338,8 @@ func sbcb(c *CPU, params ...any) error {
 
 // -- Load and Store --
 
-func lda(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func lda(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -337,8 +349,8 @@ func lda(c *CPU, params ...any) error {
 	return nil
 }
 
-func ldb(c *CPU, params ...any) error {
-	val, err := c.readOperand8(params[0])
+func ldb(c *CPU, param any) error {
+	val, err := c.readOperand8(param)
 	if err != nil {
 		return err
 	}
@@ -348,8 +360,8 @@ func ldb(c *CPU, params ...any) error {
 	return nil
 }
 
-func ldd(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func ldd(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -359,8 +371,8 @@ func ldd(c *CPU, params ...any) error {
 	return nil
 }
 
-func lds(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func lds(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -370,8 +382,8 @@ func lds(c *CPU, params ...any) error {
 	return nil
 }
 
-func ldu(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func ldu(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -381,8 +393,8 @@ func ldu(c *CPU, params ...any) error {
 	return nil
 }
 
-func ldx(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func ldx(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -392,8 +404,8 @@ func ldx(c *CPU, params ...any) error {
 	return nil
 }
 
-func ldy(c *CPU, params ...any) error {
-	val, err := c.readOperand16(params[0])
+func ldy(c *CPU, param any) error {
+	val, err := c.readOperand16(param)
 	if err != nil {
 		return err
 	}
@@ -403,8 +415,8 @@ func ldy(c *CPU, params ...any) error {
 	return nil
 }
 
-func sta(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func sta(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -414,8 +426,8 @@ func sta(c *CPU, params ...any) error {
 	return nil
 }
 
-func stb(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func stb(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -425,8 +437,8 @@ func stb(c *CPU, params ...any) error {
 	return nil
 }
 
-func std(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func std(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -437,8 +449,8 @@ func std(c *CPU, params ...any) error {
 	return nil
 }
 
-func sts(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func sts(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -448,8 +460,8 @@ func sts(c *CPU, params ...any) error {
 	return nil
 }
 
-func stu(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func stu(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -459,8 +471,8 @@ func stu(c *CPU, params ...any) error {
 	return nil
 }
 
-func stx(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func stx(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -470,8 +482,8 @@ func stx(c *CPU, params ...any) error {
 	return nil
 }
 
-func sty(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func sty(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -483,26 +495,56 @@ func sty(c *CPU, params ...any) error {
 
 // -- LEA instructions --
 
-func leax(c *CPU, params ...any) error {
-	c.X = uint16(params[0].(IndexedAddr))
+func leax(c *CPU, param any) error {
+	addr, err := indexedAddress(param)
+	if err != nil {
+		return err
+	}
+
+	c.X = addr
 	setFlag(&c.Flags.Z, c.X == 0)
+
 	return nil
 }
 
-func leay(c *CPU, params ...any) error {
-	c.Y = uint16(params[0].(IndexedAddr))
+func leay(c *CPU, param any) error {
+	addr, err := indexedAddress(param)
+	if err != nil {
+		return err
+	}
+
+	c.Y = addr
 	setFlag(&c.Flags.Z, c.Y == 0)
+
 	return nil
 }
 
-func leas(c *CPU, params ...any) error {
-	c.S = uint16(params[0].(IndexedAddr))
+func leas(c *CPU, param any) error {
+	addr, err := indexedAddress(param)
+	if err != nil {
+		return err
+	}
+
+	c.S = addr
+
 	return nil
 }
 
-func leau(c *CPU, params ...any) error {
-	c.U = uint16(params[0].(IndexedAddr))
+func leau(c *CPU, param any) error {
+	addr, err := indexedAddress(param)
+	if err != nil {
+		return err
+	}
+
+	c.U = addr
+
 	return nil
+}
+
+func indexedAddress(param any) (uint16, error) {
+	addr, err := indexedAddrParam(param)
+
+	return uint16(addr), err
 }
 
 // -- Shift and Rotate (memory) --
@@ -515,8 +557,8 @@ func neg8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func negMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func negMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -543,8 +585,8 @@ func com8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func comMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func comMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -570,8 +612,8 @@ func lsr8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func lsrMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func lsrMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -601,8 +643,8 @@ func ror8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func rorMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func rorMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -628,8 +670,8 @@ func asr8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func asrMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func asrMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -656,8 +698,8 @@ func asl8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func aslMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func aslMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -688,8 +730,8 @@ func rol8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func rolMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func rolMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -715,8 +757,8 @@ func dec8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func decMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func decMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -742,8 +784,8 @@ func inc8(c *CPU, val uint8) uint8 {
 	return result
 }
 
-func incMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func incMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -767,8 +809,8 @@ func tst8(c *CPU, val uint8) {
 	c.Flags.V = 0
 }
 
-func tstMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func tstMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -794,8 +836,8 @@ func clr8(c *CPU) {
 	c.Flags.C = 0
 }
 
-func clrMem(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func clrMem(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -835,6 +877,7 @@ func sexFn(c *CPU) error {
 		c.A = 0x00
 	}
 	c.setZN16(c.D())
+	c.Flags.V = 0
 	return nil
 }
 

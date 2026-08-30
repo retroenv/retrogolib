@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
+	"github.com/retroenv/retrogolib/set"
 )
 
 // TestOpcodeTableConsistency verifies each opcode references an instruction that has
@@ -124,7 +125,62 @@ func TestBidirectionalPage3OpcodeMapping(t *testing.T) {
 // TestOpcodeIDMappingComplete verifies all instruction names have OpcodeIDs.
 func TestOpcodeIDMappingComplete(t *testing.T) {
 	for name := range Instructions {
-		_, ok := NameToOpcodeID[name]
+		id, ok := NameToOpcodeID[name]
 		assert.True(t, ok, "instruction %s missing from NameToOpcodeID", name)
+		assert.Equal(t, name, OpcodeIDToName[id])
 	}
+}
+
+func TestOpcodeInstructionMetadata(t *testing.T) {
+	tables := []struct {
+		name    string
+		opcodes [256]Opcode
+	}{
+		{name: "base", opcodes: Opcodes},
+		{name: "page 2", opcodes: OpcodesPage2},
+		{name: "page 3", opcodes: OpcodesPage3},
+	}
+
+	seen := set.Set[*Instruction]{}
+	for _, table := range tables {
+		for i, op := range table.opcodes {
+			if op.Instruction == nil {
+				continue
+			}
+
+			ins := op.Instruction
+			seen[ins] = struct{}{}
+			assert.NotEqual(t, InvalidOpcodeID, ins.ID,
+				"%s opcode 0x%02X has no instruction ID", table.name, i)
+			assert.Equal(t, ins.Name, OpcodeIDToName[ins.ID],
+				"%s opcode 0x%02X has mismatched instruction metadata", table.name, i)
+		}
+	}
+
+	for ins := range seen {
+		hasNoParamHandler := ins.noParamFunc != nil
+		hasParamHandler := ins.paramFunc != nil
+		assert.True(t, hasNoParamHandler != hasParamHandler,
+			"instruction %s must have exactly one handler", ins.Name)
+	}
+}
+
+func TestOpcodeCategories(t *testing.T) {
+	undefined := Opcode{}
+	assert.False(t, undefined.IsBranching(BranchingInstructions))
+	assert.False(t, undefined.ReadsMemory(MemoryReadInstructions))
+	assert.False(t, undefined.WritesMemory(MemoryWriteInstructions))
+
+	jmp, ok := GetOpcodeInfo(0x0E)
+	assert.True(t, ok)
+	assert.True(t, jmp.ReadsMemory(MemoryReadInstructions))
+	assert.False(t, jmp.WritesMemory(MemoryWriteInstructions))
+
+	clr, ok := GetOpcodeInfo(0x0F)
+	assert.True(t, ok)
+	assert.True(t, MemoryReadWriteInstructions.Contains(clr.Instruction.Name))
+
+	inc, ok := GetOpcodeInfo(0x0C)
+	assert.True(t, ok)
+	assert.True(t, MemoryReadWriteInstructions.Contains(inc.Instruction.Name))
 }

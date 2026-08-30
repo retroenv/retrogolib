@@ -75,7 +75,7 @@ func (c *CPU) setZN16(value uint16) {
 // compare8 compares two 8-bit values and sets N, Z, V, C flags.
 func (c *CPU) compare8(a, b uint8) {
 	result := int16(a) - int16(b)
-	setFlag(&c.Flags.C, a >= b)
+	setFlag(&c.Flags.C, a < b)
 	setFlag(&c.Flags.V, (a^b)&0x80 != 0 && (a^uint8(result))&0x80 != 0)
 	c.setZN8(uint8(result))
 }
@@ -83,7 +83,7 @@ func (c *CPU) compare8(a, b uint8) {
 // compare16 compares two 16-bit values and sets N, Z, V, C flags.
 func (c *CPU) compare16(a, b uint16) {
 	result := int32(a) - int32(b)
-	setFlag(&c.Flags.C, a >= b)
+	setFlag(&c.Flags.C, a < b)
 	setFlag(&c.Flags.V, (a^b)&0x8000 != 0 && (a^uint16(result))&0x8000 != 0)
 	c.setZN16(uint16(result))
 }

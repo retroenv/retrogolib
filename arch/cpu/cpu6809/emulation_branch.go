@@ -58,186 +58,98 @@ func (c *CPU) setRegisterValue(reg uint8, value uint16) {
 	}
 }
 
-func bccFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0, params[0].(uint16))
+func bccFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.C == 0)
+}
+
+func bcsFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.C != 0)
+}
+
+func beqFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.Z != 0)
+}
+
+func bgeFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.N == c.Flags.V)
+}
+
+func bgtFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.Z == 0 && c.Flags.N == c.Flags.V)
+}
+
+func bhiFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.C == 0 && c.Flags.Z == 0)
+}
+
+func bleFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.Z != 0 || c.Flags.N != c.Flags.V)
+}
+
+func blsFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.C != 0 || c.Flags.Z != 0)
+}
+
+func bltFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.N != c.Flags.V)
+}
+
+func bmiFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.N != 0)
+}
+
+func bneFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.Z == 0)
+}
+
+func bplFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.N == 0)
+}
+
+func braFn(c *CPU, param any) error {
+	return branchOn(c, param, true)
+}
+
+func brnFn(_ *CPU, _ any) error {
 	return nil
 }
 
-func bcsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0, params[0].(uint16))
-	return nil
-}
+func bsrFn(c *CPU, param any) error {
+	target, err := branchTargetParam(param)
+	if err != nil {
+		return err
+	}
 
-func beqFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0, params[0].(uint16))
-	return nil
-}
-
-func bgeFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func bgtFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0 && c.Flags.N == c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func bhiFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0 && c.Flags.Z == 0, params[0].(uint16))
-	return nil
-}
-
-func bleFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0 || c.Flags.N != c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func blsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0 || c.Flags.Z != 0, params[0].(uint16))
-	return nil
-}
-
-func bltFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func bmiFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != 0, params[0].(uint16))
-	return nil
-}
-
-func bneFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0, params[0].(uint16))
-	return nil
-}
-
-func bplFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == 0, params[0].(uint16))
-	return nil
-}
-
-func braFn(c *CPU, params ...any) error {
-	c.branch(true, params[0].(uint16))
-	return nil
-}
-
-func brnFn(_ *CPU, _ ...any) error {
-	return nil
-}
-
-func bsrFn(c *CPU, params ...any) error {
-	// Push return address (address of next instruction, pre-computed by step.go).
 	c.pushS16(c.nextPC)
-	c.PC = params[0].(uint16)
+	c.PC = target
 	c.pcChanged = true
+
 	return nil
 }
 
-func bvcFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.V == 0, params[0].(uint16))
-	return nil
+func bvcFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.V == 0)
 }
 
-func bvsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.V != 0, params[0].(uint16))
-	return nil
+func bvsFn(c *CPU, param any) error {
+	return branchOn(c, param, c.Flags.V != 0)
 }
 
-// -- Long branches --
+func branchOn(c *CPU, param any, taken bool) error {
+	target, err := branchTargetParam(param)
+	if err != nil {
+		return err
+	}
 
-func lbccFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0, params[0].(uint16))
-	return nil
-}
+	c.branch(taken, target)
 
-func lbcsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0, params[0].(uint16))
-	return nil
-}
-
-func lbeqFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0, params[0].(uint16))
-	return nil
-}
-
-func lbgeFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func lbgtFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0 && c.Flags.N == c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func lbhiFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0 && c.Flags.Z == 0, params[0].(uint16))
-	return nil
-}
-
-func lbleFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0 || c.Flags.N != c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func lblsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0 || c.Flags.Z != 0, params[0].(uint16))
-	return nil
-}
-
-func lbltFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != c.Flags.V, params[0].(uint16))
-	return nil
-}
-
-func lbmiFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != 0, params[0].(uint16))
-	return nil
-}
-
-func lbneFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0, params[0].(uint16))
-	return nil
-}
-
-func lbplFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == 0, params[0].(uint16))
-	return nil
-}
-
-func lbraFn(c *CPU, params ...any) error {
-	c.branch(true, params[0].(uint16))
-	return nil
-}
-
-func lbrnFn(_ *CPU, _ ...any) error {
-	return nil
-}
-
-func lbsrFn(c *CPU, params ...any) error {
-	// Push return address (address of next instruction, pre-computed by step.go).
-	c.pushS16(c.nextPC)
-	c.PC = params[0].(uint16)
-	c.pcChanged = true
-	return nil
-}
-
-func lbvcFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.V == 0, params[0].(uint16))
-	return nil
-}
-
-func lbvsFn(c *CPU, params ...any) error {
-	c.branch(c.Flags.V != 0, params[0].(uint16))
 	return nil
 }
 
 // -- Jump --
 
-func jmpFn(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func jmpFn(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -246,8 +158,8 @@ func jmpFn(c *CPU, params ...any) error {
 	return nil
 }
 
-func jsrFn(c *CPU, params ...any) error {
-	addr, err := c.resolveEA(params[0])
+func jsrFn(c *CPU, param any) error {
+	addr, err := c.resolveEA(param)
 	if err != nil {
 		return err
 	}
@@ -260,15 +172,26 @@ func jsrFn(c *CPU, params ...any) error {
 
 // -- TFR/EXG --
 
-func tfrFn(c *CPU, params ...any) error {
-	postbyte := uint8(params[0].(RegisterPair))
+func tfrFn(c *CPU, param any) error {
+	pair, err := registerPairParam(param)
+	if err != nil {
+		return err
+	}
+
+	postbyte := uint8(pair)
 	src := c.getRegisterValue(postbyte >> 4)
 	c.setRegisterValue(postbyte&0x0F, src)
+
 	return nil
 }
 
-func exgFn(c *CPU, params ...any) error {
-	postbyte := uint8(params[0].(RegisterPair))
+func exgFn(c *CPU, param any) error {
+	pair, err := registerPairParam(param)
+	if err != nil {
+		return err
+	}
+
+	postbyte := uint8(pair)
 	srcReg := postbyte >> 4
 	dstReg := postbyte & 0x0F
 	src := c.getRegisterValue(srcReg)

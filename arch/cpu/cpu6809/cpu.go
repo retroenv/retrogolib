@@ -1,9 +1,6 @@
 package cpu6809
 
-import (
-	"errors"
-	"sync"
-)
+import "sync"
 
 // State represents a complete snapshot of the 6809 CPU state.
 type State struct {
@@ -20,9 +17,10 @@ type State struct {
 	Cycles uint64
 }
 
-// CPU represents a thread-safe Motorola 6809 microprocessor.
+// CPU represents a Motorola 6809 microprocessor.
+// Interrupt triggers may run concurrently with Step; callers must serialize all other access.
 type CPU struct {
-	mu sync.RWMutex
+	interruptMu sync.Mutex
 
 	// Registers
 	A  uint8  // Accumulator A (high byte of D)
@@ -37,19 +35,17 @@ type CPU struct {
 	Flags Flags // Condition code register (CC)
 
 	cycles    uint64
-	waiting   bool   // SYNC instruction state
+	waitMode  waitMode
 	pcChanged bool   // set by instructions that explicitly set PC (branches, jumps)
-	nextPC    uint16 // address of next instruction, set before handler call for JSR/BSR
+	nextPC    uint16 // address following the current instruction
 
 	// Interrupt control
 	triggerNMI  bool
 	triggerIRQ  bool
 	triggerFIRQ bool
-	nmiRunning  bool
-	irqRunning  bool
 
 	memory *Memory
-	opts   Options
+	opts   options
 
 	TraceStep TraceStep // set when tracing is enabled
 }
@@ -61,27 +57,21 @@ type TraceStep struct {
 	Opcode         Opcode
 }
 
-const (
-	initialCycles = 0
-)
-
 // New creates a new 6809 CPU, reads the reset vector, and initializes registers.
 func New(memory *Memory, opts ...Option) (*CPU, error) {
-	if memory == nil {
-		return nil, errors.New("memory cannot be nil")
+	if memory == nil || memory.BasicMemory == nil {
+		return nil, ErrNilMemory
 	}
 
 	c := &CPU{
-		cycles: initialCycles,
 		memory: memory,
-		opts:   NewOptions(opts...),
+		opts:   newOptions(opts...),
 	}
 
-	// Set I and F flags on reset (interrupts disabled)
+	// Reset starts with both maskable interrupt classes disabled.
 	c.Flags.I = 1
 	c.Flags.F = 1
 
-	// Read reset vector
 	resetVec := memory.ReadVector(VectorRESET)
 	c.PC = resetVec
 
@@ -104,8 +94,6 @@ func (c *CPU) Cycles() uint64 { return c.cycles }
 
 // State returns a snapshot of the current CPU state.
 func (c *CPU) State() State {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
 	return State{
 		A:      c.A,
 		B:      c.B,
@@ -122,19 +110,14 @@ func (c *CPU) State() State {
 
 // ValidateState checks that CPU state is consistent.
 func (c *CPU) ValidateState() error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if c.memory == nil {
-		return errors.New("CPU memory is nil")
+	if c.memory == nil || c.memory.BasicMemory == nil {
+		return ErrNilMemory
 	}
 	return nil
 }
 
 // Reset resets the CPU to its initial post-reset state.
 func (c *CPU) Reset() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.A = 0
 	c.B = 0
 	c.X = 0
@@ -143,15 +126,16 @@ func (c *CPU) Reset() {
 	c.U = 0
 	c.DP = 0
 	c.Flags = Flags{I: 1, F: 1}
-	c.cycles = initialCycles
-	c.waiting = false
+	c.cycles = 0
+
+	c.interruptMu.Lock()
+	c.waitMode = waitNone
 	c.triggerNMI = false
 	c.triggerIRQ = false
 	c.triggerFIRQ = false
-	c.nmiRunning = false
-	c.irqRunning = false
+	c.interruptMu.Unlock()
 
-	if c.memory != nil {
+	if c.memory != nil && c.memory.BasicMemory != nil {
 		c.PC = c.memory.ReadVector(VectorRESET)
 	}
 }
@@ -169,13 +153,26 @@ func (c *CPU) SetCC(cc uint8) {
 	c.Flags.Set(cc)
 }
 
+func (c *CPU) setWaitMode(mode waitMode) {
+	c.interruptMu.Lock()
+	c.waitMode = mode
+	c.interruptMu.Unlock()
+}
+
+func (c *CPU) isWaiting() bool {
+	c.interruptMu.Lock()
+	defer c.interruptMu.Unlock()
+
+	return c.waitMode != waitNone
+}
+
 // pushS8 pushes a byte onto the system stack (S) and decrements S.
 func (c *CPU) pushS8(value uint8) {
 	c.S--
 	c.memory.Write(c.S, value)
 }
 
-// pushS16 pushes a 16-bit word onto the system stack (high byte first).
+// pushS16 pushes the low byte first so the decremented stack points at the high byte.
 func (c *CPU) pushS16(value uint16) {
 	c.pushS8(uint8(value))
 	c.pushS8(uint8(value >> 8))
@@ -201,7 +198,7 @@ func (c *CPU) pushU8(value uint8) {
 	c.memory.Write(c.U, value)
 }
 
-// pushU16 pushes a 16-bit word onto the user stack.
+// pushU16 pushes the low byte first so the decremented stack points at the high byte.
 func (c *CPU) pushU16(value uint16) {
 	c.pushU8(uint8(value))
 	c.pushU8(uint8(value >> 8))

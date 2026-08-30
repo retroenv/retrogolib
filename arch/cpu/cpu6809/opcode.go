@@ -13,14 +13,18 @@ const (
 
 // Opcode contains decoded instruction information for a single opcode byte.
 type Opcode struct {
-	Instruction *Instruction
-	Addressing  AddressingMode
-	Timing      byte // Base cycle count
-	Size        byte // Base size in bytes (not including indexed postbyte extra)
+	Instruction      *Instruction
+	Addressing       AddressingMode
+	Timing           byte // Base cycle count
+	Size             byte // Base size in bytes (not including indexed postbyte extra)
+	BranchTakenCycle bool // Conditional long branches take one extra cycle when taken.
 }
 
 // ReadsMemory returns true if this opcode reads from memory.
 func (op Opcode) ReadsMemory(memReadInstructions set.Set[string]) bool {
+	if op.Instruction == nil {
+		return false
+	}
 	switch op.Addressing {
 	case ImmediateAddressing, Immediate16Addressing, ImpliedAddressing, RelativeAddressing, RelativeLongAddressing:
 		return false
@@ -30,6 +34,9 @@ func (op Opcode) ReadsMemory(memReadInstructions set.Set[string]) bool {
 
 // WritesMemory returns true if this opcode writes to memory.
 func (op Opcode) WritesMemory(memWriteInstructions set.Set[string]) bool {
+	if op.Instruction == nil {
+		return false
+	}
 	switch op.Addressing {
 	case ImmediateAddressing, Immediate16Addressing, ImpliedAddressing, RelativeAddressing, RelativeLongAddressing:
 		return false
@@ -39,7 +46,7 @@ func (op Opcode) WritesMemory(memWriteInstructions set.Set[string]) bool {
 
 // IsBranching returns true if this opcode is a branching instruction.
 func (op Opcode) IsBranching(branchInstructions set.Set[string]) bool {
-	return branchInstructions.Contains(op.Instruction.Name)
+	return op.Instruction != nil && branchInstructions.Contains(op.Instruction.Name)
 }
 
 // GetOpcodeInfo returns opcode information for the given byte.

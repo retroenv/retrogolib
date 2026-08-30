@@ -4,21 +4,21 @@ package cpu6809
 // Only defined entries are populated; all others have nil Instruction.
 var OpcodesPage2 = [256]Opcode{
 	// $10 $21 - $10 $2F: Long branches
-	0x21: {Instruction: LbrnInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1021 LBRN
-	0x22: {Instruction: LbhiInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1022 LBHI
-	0x23: {Instruction: LblsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1023 LBLS
-	0x24: {Instruction: LbccInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1024 LBCC
-	0x25: {Instruction: LbcsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1025 LBCS
-	0x26: {Instruction: LbneInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1026 LBNE
-	0x27: {Instruction: LbeqInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1027 LBEQ
-	0x28: {Instruction: LbvcInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1028 LBVC
-	0x29: {Instruction: LbvsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $1029 LBVS
-	0x2A: {Instruction: LbplInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102A LBPL
-	0x2B: {Instruction: LbmiInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102B LBMI
-	0x2C: {Instruction: LbgeInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102C LBGE
-	0x2D: {Instruction: LbltInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102D LBLT
-	0x2E: {Instruction: LbgtInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102E LBGT
-	0x2F: {Instruction: LbleInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4}, // $102F LBLE
+	0x21: {Instruction: LbrnInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4},                         // $1021 LBRN
+	0x22: {Instruction: LbhiInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1022 LBHI
+	0x23: {Instruction: LblsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1023 LBLS
+	0x24: {Instruction: LbccInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1024 LBCC
+	0x25: {Instruction: LbcsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1025 LBCS
+	0x26: {Instruction: LbneInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1026 LBNE
+	0x27: {Instruction: LbeqInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1027 LBEQ
+	0x28: {Instruction: LbvcInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1028 LBVC
+	0x29: {Instruction: LbvsInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $1029 LBVS
+	0x2A: {Instruction: LbplInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102A LBPL
+	0x2B: {Instruction: LbmiInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102B LBMI
+	0x2C: {Instruction: LbgeInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102C LBGE
+	0x2D: {Instruction: LbltInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102D LBLT
+	0x2E: {Instruction: LbgtInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102E LBGT
+	0x2F: {Instruction: LbleInst, Addressing: RelativeLongAddressing, Timing: 5, Size: 4, BranchTakenCycle: true}, // $102F LBLE
 
 	// $10 $3F: SWI2
 	0x3F: {Instruction: Swi2Inst, Addressing: ImpliedAddressing, Timing: 20, Size: 2}, // $103F SWI2

@@ -2,10 +2,10 @@ package cpu6809
 
 // System instructions: RTS, RTI, SWI, CWAI, SYNC.
 
-// pushEntireState pushes the entire CPU state onto the system stack.
+// pushEntireState pushes the entire CPU state with the supplied return address.
 // Order: PC, U, Y, X, DP, B, A, CC (last pushed = first on stack).
-func (c *CPU) pushEntireState() {
-	c.pushS16(c.PC)
+func (c *CPU) pushEntireState(returnPC uint16) {
+	c.pushS16(returnPC)
 	c.pushS16(c.U)
 	c.pushS16(c.Y)
 	c.pushS16(c.X)
@@ -15,7 +15,6 @@ func (c *CPU) pushEntireState() {
 	c.pushS8(c.GetCC())
 }
 
-// rtsFn - Return from Subroutine.
 func rtsFn(c *CPU) error {
 	c.PC = c.popS16()
 	c.pcChanged = true
@@ -30,7 +29,8 @@ func rtiFn(c *CPU) error {
 	c.SetCC(cc)
 
 	if c.Flags.E != 0 {
-		// Entire state was saved
+		// The opcode table accounts for the six-cycle short-frame path.
+		c.cycles += 9
 		c.A = c.popS8()
 		c.B = c.popS8()
 		c.DP = c.popS8()
@@ -42,10 +42,6 @@ func rtiFn(c *CPU) error {
 	c.PC = c.popS16()
 	c.pcChanged = true
 
-	c.mu.Lock()
-	c.irqRunning = false
-	c.nmiRunning = false
-	c.mu.Unlock()
 	return nil
 }
 
@@ -54,7 +50,7 @@ func rtiFn(c *CPU) error {
 // Disables both IRQ and FIRQ.
 func swiFn(c *CPU) error {
 	c.Flags.E = 1
-	c.pushEntireState()
+	c.pushEntireState(c.nextPC)
 	c.Flags.I = 1
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorSWI)
@@ -67,7 +63,7 @@ func swiFn(c *CPU) error {
 // Does NOT disable interrupts.
 func swi2Fn(c *CPU) error {
 	c.Flags.E = 1
-	c.pushEntireState()
+	c.pushEntireState(c.nextPC)
 	c.PC = c.memory.ReadVector(VectorSWI2)
 	c.pcChanged = true
 	return nil
@@ -78,7 +74,7 @@ func swi2Fn(c *CPU) error {
 // Does NOT disable interrupts.
 func swi3Fn(c *CPU) error {
 	c.Flags.E = 1
-	c.pushEntireState()
+	c.pushEntireState(c.nextPC)
 	c.PC = c.memory.ReadVector(VectorSWI3)
 	c.pcChanged = true
 	return nil
@@ -87,17 +83,23 @@ func swi3Fn(c *CPU) error {
 // cwaiFn - AND CC then Wait for Interrupt.
 // ANDs the CC with the immediate value, sets E=1, pushes entire state,
 // then waits for an interrupt.
-func cwaiFn(c *CPU, params ...any) error {
-	mask := uint8(params[0].(Immediate8))
+func cwaiFn(c *CPU, param any) error {
+	value, err := immediate8Param(param)
+	if err != nil {
+		return err
+	}
+
+	mask := uint8(value)
 	c.SetCC(c.GetCC() & mask)
 	c.Flags.E = 1
-	c.pushEntireState()
-	c.waiting = true
+	c.pushEntireState(c.nextPC)
+	c.setWaitMode(waitCWAI)
+
 	return nil
 }
 
-// syncFn - Synchronize with Interrupt.
 func syncFn(c *CPU) error {
-	c.waiting = true
+	c.setWaitMode(waitSync)
+
 	return nil
 }

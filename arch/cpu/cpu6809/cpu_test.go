@@ -15,7 +15,23 @@ func TestNew(t *testing.T) {
 
 func TestNilMemory(t *testing.T) {
 	_, err := NewMemory(nil)
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrNilMemory)
+
+	_, err = New(nil)
+	assert.ErrorIs(t, err, ErrNilMemory)
+
+	_, err = New(&Memory{})
+	assert.ErrorIs(t, err, ErrNilMemory)
+}
+
+func TestNilOptionIsIgnored(t *testing.T) {
+	mem := &testMem{}
+	mem.WriteWord(VectorRESET, 0x8000)
+	wrapper, err := NewMemory(mem)
+	assert.NoError(t, err)
+
+	_, err = New(wrapper, nil)
+	assert.NoError(t, err)
 }
 
 func TestDRegister(t *testing.T) {
@@ -94,6 +110,30 @@ func TestFlags(t *testing.T) {
 	cpu.Flags.Z = 1
 	expected := uint8(MaskCarry | MaskZero)
 	assert.Equal(t, expected, cpu.Flags.Get())
+}
+
+func TestTracingAndPreExecutionHook(t *testing.T) {
+	mem := &testMem{}
+	mem.WriteWord(VectorRESET, 0x8000)
+	wrapper, err := NewMemory(mem)
+	assert.NoError(t, err)
+
+	var gotInstruction *Instruction
+	var gotParams []any
+	hook := func(_ *CPU, ins *Instruction, params ...any) {
+		gotInstruction = ins
+		gotParams = append(gotParams, params...)
+	}
+	cpu, err := New(wrapper, WithTracing(), WithPreExecutionHook(hook))
+	assert.NoError(t, err)
+	mem.data[0x8000] = 0x86 // LDA immediate
+	mem.data[0x8001] = 0x42
+
+	err = cpu.Step()
+	assert.NoError(t, err)
+	assert.Equal(t, LdaInst, gotInstruction)
+	assert.Equal(t, []any{Immediate8(0x42)}, gotParams)
+	assert.Equal(t, []byte{0x86, 0x42}, cpu.TraceStep.OpcodeOperands)
 }
 
 // testMem is a simple flat 64KB memory for testing.
