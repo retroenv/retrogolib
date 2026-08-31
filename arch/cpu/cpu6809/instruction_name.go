@@ -1,6 +1,6 @@
 package cpu6809
 
-// Instruction name constants, sorted alphabetically.
+// Instruction names provide stable mnemonic keys for lookup and tooling.
 const (
 	AbxName   = "abx"
 	AdcaName  = "adca"

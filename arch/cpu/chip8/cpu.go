@@ -5,8 +5,20 @@ import (
 	"sync"
 )
 
-// CPUState represents complete Chip-8 VM state for save/load and debugging.
-type CPUState struct {
+const (
+	displayHeight         = 32
+	displayWidth          = 64
+	initialProgramCounter = 0x200
+)
+
+type keyWait struct {
+	register uint16
+	key      int8
+	active   bool
+}
+
+// State represents complete Chip-8 VM state for save/load and debugging.
+type State struct {
 	Memory       [4096]byte                         // Full 4KB memory
 	V            [16]byte                           // General-purpose registers V0-VF
 	Stack        [16]uint16                         // Call stack
@@ -18,14 +30,17 @@ type CPUState struct {
 	DelayTimer   byte                               // Delay timer value
 	SoundTimer   byte                               // Sound timer value
 	RedrawScreen bool                               // Screen redraw flag
+
+	keyWait       keyWait
+	drewThisFrame bool
 }
 
-// CPU represents a thread-safe Chip-8 virtual machine with full instruction set emulation.
+// CPU represents a CHIP-8 virtual machine with serialized execution and snapshots.
 type CPU struct {
 	// Memory and registers
 	Memory [4096]byte // 4KB memory ($000-$FFF)
 	V      [16]byte   // 16 general-purpose registers (V0-VF, VF used as flag)
-	I      uint16     // Index register (12-bit address pointer)
+	I      uint16     // Index register
 	PC     uint16     // Program counter
 
 	// Stack for subroutine calls
@@ -43,22 +58,21 @@ type CPU struct {
 	Display      [displayWidth * displayHeight]byte // 64x32 monochrome display
 	RedrawScreen bool                               // Set when screen needs redraw
 
-	mu sync.RWMutex // Thread-safe access protection
+	quirks        Quirks
+	keyWait       keyWait
+	drewThisFrame bool
+	mu            sync.RWMutex // Thread-safe access protection
 }
 
-const (
-	displayHeight         = 32
-	displayWidth          = 64
-	initialProgramCounter = 0x200
-)
-
 // New creates a new CPU.
-func New() *CPU {
+func New(optionList ...Option) *CPU {
+	opts := newOptions(optionList...)
 	c := &CPU{
-		PC: initialProgramCounter,
+		PC:      initialProgramCounter,
+		quirks:  opts.quirks,
+		keyWait: newKeyWait(),
 	}
 
-	// Load fontset into memory
 	copy(c.Memory[:], fontSet[:])
 
 	return c
@@ -86,11 +100,12 @@ func (c *CPU) Step() error {
 	return fmt.Errorf("unknown opcode: %04X", w)
 }
 
-// UpdateTimers decrements the delay and sound timers.
+// UpdateTimers advances the 60 Hz timer and display cadence by one tick.
 func (c *CPU) UpdateTimers() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	c.drewThisFrame = false
 	if c.DelayTimer > 0 {
 		c.DelayTimer--
 	}
@@ -110,39 +125,23 @@ func (c *CPU) Reset() {
 	c.DelayTimer = 0
 	c.SoundTimer = 0
 	c.RedrawScreen = false
+	c.keyWait = newKeyWait()
+	c.drewThisFrame = false
 
-	// Clear registers
-	for i := range c.V {
-		c.V[i] = 0
-	}
-
-	// Clear memory (except font data)
-	for i := len(fontSet); i < len(c.Memory); i++ {
-		c.Memory[i] = 0
-	}
-
-	// Clear display
-	for i := range c.Display {
-		c.Display[i] = 0
-	}
-
-	// Clear stack
-	for i := range c.Stack {
-		c.Stack[i] = 0
-	}
-
-	// Clear keys
-	for i := range c.Key {
-		c.Key[i] = false
-	}
+	c.Memory = [len(c.Memory)]byte{}
+	copy(c.Memory[:], fontSet[:])
+	c.V = [len(c.V)]byte{}
+	c.Stack = [len(c.Stack)]uint16{}
+	c.Display = [len(c.Display)]byte{}
+	c.Key = [len(c.Key)]bool{}
 }
 
-// GetState returns a copy of the CPU state for safe access.
-func (c *CPU) GetState() CPUState {
+// State returns a copy of the CPU state for safe access.
+func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var state CPUState
+	var state State
 	copy(state.Memory[:], c.Memory[:])
 	copy(state.V[:], c.V[:])
 	copy(state.Stack[:], c.Stack[:])
@@ -155,12 +154,14 @@ func (c *CPU) GetState() CPUState {
 	state.DelayTimer = c.DelayTimer
 	state.SoundTimer = c.SoundTimer
 	state.RedrawScreen = c.RedrawScreen
+	state.keyWait = c.keyWait
+	state.drewThisFrame = c.drewThisFrame
 
 	return state
 }
 
 // SetState sets the CPU state from a snapshot.
-func (c *CPU) SetState(state CPUState) {
+func (c *CPU) SetState(state State) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -176,6 +177,8 @@ func (c *CPU) SetState(state CPUState) {
 	c.DelayTimer = state.DelayTimer
 	c.SoundTimer = state.SoundTimer
 	c.RedrawScreen = state.RedrawScreen
+	c.keyWait = state.keyWait
+	c.drewThisFrame = state.drewThisFrame
 }
 
 // updatePC increments the program counter to the next instruction and optionally skips the following instruction.
@@ -185,4 +188,8 @@ func (c *CPU) updatePC(skipInstruction bool) {
 	} else {
 		c.PC += 2
 	}
+}
+
+func newKeyWait() keyWait {
+	return keyWait{key: -1}
 }

@@ -24,8 +24,11 @@
 //			log.Fatal(err)
 //		}
 //
-//		// Handle display updates, input, timers...
+//		// Handle display updates and input...
 //	}
+//
+// Call UpdateTimers once per 60 Hz tick. Besides decrementing the delay and
+// sound timers, that tick releases the original interpreter's display wait.
 //
 // # Memory Layout
 //
@@ -36,7 +39,7 @@
 //
 //   - V0-VE: General-purpose registers
 //   - VF: Flag register (used for carry, borrow, collision detection)
-//   - I: Index register (12-bit)
+//   - I: 16-bit index register, normally used with 12-bit memory addresses
 //   - PC: Program counter
 //   - SP: Stack pointer
 //
@@ -46,9 +49,13 @@
 // operations, and collision detection sets the VF flag when sprites overlap
 // existing pixels.
 //
+// # Compatibility
+//
+// New defaults to COSMAC VIP CHIP-8 behavior. WithQuirks enables individual
+// behaviors used by later interpreters without silently mixing dialects.
+//
 // # Safety
 //
-// This implementation includes comprehensive bounds checking for all memory
-// and register operations to prevent panics and ensure safe operation even
-// with malformed or malicious Chip-8 programs.
+// This implementation validates instruction fetches, memory-backed operands,
+// stack access, key indices, and font indices before use.
 package chip8

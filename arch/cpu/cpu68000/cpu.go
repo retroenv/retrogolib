@@ -39,7 +39,7 @@ type CPU struct {
 	sr  uint16 // Status register system byte (high byte)
 	bus Bus
 
-	opts      Options
+	opts      options
 	TraceStep TraceStep // trace step info, set if tracing is enabled
 }
 
@@ -50,7 +50,7 @@ func New(bus Bus, options ...Option) (*CPU, error) {
 		return nil, ErrNilBus
 	}
 
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 
 	c := &CPU{
 		bus:  bus,

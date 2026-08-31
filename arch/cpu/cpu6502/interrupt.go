@@ -8,9 +8,9 @@ type Interrupts struct {
 	IrqRunning   bool
 }
 
-// TriggerIrq causes an interrupt request to occur on the next cycle.
+// TriggerIRQ causes an interrupt request to occur on the next cycle.
 // This is a no-op for the 6507 variant (Atari 2600) which has no IRQ pin.
-func (c *CPU) TriggerIrq() {
+func (c *CPU) TriggerIRQ() {
 	if c.opts.variant == Variant6507 {
 		return
 	}

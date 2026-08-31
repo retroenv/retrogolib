@@ -75,16 +75,20 @@ func TestOr(t *testing.T) {
 	c := New()
 	c.V[0] = 0x12
 	c.V[1] = 0x34
+	c.V[0xf] = 1
 	assert.NoError(t, or(c, 0x0010))
 	assert.Equal(t, uint8(0x36), c.V[0])
+	assert.Equal(t, uint8(0), c.V[0xf])
 }
 
 func TestXor(t *testing.T) {
 	c := New()
 	c.V[0] = 0x12
 	c.V[1] = 0x34
+	c.V[0xf] = 1
 	assert.NoError(t, xor(c, 0x0010))
 	assert.Equal(t, uint8(0x26), c.V[0])
+	assert.Equal(t, uint8(0), c.V[0xf])
 }
 
 func TestAdd(t *testing.T) {
@@ -118,8 +122,10 @@ func TestAnd(t *testing.T) {
 	c := New()
 	c.V[0] = 0x12
 	c.V[1] = 0x34
+	c.V[0xf] = 1
 	assert.NoError(t, and(c, 0x0010))
 	assert.Equal(t, uint8(0x10), c.V[0])
+	assert.Equal(t, uint8(0), c.V[0xf])
 }
 
 func TestDrw(t *testing.T) {
@@ -158,28 +164,32 @@ func TestRnd(t *testing.T) {
 
 func TestShl(t *testing.T) {
 	c := New()
-	c.V[0] = 0b10000000
+	c.V[0] = 0
+	c.V[1] = 0b10000000
 
-	assert.NoError(t, shl(c, 0))
+	assert.NoError(t, shl(c, 0x0010))
 	assert.Equal(t, uint8(1), c.V[0xF])
 	assert.Equal(t, uint8(0), c.V[0])
 
-	assert.NoError(t, shl(c, 0))
+	c.V[1] = 1
+	assert.NoError(t, shl(c, 0x0010))
 	assert.Equal(t, uint8(0), c.V[0xF])
-	assert.Equal(t, uint8(0), c.V[0])
+	assert.Equal(t, uint8(2), c.V[0])
 }
 
 func TestShr(t *testing.T) {
 	c := New()
-	c.V[0] = 0b00000001
+	c.V[0] = 0
+	c.V[1] = 0b00000001
 
-	assert.NoError(t, shr(c, 0))
+	assert.NoError(t, shr(c, 0x0010))
 	assert.Equal(t, uint8(1), c.V[0xF])
 	assert.Equal(t, uint8(0), c.V[0])
 
-	assert.NoError(t, shr(c, 0))
+	c.V[1] = 4
+	assert.NoError(t, shr(c, 0x0010))
 	assert.Equal(t, uint8(0), c.V[0xF])
-	assert.Equal(t, uint8(0), c.V[0])
+	assert.Equal(t, uint8(2), c.V[0])
 }
 
 func TestSkp(t *testing.T) {
@@ -274,9 +284,13 @@ func TestMemoryBounds(t *testing.T) {
 	err = c.ldBVx(0)
 	assert.ErrorContains(t, err, "memory")
 	assert.ErrorIs(t, err, ErrMemoryOutOfBounds, "error should be ErrMemoryOutOfBounds")
+
+	c.I = 0xffff
+	err = c.ldBVx(0)
+	assert.ErrorIs(t, err, ErrMemoryOutOfBounds)
 }
 
-func TestCPUState(t *testing.T) {
+func TestInitialState(t *testing.T) {
 	t.Parallel()
 	c := New()
 
@@ -365,17 +379,18 @@ func TestRandomization(t *testing.T) {
 func TestLdVxK(t *testing.T) {
 	c := New()
 
-	// Test waiting for key press (no key pressed)
-	err := c.ldVxK(0)
-	assert.NoError(t, err)
-	assert.Equal(t, uint16(0x200), c.PC) // PC should not advance
+	assert.NoError(t, c.ldVxK(0))
+	assert.Equal(t, uint16(0x200), c.PC)
 
-	// Test key press detected
 	c.Key[5] = true
-	err = c.ldVxK(0)
-	assert.NoError(t, err)
+	assert.NoError(t, c.ldVxK(0))
+	assert.Equal(t, uint16(0x200), c.PC)
+
+	// FX0A completes on key release, not while the selected key is held.
+	c.Key[5] = false
+	assert.NoError(t, c.ldVxK(0))
 	assert.Equal(t, uint8(5), c.V[0])
-	assert.Equal(t, uint16(0x202), c.PC) // PC should advance
+	assert.Equal(t, uint16(0x202), c.PC)
 }
 
 func TestJpV0(t *testing.T) {
@@ -447,6 +462,7 @@ func TestLdIVxCorrectness(t *testing.T) {
 	for i := range uint16(4) {
 		assert.Equal(t, uint8(i+1), c.Memory[0x300+i])
 	}
+	assert.Equal(t, uint16(0x304), c.I)
 }
 
 func TestLdVxICorrectness(t *testing.T) {
@@ -459,6 +475,7 @@ func TestLdVxICorrectness(t *testing.T) {
 	for i := range uint16(4) {
 		assert.Equal(t, uint8(i+10), c.V[i])
 	}
+	assert.Equal(t, uint16(0x304), c.I)
 }
 
 func TestAddI(t *testing.T) {
@@ -474,10 +491,12 @@ func TestUpdateTimers(t *testing.T) {
 	c := New()
 	c.DelayTimer = 10
 	c.SoundTimer = 5
+	c.drewThisFrame = true
 
 	c.UpdateTimers()
 	assert.Equal(t, uint8(9), c.DelayTimer)
 	assert.Equal(t, uint8(4), c.SoundTimer)
+	assert.False(t, c.drewThisFrame)
 
 	// Test that timers don't go below 0
 	for range 10 {
@@ -494,6 +513,7 @@ func TestReset(t *testing.T) {
 	c.PC = 0x300
 	c.SP = 5
 	c.I = 0x123
+	c.Memory[0] = 0
 	c.V[0] = 0x42
 	c.Stack[0] = 0x200
 	c.Display[0] = 1
@@ -501,6 +521,8 @@ func TestReset(t *testing.T) {
 	c.DelayTimer = 10
 	c.SoundTimer = 5
 	c.RedrawScreen = true
+	c.keyWait = keyWait{active: true, register: 3, key: 4}
+	c.drewThisFrame = true
 
 	c.Reset()
 
@@ -515,12 +537,14 @@ func TestReset(t *testing.T) {
 	assert.Equal(t, uint8(0), c.DelayTimer)
 	assert.Equal(t, uint8(0), c.SoundTimer)
 	assert.False(t, c.RedrawScreen)
+	assert.Equal(t, newKeyWait(), c.keyWait)
+	assert.False(t, c.drewThisFrame)
 
 	// Verify font data is preserved
 	assert.Equal(t, fontSet[0], c.Memory[0])
 }
 
-func TestGetSetState(t *testing.T) {
+func TestStateRoundTrip(t *testing.T) {
 	c := New()
 
 	// Modify state
@@ -528,13 +552,17 @@ func TestGetSetState(t *testing.T) {
 	c.I = 0x123
 	c.V[0] = 0x42
 	c.DelayTimer = 10
+	c.keyWait = keyWait{active: true, register: 2, key: 3}
+	c.drewThisFrame = true
 
 	// Get state
-	state := c.GetState()
+	state := c.State()
 	assert.Equal(t, uint16(0x300), state.PC)
 	assert.Equal(t, uint16(0x123), state.I)
 	assert.Equal(t, uint8(0x42), state.V[0])
 	assert.Equal(t, uint8(10), state.DelayTimer)
+	assert.Equal(t, c.keyWait, state.keyWait)
+	assert.True(t, state.drewThisFrame)
 
 	// Create new CPU and set state
 	c2 := New()
@@ -543,33 +571,153 @@ func TestGetSetState(t *testing.T) {
 	assert.Equal(t, uint16(0x123), c2.I)
 	assert.Equal(t, uint8(0x42), c2.V[0])
 	assert.Equal(t, uint8(10), c2.DelayTimer)
+	assert.Equal(t, c.keyWait, c2.keyWait)
+	assert.True(t, c2.drewThisFrame)
 }
 
-func TestDrwWrapping(t *testing.T) {
+func TestDrwClipping(t *testing.T) {
 	c := New()
 
-	// Test X wrapping
-	c.V[0] = 62 // Near right edge
+	c.V[0] = 62
 	c.V[1] = 0
 	c.I = 0x200
-	c.Memory[0x200] = 0xFF // 8 pixels wide sprite
+	c.Memory[0x200] = 0xFF
 
-	assert.NoError(t, drw(c, 0xD011)) // DRW V0, V1, 1
+	assert.NoError(t, drw(c, 0xD011))
 
-	// Should draw 2 pixels on right edge, rest should wrap but are cut off
 	assert.Equal(t, uint8(1), c.Display[62])
 	assert.Equal(t, uint8(1), c.Display[63])
 
-	// Test Y wrapping
 	c = New()
 	c.V[0] = 0
-	c.V[1] = 31 // Bottom row
+	c.V[1] = 31
 	c.I = 0x200
 	c.Memory[0x200] = 0xFF
-	c.Memory[0x201] = 0xFF // This would wrap but should be cut off
+	c.Memory[0x201] = 0xFF
 
-	assert.NoError(t, drw(c, 0xD012)) // DRW V0, V1, 2
+	assert.NoError(t, drw(c, 0xD012))
 
-	// Only first row should be drawn
 	assert.Equal(t, uint8(1), c.Display[31*64])
+	assert.Equal(t, uint8(0), c.Display[0])
+}
+
+func TestArithmeticReadsVFBeforeWritingFlag(t *testing.T) {
+	// Bug: writing VF before evaluating the result corrupted instructions that
+	// used VF as either source or destination.
+	tests := []struct {
+		name                                  string
+		emulate                               func(*CPU, uint16) error
+		opcode, firstRegister, secondRegister uint16
+		firstValue, secondValue, wantValue    byte
+		register                              uint16
+		wantVF                                byte
+	}{
+		{
+			name: "add with VF source", emulate: add, opcode: 0x80F4,
+			firstRegister: 0, firstValue: 200, secondRegister: 0xf, secondValue: 100, wantValue: 44, wantVF: 1,
+		},
+		{
+			name: "add with VF destination", emulate: add, opcode: 0x8F14,
+			firstRegister: 0xf, firstValue: 200, secondRegister: 1, secondValue: 100,
+			register: 0xf, wantValue: 1, wantVF: 1,
+		},
+		{
+			name: "subtract with VF source", emulate: sub, opcode: 0x80F5,
+			firstRegister: 0, firstValue: 95, secondRegister: 0xf, secondValue: 100, wantValue: 251,
+		},
+		{
+			name: "reverse subtract with VF source", emulate: subn, opcode: 0x80F7,
+			firstRegister: 0, firstValue: 105, secondRegister: 0xf, secondValue: 100, wantValue: 251,
+		},
+		{
+			name: "shift right with VF source", emulate: shr, opcode: 0x80F6,
+			firstRegister: 0xf, firstValue: 61, wantValue: 30, wantVF: 1,
+		},
+		{
+			name: "shift left with VF destination", emulate: shl, opcode: 0x8FFE,
+			firstRegister: 0xf, firstValue: 188, secondRegister: 0xf, secondValue: 188,
+			register: 0xf, wantValue: 1, wantVF: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := New()
+			c.V[tt.firstRegister] = tt.firstValue
+			c.V[tt.secondRegister] = tt.secondValue
+
+			assert.NoError(t, tt.emulate(c, tt.opcode))
+			assert.Equal(t, tt.wantValue, c.V[tt.register])
+			assert.Equal(t, tt.wantVF, c.V[0xf])
+		})
+	}
+}
+
+func TestCompatibilityQuirks(t *testing.T) {
+	quirks := Quirks{
+		DisplayWaitDisabled: true,
+		JumpUsesVX:          true,
+		LoadStoreLeavesI:    true,
+		LogicPreservesVF:    true,
+		ShiftUsesVX:         true,
+		WrapSprites:         true,
+	}
+	c := New(nil, WithQuirks(quirks))
+	assert.Equal(t, quirks, c.quirks)
+
+	c.V[0], c.V[1] = 4, 1
+	assert.NoError(t, shr(c, 0x8016))
+	assert.Equal(t, uint8(2), c.V[0])
+
+	c.V[0], c.V[1], c.V[0xf] = 0x12, 0x34, 0x7f
+	assert.NoError(t, or(c, 0x8011))
+	assert.Equal(t, uint8(0x7f), c.V[0xf])
+
+	c.I = 0x300
+	assert.NoError(t, c.ldIVx(1))
+	assert.Equal(t, uint16(0x300), c.I)
+
+	c.V[0], c.V[1] = 1, 2
+	assert.NoError(t, jp(c, 0xB123))
+	assert.Equal(t, uint16(0x125), c.PC)
+
+	c.V[0], c.V[1] = 62, 31
+	c.I = 0x300
+	c.Memory[0x300], c.Memory[0x301] = 0xff, 0x80
+	assert.NoError(t, drw(c, 0xD012))
+	assert.Equal(t, uint8(1), c.Display[62])
+	assert.Equal(t, uint8(1), c.Display[31*displayWidth+62])
+	assert.Equal(t, uint8(1), c.Display[31*displayWidth])
+
+	assert.NoError(t, drw(c, 0xD012))
+	assert.Equal(t, uint8(0), c.Display[62])
+}
+
+func TestDisplayWait(t *testing.T) {
+	c := New()
+	c.I = 0x300
+	c.Memory[0x300] = 0x80
+
+	assert.NoError(t, drw(c, 0xD001))
+	assert.Equal(t, uint16(0x202), c.PC)
+	assert.Equal(t, uint8(1), c.Display[0])
+
+	assert.NoError(t, drw(c, 0xD001))
+	assert.Equal(t, uint16(0x202), c.PC)
+	assert.Equal(t, uint8(1), c.Display[0])
+
+	c.UpdateTimers()
+	assert.NoError(t, drw(c, 0xD001))
+	assert.Equal(t, uint16(0x204), c.PC)
+	assert.Equal(t, uint8(0), c.Display[0])
+}
+
+func TestDrwZeroHeight(t *testing.T) {
+	c := New()
+	c.I = 0
+	c.V[0xf] = 1
+
+	assert.NoError(t, drw(c, 0xD000))
+	assert.Equal(t, uint8(0), c.V[0xf])
+	assert.Equal(t, uint16(0x202), c.PC)
 }

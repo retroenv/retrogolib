@@ -2,7 +2,6 @@ package cpu65816
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 )
 
@@ -51,7 +50,7 @@ type CPU struct {
 	irqRunning bool
 
 	memory *Memory
-	opts   Options
+	opts   options
 
 	TraceStep TraceStep // set when tracing is enabled
 }
@@ -81,7 +80,7 @@ func New(memory *Memory, opts ...Option) (*CPU, error) {
 		SP:     initialSP,
 		cycles: initialCycles,
 		memory: memory,
-		opts:   NewOptions(opts...),
+		opts:   newOptions(opts...),
 		E:      true, // Start in emulation mode
 	}
 
@@ -202,251 +201,5 @@ func (c *CPU) SetP(p uint8) {
 		// X flag transition to 8-bit: zero high bytes of X and Y
 		c.X &= 0x00FF
 		c.Y &= 0x00FF
-	}
-}
-
-// push8 pushes a byte onto the stack and decrements SP.
-// In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
-func (c *CPU) push8(value uint8) {
-	c.memory.Write(bank24(0, c.SP), value)
-	c.SP--
-	if c.E {
-		c.SP = 0x0100 | (c.SP & 0x00FF)
-	}
-}
-
-// push8raw pushes a byte without page-1 wrap, for 65816-native stack instructions
-// that use the full 16-bit SP even in emulation mode.
-func (c *CPU) push8raw(value uint8) {
-	c.memory.Write(bank24(0, c.SP), value)
-	c.SP--
-}
-
-// push16 pushes a 16-bit word onto the stack (high byte first).
-func (c *CPU) push16(value uint16) {
-	c.push8(uint8(value >> 8))
-	c.push8(uint8(value))
-}
-
-// push16raw pushes a 16-bit word without per-byte page-1 wrap.
-func (c *CPU) push16raw(value uint16) {
-	c.push8raw(uint8(value >> 8))
-	c.push8raw(uint8(value))
-}
-
-// pop16raw pops a 16-bit word without per-byte page-1 wrap.
-func (c *CPU) pop16raw() uint16 {
-	lo := uint16(c.pop8raw())
-	hi := uint16(c.pop8raw())
-	return hi<<8 | lo
-}
-
-// fixEmuSP normalises SP to page 1 after a 65816-native stack instruction.
-func (c *CPU) fixEmuSP() {
-	if c.E {
-		c.SP = 0x0100 | (c.SP & 0x00FF)
-	}
-}
-
-// pop8 pops a byte from the stack and increments SP.
-// In emulation mode, SP wraps within page 1 ($0100-$01FF) after each byte.
-func (c *CPU) pop8() uint8 {
-	c.SP++
-	if c.E {
-		c.SP = 0x0100 | (c.SP & 0x00FF)
-	}
-	return c.memory.Read(bank24(0, c.SP))
-}
-
-// pop8raw pops a byte without page-1 wrap, for 65816-native stack instructions
-// that use the full 16-bit SP even in emulation mode.
-func (c *CPU) pop8raw() uint8 {
-	c.SP++
-	return c.memory.Read(bank24(0, c.SP))
-}
-
-// pop16 pops a 16-bit word from the stack (low byte first).
-func (c *CPU) pop16() uint16 {
-	lo := uint16(c.pop8())
-	hi := uint16(c.pop8())
-	return hi<<8 | lo
-}
-
-// dataAddr forms a 24-bit data address using the Data Bank register.
-func (c *CPU) dataAddr(offset uint16) uint32 {
-	return bank24(c.DB, offset)
-}
-
-// dpAddr forms a 24-bit direct page address.
-// In emulation mode with DP=$0000, it wraps within page 0.
-func (c *CPU) dpAddr(offset uint8) uint32 {
-	return bank24(0, c.DP+uint16(offset))
-}
-
-// readMem8 reads a byte from a 24-bit address.
-func (c *CPU) readMem8(addr uint32) uint8 {
-	return c.memory.Read(addr & 0xFFFFFF)
-}
-
-// writeMem8 writes a byte to a 24-bit address.
-func (c *CPU) writeMem8(addr uint32, value uint8) {
-	c.memory.Write(addr&0xFFFFFF, value)
-}
-
-// readMem16 reads a 16-bit word (little-endian) from a 24-bit address.
-// The hi byte wraps within the same 64KB bank — used for pointer fetches
-// (DP indirect, absolute indirect, stack-relative indirect) where the 65816
-// keeps pointer bytes inside the bank containing the pointer itself.
-func (c *CPU) readMem16(addr uint32) uint16 {
-	addr &= 0xFFFFFF
-	lo := uint16(c.memory.Read(addr))
-	bank := addr & 0xFF0000
-	hi := uint16(c.memory.Read(bank | uint32(uint16(addr)+1)))
-	return hi<<8 | lo
-}
-
-// readData16 reads a 16-bit word (little-endian) from a 24-bit address.
-// The hi byte is at addr+1 in full 24-bit address space — used for data reads
-// (absolute, indexed-absolute, direct-page memory operands) where the 65816
-// allows the address to cross a bank boundary.
-func (c *CPU) readData16(addr uint32) uint16 {
-	addr &= 0xFFFFFF
-	lo := uint16(c.memory.Read(addr))
-	hi := uint16(c.memory.Read((addr + 1) & 0xFFFFFF))
-	return hi<<8 | lo
-}
-
-// readDPWord reads a 16-bit indirect pointer from a direct-page offset.
-// In emulation mode with DP_lo=0, both pointer bytes wrap within the DP 256-byte page.
-func (c *CPU) readDPWord(dpOffset uint8) uint16 {
-	if c.E && c.DP&0xFF == 0 {
-		dpPage := uint32(c.DP)
-		lo := uint16(c.memory.Read(dpPage | uint32(dpOffset)))
-		hi := uint16(c.memory.Read(dpPage | uint32(dpOffset+1))) // +1 wraps at 8 bits
-		return hi<<8 | lo
-	}
-	return c.readMem16(bank24(0, c.DP+uint16(dpOffset)))
-}
-
-// writeMem16 writes a 16-bit word (little-endian) to a 24-bit address.
-func (c *CPU) writeMem16(addr uint32, value uint16) {
-	c.memory.WriteWord(addr&0xFFFFFF, value)
-}
-
-// readMem24 reads a 24-bit (3-byte) long pointer, wrapping within the same bank.
-// All three bytes stay in the same 64KB bank as addr — used for [dp] and [abs] pointer fetches.
-func (c *CPU) readMem24(addr uint32) uint32 {
-	addr &= 0xFFFFFF
-	bank := addr & 0xFF0000
-	lo := uint32(c.memory.Read(addr))
-	mid := uint32(c.memory.Read(bank | uint32(uint16(addr)+1)))
-	hi := uint32(c.memory.Read(bank | uint32(uint16(addr)+2)))
-	return hi<<16 | mid<<8 | lo
-}
-
-// branch performs a relative branch if the condition is true.
-// addr is the pre-computed absolute branch target address.
-func (c *CPU) branch(taken bool, addr uint16) {
-	if !taken {
-		return
-	}
-	c.PC = addr
-	c.pcChanged = true
-	c.cycles++ // extra cycle when branch taken
-}
-
-// instrSize returns the actual size of an instruction given the opcode's WidthFlag
-// and current M/X flag state.
-func (c *CPU) instrSize(op Opcode) int {
-	size := int(op.Instruction.Addressing[op.Addressing].BaseSize)
-	switch op.WidthFlag {
-	case WidthM:
-		if c.AccWidth() == 2 {
-			size++
-		}
-	case WidthX:
-		if c.IdxWidth() == 2 {
-			size++
-		}
-	}
-	return size
-}
-
-// fetchByte reads the next byte from PC (in PB bank) without advancing PC.
-func (c *CPU) fetchByte(offset uint16) uint8 {
-	return c.memory.Read(bank24(c.PB, c.PC+offset))
-}
-
-// fetchWord reads the next word starting at PC+offset.
-func (c *CPU) fetchWord(offset uint16) uint16 {
-	lo := uint16(c.fetchByte(offset))
-	hi := uint16(c.fetchByte(offset + 1))
-	return hi<<8 | lo
-}
-
-// resolveDP resolves a direct page address to a 24-bit address.
-// Handles emulation mode page-0 wrap when DP low byte is $00.
-func (c *CPU) resolveDP(dp uint8) uint32 {
-	if c.E && c.DP&0xFF == 0 {
-		// Emulation mode with DP page-aligned: result stays within the DP 256-byte block.
-		return uint32(c.DP) | uint32(dp)
-	}
-	// Direct page is always in bank 0; wrap at 16 bits if DP+dp overflows.
-	return bank24(0, c.DP+uint16(dp))
-}
-
-// resolveDPIndexed resolves a dp,X or dp,Y effective address.
-// idx is the raw (possibly 16-bit) index register value; IdxWidth() governs masking.
-func (c *CPU) resolveDPIndexed(dp uint8, idx uint16) uint32 {
-	if c.E && c.DP&0xFF == 0 {
-		// Emulation mode, DP page-aligned: addition wraps within page 0.
-		return uint32(c.DP) | uint32(dp+uint8(idx&0xFF))
-	}
-	if c.IdxWidth() == 1 {
-		return (uint32(c.DP) + uint32(dp) + uint32(idx&0xFF)) & 0xFFFF
-	}
-	return (uint32(c.DP) + uint32(dp) + uint32(idx)) & 0xFFFF
-}
-
-// resolveEA resolves an effective address parameter to a readable 24-bit address.
-// Returns the address and an error if the type is unexpected.
-func (c *CPU) resolveEA(param any) (uint32, error) { //nolint:cyclop
-	switch p := param.(type) {
-	case Immediate8:
-		return 0, errors.New("resolveEA called on immediate8")
-	case Immediate16:
-		return 0, errors.New("resolveEA called on immediate16")
-	case DirectPage:
-		return c.resolveDP(uint8(p)), nil
-	case DirectPageX:
-		return c.resolveDPIndexed(uint8(p), c.X), nil
-	case DirectPageY:
-		return c.resolveDPIndexed(uint8(p), c.Y), nil
-	case DPIndirect:
-		return uint32(p), nil
-	case DPIndirectX:
-		return uint32(p), nil
-	case DPIndirectY:
-		return uint32(p), nil
-	case DPIndirectLong:
-		return uint32(p), nil
-	case DPIndLongY:
-		return uint32(p), nil
-	case Absolute16:
-		return c.dataAddr(uint16(p)), nil
-	case AbsoluteX16:
-		return uint32(p), nil
-	case AbsoluteY16:
-		return uint32(p), nil
-	case AbsLong:
-		return uint32(p), nil
-	case AbsLongX:
-		return uint32(p), nil
-	case StackRel:
-		return bank24(0, c.SP+uint16(p)), nil
-	case SRIndY:
-		return uint32(p), nil
-	default:
-		return 0, fmt.Errorf("%w: type %T", ErrUnsupportedAddressingMode, param)
 	}
 }

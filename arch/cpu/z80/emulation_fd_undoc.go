@@ -52,7 +52,7 @@ func fdLdIYHB(c *CPU) error   { c.SetIYH(c.B); return nil }
 func fdLdIYHC(c *CPU) error   { c.SetIYH(c.C); return nil }
 func fdLdIYHD(c *CPU) error   { c.SetIYH(c.D); return nil }
 func fdLdIYHE(c *CPU) error   { c.SetIYH(c.E); return nil }
-func fdLdIYHIYH(c *CPU) error { return nil } // LD IYH,IYH = NOP
+func fdLdIYHIYH(_ *CPU) error { return nil } // LD IYH,IYH = NOP
 func fdLdIYHIYL(c *CPU) error { c.SetIYH(c.IYL()); return nil }
 func fdLdIYHA(c *CPU) error   { c.SetIYH(c.A); return nil }
 
@@ -61,7 +61,7 @@ func fdLdIYLC(c *CPU) error   { c.SetIYL(c.C); return nil }
 func fdLdIYLD(c *CPU) error   { c.SetIYL(c.D); return nil }
 func fdLdIYLE(c *CPU) error   { c.SetIYL(c.E); return nil }
 func fdLdIYLIYH(c *CPU) error { c.SetIYL(c.IYH()); return nil }
-func fdLdIYLIYL(c *CPU) error { return nil } // LD IYL,IYL = NOP
+func fdLdIYLIYL(_ *CPU) error { return nil } // LD IYL,IYL = NOP
 func fdLdIYLA(c *CPU) error   { c.SetIYL(c.A); return nil }
 
 // Arithmetic operations with IYH/IYL

@@ -92,7 +92,7 @@ type CPU struct {
 	triggerIrq bool
 	triggerNmi bool
 
-	opts      Options
+	opts      options
 	TraceStep TraceStep // trace step info, set if tracing is enabled
 
 	currentOpcode uint8 // opcode being executed (for instruction functions to access)
@@ -128,7 +128,7 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 		return nil, ErrNilMemory
 	}
 
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 	bus := &legacyBusAdapter{Memory: memory, ioHandler: opts.ioHandler}
 	return newCPU(bus, opts)
 }
@@ -142,7 +142,7 @@ func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
 		return nil, ErrNilMemory
 	}
 
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 	return newCPU(bus, opts)
 }
 
@@ -407,7 +407,7 @@ func (c *CPU) setLogicalFlags(result uint8, hFlag bool) {
 	c.setC(false)
 }
 
-func newCPU(bus Bus, opts Options) (*CPU, error) {
+func newCPU(bus Bus, opts options) (*CPU, error) {
 	// Default to generic system
 	if opts.initialPC == 0 && opts.initialSP == 0 && opts.systemType == "" {
 		opts.systemType = arch.Generic

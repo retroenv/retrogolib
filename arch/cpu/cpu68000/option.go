@@ -2,8 +2,7 @@ package cpu68000
 
 import "github.com/retroenv/retrogolib/arch"
 
-// Options contains options for the CPU.
-type Options struct {
+type options struct {
 	tracing    bool
 	systemType arch.System
 	initialPC  uint32
@@ -11,41 +10,42 @@ type Options struct {
 }
 
 // Option defines a CPU parameter.
-type Option func(*Options)
-
-// NewOptions creates a new options instance from the passed options.
-func NewOptions(optionList ...Option) Options {
-	opts := Options{}
-	for _, option := range optionList {
-		option(&opts)
-	}
-	return opts
-}
+type Option func(*options)
 
 // WithTracing enables tracing for the program.
-func WithTracing() func(*Options) {
-	return func(options *Options) {
+func WithTracing() Option {
+	return func(options *options) {
 		options.tracing = true
 	}
 }
 
 // WithSystemType sets the target system type for emulation.
-func WithSystemType(systemType arch.System) func(*Options) {
-	return func(options *Options) {
+func WithSystemType(systemType arch.System) Option {
+	return func(options *options) {
 		options.systemType = systemType
 	}
 }
 
 // WithInitialPC sets the initial program counter value.
-func WithInitialPC(pc uint32) func(*Options) {
-	return func(options *Options) {
+func WithInitialPC(pc uint32) Option {
+	return func(options *options) {
 		options.initialPC = pc
 	}
 }
 
 // WithInitialSP sets the initial stack pointer value.
-func WithInitialSP(sp uint32) func(*Options) {
-	return func(options *Options) {
+func WithInitialSP(sp uint32) Option {
+	return func(options *options) {
 		options.initialSP = sp
 	}
+}
+
+func newOptions(optionList ...Option) options {
+	opts := options{}
+	for _, option := range optionList {
+		if option != nil {
+			option(&opts)
+		}
+	}
+	return opts
 }

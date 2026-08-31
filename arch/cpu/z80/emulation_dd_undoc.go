@@ -52,7 +52,7 @@ func ddLdIXHB(c *CPU) error   { c.SetIXH(c.B); return nil }
 func ddLdIXHC(c *CPU) error   { c.SetIXH(c.C); return nil }
 func ddLdIXHD(c *CPU) error   { c.SetIXH(c.D); return nil }
 func ddLdIXHE(c *CPU) error   { c.SetIXH(c.E); return nil }
-func ddLdIXHIXH(c *CPU) error { return nil } // LD IXH,IXH = NOP
+func ddLdIXHIXH(_ *CPU) error { return nil } // LD IXH,IXH = NOP
 func ddLdIXHIXL(c *CPU) error { c.SetIXH(c.IXL()); return nil }
 func ddLdIXHA(c *CPU) error   { c.SetIXH(c.A); return nil }
 
@@ -61,7 +61,7 @@ func ddLdIXLC(c *CPU) error   { c.SetIXL(c.C); return nil }
 func ddLdIXLD(c *CPU) error   { c.SetIXL(c.D); return nil }
 func ddLdIXLE(c *CPU) error   { c.SetIXL(c.E); return nil }
 func ddLdIXLIXH(c *CPU) error { c.SetIXL(c.IXH()); return nil }
-func ddLdIXLIXL(c *CPU) error { return nil } // LD IXL,IXL = NOP
+func ddLdIXLIXL(_ *CPU) error { return nil } // LD IXL,IXL = NOP
 func ddLdIXLA(c *CPU) error   { c.SetIXL(c.A); return nil }
 
 // Arithmetic operations with IXH/IXL

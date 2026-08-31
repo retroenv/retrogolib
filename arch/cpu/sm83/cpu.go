@@ -53,7 +53,7 @@ type CPU struct {
 	imeDelay bool // IME is enabled after the instruction following EI
 	haltBug  bool // HALT bug: PC fails to increment after HALT with IME=0 and pending interrupt
 
-	opts Options
+	opts options
 
 	currentOpcode uint8 // opcode being executed
 
@@ -68,7 +68,7 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 		return nil, ErrNilMemory
 	}
 
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 
 	c := &CPU{
 		PC:     opts.initialPC,

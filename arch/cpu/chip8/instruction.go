@@ -13,31 +13,6 @@ type Instruction struct {
 	Emulation func(c *CPU, param uint16) error // Handler for instruction execution
 }
 
-// Instruction name constants for easy access by external packages.
-const (
-	AddName  = "add"
-	AndName  = "and"
-	CallName = "call"
-	ClsName  = "cls"
-	DrwName  = "drw"
-	JpName   = "jp"
-	LdName   = "ld"
-	OrName   = "or"
-	RetName  = "ret"
-	RndName  = "rnd"
-	SeName   = "se"
-	ShlName  = "shl"
-	ShrName  = "shr"
-	SkpName  = "skp"
-	SknpName = "sknp"
-	SneName  = "sne"
-	SubName  = "sub"
-	SubnName = "subn"
-	XorName  = "xor"
-)
-
-// Standard Chip-8 Instructions
-
 // AddInst adds a value or register to a register (ADD Vx, byte / ADD Vx, Vy / ADD I, Vx).
 var AddInst = &Instruction{
 	Name:      AddName,
@@ -151,7 +126,7 @@ var SeInst = &Instruction{
 	},
 }
 
-// ShlInst shifts Vx left by 1, stores MSB in VF (SHL Vx).
+// ShlInst shifts Vy left by 1 into Vx and stores the shifted bit in VF (SHL Vx, Vy).
 var ShlInst = &Instruction{
 	Name:      ShlName,
 	Emulation: shl,
@@ -160,7 +135,7 @@ var ShlInst = &Instruction{
 	},
 }
 
-// ShrInst shifts Vx right by 1, stores LSB in VF (SHR Vx).
+// ShrInst shifts Vy right by 1 into Vx and stores the shifted bit in VF (SHR Vx, Vy).
 var ShrInst = &Instruction{
 	Name:      ShrName,
 	Emulation: shr,
@@ -222,27 +197,4 @@ var XorInst = &Instruction{
 	Addressing: map[Mode]OpcodeInfo{
 		RegisterRegisterAddressing: Opcode8003,
 	},
-}
-
-// Instructions maps instruction names to their information struct.
-var Instructions = map[string]*Instruction{
-	AddName:  AddInst,
-	AndName:  AndInst,
-	CallName: CallInst,
-	ClsName:  ClsInst,
-	DrwName:  DrwInst,
-	JpName:   JpInst,
-	LdName:   LdInst,
-	OrName:   OrInst,
-	RetName:  RetInst,
-	RndName:  RndInst,
-	SeName:   SeInst,
-	ShlName:  ShlInst,
-	ShrName:  ShrInst,
-	SkpName:  SkpInst,
-	SknpName: SknpInst,
-	SneName:  SneInst,
-	SubName:  SubInst,
-	SubnName: SubnInst,
-	XorName:  XorInst,
 }

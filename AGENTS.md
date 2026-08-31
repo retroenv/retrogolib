@@ -1,5 +1,17 @@
 # Repository Guidance
 
+## Go file organization
+
+- Do not create a separate file solely for a small private type, declaration,
+  or a few tightly coupled private helpers. Keep them in the file that owns and
+  uses them unless they grow into a substantial, independently cohesive
+  component.
+- A small file is appropriate when it represents a stable boundary of its own,
+  such as package documentation, error contracts, public types, opcode tables,
+  or embedded data.
+- Apply file-boundary decisions consistently across sibling packages, especially
+  the architecture packages under `arch/`.
+
 ## Work-branch changelog
 
 When updating `docs/work-branch-changelog.md`, describe the current committed

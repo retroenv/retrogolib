@@ -86,3 +86,19 @@ func (c *CPU) executeParamInstruction(op Opcode) error {
 	}
 	return nil
 }
+
+// instrSize accounts for immediate operands whose width follows M or X.
+func (c *CPU) instrSize(op Opcode) int {
+	size := int(op.Instruction.Addressing[op.Addressing].BaseSize)
+	switch op.WidthFlag {
+	case WidthM:
+		if c.AccWidth() == 2 {
+			size++
+		}
+	case WidthX:
+		if c.IdxWidth() == 2 {
+			size++
+		}
+	}
+	return size
+}

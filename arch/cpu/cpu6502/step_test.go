@@ -42,7 +42,7 @@ func TestPageCrossCycleDoesNotRequireTracing(t *testing.T) {
 			cpu := newProgramCPU(t, VariantNMOS6502, 0x8000, 0xbd, 0xff, 0x20)
 			cpu.X = 1
 			cpu.memory.Write(0x2100, 0x42)
-			cpu.opts = NewOptions(tt.opts...)
+			cpu.opts = newOptions(tt.opts...)
 
 			assert.NoError(t, cpu.Step())
 

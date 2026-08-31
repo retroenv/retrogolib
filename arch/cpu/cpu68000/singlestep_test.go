@@ -232,7 +232,7 @@ func runSingleTest(t *testing.T, tc *testCase) bool {
 
 	cpu := &CPU{
 		bus: bus,
-		opts: Options{
+		opts: options{
 			initialPC: tc.Initial.PC,
 			initialSP: tc.Initial.SSP,
 		},

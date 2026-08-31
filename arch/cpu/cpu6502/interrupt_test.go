@@ -11,7 +11,7 @@ func TestIRQRemainsPendingWhileMasked(t *testing.T) {
 
 	cpu := cpuTestSetup(t)
 	cpu.memory.Write(cpu.PC, 0xea)
-	cpu.TriggerIrq()
+	cpu.TriggerIRQ()
 
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint16(0x8001), cpu.PC)
@@ -26,7 +26,7 @@ func TestStepServicesIRQBeforeNextInstruction(t *testing.T) {
 	cpu.Flags.I = 0
 	cpu.memory.Write(cpu.PC, 0xea)
 	startPC := cpu.PC
-	cpu.TriggerIrq()
+	cpu.TriggerIRQ()
 
 	assert.NoError(t, cpu.Step())
 
@@ -49,7 +49,7 @@ func TestNMIPrecedesIRQAndIgnoresInterruptMask(t *testing.T) {
 	memory.WriteWord(NMIAddress, 0x9000)
 	memory.WriteWord(IrqAddress, 0xa000)
 	cpu := New(memory)
-	cpu.TriggerIrq()
+	cpu.TriggerIRQ()
 	cpu.TriggerNMI()
 
 	assert.NoError(t, cpu.Step())

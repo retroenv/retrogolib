@@ -5,6 +5,7 @@
 #
 # Usage:
 #   make all       - download/update all test data
+#   make chip8     - Timendus CHIP-8 test suite
 #   make cpu6502   - 65x02 SingleStepTests + Klaus Dormann functional tests
 #   make cpu65816  - 65816 SingleStepTests (with open PR fixes applied)
 #   make cpu68000  - 680x0 SingleStepTests
@@ -16,6 +17,7 @@ REPO_ROOT := $(shell git -C $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) rev-p
 
 TESTDATA_ROOT := $(REPO_ROOT)/testdata
 
+CHIP8_TESTDATA    := $(TESTDATA_ROOT)/chip8
 CPU6502_TESTDATA  := $(TESTDATA_ROOT)/cpu6502
 CPU65816_TESTDATA := $(TESTDATA_ROOT)/cpu65816
 CPU68000_TESTDATA := $(TESTDATA_ROOT)/cpu68000
@@ -25,12 +27,24 @@ ZEXALL_TESTDATA   := $(TESTDATA_ROOT)/zexall
 
 DIRTYHAIRY_65816 := https://github.com/DirtyHairy/65816.git
 DORMANN_REPO     := https://github.com/Klaus2m5/6502_65C02_functional_tests
+CHIP8_TEST_REPO  := https://github.com/Timendus/chip8-test-suite.git
 SINGLESTEP_BASE  := https://github.com/SingleStepTests
 ZEXALL_REPO      := https://github.com/agn453/ZEXALL
 
-.PHONY: all cpu6502 cpu6502-dormann cpu6502-singlestep cpu65816 cpu68000 sm83 z80 z80-singlestep zexall clean
+.PHONY: all chip8 cpu6502 cpu6502-dormann cpu6502-singlestep cpu65816 cpu68000 sm83 z80 z80-singlestep zexall clean
 
-all: cpu6502 cpu65816 cpu68000 sm83 z80
+all: chip8 cpu6502 cpu65816 cpu68000 sm83 z80
+
+# CHIP-8: Timendus CHIP-8 test suite
+chip8:
+	@echo "==> CHIP-8: Timendus test suite"
+	@if [ -d "$(CHIP8_TESTDATA)/.git" ]; then \
+		echo "  Updating..."; \
+		git -C "$(CHIP8_TESTDATA)" pull --ff-only; \
+	else \
+		echo "  Cloning..."; \
+		git clone --depth=1 $(CHIP8_TEST_REPO) "$(CHIP8_TESTDATA)"; \
+	fi
 
 # 6502/65C02: SingleStepTests/65x02 + Klaus Dormann functional tests
 cpu6502: cpu6502-singlestep cpu6502-dormann
@@ -127,6 +141,7 @@ zexall:
 
 clean:
 	@echo "==> Removing all downloaded test data"
+	rm -rf "$(CHIP8_TESTDATA)"
 	rm -rf "$(CPU6502_TESTDATA)/65x02"
 	rm -rf "$(CPU6502_TESTDATA)/dormann"
 	rm -rf "$(CPU65816_TESTDATA)/65816"

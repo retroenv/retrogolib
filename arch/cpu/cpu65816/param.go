@@ -2,6 +2,16 @@ package cpu65816
 
 import "fmt"
 
+func (c *CPU) fetchByte(offset uint16) uint8 {
+	return c.memory.Read(bank24(c.PB, c.PC+offset))
+}
+
+func (c *CPU) fetchWord(offset uint16) uint16 {
+	lo := uint16(c.fetchByte(offset))
+	hi := uint16(c.fetchByte(offset + 1))
+	return hi<<8 | lo
+}
+
 type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
 
 var paramReader = map[AddressingMode]paramReaderFunc{

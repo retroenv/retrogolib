@@ -56,7 +56,7 @@ type CPU struct {
 	irqAddress uint16 // IRQ/BRK handler address (from $FFFE-$FFFF)
 	nmiAddress uint16 // NMI handler address (from $FFFA-$FFFB)
 
-	opts      Options
+	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	branchTaken bool // Set by branch to distinguish a self-loop from a fallthrough.
@@ -70,7 +70,7 @@ func New(memory *Memory, options ...Option) *CPU {
 		panic(ErrNilMemory)
 	}
 
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 	c := &CPU{
 		SP:     InitialStack,
 		cycles: initialCycles,

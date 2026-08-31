@@ -1,4 +1,4 @@
-package cpu6502
+package cpu65816
 
 import (
 	"testing"
@@ -10,9 +10,8 @@ func TestNewOptions(t *testing.T) {
 	t.Parallel()
 
 	hook := PreExecutionHook(func(_ *CPU, _ *Instruction, _ ...any) {})
-	opts := newOptions(nil, WithTracing(), WithPreExecutionHook(hook), WithVariant(Variant65C02))
+	opts := newOptions(nil, WithTracing(), WithPreExecutionHook(hook))
 
 	assert.True(t, opts.tracing)
 	assert.NotNil(t, opts.preExecutionHook)
-	assert.Equal(t, Variant65C02, opts.variant)
 }

@@ -2,24 +2,37 @@ package chip8
 
 import (
 	"fmt"
-	"math"
 	"math/rand/v2"
 )
 
-// ldVxK implements LD Vx, K instruction (wait for key press)
+// ldVxK waits for a key press and release before resuming execution.
 func (c *CPU) ldVxK(reg uint16) error {
-	keyPressed := -1
-	for i, isKeyPressed := range c.Key {
-		if isKeyPressed {
-			keyPressed = i
-			break
+	if !c.keyWait.active {
+		c.keyWait = newKeyWait()
+		c.keyWait.active = true
+		c.keyWait.register = reg
+	}
+
+	if c.keyWait.key < 0 {
+		for key, pressed := range c.Key {
+			if pressed {
+				c.keyWait.key = int8(key)
+				break
+			}
 		}
+
+		return nil
 	}
-	if keyPressed == -1 {
-		return nil // do not update program counter and wait for a key press
+
+	key := byte(c.keyWait.key)
+	if c.Key[key] {
+		return nil
 	}
-	c.V[reg] = byte(keyPressed)
+
+	c.V[c.keyWait.register] = key
 	c.PC += 2
+	c.keyWait = newKeyWait()
+
 	return nil
 }
 
@@ -36,7 +49,7 @@ func (c *CPU) ldFVx(reg uint16) error {
 
 // ldBVx implements LD B, Vx instruction (store BCD representation)
 func (c *CPU) ldBVx(reg uint16) error {
-	if c.I+2 >= uint16(len(c.Memory)) {
+	if c.I >= uint16(len(c.Memory)) || 3 > uint16(len(c.Memory))-c.I {
 		return fmt.Errorf("%w: I=0x%03X", ErrMemoryOutOfBounds, c.I)
 	}
 	bcd := c.V[reg]
@@ -50,11 +63,14 @@ func (c *CPU) ldBVx(reg uint16) error {
 
 // ldIVx implements LD [I], Vx instruction (store registers V0 through Vx in memory)
 func (c *CPU) ldIVx(reg uint16) error {
-	if c.I+reg >= uint16(len(c.Memory)) {
+	if c.I >= uint16(len(c.Memory)) || reg >= uint16(len(c.Memory))-c.I {
 		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
 	}
 	for i := range reg + 1 {
 		c.Memory[c.I+i] = c.V[i]
+	}
+	if !c.quirks.LoadStoreLeavesI {
+		c.I += reg + 1
 	}
 	c.PC += 2
 	return nil
@@ -62,14 +78,59 @@ func (c *CPU) ldIVx(reg uint16) error {
 
 // ldVxI implements LD Vx, [I] instruction (read registers V0 through Vx from memory)
 func (c *CPU) ldVxI(reg uint16) error {
-	if c.I+reg >= uint16(len(c.Memory)) {
+	if c.I >= uint16(len(c.Memory)) || reg >= uint16(len(c.Memory))-c.I {
 		return fmt.Errorf("%w: I=0x%03X, reg=0x%X", ErrMemoryOutOfBounds, c.I, reg)
 	}
 	for i := range reg + 1 {
 		c.V[i] = c.Memory[c.I+i]
 	}
+	if !c.quirks.LoadStoreLeavesI {
+		c.I += reg + 1
+	}
 	c.PC += 2
 	return nil
+}
+
+func (c *CPU) writeArithmeticResult(reg uint16, result, flag byte) {
+	// VF may also be an operand or the destination, so consume operands first
+	// and write the flag last as the original interpreter does.
+	c.V[reg] = result
+	c.V[0xf] = flag
+}
+
+func (c *CPU) drawSprite(x, y, height uint16) {
+	for yLine := range height {
+		drawY := y + yLine
+		if drawY >= displayHeight {
+			if !c.quirks.WrapSprites {
+				break
+			}
+			drawY %= displayHeight
+		}
+
+		c.drawSpriteRow(x, drawY, c.Memory[c.I+yLine])
+	}
+}
+
+func (c *CPU) drawSpriteRow(x, y uint16, sprite byte) {
+	for xLine := range uint16(8) {
+		drawX := x + xLine
+		if drawX >= displayWidth {
+			if !c.quirks.WrapSprites {
+				break
+			}
+			drawX %= displayWidth
+		}
+		if (sprite & (0x80 >> xLine)) == 0 {
+			continue
+		}
+
+		index := drawX + y*displayWidth
+		if c.Display[index] == 1 {
+			c.V[0xf] = 1
+		}
+		c.Display[index] ^= 1
+	}
 }
 
 // cls clears the display.
@@ -101,7 +162,11 @@ func jp(c *CPU, param uint16) error {
 	case 0x1: // JP addr
 		c.PC = addr
 	case 0xb: // JP V0, addr
-		c.PC = addr + uint16(c.V[0])
+		register := uint16(0)
+		if c.quirks.JumpUsesVX {
+			register = (addr & 0x0F00) >> 8
+		}
+		c.PC = addr + uint16(c.V[register])
 	default:
 		return fmt.Errorf("invalid mode for jp: %04X", mode)
 	}
@@ -180,6 +245,9 @@ func or(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 	c.V[reg1] |= c.V[reg2]
+	if !c.quirks.LogicPreservesVF {
+		c.V[0xf] = 0
+	}
 	c.PC += 2
 	return nil
 }
@@ -192,6 +260,9 @@ func xor(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 	c.V[reg1] ^= c.V[reg2]
+	if !c.quirks.LogicPreservesVF {
+		c.V[0xf] = 0
+	}
 	c.PC += 2
 	return nil
 }
@@ -215,13 +286,8 @@ func add(c *CPU, param uint16) error {
 			return fmt.Errorf("%w: 0x%X", ErrRegisterOutOfBounds, reg2)
 		}
 
-		if uint16(c.V[reg])+uint16(c.V[reg2]) > math.MaxUint8 {
-			c.V[0xf] = 1
-		} else {
-			c.V[0xf] = 0
-		}
-
-		c.V[reg] += c.V[reg2]
+		result := uint16(c.V[reg]) + uint16(c.V[reg2])
+		c.writeArithmeticResult(reg, byte(result), byte(result>>8))
 
 	case mode == 0xf && value == 0x1e: // ADD I, Vx
 		c.I += uint16(c.V[reg])
@@ -242,13 +308,13 @@ func sub(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg1] >= c.V[reg2] {
-		c.V[0xf] = 1
-	} else {
-		c.V[0xf] = 0
+	left, right := c.V[reg1], c.V[reg2]
+	result := left - right
+	flag := byte(0)
+	if left >= right {
+		flag = 1
 	}
-
-	c.V[reg1] -= c.V[reg2]
+	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2
 	return nil
@@ -328,6 +394,9 @@ func and(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 	c.V[reg1] &= c.V[reg2]
+	if !c.quirks.LogicPreservesVF {
+		c.V[0xf] = 0
+	}
 	c.PC += 2
 	return nil
 }
@@ -339,41 +408,24 @@ func drw(c *CPU, param uint16) error {
 	if reg1 > 15 || reg2 > 15 {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
+	// The original interpreter could execute at most one draw per vertical blank.
+	if !c.quirks.DisplayWaitDisabled && c.drewThisFrame {
+		return nil
+	}
 
 	x := uint16(c.V[reg1]) % displayWidth
 	y := uint16(c.V[reg2]) % displayHeight
 	height := param & 0x000F
 
-	if c.I+height-1 >= uint16(len(c.Memory)) {
+	if height > 0 && (c.I >= uint16(len(c.Memory)) || height > uint16(len(c.Memory))-c.I) {
 		return fmt.Errorf("%w: sprite I=0x%03X, height=%d", ErrMemoryOutOfBounds, c.I, height)
 	}
 
 	c.V[0xf] = 0
-
-	for yLine := range height {
-		if y+yLine >= displayHeight {
-			break // Stop drawing if we go past screen boundary
-		}
-		sprite := c.Memory[c.I+yLine]
-
-		for xLine := range uint16(8) {
-			if x+xLine >= displayWidth {
-				break // Stop drawing if we go past screen boundary
-			}
-			if (sprite & (0x80 >> xLine)) != 0 {
-				index := (x + xLine) + (y+yLine)*displayWidth
-				if index >= uint16(len(c.Display)) {
-					return fmt.Errorf("%w: %d", ErrDisplayOutOfBounds, index)
-				}
-				if c.Display[index] == 1 {
-					c.V[0xf] = 1
-				}
-				c.Display[index] ^= 1
-			}
-		}
-	}
+	c.drawSprite(x, y, height)
 
 	c.RedrawScreen = true
+	c.drewThisFrame = true
 	c.PC += 2
 	return nil
 }
@@ -392,24 +444,32 @@ func rnd(c *CPU, param uint16) error {
 
 // shl shifts a register left by one.
 func shl(c *CPU, param uint16) error {
-	reg := (param & 0x0F00) >> 8
-	if reg > 15 {
-		return fmt.Errorf("%w: 0x%X", ErrRegisterOutOfBounds, reg)
+	reg1 := (param & 0x0F00) >> 8
+	reg2 := (param & 0x00F0) >> 4
+	if reg1 > 15 || reg2 > 15 {
+		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
-	c.V[0xf] = c.V[reg] >> 7
-	c.V[reg] <<= 1
+	if c.quirks.ShiftUsesVX {
+		reg2 = reg1
+	}
+	value := c.V[reg2]
+	c.writeArithmeticResult(reg1, value<<1, value>>7)
 	c.PC += 2
 	return nil
 }
 
 // shr shifts a register right by one.
 func shr(c *CPU, param uint16) error {
-	reg := (param & 0x0F00) >> 8
-	if reg > 15 {
-		return fmt.Errorf("%w: 0x%X", ErrRegisterOutOfBounds, reg)
+	reg1 := (param & 0x0F00) >> 8
+	reg2 := (param & 0x00F0) >> 4
+	if reg1 > 15 || reg2 > 15 {
+		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
-	c.V[0xf] = c.V[reg] & 0x1
-	c.V[reg] >>= 1
+	if c.quirks.ShiftUsesVX {
+		reg2 = reg1
+	}
+	value := c.V[reg2]
+	c.writeArithmeticResult(reg1, value>>1, value&0x1)
 	c.PC += 2
 	return nil
 }
@@ -458,13 +518,13 @@ func subn(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	if c.V[reg2] >= c.V[reg1] {
-		c.V[0xf] = 1
-	} else {
-		c.V[0xf] = 0
+	left, right := c.V[reg1], c.V[reg2]
+	result := right - left
+	flag := byte(0)
+	if right >= left {
+		flag = 1
 	}
-
-	c.V[reg1] = c.V[reg2] - c.V[reg1]
+	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2
 	return nil

@@ -104,3 +104,20 @@ func (c *CPU) handleIRQ(stackState bool) {
 	c.Flags.I = 1
 	c.PC = c.memory.ReadVector(VectorIRQ)
 }
+
+type waitMode uint8
+
+const (
+	waitNone waitMode = iota
+	waitSync
+	waitCWAI
+)
+
+type interruptKind uint8
+
+const (
+	interruptNone interruptKind = iota
+	interruptNMI
+	interruptFIRQ
+	interruptIRQ
+)

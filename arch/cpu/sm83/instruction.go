@@ -61,54 +61,6 @@ func (ins Instruction) GetOpcodeByRegisterPair(dst, src RegisterParam) (OpcodeIn
 	return info, exists
 }
 
-// Instruction name constants for easy access by external packages.
-const (
-	AdcName  = "adc"
-	AddName  = "add"
-	AndName  = "and"
-	BitName  = "bit"
-	CallName = "call"
-	CcfName  = "ccf"
-	CpName   = "cp"
-	CplName  = "cpl"
-	DaaName  = "daa"
-	DecName  = "dec"
-	DiName   = "di"
-	EiName   = "ei"
-	HaltName = "halt"
-	IncName  = "inc"
-	JpName   = "jp"
-	JrName   = "jr"
-	LdName   = "ld"
-	LdhName  = "ldh"
-	NopName  = "nop"
-	OrName   = "or"
-	PopName  = "pop"
-	PushName = "push"
-	ResName  = "res"
-	RetName  = "ret"
-	RetiName = "reti"
-	RlName   = "rl"
-	RlaName  = "rla"
-	RlcName  = "rlc"
-	RlcaName = "rlca"
-	RrName   = "rr"
-	RraName  = "rra"
-	RrcName  = "rrc"
-	RrcaName = "rrca"
-	RstName  = "rst"
-	SbcName  = "sbc"
-	ScfName  = "scf"
-	SetName  = "set"
-	SlaName  = "sla"
-	SraName  = "sra"
-	SrlName  = "srl"
-	StopName = "stop"
-	SubName  = "sub"
-	SwapName = "swap"
-	XorName  = "xor"
-)
-
 // ---------------------------------------------------------------------------
 // Implied / simple instructions
 // ---------------------------------------------------------------------------

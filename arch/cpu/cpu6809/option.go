@@ -4,6 +4,11 @@ package cpu6809
 // Params is empty for implied instructions and otherwise contains one typed operand.
 type PreExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
 
+type options struct {
+	tracing          bool
+	preExecutionHook PreExecutionHook
+}
+
 // Option configures a CPU.
 type Option func(*options)
 

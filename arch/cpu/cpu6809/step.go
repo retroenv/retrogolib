@@ -123,3 +123,9 @@ func (c *CPU) executeInstruction(op Opcode, baseOffset uint16) error {
 
 	return nil
 }
+
+type decodedOpcode struct {
+	opcode      Opcode
+	opcodeBytes [2]byte
+	baseOffset  uint16
+}

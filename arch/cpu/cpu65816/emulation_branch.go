@@ -2,6 +2,16 @@ package cpu65816
 
 // Branch and jump instructions.
 
+// branch performs a relative branch to the precomputed target when taken.
+func (c *CPU) branch(taken bool, addr uint16) {
+	if !taken {
+		return
+	}
+	c.PC = addr
+	c.pcChanged = true
+	c.cycles++
+}
+
 func bcc(c *CPU, params ...any) error {
 	c.branch(c.Flags.C == 0, params[0].(uint16))
 	return nil

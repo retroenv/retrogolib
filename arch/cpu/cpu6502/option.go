@@ -15,31 +15,18 @@ const (
 // PreExecutionHook is called after instruction decoding and before execution.
 type PreExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
 
-// Options contains options for the CPU.
-type Options struct {
+type options struct {
 	variant          CPUVariant
 	tracing          bool
 	preExecutionHook PreExecutionHook
 }
 
 // Option configures a CPU constructor option.
-type Option func(*Options)
-
-// NewOptions creates a new options instance from the passed options.
-func NewOptions(optionList ...Option) Options {
-	opts := Options{}
-	for _, option := range optionList {
-		if option == nil {
-			continue
-		}
-		option(&opts)
-	}
-	return opts
-}
+type Option func(*options)
 
 // WithTracing enables tracing for the program.
 func WithTracing() Option {
-	return func(options *Options) {
+	return func(options *options) {
 		options.tracing = true
 	}
 }
@@ -47,14 +34,24 @@ func WithTracing() Option {
 // WithPreExecutionHook sets a hook that is called before each instruction is executed.
 // It can be used to read a memory value before the instruction overwrites it.
 func WithPreExecutionHook(hook PreExecutionHook) Option {
-	return func(options *Options) {
+	return func(options *options) {
 		options.preExecutionHook = hook
 	}
 }
 
 // WithVariant sets the CPU variant.
 func WithVariant(v CPUVariant) Option {
-	return func(options *Options) {
+	return func(options *options) {
 		options.variant = v
 	}
+}
+
+func newOptions(optionList ...Option) options {
+	opts := options{}
+	for _, option := range optionList {
+		if option != nil {
+			option(&opts)
+		}
+	}
+	return opts
 }

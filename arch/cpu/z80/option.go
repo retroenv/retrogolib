@@ -8,55 +8,47 @@ type IOHandler interface {
 	WritePort(port uint8, value uint8)
 }
 
-// Options contains options for the CPU.
-type Options struct {
-	tracing bool
+// PreExecutionHook runs after operand decoding and before instruction execution.
+// Params is empty for implied instructions and otherwise contains decoded operands.
+type PreExecutionHook func(cpu *CPU, opcode uint8, params ...any)
 
-	preExecutionHook func(cpu *CPU, opcode uint8, params ...any)
+type options struct {
+	tracing          bool
+	preExecutionHook PreExecutionHook
 	ioHandler        IOHandler
 	systemType       arch.System
-
-	initialPC uint16
-	initialSP uint16
+	initialPC        uint16
+	initialSP        uint16
 }
 
 // Option defines a CPU parameter.
-type Option func(*Options)
-
-// NewOptions creates a new options instance from the passed options.
-func NewOptions(optionList ...Option) Options {
-	opts := Options{}
-	for _, option := range optionList {
-		option(&opts)
-	}
-	return opts
-}
+type Option func(*options)
 
 // WithTracing enables tracing for the program.
-func WithTracing() func(*Options) {
-	return func(options *Options) {
+func WithTracing() Option {
+	return func(options *options) {
 		options.tracing = true
 	}
 }
 
 // WithPreExecutionHook sets a hook that is called before each instruction is executed.
 // It can be used to read a memory value before the instruction overwrites it.
-func WithPreExecutionHook(hook func(cpu *CPU, opcode uint8, params ...any)) func(*Options) {
-	return func(options *Options) {
+func WithPreExecutionHook(hook PreExecutionHook) Option {
+	return func(options *options) {
 		options.preExecutionHook = hook
 	}
 }
 
 // WithIOHandler sets an I/O handler for port operations.
-func WithIOHandler(handler IOHandler) func(*Options) {
-	return func(options *Options) {
+func WithIOHandler(handler IOHandler) Option {
+	return func(options *options) {
 		options.ioHandler = handler
 	}
 }
 
 // WithSystemType sets the target system type for emulation.
-func WithSystemType(systemType arch.System) func(*Options) {
-	return func(options *Options) {
+func WithSystemType(systemType arch.System) Option {
+	return func(options *options) {
 		options.systemType = systemType
 		// Set system-specific defaults
 		switch systemType {
@@ -74,15 +66,25 @@ func WithSystemType(systemType arch.System) func(*Options) {
 }
 
 // WithInitialPC sets the initial program counter value.
-func WithInitialPC(pc uint16) func(*Options) {
-	return func(options *Options) {
+func WithInitialPC(pc uint16) Option {
+	return func(options *options) {
 		options.initialPC = pc
 	}
 }
 
 // WithInitialSP sets the initial stack pointer value.
-func WithInitialSP(sp uint16) func(*Options) {
-	return func(options *Options) {
+func WithInitialSP(sp uint16) Option {
+	return func(options *options) {
 		options.initialSP = sp
 	}
+}
+
+func newOptions(optionList ...Option) options {
+	opts := options{}
+	for _, option := range optionList {
+		if option != nil {
+			option(&opts)
+		}
+	}
+	return opts
 }
