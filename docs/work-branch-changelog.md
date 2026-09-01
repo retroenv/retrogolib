@@ -1,98 +1,126 @@
 # Work Branch Changelog
 
-Tracks the changes introduced by `work2` since its common ancestor with `main`.
+Tracks the committed changes introduced by `work2` since its common ancestor
+with the current remote-tracking `main` branch.
 
-**Last Updated:** 2026-08-29
+**Last Updated:** 2026-09-01
 
 ---
 
 ## Current Branch State
 
-- Comparison of current remote-tracking refs: `origin/main...work2`
-  (`e7fb46b...af3c5fd`).
-- Merge base: `e7fb46b`; this revision of `main` was merged into `work2` by
-  `af3c5fd` on 2026-08-29. Earlier merges remain part of the branch history.
-- Committed baseline delta: 119 files, with 118 added and 1 modified; 24,259
-  insertions and 5 deletions.
-- The source of truth for this document is the current `origin/main...work2`
-  diff plus the branch history, not older merge-plan assumptions.
+- Comparison range: `origin/main...HEAD`, currently
+  `e7fb46b...3751fde`.
+- Merge base: `e7fb46b` (`readme: remove goreportcard`, 2026-08-29).
+- Committed branch delta: 185 files, with 150 added and 35 modified; 27,234
+  insertions and 1,283 deletions.
+- `git diff --name-status --find-renames origin/main...HEAD` reports no deleted
+  or renamed files in the current range.
+- The range covers committed changes only; the working-tree edit that refreshes
+  this document is intentionally not included in those statistics.
 
 ## Changes Already Absorbed From `main`
 
-The following earlier `work2` areas are absent from the branch-side diff because
-they were present at the latest merge base:
+The merge base already contains earlier branch work that is therefore absent
+from the current branch-side diff:
 
-- Test infrastructure changes in `Makefile` and `testdata/`.
-- Architecture registration updates in `arch/`.
-- 6502/65C02 implementation, package rename, and integration-test work.
-- Most Z80 bus, opcode, and integration-test work, apart from the three-file
-  documentation and declaration-order cleanup listed below.
-- x86 support in `arch/cpu/x86/`.
-- CLI and configuration declaration-order cleanup.
-- Logging safety, formatting, and handler-consistency changes under `log/`.
+- The base CHIP-8, 6502/65C02, x86, and Z80 implementations and their initial
+  architecture registration.
+- Earlier shared test infrastructure and test data support; this branch only
+  contributes the CPU targets and CHIP-8 additions described below.
+- Earlier CLI, configuration, and logging cleanups.
 
 ## Branch-Specific Changes
 
-### CPU Emulators
+### New CPU Emulators
 
-- **WDC 65C816:** Adds the `arch/cpu/cpu65816/` package, including
-  emulation/native modes, 24-bit memory support, interrupts, tracing, and unit,
-  opcode, and SingleStepTests coverage.
-- **Motorola 68000:** Adds the `arch/cpu/cpu68000/` package, including
-  bus and memory abstractions, effective-address handling, interrupts, tracing,
-  and unit, opcode, memory, and SingleStepTests coverage.
-- **Motorola 6809:** Adds the `arch/cpu/cpu6809/` package, including
-  indexed addressing, page 0/10/11 opcode tables, interrupts, tracing, and unit
-  and opcode coverage.
-- **Sharp SM83:** Adds the `arch/cpu/sm83/` package for Game Boy and
-  Game Boy Color CPU behavior, including CB-prefixed instructions, interrupts,
-  tracing, and SingleStepTests coverage.
+- **WDC 65C816:** Adds `arch/cpu/cpu65816/` with emulation and native modes,
+  24-bit addressing, interrupts, tracing, structured instruction metadata, and
+  unit, opcode, effective-address, and SingleStepTests coverage.
+- **Motorola 68000:** Adds `arch/cpu/cpu68000/` with bus and memory abstractions,
+  effective-address handling, interrupts, tracing, structured instruction
+  metadata, and unit, opcode, memory, and SingleStepTests coverage.
+- **Motorola 6809:** Adds `arch/cpu/cpu6809/` with indexed addressing, page
+  0/10/11 opcode tables, interrupts, tracing, structured instruction metadata,
+  and unit and opcode coverage.
+- **Sharp SM83:** Adds `arch/cpu/sm83/` with Game Boy CPU behavior, CB-prefixed
+  instructions, interrupts, tracing, structured instruction metadata, and
+  SingleStepTests coverage.
+
+### Existing CPU Refactors and Correctness
+
+- **Cross-architecture structure:** Aligns instruction names, instruction
+  registries, option handling, constructor setup, and focused tests across the
+  CHIP-8, 6502, 65C816, 68000, 6809, SM83, x86, and Z80 packages. Small internal
+  declarations remain with their cohesive implementation instead of occupying
+  single-purpose files.
+- **Public APIs:** Replaces exposed option implementation details with private
+  option state and typed functional options. Obsolete compatibility APIs are
+  removed rather than retained as deprecated wrappers.
+- **CHIP-8:** Makes COSMAC VIP behavior the default and adds explicit quirks for
+  later interpreter variants. Corrects display-wait, key-release, shift, logic,
+  jump, load/store, sprite, arithmetic-flag, and bounds behavior; expands unit
+  tests and adds Timendus ROM conformance tests with screenshot comparison.
+- **6502/65C02:** Reorganizes instruction metadata and unofficial operations,
+  tightens constructor, memory, interrupt, stepping, and option behavior, and
+  adds focused CPU, interrupt, option, opcode, and step tests.
+- **x86 and Z80:** Separates substantial instruction-name and registry data from
+  core instruction definitions. Z80 also adopts private option state, a typed
+  pre-execution hook, nil-option handling, and registry and option tests.
 
 ### System Foundations
 
 - **Atari 2600:** Adds system and memory-map definitions, TIA and RIOT register
-  constants, and cartridge loading with supported banking schemes under
-  `arch/system/atari2600/`, with tests.
+  constants, cartridge loading, supported banking schemes, and tests under
+  `arch/system/atari2600/`.
 - **TRS-80 Color Computer:** Adds CoCo memory-map, hardware, interrupt, PIA, and
-  SAM definitions under `arch/system/coco/`, with tests.
+  SAM definitions with tests under `arch/system/coco/`.
 - **Vectrex:** Adds Vectrex memory-map, hardware, interrupt, and VIA definitions
-  under `arch/system/vectrex/`, with tests.
+  with tests under `arch/system/vectrex/`.
 
-### Small Follow-Up Cleanups
+### Test and Documentation Integration
 
-- `arch/cpu/cpu68000/instruction.go` and `arch/cpu/sm83/option.go` order private
-  function types before their exported dependents to satisfy lint rules.
-- `arch/cpu/z80/categories.go`, `instruction.go`, and `opcode_test.go` clean up
-  comments and test labels without changing opcode behavior.
-
-### Documentation
-
-- Updates `README.md` to list the newly added CPU packages.
-- Adds active gap-closure plans for the Motorola 68000 and Z80.
-- Adds the planned Commodore 64 system implementation document.
-- Maintains this branch changelog.
+- Extends the root integration-test target for the 65C816, 68000, and SM83
+  suites.
+- Adds a `testdata/Makefile` target for the Timendus CHIP-8 test suite and keeps
+  the existing CPU test-data targets in the aggregate workflow.
+- Updates `README.md` with the new CPU packages.
+- Adds gap-closure plans for the Motorola 68000 and Z80, a Commodore 64 system
+  implementation plan, and this branch changelog.
 
 ## Files
 
-| Status | Files | Purpose |
-| --- | --- | --- |
-| Modified | `README.md` | Lists the newly added CPU packages. |
-| Added | `arch/cpu/cpu65816/`, `arch/cpu/cpu68000/`, `arch/cpu/cpu6809/`, `arch/cpu/sm83/` | New CPU emulator packages and tests relative to the merge base. |
-| Added | `arch/system/atari2600/`, `arch/system/coco/`, `arch/system/vectrex/` | New system, cartridge, memory-map, and register definitions with tests. |
-| Modified | `arch/cpu/cpu68000/instruction.go`, `arch/cpu/sm83/option.go`, `arch/cpu/z80/` | Non-behavioral declaration, comment, and label cleanup. |
-| Added | `docs/cpu68000-gap-closure-plan.md`, `docs/system-implementation-plan-c64.md`, `docs/z80-gap-closure-plan.md`, `docs/work-branch-changelog.md` | Active plans and branch tracking. |
+| Status | Count | Files | Purpose |
+| --- | ---: | --- | --- |
+| Modified | 1 | `Makefile` | Extends CPU integration-test coverage. |
+| Modified | 1 | `README.md` | Lists the new CPU packages. |
+| Added / Modified | 4 / 6 | `arch/cpu/chip8/` | Adds compatibility options, registry separation, correctness fixes, and Timendus ROM tests. |
+| Added / Modified | 7 / 17 | `arch/cpu/cpu6502/` | Refactors package structure and behavior and expands focused tests. |
+| Added | 30 | `arch/cpu/cpu65816/` | Adds the WDC 65C816 emulator and tests. |
+| Added | 29 | `arch/cpu/cpu68000/` | Adds the Motorola 68000 emulator and tests. |
+| Added | 27 | `arch/cpu/cpu6809/` | Adds the Motorola 6809 emulator and tests. |
+| Added | 24 | `arch/cpu/sm83/` | Adds the Sharp SM83 emulator and tests. |
+| Added / Modified | 2 / 2 | `arch/cpu/x86/` | Moves instruction names and registry data into cohesive files. |
+| Added / Modified | 4 / 7 | `arch/cpu/z80/` | Aligns registry and option structure and adds focused tests. |
+| Added | 19 | `arch/system/atari2600/`, `arch/system/coco/`, `arch/system/vectrex/` | Adds system foundations, register definitions, cartridge support, and tests. |
+| Added | 4 | `docs/` | Adds implementation plans and branch tracking. |
+| Modified | 1 | `testdata/Makefile` | Integrates the Timendus CHIP-8 ROM suite. |
+
+The grouped counts above total the exact 150 added and 35 modified files
+reported for `origin/main...HEAD`; no row represents a rename.
 
 ## Merge Summary
 
-Most of the remaining branch delta is additive CPU and system-package work. The
-only remaining changes to existing files are the README package list and the
-small Z80 cleanups.
+The current branch delta combines four additive CPU emulators and three system
+foundations with a consistency and correctness pass over every pre-existing CPU
+architecture. The largest changes to existing code are the CHIP-8 and 6502
+behavioral refactors; x86 and Z80 changes primarily align instruction metadata
+and option organization.
 
 ## Verification
 
-- Inspected: `git status --short`, `git diff --stat origin/main...work2`,
-  `git diff --name-status origin/main...work2`, and the substantive
-  branch-side diffs.
-- Passed: `go fmt ./...`.
-- Passed: `make lint`.
-- Passed: `make test`.
+- Refreshed `origin/main` before deriving the comparison.
+- Derived the merge base, totals, and file classifications from
+  `origin/main...HEAD`, using `--find-renames` for the Files table.
+- Verified the final document with `git diff --check` and rechecked its stated
+  range and statistics against the live committed diff.
