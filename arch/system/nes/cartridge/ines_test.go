@@ -205,6 +205,44 @@ func TestSaveLoadRoundtrip(t *testing.T) {
 	assert.Equal(t, original.CHR[50], loaded.CHR[50])
 }
 
+func TestSaveLoadRoundtripHeaderFlags(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		mirror       MirrorMode
+		hasTrainer   bool
+		controlFlags byte
+	}{
+		{name: "horizontal", mirror: MirrorHorizontal},
+		{name: "vertical", mirror: MirrorVertical, controlFlags: 0x01},
+		{name: "four screen", mirror: Mirror4, controlFlags: 0x08},
+		{name: "trainer", mirror: MirrorHorizontal, hasTrainer: true, controlFlags: 0x04},
+		{name: "four screen with trainer", mirror: Mirror4, hasTrainer: true, controlFlags: 0x0C},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			original := New()
+			original.Mirror = tt.mirror
+			if tt.hasTrainer {
+				original.Trainer = make([]byte, 512)
+			}
+
+			var buf bytes.Buffer
+			assert.NoError(t, original.Save(&buf))
+			assert.Equal(t, tt.controlFlags, buf.Bytes()[6]&0x0F)
+
+			loaded, err := LoadFile(bytes.NewReader(buf.Bytes()))
+			assert.NoError(t, err)
+			assert.Equal(t, tt.mirror, loaded.Mirror)
+			assert.Len(t, loaded.Trainer, len(original.Trainer))
+		})
+	}
+}
+
 func testRom() []byte {
 	prg := make([]byte, 2*16384)
 	prg[0] = 0x80 // marker

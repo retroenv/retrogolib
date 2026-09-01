@@ -5,10 +5,17 @@ func ControlBytes(battery, mirror byte, mapper uint16, hasTrainer bool) (byte, b
 	mapper8 := byte(mapper)
 
 	var control1, control2 byte
-	control1 |= (battery & 1) << 1
+	if battery&1 != 0 {
+		control1 |= batteryFlag
+	}
 
-	control1 |= mirror & 1
-	control1 |= ((mirror >> 1) & 1) << 3
+	// The iNES header cannot encode mapper-controlled single-screen modes.
+	switch MirrorMode(mirror) {
+	case MirrorVertical:
+		control1 |= verticalMirroringFlag
+	case Mirror4:
+		control1 |= fourScreenFlag
+	}
 
 	control1 |= mergeNibbles(mapper8, control1)
 	control2 |= mergeNibbles(highNibble(mapper8), control2)

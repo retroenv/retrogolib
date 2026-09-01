@@ -10,7 +10,10 @@ import (
 var iNESFileMagic = [4]byte{'N', 'E', 'S', 0x1a}
 
 const (
-	trainerFlag = 1 << 3
+	verticalMirroringFlag = 1 << iota
+	batteryFlag
+	trainerFlag
+	fourScreenFlag
 )
 
 // LoadFile loads an .nes file in iNES format.
@@ -32,14 +35,17 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		header.NumRAM = 0 // byte 8 is not RAM size in NES 2.0
 	}
 
-	mirror1 := header.Control1 & 1
-	mirror2 := (header.Control1 >> 3) & 1
-	mirror := mirror1 | mirror2<<1
+	mirror := MirrorMode(header.Control1 & verticalMirroringFlag)
 
-	battery := (header.Control1 >> 1) & 1
+	// Four-screen mirroring takes precedence over the horizontal/vertical bit.
+	if header.Control1&fourScreenFlag != 0 {
+		mirror = Mirror4
+	}
+
+	battery := (header.Control1 & batteryFlag) >> 1
 
 	var trainer []byte
-	if header.Control1&trainerFlag != 0 { // check if trainer is present
+	if header.Control1&trainerFlag != 0 {
 		trainer = make([]byte, 512)
 		if _, err := io.ReadFull(reader, trainer); err != nil {
 			return nil, fmt.Errorf("reading trainer: %w", err)
@@ -65,7 +71,7 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		RAM:         header.NumRAM,
 		Trainer:     trainer,
 		Mapper:      mapper,
-		Mirror:      MirrorMode(mirror),
+		Mirror:      mirror,
 		Battery:     battery,
 		VideoFormat: header.VideoFormat,
 	}, nil
