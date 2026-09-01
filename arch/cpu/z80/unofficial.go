@@ -32,7 +32,7 @@ var INF = &Instruction{
 	Name:       InfName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xAA, Size: 2, Cycles: 16}, // ED AA
+		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0xAA, Size: 2, Cycles: 16}, // ED AA
 	},
 	NoParamFunc: inf,
 }
@@ -42,7 +42,7 @@ var OUTF = &Instruction{
 	Name:       OutfName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xAB, Size: 2, Cycles: 16}, // ED AB
+		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0xAB, Size: 2, Cycles: 16}, // ED AB
 	},
 	NoParamFunc: outf,
 }

@@ -93,6 +93,26 @@ func TestUndocumentedInstructionMap(t *testing.T) {
 	assert.False(t, IsUnofficialInstruction("nop"), "Regular nop should not be considered unofficial")
 }
 
+func TestUndocumentedPortInstructionDefinitions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		instruction *Instruction
+		opcode      byte
+	}{
+		{instruction: INF, opcode: 0xAA},
+		{instruction: OUTF, opcode: 0xAB},
+	}
+
+	for _, test := range tests {
+		info := test.instruction.Addressing[ImpliedAddressing]
+		assert.Equal(t, PrefixED, info.Prefix)
+		assert.Equal(t, test.opcode, info.Opcode)
+		assert.Equal(t, byte(2), info.Size)
+		assert.True(t, test.instruction.Unofficial)
+	}
+}
+
 func TestValidDDFDInstructionsStillWork(t *testing.T) {
 	tests := []struct {
 		name     string
