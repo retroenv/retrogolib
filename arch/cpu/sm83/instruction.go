@@ -434,18 +434,18 @@ var LdhAN = &Instruction{
 	ParamFunc: ldhAN,
 }
 
-// LdCA - LD (C),A — Store A to $FF00+C.
-var LdCA = &Instruction{
-	Name: LdName,
+// LdhCA - LDH (C),A — Store A to $FF00+C.
+var LdhCA = &Instruction{
+	Name: LdhName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xE2, Size: 1, Cycles: 2},
 	},
 	NoParamFunc: ldCA,
 }
 
-// LdAC - LD A,(C) — Load from $FF00+C into A.
-var LdAC = &Instruction{
-	Name: LdName,
+// LdhAC - LDH A,(C) — Load from $FF00+C into A.
+var LdhAC = &Instruction{
+	Name: LdhName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImpliedAddressing: {Opcode: 0xF2, Size: 1, Cycles: 2},
 	},
