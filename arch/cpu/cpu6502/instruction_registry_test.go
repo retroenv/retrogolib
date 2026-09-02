@@ -39,7 +39,7 @@ func TestInstructionIdentityRegistryIsComplete(t *testing.T) {
 	}
 }
 
-func TestInstructionAddressingMetadataHasSizes(t *testing.T) {
+func TestInstructionAddressingMetadataHasExactSizes(t *testing.T) {
 	t.Parallel()
 
 	seen := make(map[*Instruction]struct{})
@@ -54,10 +54,10 @@ func TestInstructionAddressingMetadataHasSizes(t *testing.T) {
 			}
 			seen[instruction] = struct{}{}
 			for addressing, info := range instruction.Addressing {
-				assert.True(t, info.Size > 0, "instruction %s addressing %d", instruction.Name, addressing)
-				assert.True(
+				assert.Equal(
 					t,
-					info.Size <= MaxOpcodeSize,
+					byte(addressingModeSize(addressing)),
+					info.Size,
 					"instruction %s addressing %d size %d",
 					instruction.Name,
 					addressing,

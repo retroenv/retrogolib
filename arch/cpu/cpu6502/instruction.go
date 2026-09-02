@@ -139,7 +139,7 @@ var BplInst = &Instruction{
 var BrkInst = &Instruction{
 	Name: BrkName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x00, Size: 2},
+		ImpliedAddressing: {Opcode: 0x00, Size: 1},
 	},
 	NoParamFunc: brk,
 }
