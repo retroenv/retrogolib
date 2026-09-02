@@ -1,63 +1,62 @@
-## RetroGoLib - a Golang library for retro console tooling development
+# retrogolib
 
-[![Build status](https://github.com/retroenv/retrogolib/actions/workflows/go.yaml/badge.svg?branch=main)](https://github.com/retroenv/retrogolib/actions)
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/retroenv/retrogolib)
-[![codecov](https://codecov.io/gh/retroenv/retrogolib/branch/main/graph/badge.svg?token=jiBBxNmmVB)](https://app.codecov.io/gh/retroenv/retrogolib)
+[![CI](https://github.com/retroenv/retrogolib/actions/workflows/go.yaml/badge.svg?branch=main)](https://github.com/retroenv/retrogolib/actions/workflows/go.yaml)
+[![Codecov](https://codecov.io/gh/retroenv/retrogolib/graph/badge.svg)](https://codecov.io/gh/retroenv/retrogolib)
+[![Release](https://img.shields.io/github/v/release/retroenv/retrogolib)](https://github.com/retroenv/retrogolib/releases/latest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/retroenv/retrogolib.svg)](https://pkg.go.dev/github.com/retroenv/retrogolib)
+[![License](https://img.shields.io/github/license/retroenv/retrogolib)](LICENSE)
+![LLM assisted: human reviewed](https://img.shields.io/badge/LLM%20assisted-human%20reviewed-6f42c1)
+
+A Go library of reusable components for retro-computing tools: emulators,
+debuggers, disassemblers, and system-specific utilities.
+
+## Features
+
+* **CPU emulation** - Chip-8, 6502-family, and Z80 emulators with tested instruction implementations
+* **Instruction definitions** - x86 definitions from the 8086 through the 80486 for static analysis tools
+* **System helpers** - NES cartridge, mapper, register, and parameter support
+* **CGO-free GUI support** - Interfaces and SDL integration designed for straightforward cross-compilation
+* **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
+* **Small dependency footprint** - Go 1.22+ with only `ebitengine/purego` as an external dependency
 
 ## Installation
+
+Add the module to an existing Go project:
 
 ```bash
 go get github.com/retroenv/retrogolib
 ```
 
-## Overview
+Then import the package needed by your tool:
 
-RetroGoLib is a Go library for building retro computing tools such as emulators, debuggers,
-disassemblers, and system-specific utilities. It focuses on small dependencies, reusable CPU and
-system components, and clean APIs that compose well in standalone tools.
+```go
+import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
+```
 
-## Highlights
+## Packages
 
-- Go 1.22 or later
-- Single external dependency: [`ebitengine/purego`](https://github.com/ebitengine/purego)
-- No CGO dependencies, including SDL support for easier cross-compilation
-- Reusable CPU emulation packages with tests and system helpers
-- Supporting utility packages for CLI apps, configuration, logging, input, and assertions
+    ├─ app                         common application and service helpers
+    ├─ arch                        shared architecture constants and types
+    │  ├─ cpu
+    │  │  ├─ chip8                 Chip-8 virtual machine
+    │  │  ├─ cpu6502               MOS 6502-family emulator, including NMOS and 65C02 variants
+    │  │  ├─ x86                   Intel x86 instruction definitions from 8086 through 80486
+    │  │  └─ z80                   Zilog Z80 emulator, including prefixed and undocumented opcodes
+    │  └─ system/nes               Nintendo Entertainment System support
+    │     ├─ cartridge             .nes ROM loading and saving
+    │     ├─ codedatalog           FCEUX/Mesen-compatible code/data logging
+    │     ├─ parameter             assembler-compatible instruction parameter formatting
+    │     └─ register              NES memory-register constants
+    ├─ assert                      test assertion helpers
+    ├─ buildinfo                   embedded build-version metadata formatting
+    ├─ cli                         command-line application helpers
+    ├─ config                      configuration loading, parsing, and persistence
+    ├─ gui                         CGO-free GUI rendering abstractions
+    │  ├─ internal/dynlib          dynamic-library helpers for GUI backends
+    │  ├─ internal/framebuffer     frame-buffer helpers for GUI backends
+    │  └─ sdl2                     SDL2 GUI backend
+    ├─ input                       keyboard and controller input helpers
+    ├─ log                         nil-safe structured logging built on log/slog
+    └─ set                         generic set data structures and operations
 
-## CPU Packages
-
-These packages are currently implemented in the repository:
-
-- `arch/cpu/chip8`: Chip-8 virtual machine
-- `arch/cpu/cpu6502`: 6502 family, including NMOS and 65C02 variants
-- `arch/cpu/x86`: x86 instruction definitions for 8086 through 80486
-- `arch/cpu/z80`: Zilog Z80, including prefixed and undocumented opcode support
-
-## System Support
-
-Concrete system helper packages currently include:
-
-- `arch/system/nes`: NES cartridge, mapper, register, and parameter helpers
-
-## Package Overview
-
-    ├─ app               common application and service helpers
-    ├─ arch              shared architecture and system identifiers
-    ├─ arch/cpu/*        CPU emulation and virtual-machine packages
-    ├─ arch/system/*     system-specific constants and helpers
-    ├─ assert            test assertion helpers
-    ├─ buildinfo         version metadata helpers
-    ├─ cli               command-line parsing and related utilities
-    ├─ config            configuration loading, parsing, and persistence
-    ├─ gui               graphical interface helpers with CGO-free SDL integration
-    ├─ input             keyboard and controller input helpers
-    ├─ log               structured logging helpers built on slog
-    └─ set               generic set data structures and operations
-
-## API Documentation
-
-For detailed package documentation, visit [pkg.go.dev](https://pkg.go.dev/github.com/retroenv/retrogolib).
-
-## License
-
-This project is licensed under the Apache License Version 2.0 - see the LICENSE file for details.
+For package-level APIs and examples, see the [Go package documentation](https://pkg.go.dev/github.com/retroenv/retrogolib).
