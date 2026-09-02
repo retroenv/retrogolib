@@ -8,13 +8,13 @@ var DcpInst = &Instruction{
 	Name:       DcpName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0xc7},
-		ZeroPageXAddressing: {Opcode: 0xd7},
-		AbsoluteAddressing:  {Opcode: 0xcf},
-		AbsoluteXAddressing: {Opcode: 0xdf},
-		AbsoluteYAddressing: {Opcode: 0xdb},
-		IndirectXAddressing: {Opcode: 0xc3},
-		IndirectYAddressing: {Opcode: 0xd3},
+		ZeroPageAddressing:  {Opcode: 0xc7, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xd7, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xcf, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xdf, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xdb, Size: 3},
+		IndirectXAddressing: {Opcode: 0xc3, Size: 2},
+		IndirectYAddressing: {Opcode: 0xd3, Size: 2},
 	},
 	ParamFunc: dcp,
 }
@@ -24,13 +24,13 @@ var IscInst = &Instruction{
 	Name:       IscName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0xe7},
-		ZeroPageXAddressing: {Opcode: 0xf7},
-		AbsoluteAddressing:  {Opcode: 0xef},
-		AbsoluteXAddressing: {Opcode: 0xff},
-		AbsoluteYAddressing: {Opcode: 0xfb},
-		IndirectXAddressing: {Opcode: 0xe3},
-		IndirectYAddressing: {Opcode: 0xf3},
+		ZeroPageAddressing:  {Opcode: 0xe7, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0xf7, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xef, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0xff, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xfb, Size: 3},
+		IndirectXAddressing: {Opcode: 0xe3, Size: 2},
+		IndirectYAddressing: {Opcode: 0xf3, Size: 2},
 	},
 	ParamFunc: isc,
 }
@@ -41,7 +41,7 @@ var LasInst = &Instruction{
 	Name:       LasName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		AbsoluteYAddressing: {Opcode: 0xbb},
+		AbsoluteYAddressing: {Opcode: 0xbb, Size: 3},
 	},
 	ParamFunc: las,
 }
@@ -51,12 +51,12 @@ var LaxInst = &Instruction{
 	Name:       LaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0xa7},
-		ZeroPageYAddressing: {Opcode: 0xb7},
-		AbsoluteAddressing:  {Opcode: 0xaf},
-		AbsoluteYAddressing: {Opcode: 0xbf},
-		IndirectXAddressing: {Opcode: 0xa3},
-		IndirectYAddressing: {Opcode: 0xb3},
+		ZeroPageAddressing:  {Opcode: 0xa7, Size: 2},
+		ZeroPageYAddressing: {Opcode: 0xb7, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0xaf, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0xbf, Size: 3},
+		IndirectXAddressing: {Opcode: 0xa3, Size: 2},
+		IndirectYAddressing: {Opcode: 0xb3, Size: 2},
 	},
 	ParamFunc: lax,
 }
@@ -66,12 +66,12 @@ var NopUnofficialInst = &Instruction{
 	Name:       NopName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing:   {Opcode: 0x1a},
-		ImmediateAddressing: {Opcode: 0x80},
-		ZeroPageAddressing:  {Opcode: 0x04},
-		ZeroPageXAddressing: {Opcode: 0x14},
-		AbsoluteAddressing:  {Opcode: 0x0c},
-		AbsoluteXAddressing: {Opcode: 0x1c},
+		ImpliedAddressing:   {Opcode: 0x1a, Size: 1},
+		ImmediateAddressing: {Opcode: 0x80, Size: 2},
+		ZeroPageAddressing:  {Opcode: 0x04, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x14, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x0c, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x1c, Size: 3},
 	},
 	ParamFunc: nopUnofficial,
 }
@@ -81,13 +81,13 @@ var RlaInst = &Instruction{
 	Name:       RlaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0x27},
-		ZeroPageXAddressing: {Opcode: 0x37},
-		AbsoluteAddressing:  {Opcode: 0x2f},
-		AbsoluteXAddressing: {Opcode: 0x3f},
-		AbsoluteYAddressing: {Opcode: 0x3b},
-		IndirectXAddressing: {Opcode: 0x23},
-		IndirectYAddressing: {Opcode: 0x33},
+		ZeroPageAddressing:  {Opcode: 0x27, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x37, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x2f, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x3f, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x3b, Size: 3},
+		IndirectXAddressing: {Opcode: 0x23, Size: 2},
+		IndirectYAddressing: {Opcode: 0x33, Size: 2},
 	},
 	ParamFunc: rla,
 }
@@ -97,13 +97,13 @@ var RraInst = &Instruction{
 	Name:       RraName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0x67},
-		ZeroPageXAddressing: {Opcode: 0x77},
-		AbsoluteAddressing:  {Opcode: 0x6f},
-		AbsoluteXAddressing: {Opcode: 0x7f},
-		AbsoluteYAddressing: {Opcode: 0x7b},
-		IndirectXAddressing: {Opcode: 0x63},
-		IndirectYAddressing: {Opcode: 0x73},
+		ZeroPageAddressing:  {Opcode: 0x67, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x77, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x6f, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x7f, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x7b, Size: 3},
+		IndirectXAddressing: {Opcode: 0x63, Size: 2},
+		IndirectYAddressing: {Opcode: 0x73, Size: 2},
 	},
 	ParamFunc: rra,
 }
@@ -113,10 +113,10 @@ var SaxInst = &Instruction{
 	Name:       SaxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0x87},
-		ZeroPageYAddressing: {Opcode: 0x97},
-		AbsoluteAddressing:  {Opcode: 0x8f},
-		IndirectXAddressing: {Opcode: 0x83},
+		ZeroPageAddressing:  {Opcode: 0x87, Size: 2},
+		ZeroPageYAddressing: {Opcode: 0x97, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x8f, Size: 3},
+		IndirectXAddressing: {Opcode: 0x83, Size: 2},
 	},
 	ParamFunc: sax,
 }
@@ -126,7 +126,7 @@ var SbcUnofficialInst = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xeb},
+		ImmediateAddressing: {Opcode: 0xeb, Size: 2},
 	},
 	ParamFunc: sbc,
 }
@@ -137,8 +137,8 @@ var ShaInst = &Instruction{
 	Name:       ShaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		IndirectYAddressing: {Opcode: 0x93},
-		AbsoluteYAddressing: {Opcode: 0x9f},
+		IndirectYAddressing: {Opcode: 0x93, Size: 2},
+		AbsoluteYAddressing: {Opcode: 0x9f, Size: 3},
 	},
 	ParamFunc: sha,
 }
@@ -149,7 +149,7 @@ var ShxInst = &Instruction{
 	Name:       ShxName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		AbsoluteYAddressing: {Opcode: 0x9e},
+		AbsoluteYAddressing: {Opcode: 0x9e, Size: 3},
 	},
 	ParamFunc: shx,
 }
@@ -160,7 +160,7 @@ var ShyInst = &Instruction{
 	Name:       ShyName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		AbsoluteXAddressing: {Opcode: 0x9c},
+		AbsoluteXAddressing: {Opcode: 0x9c, Size: 3},
 	},
 	ParamFunc: shy,
 }
@@ -170,13 +170,13 @@ var SloInst = &Instruction{
 	Name:       SloName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0x07},
-		ZeroPageXAddressing: {Opcode: 0x17},
-		AbsoluteAddressing:  {Opcode: 0x0f},
-		AbsoluteXAddressing: {Opcode: 0x1f},
-		AbsoluteYAddressing: {Opcode: 0x1b},
-		IndirectXAddressing: {Opcode: 0x03},
-		IndirectYAddressing: {Opcode: 0x13},
+		ZeroPageAddressing:  {Opcode: 0x07, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x17, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x0f, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x1f, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x1b, Size: 3},
+		IndirectXAddressing: {Opcode: 0x03, Size: 2},
+		IndirectYAddressing: {Opcode: 0x13, Size: 2},
 	},
 	ParamFunc: slo,
 }
@@ -186,13 +186,13 @@ var SreInst = &Instruction{
 	Name:       SreName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ZeroPageAddressing:  {Opcode: 0x47},
-		ZeroPageXAddressing: {Opcode: 0x57},
-		AbsoluteAddressing:  {Opcode: 0x4f},
-		AbsoluteXAddressing: {Opcode: 0x5f},
-		AbsoluteYAddressing: {Opcode: 0x5b},
-		IndirectXAddressing: {Opcode: 0x43},
-		IndirectYAddressing: {Opcode: 0x53},
+		ZeroPageAddressing:  {Opcode: 0x47, Size: 2},
+		ZeroPageXAddressing: {Opcode: 0x57, Size: 2},
+		AbsoluteAddressing:  {Opcode: 0x4f, Size: 3},
+		AbsoluteXAddressing: {Opcode: 0x5f, Size: 3},
+		AbsoluteYAddressing: {Opcode: 0x5b, Size: 3},
+		IndirectXAddressing: {Opcode: 0x43, Size: 2},
+		IndirectYAddressing: {Opcode: 0x53, Size: 2},
 	},
 	ParamFunc: sre,
 }
@@ -203,7 +203,7 @@ var TasInst = &Instruction{
 	Name:       TasName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		AbsoluteYAddressing: {Opcode: 0x9b},
+		AbsoluteYAddressing: {Opcode: 0x9b, Size: 3},
 	},
 	ParamFunc: tas,
 }
@@ -213,7 +213,7 @@ var AlrInst = &Instruction{
 	Name:       AlrName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x4b},
+		ImmediateAddressing: {Opcode: 0x4b, Size: 2},
 	},
 	ParamFunc: alr,
 }
@@ -223,7 +223,7 @@ var AncInst = &Instruction{
 	Name:       AncName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x0b},
+		ImmediateAddressing: {Opcode: 0x0b, Size: 2},
 	},
 	ParamFunc: anc,
 }
@@ -233,7 +233,7 @@ var AncUnofficialInst = &Instruction{
 	Name:       AncName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x2b},
+		ImmediateAddressing: {Opcode: 0x2b, Size: 2},
 	},
 	ParamFunc: anc,
 }
@@ -245,7 +245,7 @@ var AneInst = &Instruction{
 	Name:       AneName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x8b},
+		ImmediateAddressing: {Opcode: 0x8b, Size: 2},
 	},
 	ParamFunc: ane,
 }
@@ -255,7 +255,7 @@ var ArrInst = &Instruction{
 	Name:       ArrName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x6b},
+		ImmediateAddressing: {Opcode: 0x6b, Size: 2},
 	},
 	ParamFunc: arr,
 }
@@ -265,7 +265,7 @@ var AxsInst = &Instruction{
 	Name:       AxsName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xcb},
+		ImmediateAddressing: {Opcode: 0xcb, Size: 2},
 	},
 	ParamFunc: axs,
 }
@@ -277,7 +277,7 @@ var LxaInst = &Instruction{
 	Name:       LxaName,
 	Unofficial: true,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xab},
+		ImmediateAddressing: {Opcode: 0xab, Size: 2},
 	},
 	ParamFunc: lxa,
 }

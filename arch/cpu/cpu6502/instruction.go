@@ -317,7 +317,7 @@ var JmpInst = &Instruction{
 	Name: JmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		AbsoluteAddressing: {Opcode: 0x4c, Size: 3},
-		IndirectAddressing: {Opcode: 0x6c},
+		IndirectAddressing: {Opcode: 0x6c, Size: 3},
 	},
 	ParamFunc: jmp,
 }
