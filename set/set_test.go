@@ -22,6 +22,13 @@ func TestNewFromSlice(t *testing.T) {
 	assert.True(t, s.Contains(3), "Set should contain 3")
 }
 
+func TestSorted(t *testing.T) {
+	s := NewFromSlice([]int{3, 1, 2})
+
+	assert.Equal(t, []int{1, 2, 3}, Sorted(s))
+	assert.Equal(t, 3, s.Size())
+}
+
 func TestAdd(t *testing.T) {
 	s := New[string]()
 	s.Add("hello")

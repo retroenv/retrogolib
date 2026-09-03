@@ -1,5 +1,10 @@
 package set
 
+import (
+	"cmp"
+	"slices"
+)
+
 // Set represents a generic set data structure using a map with struct{} values.
 type Set[T comparable] map[T]struct{}
 
@@ -189,4 +194,11 @@ func (s Set[T]) ForEach(fn func(T)) {
 	for element := range s {
 		fn(element)
 	}
+}
+
+// Sorted returns all elements in ascending order.
+func Sorted[T cmp.Ordered](s Set[T]) []T {
+	result := s.ToSlice()
+	slices.Sort(result)
+	return result
 }

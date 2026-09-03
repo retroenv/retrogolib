@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
+	"github.com/retroenv/retrogolib/set"
 )
 
 func TestInstructionsForVariant(t *testing.T) {
@@ -42,17 +43,17 @@ func TestInstructionIdentityRegistryIsComplete(t *testing.T) {
 func TestInstructionAddressingMetadataHasExactSizes(t *testing.T) {
 	t.Parallel()
 
-	seen := make(map[*Instruction]struct{})
+	seen := set.New[*Instruction]()
 	for _, table := range [][256]Opcode{Opcodes, Opcodes65C02, OpcodesSynertek65C02} {
 		for _, opcode := range table {
 			instruction := opcode.Instruction
 			if instruction == nil {
 				continue
 			}
-			if _, ok := seen[instruction]; ok {
+			if seen.Contains(instruction) {
 				continue
 			}
-			seen[instruction] = struct{}{}
+			seen.Add(instruction)
 			for addressing, info := range instruction.Addressing {
 				assert.Equal(
 					t,
