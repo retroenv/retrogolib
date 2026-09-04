@@ -202,3 +202,10 @@ func Sorted[T cmp.Ordered](s Set[T]) []T {
 	slices.Sort(result)
 	return result
 }
+
+// SortedFunc returns all elements in the order that compare defines.
+func SortedFunc[T comparable](s Set[T], compare func(T, T) int) []T {
+	result := s.ToSlice()
+	slices.SortFunc(result, compare)
+	return result
+}

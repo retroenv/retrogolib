@@ -29,6 +29,13 @@ func TestSorted(t *testing.T) {
 	assert.Equal(t, 3, s.Size())
 }
 
+func TestSortedFunc(t *testing.T) {
+	s := NewFromSlice([]int{1, 3, 2})
+
+	assert.Equal(t, []int{3, 2, 1}, SortedFunc(s, compareIntsDescending))
+	assert.Equal(t, 3, s.Size())
+}
+
 func TestAdd(t *testing.T) {
 	s := New[string]()
 	s.Add("hello")
@@ -206,4 +213,8 @@ func TestEmptySetOperations(t *testing.T) {
 	assert.True(t, empty.Difference(s).IsEmpty(), "Difference of empty set should be empty")
 	assert.True(t, empty.IsSubset(s), "Empty set should be subset of any set")
 	assert.True(t, s.IsSuperset(empty), "Any set should be superset of empty set")
+}
+
+func compareIntsDescending(left, right int) int {
+	return right - left
 }
