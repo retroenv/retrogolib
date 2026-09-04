@@ -52,6 +52,9 @@ type Bit uint8
 // Port represents I/O port addresses.
 type Port uint8
 
+// RegisterParam identifies a specific register or addressing mode variant for opcode mapping.
+type RegisterParam uint8
+
 // RegisterParam constants are used as keys in opcode lookup maps to identify
 // specific instruction variants. These enable bidirectional mapping between
 // opcodes and instructions for disassembly and code generation.
@@ -133,9 +136,6 @@ const (
 	RegIM1 // Mode 1: RST 38H
 	RegIM2 // Mode 2: Vectored interrupts
 )
-
-// RegisterParam identifies a specific register or addressing mode variant for opcode mapping.
-type RegisterParam uint8
 
 // registerNames provides register parameter string representations.
 var registerNames = [...]string{

@@ -110,6 +110,38 @@ func Test65C02BranchTiming(t *testing.T) {
 	}
 }
 
+func TestSelfBranchPageCrossTiming(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		variant    CPUVariant
+		pc         uint16
+		program    []byte
+		wantCycles uint64
+	}{
+		{name: "NMOS same page", pc: 0x80fd, program: []byte{0xd0, 0xfe}, wantCycles: 3},
+		{name: "NMOS last two bytes", pc: 0x80fe, program: []byte{0xd0, 0xfe}, wantCycles: 4},
+		{name: "NMOS operand on next page", pc: 0x80ff, program: []byte{0xd0, 0xfe}, wantCycles: 4},
+		{name: "NMOS address wrap", pc: 0xfffe, program: []byte{0xd0, 0xfe}, wantCycles: 4},
+		{name: "65C02 BRA", variant: Variant65C02, pc: 0x80fe, program: []byte{0x80, 0xfe}, wantCycles: 4},
+		{name: "65C02 BBR", variant: Variant65C02, pc: 0x80fd, program: []byte{0x0f, 0x10, 0xfd}, wantCycles: 7},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			cpu := newProgramCPU(t, tt.variant, tt.pc, tt.program...)
+			assert.NoError(t, cpu.Step())
+
+			// The page comparison uses the following instruction's address,
+			// even when the taken branch returns to its own opcode.
+			assert.Equal(t, tt.pc, cpu.PC)
+			assert.Equal(t, initialCycles+tt.wantCycles, cpu.cycles)
+		})
+	}
+}
+
 func newProgramCPU(t *testing.T, variant CPUVariant, pc uint16, program ...byte) *CPU {
 	t.Helper()
 

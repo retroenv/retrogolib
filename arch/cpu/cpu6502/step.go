@@ -107,6 +107,16 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 
 // updatePC updates the program counter based on the instruction execution.
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
+	if c.branchTaken {
+		// Taken branches compare the target with the following instruction,
+		// including self-loops and address-space wraparound.
+		nextAddress := oldPC + uint16(amount)
+		if c.PC&0xff00 != nextAddress&0xff00 {
+			c.cycles++
+		}
+		return
+	}
+
 	// update PC only if the instruction execution did not change it
 	if oldPC == c.PC {
 		// If the instruction explicitly sets PC (JMP, JSR, RTI, RTS, BRK) but landed on the
@@ -117,28 +127,6 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 		if _, ok := NotExecutingFollowingOpcodeInstructions[ins.Name]; ok {
 			return
 		}
-		// If a branch was taken but targeted the same address (self-loop), don't advance.
-		if c.branchTaken {
-			return
-		}
-
 		c.PC += uint16(amount)
-		return
-	}
-
-	// page crossing is measured based on the start of the instruction that follows the
-	// current instruction
-	nextAddress := oldPC + uint16(amount)
-	pageCrossed := c.PC&0xff00 != nextAddress&0xff00
-	if !pageCrossed {
-		return
-	}
-	if _, ok := BranchingInstructions[ins.Name]; !ok {
-		return
-	}
-
-	// account for a branch page crossing extra CPU cycle.
-	if ins.Name != JmpInst.Name && ins.Name != JsrInst.Name {
-		c.cycles++
 	}
 }

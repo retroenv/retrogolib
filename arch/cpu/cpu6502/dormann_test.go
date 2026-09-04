@@ -20,10 +20,10 @@ const (
 	// dormannStartPC is the entry point for Klaus Dormann tests (code_segment).
 	dormannStartPC = 0x0400
 
-	// dormannMaxCycles prevents truly infinite loops on emulator bugs.
-	dormannMaxCycles = uint64(200_000_000)
+	// dormannMaxInstructions prevents truly infinite loops on emulator bugs.
+	dormannMaxInstructions = uint64(200_000_000)
 
-	// dormannProgressInterval prints progress every N cycles.
+	// dormannProgressInterval prints progress every N instructions.
 	dormannProgressInterval = uint64(10_000_000)
 
 	// Success addresses from bin_files/*.lst (last "jmp *" = "test passed, no errors").
@@ -41,47 +41,50 @@ func TestDormann(t *testing.T) {
 
 	tests := []dormannTest{
 		{
-			name:      "6502 functional test",
-			binary:    filepath.Join("bin_files", "6502_functional_test.bin"),
-			variant:   VariantNMOS6502,
-			startPC:   dormannStartPC,
-			successPC: nmos6502SuccessPC,
-			maxCycles: dormannMaxCycles,
+			name:            "6502 functional test",
+			binary:          filepath.Join("bin_files", "6502_functional_test.bin"),
+			variant:         VariantNMOS6502,
+			startPC:         dormannStartPC,
+			successPC:       nmos6502SuccessPC,
+			maxInstructions: dormannMaxInstructions,
 		},
 		{
-			name:      "65C02 extended opcodes test",
-			binary:    filepath.Join("bin_files", "65C02_extended_opcodes_test.bin"),
-			variant:   Variant65C02,
-			startPC:   dormannStartPC,
-			successPC: c65c02SuccessPC,
-			maxCycles: dormannMaxCycles,
+			name:            "65C02 extended opcodes test",
+			binary:          filepath.Join("bin_files", "65C02_extended_opcodes_test.bin"),
+			variant:         Variant65C02,
+			startPC:         dormannStartPC,
+			successPC:       c65c02SuccessPC,
+			maxInstructions: dormannMaxInstructions,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			runDormannTest(t, dataDir, tc)
+			runDormannTest(t, dataDir, tc, false)
 		})
 	}
 }
 
 // dormannTest describes a single Klaus Dormann binary ROM test.
 type dormannTest struct {
-	name      string
-	binary    string // relative path inside the dormann data dir
-	variant   CPUVariant
-	startPC   uint16
-	successPC uint16
-	maxCycles uint64
+	name            string
+	binary          string // relative path inside the dormann data dir
+	variant         CPUVariant
+	startPC         uint16
+	successPC       uint16
+	maxInstructions uint64
 }
 
 // runDormannTest loads a binary ROM and runs it until the CPU halts, then checks the success address.
-func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
+func runDormannTest(t *testing.T, dataDir string, tc dormannTest, required bool) {
 	t.Helper()
 
 	path := filepath.Join(dataDir, tc.binary)
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if required {
+			assert.NoError(t, err)
+		}
 		t.Skipf("test binary not found at %s (run 'make -C testdata cpu6502' to download): %v", path, err)
 	}
 
@@ -103,21 +106,22 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	cpu.PC = tc.startPC
 
 	var (
-		cycles uint64
-		prevPC uint16
-		halted bool
+		instructions uint64
+		prevPC       uint16
+		halted       bool
 	)
 
-	for cycles < tc.maxCycles {
+	startCycles := cpu.Cycles()
+	for instructions < tc.maxInstructions {
 		prevPC = cpu.PC
 
 		stepErr := cpu.Step()
 		assert.Nil(t, stepErr)
 
-		cycles++
+		instructions++
 
-		if cycles%dormannProgressInterval == 0 {
-			fmt.Printf("  %s: %d M cycles, PC=0x%04X\n", tc.name, cycles/1_000_000, cpu.PC)
+		if instructions%dormannProgressInterval == 0 {
+			fmt.Printf("  %s: %d M instructions, PC=0x%04X\n", tc.name, instructions/1_000_000, cpu.PC)
 		}
 
 		if cpu.PC == prevPC {
@@ -129,7 +133,7 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	assert.True(t, halted)
 	assert.Equal(t, tc.successPC, cpu.PC)
 
-	t.Logf("%s: PASSED at 0x%04X after %d cycles", tc.name, cpu.PC, cycles)
+	t.Logf("%s: PASSED at 0x%04X after %d instructions, %d CPU cycles", tc.name, cpu.PC, instructions, cpu.Cycles()-startCycles)
 }
 
 // getDormannDataDir returns the directory containing Klaus Dormann test data,
