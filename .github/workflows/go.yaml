@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ "1.22" ]
+        go: [ "1.25" ]
 
     steps:
-      - name: Set up Go 1.x
+      - name: Set up Go 1.25
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}

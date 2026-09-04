@@ -17,7 +17,7 @@ debuggers, disassemblers, and system-specific utilities.
 * **System helpers** - NES cartridge, mapper, register, and parameter support
 * **CGO-free GUI support** - Interfaces and SDL integration designed for straightforward cross-compilation
 * **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
-* **Small dependency footprint** - Go 1.22+ with only `ebitengine/purego` as an external dependency
+* **Small dependency footprint** - Go 1.25+ with only `ebitengine/purego` as an external dependency
 
 ## Installation
 
