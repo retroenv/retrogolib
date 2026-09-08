@@ -3,45 +3,45 @@ package z80
 import "math/bits"
 
 // ldi executes Load and Increment operation.
-func (c *CPU) ldi() {
-	hl := c.hl()
-	de := c.de()
-	bc := c.bc()
+func (cpu *CPU) ldi() {
+	hl := cpu.hl()
+	de := cpu.de()
+	bc := cpu.bc()
 
 	// Copy byte from (HL) to (DE)
-	value := c.bus.Read(hl)
-	c.bus.Write(de, value)
+	value := cpu.bus.Read(hl)
+	cpu.bus.Write(de, value)
 
 	// Increment HL and DE, decrement BC
-	c.setHL(hl + 1)
-	c.setDE(de + 1)
-	c.setBC(bc - 1)
+	cpu.setHL(hl + 1)
+	cpu.setDE(de + 1)
+	cpu.setBC(bc - 1)
 
 	// Set P/V flag based on BC
-	c.setPOverflow(bc != 1) // P/V set if BC-1 != 0
-	c.setH(false)
-	c.setN(false)
+	cpu.setPOverflow(bc != 1) // P/V set if BC-1 != 0
+	cpu.setH(false)
+	cpu.setN(false)
 }
 
 // ldd executes Load and Decrement operation.
-func (c *CPU) ldd() {
-	hl := c.hl()
-	de := c.de()
-	bc := c.bc()
+func (cpu *CPU) ldd() {
+	hl := cpu.hl()
+	de := cpu.de()
+	bc := cpu.bc()
 
 	// Copy byte from (HL) to (DE)
-	value := c.bus.Read(hl)
-	c.bus.Write(de, value)
+	value := cpu.bus.Read(hl)
+	cpu.bus.Write(de, value)
 
 	// Decrement HL, DE, and BC
-	c.setHL(hl - 1)
-	c.setDE(de - 1)
-	c.setBC(bc - 1)
+	cpu.setHL(hl - 1)
+	cpu.setDE(de - 1)
+	cpu.setBC(bc - 1)
 
 	// Set P/V flag based on BC
-	c.setPOverflow(bc != 1) // P/V set if BC-1 != 0
-	c.setH(false)
-	c.setN(false)
+	cpu.setPOverflow(bc != 1) // P/V set if BC-1 != 0
+	cpu.setH(false)
+	cpu.setN(false)
 }
 
 // boolToUint8 converts a boolean to 1 or 0 as uint8.

@@ -15,112 +15,114 @@ type TraceStep struct {
 	CustomData string // custom data field that can be used in the pre execution hook
 }
 
-// Step executes the next instruction in the CPU.
-func (c *CPU) Step() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Step accepts a pending interrupt, performs a HALT idle cycle, or executes one instruction.
+func (cpu *CPU) Step() error {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
 
-	if c.halted {
-		// CPU is halted, just advance cycles
-		c.cycles += 4
+	if cpu.handleInterrupts() {
 		return nil
 	}
 
-	// Handle interrupts first
-	c.handleInterrupts()
+	if cpu.halted {
+		cpu.incrementRefresh(false)
+		cpu.cycles += 4
+		return nil
+	}
 
-	c.lastWasLdAIR = false
+	cpu.eiPending = false
+	cpu.lastWasLdAIR = false
 
-	pcBeforeDecode := c.PC
-	opcode, opcodeByte, err := c.decodeNextInstruction()
+	pcBeforeDecode := cpu.PC
+	opcode, opcodeByte, err := cpu.decodeNextInstruction()
 	if err != nil {
 		return err
 	}
 	// Capture oldPC after decode: decode may advance PC past DD/FD prefix
 	// when falling through to unprefixed instruction execution.
-	oldPC := c.PC
+	oldPC := cpu.PC
 
-	c.cycles += uint64(opcode.Timing)
+	cpu.cycles += uint64(opcode.Timing)
 
 	// Store current opcode for instruction functions to access
-	c.currentOpcode = opcodeByte
+	cpu.currentOpcode = opcodeByte
 
 	// Prefixed instructions (CB, ED, DD, FD) and DD/FD passthrough increment R twice.
 	prefixed := opcodeByte == PrefixCB || opcodeByte == PrefixED ||
 		opcodeByte == PrefixDD || opcodeByte == PrefixFD ||
-		c.PC != pcBeforeDecode
-	c.incrementRefresh(prefixed)
+		cpu.PC != pcBeforeDecode
+	cpu.incrementRefresh(prefixed)
 
-	if err := c.executeInstruction(opcode, opcodeByte, oldPC); err != nil {
+	if err := cpu.executeInstruction(opcode, opcodeByte, oldPC); err != nil {
 		return err
 	}
-	c.q = c.GetFlags()
+	cpu.q = cpu.GetFlags()
 	return nil
 }
 
 // executeInstruction runs the decoded instruction and updates the program counter.
-func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) error {
+func (cpu *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) error {
 	ins := opcode.Instruction
 	if ins.NoParamFunc != nil {
-		if c.opts.preExecutionHook != nil {
-			c.opts.preExecutionHook(c, opcodeByte)
+		if cpu.opts.preExecutionHook != nil {
+			cpu.opts.preExecutionHook(cpu, opcodeByte)
 		}
-		if err := ins.NoParamFunc(c); err != nil {
+		if err := ins.NoParamFunc(cpu); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
-		c.updatePC(ins, oldPC, int(opcode.Size))
+		cpu.updatePC(ins, oldPC, int(opcode.Size))
 		return nil
 	}
 
-	params, operands, err := readOpParams(c, opcode.Addressing)
+	params, operands, err := readOpParams(cpu, opcode.Addressing)
 	if err != nil {
 		return fmt.Errorf("reading opcode params: %w", err)
 	}
-	if c.opts.tracing {
-		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
+	if cpu.opts.tracing {
+		cpu.TraceStep.OpcodeOperands = append(cpu.TraceStep.OpcodeOperands, operands...)
 	}
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, opcodeByte, params...)
+	if cpu.opts.preExecutionHook != nil {
+		cpu.opts.preExecutionHook(cpu, opcodeByte, params...)
 	}
 
-	if err := ins.ParamFunc(c, params...); err != nil {
+	if err := ins.ParamFunc(cpu, params...); err != nil {
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
-	c.updatePC(ins, oldPC, int(opcode.Size))
+	cpu.updatePC(ins, oldPC, int(opcode.Size))
 	return nil
 }
 
 // incrementRefresh increments the memory refresh register R.
 // Preserves bit 7 and increments the lower 7 bits. Prefixed instructions increment by 2.
-func (c *CPU) incrementRefresh(prefixed bool) {
+func (cpu *CPU) incrementRefresh(prefixed bool) {
 	inc := uint8(1)
 	if prefixed {
 		inc = 2
 	}
-	c.R = (c.R & 0x80) | ((c.R + inc) & 0x7F)
+	cpu.R = (cpu.R & 0x80) | ((cpu.R + inc) & 0x7F)
 }
 
 // decodeNextInstruction decodes the current instruction at the program counter.
-func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
+func (cpu *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 	// Handle extended instruction prefixes first
-	opcodeByte := c.bus.Read(c.PC)
+	opcodeByte := cpu.bus.Read(cpu.PC)
 
 	switch opcodeByte {
 	case PrefixCB:
 		// CB-prefixed instructions (bit operations)
-		return c.decodeCBInstruction()
+		return cpu.decodeCBInstruction()
 
 	case PrefixED:
 		// ED-prefixed instructions (extended operations)
-		return c.decodeEDInstruction()
+		return cpu.decodeEDInstruction()
 
 	case PrefixDD:
 		// DD-prefixed instructions (IX operations)
-		return c.decodeDDInstruction()
+		return cpu.decodeDDInstruction()
 
 	case PrefixFD:
 		// FD-prefixed instructions (IY operations)
-		return c.decodeFDInstruction()
+		return cpu.decodeFDInstruction()
 	}
 
 	// Single-byte instructions
@@ -129,9 +131,9 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 		return Opcode{}, opcodeByte, fmt.Errorf("%w: opcode 0x%02x", ErrUnsupportedOpcode, opcodeByte)
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{opcodeByte},
 		}
@@ -140,7 +142,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 }
 
 // updatePC updates the program counter based on the instruction execution.
-func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
+func (cpu *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// Check if this is a jump instruction that always changes PC
 	if ins != nil && isJumpInstruction(ins) {
 		// Jump instructions handle PC themselves, don't modify it
@@ -148,9 +150,9 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	}
 
 	// Update PC only if the instruction execution did not change it
-	if oldPC == c.PC {
+	if oldPC == cpu.PC {
 		// PC unchanged, advance by instruction size
-		c.PC += uint16(amount)
+		cpu.PC += uint16(amount)
 		return
 	}
 
@@ -158,17 +160,17 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
-func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.bus.Read(c.PC + 1) // Get the actual CB instruction
+func (cpu *CPU) decodeCBInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.bus.Read(cpu.PC + 1) // Get the actual CB instruction
 
 	opcode := CBOpcodes[opcodeByte]
 	if opcode.Instruction == nil {
 		return Opcode{}, PrefixCB, fmt.Errorf("%w: opcode CB %02X", ErrUnsupportedOpcode, opcodeByte)
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixCB, opcodeByte},
 		}
@@ -178,17 +180,17 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 }
 
 // decodeEDInstruction decodes ED-prefixed instructions (extended operations).
-func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.bus.Read(c.PC + 1) // Get the actual ED instruction
+func (cpu *CPU) decodeEDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.bus.Read(cpu.PC + 1) // Get the actual ED instruction
 
 	opcode := EDOpcodes[opcodeByte]
 	if opcode.Instruction == nil {
 		return Opcode{}, PrefixED, fmt.Errorf("%w: opcode ED %02X", ErrUnsupportedEDOpcode, opcodeByte)
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixED, opcodeByte},
 		}
@@ -198,12 +200,12 @@ func (c *CPU) decodeEDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeDDInstruction decodes DD-prefixed instructions (IX operations).
-func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.bus.Read(c.PC + 1) // Get the actual DD instruction
+func (cpu *CPU) decodeDDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.bus.Read(cpu.PC + 1) // Get the actual DD instruction
 
 	// Handle DD CB prefix first
 	if opcodeByte == PrefixCB {
-		return c.decodeDDCBInstruction()
+		return cpu.decodeDDCBInstruction()
 	}
 
 	opcode := DDOpcodes[opcodeByte]
@@ -211,18 +213,19 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 		// Undocumented behavior: DD prefix with no IX-specific instruction
 		// executes the unprefixed instruction with 4 extra T-states.
 		// Advance PC past the DD prefix so param readers see the correct offsets.
-		c.PC++
+		cpu.PC++
 		unprefixed := Opcodes[opcodeByte]
 		if unprefixed.Instruction == nil {
 			return Opcode{}, PrefixDD, fmt.Errorf("%w: opcode DD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
+		cpu.q = 0 // An ignored prefix does not modify flags.
 		unprefixed.Timing += 4
 		return unprefixed, opcodeByte, nil
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixDD, opcodeByte},
 		}
@@ -232,9 +235,9 @@ func (c *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeDDCBInstruction decodes DD CB prefixed instructions (IX bit operations).
-func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
-	displacement := int8(c.bus.Read(c.PC + 2)) // Get displacement
-	opcodeByte := c.bus.Read(c.PC + 3)         // Get bit operation
+func (cpu *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
+	displacement := int8(cpu.bus.Read(cpu.PC + 2)) // Get displacement
+	opcodeByte := cpu.bus.Read(cpu.PC + 3)         // Get bit operation
 
 	var instruction *Instruction
 	var timing byte = 23 // All DDCB operations take 23 T-states
@@ -257,9 +260,9 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixDD, PrefixCB, uint8(displacement), opcodeByte},
 		}
@@ -269,12 +272,12 @@ func (c *CPU) decodeDDCBInstruction() (Opcode, uint8, error) {
 }
 
 // decodeFDInstruction decodes FD-prefixed instructions (IY operations).
-func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
-	opcodeByte := c.bus.Read(c.PC + 1) // Get the actual FD instruction
+func (cpu *CPU) decodeFDInstruction() (Opcode, uint8, error) {
+	opcodeByte := cpu.bus.Read(cpu.PC + 1) // Get the actual FD instruction
 
 	// Handle FD CB prefix first
 	if opcodeByte == PrefixCB {
-		return c.decodeFDCBInstruction()
+		return cpu.decodeFDCBInstruction()
 	}
 
 	opcode := FDOpcodes[opcodeByte]
@@ -282,18 +285,19 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 		// Undocumented behavior: FD prefix with no IY-specific instruction
 		// executes the unprefixed instruction with 4 extra T-states.
 		// Advance PC past the FD prefix so param readers see the correct offsets.
-		c.PC++
+		cpu.PC++
 		unprefixed := Opcodes[opcodeByte]
 		if unprefixed.Instruction == nil {
 			return Opcode{}, PrefixFD, fmt.Errorf("%w: opcode FD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
+		cpu.q = 0 // An ignored prefix does not modify flags.
 		unprefixed.Timing += 4
 		return unprefixed, opcodeByte, nil
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixFD, opcodeByte},
 		}
@@ -303,9 +307,9 @@ func (c *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 }
 
 // decodeFDCBInstruction decodes FD CB prefixed instructions (IY bit operations).
-func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
-	displacement := int8(c.bus.Read(c.PC + 2)) // Get displacement
-	opcodeByte := c.bus.Read(c.PC + 3)         // Get bit operation
+func (cpu *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
+	displacement := int8(cpu.bus.Read(cpu.PC + 2)) // Get displacement
+	opcodeByte := cpu.bus.Read(cpu.PC + 3)         // Get bit operation
 
 	var instruction *Instruction
 	var timing byte = 23 // All FDCB operations take 23 T-states
@@ -328,83 +332,15 @@ func (c *CPU) decodeFDCBInstruction() (Opcode, uint8, error) {
 		Timing:      timing,
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
-			PC:             c.PC,
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
+			PC:             cpu.PC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixFD, PrefixCB, uint8(displacement), opcodeByte},
 		}
 	}
 
 	return opcode, PrefixFD, nil
-}
-
-// handleInterrupts processes pending interrupts.
-func (c *CPU) handleInterrupts() {
-	// Non-maskable interrupt has the highest priority
-	if c.triggerNmi {
-		c.triggerNmi = false
-		c.halted = false
-
-		// Save current PC
-		c.push16(c.PC)
-
-		// Jump to NMI vector
-		c.PC = 0x0066
-		c.iff2 = c.iff1
-		c.iff1 = false
-
-		c.cycles += 11
-		return
-	}
-
-	// Maskable interrupt
-	if c.triggerIrq && c.iff1 {
-		c.triggerIrq = false
-		c.halted = false
-
-		// Zilog NMOS bug: LD A,I and LD A,R set P/V from IFF2, but if an
-		// interrupt is accepted immediately after, P/V is reset to 0.
-		if c.lastWasLdAIR {
-			c.Flags.P = 0
-		}
-
-		c.iff1 = false
-		c.iff2 = false
-
-		// Save current PC
-		c.push16(c.PC)
-
-		switch c.im {
-		case 0:
-			// IM 0: read instruction opcode from data bus via Bus.IRQData().
-			// In practice this is almost always a RST instruction.
-			dataBusValue := c.bus.IRQData()
-			if dataBusValue&0xC7 == 0xC7 {
-				// RST instruction: extract vector from bits 3-5
-				vector := uint16(dataBusValue & 0x38)
-				c.PC = vector
-				c.MEMPTR = vector
-			} else {
-				// Fallback for non-RST instructions on the bus.
-				// Full arbitrary instruction execution is not yet supported.
-				c.PC = 0x0038
-				c.MEMPTR = 0x0038
-			}
-			c.cycles += 13
-		case 1:
-			c.PC = 0x0038
-			c.MEMPTR = 0x0038
-			c.cycles += 13
-		case 2:
-			// IM 2: read vector low byte from data bus, combine with I register.
-			vectorLow := c.bus.IRQData()
-			vectorAddr := uint16(c.I)<<8 | uint16(vectorLow)
-			c.PC = c.bus.ReadWord(vectorAddr)
-			c.MEMPTR = c.PC
-			c.cycles += 19
-		}
-	}
 }
 
 // jumpInstructions is a lookup set of instructions that always modify PC.

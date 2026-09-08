@@ -3,28 +3,28 @@ package z80
 // Undocumented FD prefix instructions - IYH/IYL half-register operations
 
 // IYH returns the high byte of IY.
-func (c *CPU) IYH() uint8 { return uint8(c.IY >> 8) }
+func (cpu *CPU) IYH() uint8 { return uint8(cpu.IY >> 8) }
 
 // IYL returns the low byte of IY.
-func (c *CPU) IYL() uint8 { return uint8(c.IY) }
+func (cpu *CPU) IYL() uint8 { return uint8(cpu.IY) }
 
 // SetIYH sets the high byte of IY.
-func (c *CPU) SetIYH(v uint8) { c.IY = uint16(v)<<8 | uint16(c.IYL()) }
+func (cpu *CPU) SetIYH(v uint8) { cpu.IY = uint16(v)<<8 | uint16(cpu.IYL()) }
 
 // SetIYL sets the low byte of IY.
-func (c *CPU) SetIYL(v uint8) { c.IY = uint16(c.IYH())<<8 | uint16(v) }
+func (cpu *CPU) SetIYL(v uint8) { cpu.IY = uint16(cpu.IYH())<<8 | uint16(v) }
 
 // INC/DEC IYH/IYL
 
-func fdIncIYH(c *CPU) error { c.SetIYH(c.inc8(c.IYH())); return nil }
-func fdDecIYH(c *CPU) error { c.SetIYH(c.dec8(c.IYH())); return nil }
-func fdIncIYL(c *CPU) error { c.SetIYL(c.inc8(c.IYL())); return nil }
-func fdDecIYL(c *CPU) error { c.SetIYL(c.dec8(c.IYL())); return nil }
+func fdIncIYH(cpu *CPU) error { cpu.SetIYH(cpu.inc8(cpu.IYH())); return nil }
+func fdDecIYH(cpu *CPU) error { cpu.SetIYH(cpu.dec8(cpu.IYH())); return nil }
+func fdIncIYL(cpu *CPU) error { cpu.SetIYL(cpu.inc8(cpu.IYL())); return nil }
+func fdDecIYL(cpu *CPU) error { cpu.SetIYL(cpu.dec8(cpu.IYL())); return nil }
 
 // LD IYH/IYL,n
 
-func fdLdIYHn(c *CPU, _ ...any) error {
-	c.SetIYH(c.bus.Read(c.PC + 2))
+func fdLdIYHn(cpu *CPU, _ ...any) error {
+	cpu.SetIYH(cpu.bus.Read(cpu.PC + 2))
 	return nil
 }
 

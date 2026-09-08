@@ -3,16 +3,6 @@
 
 package z80
 
-// readPort reads from an I/O port using the full 16-bit bus address.
-func (c *CPU) readPort(address uint16) uint8 {
-	return c.bus.ReadPort(address)
-}
-
-// writePort writes to an I/O port using the full 16-bit bus address.
-func (c *CPU) writePort(address uint16, value uint8) {
-	c.bus.WritePort(address, value)
-}
-
 // SLL - Shift Left Logical (undocumented)
 // Shifts left and sets bit 0 to 1 (unlike SLA which sets bit 0 to 0)
 var SLL = &Instruction{

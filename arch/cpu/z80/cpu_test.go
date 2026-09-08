@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 	assert.False(t, cpu.halted, "CPU should not be halted initially")
 	assert.False(t, cpu.iff1, "IFF1 should be false initially")
 	assert.False(t, cpu.iff2, "IFF2 should be false initially")
-	assert.Equal(t, uint8(0), cpu.im, "Interrupt mode should be 0 initially")
+	assert.Equal(t, InterruptMode0, cpu.im, "Interrupt mode should be 0 initially")
 
 	// Test Game Boy system initialization
 	gameboyMemory := NewBasicMemory()
@@ -111,14 +111,57 @@ func TestNewWithBus(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNilMemory)
 }
 
+func TestLegacyBusCompatibility(t *testing.T) {
+	mem := NewBasicMemory()
+	io := &legacyTestIO{}
+	cpu, err := New(mem, WithIOHandler(io))
+	assert.NoError(t, err)
+	cpu.A = 0x12
+	mem.LoadProgram([]byte{0xDB, 0x34, 0xD3, 0x56})
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0xA5), cpu.A)
+	assert.Equal(t, uint8(0x34), io.port)
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0x56), io.port)
+	assert.Equal(t, uint8(0xA5), io.value)
+	assert.Equal(t, uint8(0xFF), cpu.Bus().IRQData())
+
+	cpu, err = New(mem)
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0xFF), cpu.Bus().ReadPort(0x1234))
+	cpu.Bus().WritePort(0x1234, 0x56)
+	cpu.Bus().OnRETI()
+}
+
+type legacyTestIO struct {
+	port, value uint8
+}
+
+func (io *legacyTestIO) ReadPort(port uint8) uint8 {
+	io.port = port
+	return 0xA5
+}
+
+func (io *legacyTestIO) WritePort(port, value uint8) {
+	io.port, io.value = port, value
+}
+
 // testBus implements the Bus interface for testing.
 type testBus struct {
 	Memory
 	irqData   uint8
+	irqCalls  int
+	portValue uint8
+	ports     []singleStepPort
 	retiCalls int
 }
 
-func (b *testBus) ReadPort(_ uint16) uint8     { return 0xFF }
-func (b *testBus) WritePort(_ uint16, _ uint8) {}
-func (b *testBus) IRQData() uint8              { return b.irqData }
-func (b *testBus) OnRETI()                     { b.retiCalls++ }
+func (bus *testBus) ReadPort(address uint16) uint8 {
+	bus.ports = append(bus.ports, singleStepPort{Address: address, Value: bus.portValue, IsRead: true})
+	return bus.portValue
+}
+func (bus *testBus) WritePort(address uint16, value uint8) {
+	bus.ports = append(bus.ports, singleStepPort{Address: address, Value: value})
+}
+func (bus *testBus) IRQData() uint8 { bus.irqCalls++; return bus.irqData }
+func (bus *testBus) OnRETI()        { bus.retiCalls++ }

@@ -7,24 +7,24 @@ import (
 // GetRegisterValue returns the value of a register by its encoding number (0-7).
 // Register 6 accesses memory at (HL) instead of a direct register.
 // Returns 0 for invalid register numbers.
-func (c *CPU) GetRegisterValue(reg uint8) uint8 {
+func (cpu *CPU) GetRegisterValue(reg uint8) uint8 {
 	switch reg {
 	case 0:
-		return c.B
+		return cpu.B
 	case 1:
-		return c.C
+		return cpu.C
 	case 2:
-		return c.D
+		return cpu.D
 	case 3:
-		return c.E
+		return cpu.E
 	case 4:
-		return c.H
+		return cpu.H
 	case 5:
-		return c.L
+		return cpu.L
 	case 6:
-		return c.bus.Read(c.hl())
+		return cpu.bus.Read(cpu.hl())
 	case 7:
-		return c.A
+		return cpu.A
 	default:
 		return 0
 	}
@@ -33,24 +33,24 @@ func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 // SetRegisterValue sets the value of a register by its encoding number (0-7).
 // Register 6 writes to memory at (HL) instead of a direct register.
 // Invalid register numbers are silently ignored.
-func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
+func (cpu *CPU) SetRegisterValue(reg uint8, value uint8) {
 	switch reg {
 	case 0:
-		c.B = value
+		cpu.B = value
 	case 1:
-		c.C = value
+		cpu.C = value
 	case 2:
-		c.D = value
+		cpu.D = value
 	case 3:
-		c.E = value
+		cpu.E = value
 	case 4:
-		c.H = value
+		cpu.H = value
 	case 5:
-		c.L = value
+		cpu.L = value
 	case 6:
-		c.bus.Write(c.hl(), value)
+		cpu.bus.Write(cpu.hl(), value)
 	case 7:
-		c.A = value
+		cpu.A = value
 	}
 }
 

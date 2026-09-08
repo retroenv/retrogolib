@@ -3,162 +3,162 @@ package z80
 import "fmt"
 
 // inc8 increments an 8-bit value and sets flags appropriately.
-func (c *CPU) inc8(value uint8) uint8 {
+func (cpu *CPU) inc8(value uint8) uint8 {
 	result := value + 1
 
-	c.setSZ(result)
-	c.setH((value & 0x0F) == 0x0F) // Half carry if lower nibble was 0xF
-	c.setPOverflow(value == 0x7F)  // Overflow if incrementing 0x7F
-	c.setN(false)                  // Indicates arithmetic (not logical) operation
+	cpu.setSZ(result)
+	cpu.setH((value & 0x0F) == 0x0F) // Half carry if lower nibble was 0xF
+	cpu.setPOverflow(value == 0x7F)  // Overflow if incrementing 0x7F
+	cpu.setN(false)                  // Indicates arithmetic (not logical) operation
 
 	return result
 }
 
 // dec8 decrements an 8-bit value and sets flags appropriately.
-func (c *CPU) dec8(value uint8) uint8 {
+func (cpu *CPU) dec8(value uint8) uint8 {
 	result := value - 1
 
-	c.setSZ(result)
-	c.setH((value & 0x0F) == 0x00) // Half carry if lower nibble was 0x0
-	c.setPOverflow(value == 0x80)  // Overflow if decrementing 0x80
-	c.setN(true)                   // Indicates subtraction operation for BCD correction
+	cpu.setSZ(result)
+	cpu.setH((value & 0x0F) == 0x00) // Half carry if lower nibble was 0x0
+	cpu.setPOverflow(value == 0x80)  // Overflow if decrementing 0x80
+	cpu.setN(true)                   // Indicates subtraction operation for BCD correction
 
 	return result
 }
 
 // add8 adds two 8-bit values and sets flags appropriately.
-func (c *CPU) add8(a, b uint8) uint8 {
+func (cpu *CPU) add8(a, b uint8) uint8 {
 	result16 := uint16(a) + uint16(b)
 	result := uint8(result16)
 
-	c.setSZ(result)
-	c.setC(result16 > 0xFF)                                     // Carry if result > 255
-	c.setH((a&0x0F)+(b&0x0F) > 0x0F)                            // Half carry from bit 3 to 4
-	c.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0) // Two's complement overflow detection
-	c.setN(false)                                               // Indicates addition for BCD correction
+	cpu.setSZ(result)
+	cpu.setC(result16 > 0xFF)                                     // Carry if result > 255
+	cpu.setH((a&0x0F)+(b&0x0F) > 0x0F)                            // Half carry from bit 3 to 4
+	cpu.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0) // Two's complement overflow detection
+	cpu.setN(false)                                               // Indicates addition for BCD correction
 
 	return result
 }
 
 // sub8 subtracts two 8-bit values and sets flags appropriately.
-func (c *CPU) sub8(a, b uint8) uint8 {
+func (cpu *CPU) sub8(a, b uint8) uint8 {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
-	c.setSZ(result)
-	c.setC(a < b)                                        // Borrow if minuend < subtrahend
-	c.setH((a & 0x0F) < (b & 0x0F))                      // Half borrow from bit 3
-	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Two's complement overflow detection
-	c.setN(true)                                         // Indicates subtraction for BCD correction
+	cpu.setSZ(result)
+	cpu.setC(a < b)                                        // Borrow if minuend < subtrahend
+	cpu.setH((a & 0x0F) < (b & 0x0F))                      // Half borrow from bit 3
+	cpu.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Two's complement overflow detection
+	cpu.setN(true)                                         // Indicates subtraction for BCD correction
 
 	return result
 }
 
 // add16 adds two 16-bit values and sets carry/half-carry flags.
-func (c *CPU) add16(a, b uint16) uint16 {
+func (cpu *CPU) add16(a, b uint16) uint16 {
 	result32 := uint32(a) + uint32(b)
 	result := uint16(result32)
 
 	// Update limited flags for 16-bit arithmetic (Z80 16-bit ops don't affect S,Z,P)
-	c.setC(result32 > 0xFFFF)              // Carry if result > 65535
-	c.setH((a&0x0FFF)+(b&0x0FFF) > 0x0FFF) // Half carry from bit 11 to bit 12
-	c.setN(false)                          // Indicates addition for BCD correction
+	cpu.setC(result32 > 0xFFFF)              // Carry if result > 65535
+	cpu.setH((a&0x0FFF)+(b&0x0FFF) > 0x0FFF) // Half carry from bit 11 to bit 12
+	cpu.setN(false)                          // Indicates addition for BCD correction
 
 	return result
 }
 
 // and8 performs bitwise AND on two 8-bit values and sets flags.
-func (c *CPU) and8(a, b uint8) uint8 {
+func (cpu *CPU) and8(a, b uint8) uint8 {
 	result := a & b
 
-	c.setSZP(result)
-	c.setH(true)  // H always set for Z80 AND instruction
-	c.setN(false) // Indicates logical (not arithmetic) operation
-	c.setC(false) // Logical operations clear carry
+	cpu.setSZP(result)
+	cpu.setH(true)  // H always set for Z80 AND instruction
+	cpu.setN(false) // Indicates logical (not arithmetic) operation
+	cpu.setC(false) // Logical operations clear carry
 
 	return result
 }
 
 // or8 performs bitwise OR on two 8-bit values and sets flags.
-func (c *CPU) or8(a, b uint8) uint8 {
+func (cpu *CPU) or8(a, b uint8) uint8 {
 	result := a | b
 
-	c.setSZP(result)
-	c.setH(false) // Logical operations clear half carry
-	c.setN(false) // Indicates logical (not arithmetic) operation
-	c.setC(false) // Logical operations clear carry
+	cpu.setSZP(result)
+	cpu.setH(false) // Logical operations clear half carry
+	cpu.setN(false) // Indicates logical (not arithmetic) operation
+	cpu.setC(false) // Logical operations clear carry
 
 	return result
 }
 
 // xor8 performs bitwise XOR on two 8-bit values and sets flags.
-func (c *CPU) xor8(a, b uint8) uint8 {
+func (cpu *CPU) xor8(a, b uint8) uint8 {
 	result := a ^ b
 
-	c.setSZP(result)
-	c.setH(false) // Logical operations clear half carry
-	c.setN(false) // Indicates logical (not arithmetic) operation
-	c.setC(false) // Logical operations clear carry
+	cpu.setSZP(result)
+	cpu.setH(false) // Logical operations clear half carry
+	cpu.setN(false) // Indicates logical (not arithmetic) operation
+	cpu.setC(false) // Logical operations clear carry
 
 	return result
 }
 
 // cp compares two 8-bit values (like SUB but doesn't store result).
-func (c *CPU) cp(a, b uint8) {
+func (cpu *CPU) cp(a, b uint8) {
 	result16 := uint16(a) - uint16(b)
 	result := uint8(result16)
 
 	// Set flags
-	c.setS(result)                                       // S from result
-	c.setZ(result)                                       // Z from result
-	c.setXY(b)                                           // X/Y from operand (not result) - Z80 quirk for CP
-	c.setC(a < b)                                        // Carry if a < b
-	c.setH((a & 0x0F) < (b & 0x0F))                      // Half carry
-	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Overflow
-	c.setN(true)                                         // Indicates subtraction for BCD correction
+	cpu.setS(result)                                       // S from result
+	cpu.setZ(result)                                       // Z from result
+	cpu.setXY(b)                                           // X/Y from operand (not result) - Z80 quirk for CP
+	cpu.setC(a < b)                                        // Carry if a < b
+	cpu.setH((a & 0x0F) < (b & 0x0F))                      // Half carry
+	cpu.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0) // Overflow
+	cpu.setN(true)                                         // Indicates subtraction for BCD correction
 }
 
 // neg negates the accumulator (two's complement).
-func (c *CPU) neg(value uint8) uint8 {
+func (cpu *CPU) neg(value uint8) uint8 {
 	result := uint8(-int8(value))
 
-	c.setSZP(result)
-	c.setC(value != 0)            // Carry set unless original value was 0
-	c.setH((value & 0x0F) != 0)   // Half carry
-	c.setPOverflow(value == 0x80) // Overflow if negating 0x80
-	c.setN(true)                  // Indicates subtraction-based operation (two's complement)
+	cpu.setSZP(result)
+	cpu.setC(value != 0)            // Carry set unless original value was 0
+	cpu.setH((value & 0x0F) != 0)   // Half carry
+	cpu.setPOverflow(value == 0x80) // Overflow if negating 0x80
+	cpu.setN(true)                  // Indicates subtraction-based operation (two's complement)
 
 	return result
 }
 
 // adc adds with carry.
-func (c *CPU) adc(a, b uint8) uint8 {
-	carry := c.Flags.C
+func (cpu *CPU) adc(a, b uint8) uint8 {
+	carry := cpu.Flags.C
 	result16 := uint16(a) + uint16(b) + uint16(carry)
 	result := uint8(result16)
 
 	// Set flags
-	c.setSZ(result)
-	c.setC(result16 > 0xFF)
-	c.setH((a&0x0F)+(b&0x0F)+carry > 0x0F)
-	c.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0)
-	c.setN(false)
+	cpu.setSZ(result)
+	cpu.setC(result16 > 0xFF)
+	cpu.setH((a&0x0F)+(b&0x0F)+carry > 0x0F)
+	cpu.setPOverflow(((a ^ b ^ 0x80) & (result ^ a) & 0x80) != 0)
+	cpu.setN(false)
 
 	return result
 }
 
 // sbc subtracts with carry.
-func (c *CPU) sbc(a, b uint8) uint8 {
-	carry := c.Flags.C
+func (cpu *CPU) sbc(a, b uint8) uint8 {
+	carry := cpu.Flags.C
 	result16 := uint16(a) - uint16(b) - uint16(carry)
 	result := uint8(result16)
 
 	// Set flags
-	c.setSZ(result)
-	c.setC(result16 > 0xFF) // Borrow occurred
-	c.setH((a & 0x0F) < (b&0x0F)+carry)
-	c.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0)
-	c.setN(true)
+	cpu.setSZ(result)
+	cpu.setC(result16 > 0xFF) // Borrow occurred
+	cpu.setH((a & 0x0F) < (b&0x0F)+carry)
+	cpu.setPOverflow(((a ^ b) & (a ^ result) & 0x80) != 0)
+	cpu.setN(true)
 
 	return result
 }
@@ -166,131 +166,131 @@ func (c *CPU) sbc(a, b uint8) uint8 {
 // Rotate operations
 
 // rlca rotates accumulator left circular and sets carry.
-func (c *CPU) rlca(value uint8) uint8 {
+func (cpu *CPU) rlca(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | carry
 
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
-	c.setXY(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
+	cpu.setXY(result)
 
 	return result
 }
 
 // rrca rotates accumulator right circular and sets carry.
-func (c *CPU) rrca(value uint8) uint8 {
+func (cpu *CPU) rrca(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (carry << 7)
 
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
-	c.setXY(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
+	cpu.setXY(result)
 
 	return result
 }
 
 // rlc rotates value left circular and sets all flags.
-func (c *CPU) rlc(value uint8) uint8 {
+func (cpu *CPU) rlc(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | carry
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // rrc rotates value right circular and sets all flags.
-func (c *CPU) rrc(value uint8) uint8 {
+func (cpu *CPU) rrc(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (carry << 7)
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // rl rotates value left through carry and sets all flags.
-func (c *CPU) rl(value uint8) uint8 {
+func (cpu *CPU) rl(value uint8) uint8 {
 	newCarry := (value & 0x80) >> 7
-	result := (value << 1) | c.Flags.C
+	result := (value << 1) | cpu.Flags.C
 
-	c.setSZP(result)
-	c.setC(newCarry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(newCarry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // rr rotates value right through carry and sets all flags.
-func (c *CPU) rr(value uint8) uint8 {
+func (cpu *CPU) rr(value uint8) uint8 {
 	newCarry := value & 0x01
-	result := (value >> 1) | (c.Flags.C << 7)
+	result := (value >> 1) | (cpu.Flags.C << 7)
 
-	c.setSZP(result)
-	c.setC(newCarry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(newCarry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // sla shifts value left arithmetic and sets all flags.
-func (c *CPU) sla(value uint8) uint8 {
+func (cpu *CPU) sla(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := value << 1
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // sra shifts value right arithmetic and sets all flags.
-func (c *CPU) sra(value uint8) uint8 {
+func (cpu *CPU) sra(value uint8) uint8 {
 	carry := value & 0x01
 	result := (value >> 1) | (value & 0x80) // Keep sign bit
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // sll shifts value left logical (undocumented) and sets all flags.
-func (c *CPU) sll(value uint8) uint8 {
+func (cpu *CPU) sll(value uint8) uint8 {
 	carry := (value & 0x80) >> 7
 	result := (value << 1) | 0x01 // Set bit 0
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
 
 // srl shifts value right logical and sets all flags.
-func (c *CPU) srl(value uint8) uint8 {
+func (cpu *CPU) srl(value uint8) uint8 {
 	carry := value & 0x01
 	result := value >> 1
 
-	c.setSZP(result)
-	c.setC(carry != 0)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(result)
+	cpu.setC(carry != 0)
+	cpu.setH(false)
+	cpu.setN(false)
 
 	return result
 }
@@ -300,39 +300,39 @@ func (c *CPU) srl(value uint8) uint8 {
 // bit tests bit n of value and sets flags.
 // For BIT on register operands, X/Y come from the register value.
 // For BIT on (HL), X/Y come from MEMPTR high byte - caller must handle this.
-func (c *CPU) bit(n uint8, value uint8) {
+func (cpu *CPU) bit(n uint8, value uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
-	setFlag(&c.Flags.Z, bitIsZero)
-	setFlag(&c.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
-	setFlag(&c.Flags.S, n == 7 && bit != 0)
-	c.setH(true)
-	c.setN(false)
-	c.setXY(value) // X/Y from value for register BIT ops
+	setFlag(&cpu.Flags.Z, bitIsZero)
+	setFlag(&cpu.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
+	setFlag(&cpu.Flags.S, n == 7 && bit != 0)
+	cpu.setH(true)
+	cpu.setN(false)
+	cpu.setXY(value) // X/Y from value for register BIT ops
 }
 
 // bitMemptr tests bit n of value, setting X/Y from MEMPTR high byte.
 // Used for BIT n,(HL) and BIT n,(IX+d)/(IY+d).
-func (c *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
+func (cpu *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
-	setFlag(&c.Flags.Z, bitIsZero)
-	setFlag(&c.Flags.P, bitIsZero)
-	setFlag(&c.Flags.S, n == 7 && bit != 0)
-	c.setH(true)
-	c.setN(false)
-	c.setXY(memptrHigh)
+	setFlag(&cpu.Flags.Z, bitIsZero)
+	setFlag(&cpu.Flags.P, bitIsZero)
+	setFlag(&cpu.Flags.S, n == 7 && bit != 0)
+	cpu.setH(true)
+	cpu.setN(false)
+	cpu.setXY(memptrHigh)
 }
 
 // setBit sets bit n of value.
-func (c *CPU) setBit(n uint8, value uint8) uint8 {
+func (cpu *CPU) setBit(n uint8, value uint8) uint8 {
 	return value | (1 << n)
 }
 
 // res resets bit n of value.
-func (c *CPU) res(n uint8, value uint8) uint8 {
+func (cpu *CPU) res(n uint8, value uint8) uint8 {
 	return value & ^(1 << n)
 }
 
@@ -351,6 +351,7 @@ func halt(c *CPU) error {
 
 // di disables interrupts.
 func di(c *CPU) error {
+	c.eiPending = false
 	c.iff1 = false
 	c.iff2 = false
 	return nil
@@ -358,6 +359,7 @@ func di(c *CPU) error {
 
 // ei enables interrupts.
 func ei(c *CPU) error {
+	c.eiPending = true
 	c.iff1 = true
 	c.iff2 = true
 	return nil
@@ -694,7 +696,7 @@ func outPort(c *CPU, params ...any) error {
 
 	// OUT (n),A - Output accumulator to port, address = A<<8 | n
 	address := uint16(c.A)<<8 | uint16(portAddr)
-	c.writePort(address, c.A)
+	c.bus.WritePort(address, c.A)
 	c.MEMPTR = uint16(portAddr+1) | uint16(c.A)<<8
 
 	return nil
@@ -717,7 +719,7 @@ func inPort(c *CPU, params ...any) error {
 	// IN A,(n) - Input from port to accumulator, address = A<<8 | n
 	address := uint16(c.A)<<8 | uint16(portAddr)
 	c.MEMPTR = address + 1
-	c.A = c.readPort(address)
+	c.A = c.bus.ReadPort(address)
 
 	return nil
 }

@@ -7,41 +7,38 @@ type Memory interface {
 	// Read reads a byte from memory at the given address.
 	Read(address uint16) uint8
 
-	// Write writes a byte to memory at the given address.
-	Write(address uint16, value uint8)
-
 	// ReadWord reads a 16-bit word from memory at the given address (little-endian).
 	ReadWord(address uint16) uint16
+
+	// Write writes a byte to memory at the given address.
+	Write(address uint16, value uint8)
 
 	// WriteWord writes a 16-bit word to memory at the given address (little-endian).
 	WriteWord(address uint16, value uint16)
 }
 
-// Bus provides the full hardware interface for a Z80 system.
-// It extends Memory with I/O port access and interrupt acknowledgment.
-// For simple use cases (tests, basic emulation), use Memory + WithIOHandler instead.
+// Bus extends Memory with 16-bit port addresses and interrupt acknowledgment.
+// NewWithBus uses this interface directly. New adapts Memory and WithIOHandler.
+// Callbacks run under the CPU lock and must not call locking CPU methods.
 type Bus interface {
 	Memory
 
-	// ReadPort reads from an I/O port. The full 16-bit address is provided
-	// because the Z80 places register data on the upper address lines:
-	//   - IN A,(n):    address = A<<8 | n
-	//   - IN r,(C):    address = B<<8 | C
-	//   - INI/IND/etc: address = B<<8 | C
-	ReadPort(address uint16) uint8
-
-	// WritePort writes to an I/O port with full 16-bit address.
-	WritePort(address uint16, value uint8)
-
-	// IRQData returns the byte placed on the data bus during interrupt acknowledge.
-	// For IM 0, this should be an instruction opcode (typically RST n, e.g. 0xFF for RST 38h).
-	// For IM 2, this is the low byte of the interrupt vector table address.
+	// IRQData supplies an IM 0 opcode or the low byte of an IM 2 vector address.
+	// It is sampled once per accepted IRQ in these modes; IM 1 ignores bus data.
+	// IM 0 supports RST opcodes, with a RST 38h fallback for other values.
 	IRQData() uint8
 
-	// OnRETI is called when a RETI instruction executes.
-	// Hardware (e.g., Z80 PIO/CTC daisy chain) monitors the bus for RETI
-	// to manage interrupt priority.
+	// OnRETI notifies interrupt daisy-chain hardware after ED 4D executes.
+	// RETN and its undocumented mirrors do not notify the host.
 	OnRETI()
+
+	// ReadPort receives A:n for immediate IN or B:C for register/block IN.
+	// Block input uses B before its decrement.
+	ReadPort(address uint16) uint8
+
+	// WritePort receives A:n for immediate OUT or B:C for register/block OUT.
+	// Block output uses B after its decrement.
+	WritePort(address uint16, value uint8)
 }
 
 // BasicMemory implements a simple 64KB flat memory space with no banking.
@@ -108,18 +105,18 @@ type legacyBusAdapter struct {
 	ioHandler IOHandler
 }
 
-func (a *legacyBusAdapter) ReadPort(address uint16) uint8 {
-	if a.ioHandler != nil {
-		return a.ioHandler.ReadPort(uint8(address))
+func (bus *legacyBusAdapter) ReadPort(address uint16) uint8 {
+	if bus.ioHandler != nil {
+		return bus.ioHandler.ReadPort(uint8(address))
 	}
 	return 0xFF
 }
 
-func (a *legacyBusAdapter) WritePort(address uint16, value uint8) {
-	if a.ioHandler != nil {
-		a.ioHandler.WritePort(uint8(address), value)
+func (bus *legacyBusAdapter) WritePort(address uint16, value uint8) {
+	if bus.ioHandler != nil {
+		bus.ioHandler.WritePort(uint8(address), value)
 	}
 }
 
-func (a *legacyBusAdapter) IRQData() uint8 { return 0xFF }
-func (a *legacyBusAdapter) OnRETI()        {}
+func (bus *legacyBusAdapter) IRQData() uint8 { return 0xFF }
+func (bus *legacyBusAdapter) OnRETI()        {}

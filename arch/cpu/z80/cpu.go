@@ -6,7 +6,8 @@ import (
 	"github.com/retroenv/retrogolib/arch"
 )
 
-// State represents complete CPU state for save/load and debugging.
+// State is a register and execution-status snapshot for debugging.
+// It does not include every internal latch needed for save/restore.
 type State struct {
 	// Main 8-bit registers (can be paired as BC, DE, HL)
 	A uint8 // Accumulator
@@ -45,7 +46,9 @@ type State struct {
 	Halted bool
 }
 
-// CPU represents a thread-safe Z80 microprocessor with full instruction set emulation.
+// CPU emulates a Z80 microprocessor.
+// Step, CheckInterrupts, and interrupt triggers are synchronized. Callers must
+// serialize direct register access and interrupt configuration with execution.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -85,9 +88,9 @@ type CPU struct {
 	halted bool
 
 	// Interrupt control
-	iff1 bool  // Interrupt enable flip-flop
-	iff2 bool  // Backup of IFF1 for NMI handling
-	im   uint8 // Interrupt mode: 0, 1, or 2
+	iff1 bool          // Interrupt enable flip-flop
+	iff2 bool          // Backup of IFF1 for NMI handling
+	im   InterruptMode // Interrupt mode: 0, 1, or 2
 
 	triggerIrq bool
 	triggerNmi bool
@@ -107,6 +110,7 @@ type CPU struct {
 	// Used to emulate the Zilog NMOS bug where P/V is reset if an IRQ fires
 	// during these instructions.
 	lastWasLdAIR bool
+	eiPending    bool // IRQ acceptance waits until the instruction after EI completes.
 
 	bus Bus
 }
@@ -136,7 +140,8 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 // NewWithBus creates a new Z80 CPU with a full bus interface.
 // The Bus interface provides memory, I/O ports, and interrupt acknowledgment,
 // enabling accurate emulation of systems with interrupt daisy chains and
-// full 16-bit I/O port addressing.
+// full 16-bit I/O port addressing. WithIOHandler applies only to New.
+// Bus callbacks execute under the CPU lock and must not call locking CPU methods.
 func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
 	if bus == nil {
 		return nil, ErrNilMemory
@@ -147,264 +152,264 @@ func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
 }
 
 // Cycles returns total CPU cycles executed.
-func (c *CPU) Cycles() uint64 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.cycles
+func (cpu *CPU) Cycles() uint64 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.cycles
 }
 
 // Halted returns CPU halt state.
-func (c *CPU) Halted() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.halted
+func (cpu *CPU) Halted() bool {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.halted
 }
 
 // Halt stops CPU execution.
-func (c *CPU) Halt() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.halted = true
+func (cpu *CPU) Halt() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.halted = true
 }
 
 // Resume continues CPU execution.
-func (c *CPU) Resume() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.halted = false
+func (cpu *CPU) Resume() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.halted = false
 }
 
-// State returns complete CPU state.
-func (c *CPU) State() State {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// State returns a register and execution-status snapshot.
+func (cpu *CPU) State() State {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
 
 	return State{
-		A:        c.A,
-		B:        c.B,
-		C:        c.C,
-		D:        c.D,
-		E:        c.E,
-		H:        c.H,
-		L:        c.L,
-		AltA:     c.AltA,
-		AltB:     c.AltB,
-		AltC:     c.AltC,
-		AltD:     c.AltD,
-		AltE:     c.AltE,
-		AltH:     c.AltH,
-		AltL:     c.AltL,
-		IX:       c.IX,
-		IY:       c.IY,
-		SP:       c.SP,
-		PC:       c.PC,
-		I:        c.I,
-		R:        c.R,
-		MEMPTR:   c.MEMPTR,
-		Cycles:   c.cycles,
-		Flags:    c.Flags,
-		AltFlags: c.AltFlags,
+		A:        cpu.A,
+		B:        cpu.B,
+		C:        cpu.C,
+		D:        cpu.D,
+		E:        cpu.E,
+		H:        cpu.H,
+		L:        cpu.L,
+		AltA:     cpu.AltA,
+		AltB:     cpu.AltB,
+		AltC:     cpu.AltC,
+		AltD:     cpu.AltD,
+		AltE:     cpu.AltE,
+		AltH:     cpu.AltH,
+		AltL:     cpu.AltL,
+		IX:       cpu.IX,
+		IY:       cpu.IY,
+		SP:       cpu.SP,
+		PC:       cpu.PC,
+		I:        cpu.I,
+		R:        cpu.R,
+		MEMPTR:   cpu.MEMPTR,
+		Cycles:   cpu.cycles,
+		Flags:    cpu.Flags,
+		AltFlags: cpu.AltFlags,
 		Interrupts: Interrupts{
-			IFF1:         c.iff1,
-			IFF2:         c.iff2,
-			IM:           c.im,
-			NMITriggered: c.triggerNmi,
-			IrqTriggered: c.triggerIrq,
+			IFF1:         cpu.iff1,
+			IFF2:         cpu.iff2,
+			IM:           uint8(cpu.im),
+			NMITriggered: cpu.triggerNmi,
+			IrqTriggered: cpu.triggerIrq,
 		},
-		Halted: c.halted,
+		Halted: cpu.halted,
 	}
 }
 
 // Memory returns the attached memory controller.
 //
 //nolint:ireturn // intentional: Memory is the public API interface
-func (c *CPU) Memory() Memory {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.bus
+func (cpu *CPU) Memory() Memory {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.bus
 }
 
 // Bus returns the attached bus interface.
 //
 //nolint:ireturn // intentional: Bus is the public API interface
-func (c *CPU) Bus() Bus {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.bus
+func (cpu *CPU) Bus() Bus {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.bus
 }
 
 // BC returns the BC register pair as a 16-bit value.
-func (c *CPU) BC() uint16 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.bc()
+func (cpu *CPU) BC() uint16 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.bc()
 }
 
 // DE returns the DE register pair as a 16-bit value.
-func (c *CPU) DE() uint16 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.de()
+func (cpu *CPU) DE() uint16 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.de()
 }
 
 // HL returns the HL register pair as a 16-bit value.
-func (c *CPU) HL() uint16 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.hl()
+func (cpu *CPU) HL() uint16 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.hl()
 }
 
 // AF returns the AF register pair as a 16-bit value.
-func (c *CPU) AF() uint16 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.af()
+func (cpu *CPU) AF() uint16 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.af()
 }
 
 // TriggerNMI triggers a non-maskable interrupt.
-func (c *CPU) TriggerNMI() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.triggerNmi = true
+func (cpu *CPU) TriggerNMI() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.triggerNmi = true
 }
 
 // TriggerIRQ triggers a maskable interrupt.
-func (c *CPU) TriggerIRQ() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.triggerIrq = true
+func (cpu *CPU) TriggerIRQ() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.triggerIrq = true
 }
 
 // bc returns the BC register pair as a 16-bit value (internal, no lock).
-func (c *CPU) bc() uint16 {
-	return uint16(c.B)<<8 | uint16(c.C)
+func (cpu *CPU) bc() uint16 {
+	return uint16(cpu.B)<<8 | uint16(cpu.C)
 }
 
 // de returns the DE register pair as a 16-bit value (internal, no lock).
-func (c *CPU) de() uint16 {
-	return uint16(c.D)<<8 | uint16(c.E)
+func (cpu *CPU) de() uint16 {
+	return uint16(cpu.D)<<8 | uint16(cpu.E)
 }
 
 // hl returns the HL register pair as a 16-bit value (internal, no lock).
-func (c *CPU) hl() uint16 {
-	return uint16(c.H)<<8 | uint16(c.L)
+func (cpu *CPU) hl() uint16 {
+	return uint16(cpu.H)<<8 | uint16(cpu.L)
 }
 
 // af returns the AF register pair as a 16-bit value (internal, no lock).
-func (c *CPU) af() uint16 {
-	return uint16(c.A)<<8 | uint16(c.GetFlags())
+func (cpu *CPU) af() uint16 {
+	return uint16(cpu.A)<<8 | uint16(cpu.GetFlags())
 }
 
 // setBC sets the BC register pair from a 16-bit value.
-func (c *CPU) setBC(value uint16) {
-	c.B = uint8(value >> 8)
-	c.C = uint8(value)
+func (cpu *CPU) setBC(value uint16) {
+	cpu.B = uint8(value >> 8)
+	cpu.C = uint8(value)
 }
 
 // setDE sets the DE register pair from a 16-bit value.
-func (c *CPU) setDE(value uint16) {
-	c.D = uint8(value >> 8)
-	c.E = uint8(value)
+func (cpu *CPU) setDE(value uint16) {
+	cpu.D = uint8(value >> 8)
+	cpu.E = uint8(value)
 }
 
 // setHL sets the HL register pair from a 16-bit value.
-func (c *CPU) setHL(value uint16) {
-	c.H = uint8(value >> 8)
-	c.L = uint8(value)
+func (cpu *CPU) setHL(value uint16) {
+	cpu.H = uint8(value >> 8)
+	cpu.L = uint8(value)
 }
 
 // setAF sets the AF register pair from a 16-bit value.
-func (c *CPU) setAF(value uint16) {
-	c.A = uint8(value >> 8)
-	c.setFlags(uint8(value))
+func (cpu *CPU) setAF(value uint16) {
+	cpu.A = uint8(value >> 8)
+	cpu.setFlags(uint8(value))
 }
 
 // pop pops a byte from the stack and updates the stack pointer.
-func (c *CPU) pop() uint8 {
-	value := c.bus.Read(c.SP)
-	c.SP++
+func (cpu *CPU) pop() uint8 {
+	value := cpu.bus.Read(cpu.SP)
+	cpu.SP++
 	return value
 }
 
 // pop16 pops a word from the stack and updates the stack pointer.
-func (c *CPU) pop16() uint16 {
-	low := uint16(c.pop())
-	high := uint16(c.pop())
+func (cpu *CPU) pop16() uint16 {
+	low := uint16(cpu.pop())
+	high := uint16(cpu.pop())
 	return high<<8 | low
 }
 
 // push pushes a byte to the stack and updates the stack pointer.
-func (c *CPU) push(value uint8) {
-	c.SP--
-	c.bus.Write(c.SP, value)
+func (cpu *CPU) push(value uint8) {
+	cpu.SP--
+	cpu.bus.Write(cpu.SP, value)
 }
 
 // push16 pushes a word to the stack and updates the stack pointer.
-func (c *CPU) push16(value uint16) {
+func (cpu *CPU) push16(value uint16) {
 	high := uint8(value >> 8)
 	low := uint8(value)
-	c.push(high)
-	c.push(low)
+	cpu.push(high)
+	cpu.push(low)
 }
 
 // inPortToRegister reads from port C to a register and sets flags.
-func (c *CPU) inPortToRegister(regPtr *uint8) {
-	c.MEMPTR = c.bc() + 1
-	value := c.readPort(c.bc())
+func (cpu *CPU) inPortToRegister(regPtr *uint8) {
+	cpu.MEMPTR = cpu.bc() + 1
+	value := cpu.bus.ReadPort(cpu.bc())
 	*regPtr = value
-	c.setSZP(value)
-	c.setH(false)
-	c.setN(false)
+	cpu.setSZP(value)
+	cpu.setH(false)
+	cpu.setN(false)
 }
 
 // applyCBOperation applies a CB prefix operation to a register or (HL).
 // Used by rotate, shift, RES, and SET instructions.
-func (c *CPU) applyCBOperation(operation func(uint8) uint8) {
-	opcodeByte := c.bus.Read(c.PC + 1)
+func (cpu *CPU) applyCBOperation(operation func(uint8) uint8) {
+	opcodeByte := cpu.bus.Read(cpu.PC + 1)
 	reg := opcodeByte & 0x07
 
 	if reg == 6 { // Operation on (HL)
-		addr := c.hl()
-		value := c.bus.Read(addr)
+		addr := cpu.hl()
+		value := cpu.bus.Read(addr)
 		result := operation(value)
-		c.bus.Write(addr, result)
+		cpu.bus.Write(addr, result)
 	} else { // Operation on register
-		value := c.GetRegisterValue(reg)
+		value := cpu.GetRegisterValue(reg)
 		result := operation(value)
-		c.SetRegisterValue(reg, result)
+		cpu.SetRegisterValue(reg, result)
 	}
 }
 
 // calculateIndexedAddress reads displacement byte from memory at PC+2 and calculates indexed address.
 // Used by DD (IX) and FD (IY) prefix instructions where PC points to the prefix byte.
 // Also sets MEMPTR to the calculated address.
-func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
-	displacement := int8(c.bus.Read(c.PC + 2))
+func (cpu *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
+	displacement := int8(cpu.bus.Read(cpu.PC + 2))
 	addr := uint16(int32(indexReg) + int32(displacement))
-	c.MEMPTR = addr
+	cpu.MEMPTR = addr
 	return addr
 }
 
 // read16 reads a 16-bit value from memory at addr (little-endian).
-func (c *CPU) read16(addr uint16) uint16 {
-	low := c.bus.Read(addr)
-	high := c.bus.Read(addr + 1)
+func (cpu *CPU) read16(addr uint16) uint16 {
+	low := cpu.bus.Read(addr)
+	high := cpu.bus.Read(addr + 1)
 	return uint16(high)<<8 | uint16(low)
 }
 
 // writeRegisterPair writes a register pair to memory at addr (little-endian).
-func (c *CPU) writeRegisterPair(addr uint16, low, high uint8) {
-	c.bus.Write(addr, low)
-	c.bus.Write(addr+1, high)
+func (cpu *CPU) writeRegisterPair(addr uint16, low, high uint8) {
+	cpu.bus.Write(addr, low)
+	cpu.bus.Write(addr+1, high)
 }
 
 // setLogicalFlags sets flags for logical operations (AND/OR/XOR).
 // hFlag should be true for AND, false for OR/XOR.
-func (c *CPU) setLogicalFlags(result uint8, hFlag bool) {
-	c.setSZP(result)
-	c.setH(hFlag)
-	c.setN(false)
-	c.setC(false)
+func (cpu *CPU) setLogicalFlags(result uint8, hFlag bool) {
+	cpu.setSZP(result)
+	cpu.setH(hFlag)
+	cpu.setN(false)
+	cpu.setC(false)
 }
 
 func newCPU(bus Bus, opts options) (*CPU, error) {

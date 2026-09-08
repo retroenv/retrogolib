@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -85,24 +86,11 @@ type singleStepTest struct {
 	Ports   []singleStepPort
 }
 
-// testIOHandler provides port read/write values for test cases.
-type testIOHandler struct {
-	reads  map[uint8]uint8
-	writes map[uint8]uint8
-}
-
-func newTestIOHandler(ports []singleStepPort) *testIOHandler {
-	h := &testIOHandler{
-		reads:  make(map[uint8]uint8),
-		writes: make(map[uint8]uint8),
-	}
-	for _, p := range ports {
-		port := uint8(p.Address)
-		if p.IsRead {
-			h.reads[port] = p.Value
-		}
-	}
-	return h
+// singleStepBus supplies input data and records the full port transaction sequence.
+type singleStepBus struct {
+	Memory
+	expected []singleStepPort
+	actual   []singleStepPort
 }
 
 // UnmarshalJSON handles the ports field which is an array of [addr, val, "r"|"w"].
@@ -146,14 +134,22 @@ func (t *singleStepTest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (h *testIOHandler) ReadPort(port uint8) uint8 {
-	if val, ok := h.reads[port]; ok {
-		return val
+func (bus *singleStepBus) IRQData() uint8 { return 0xFF }
+
+func (bus *singleStepBus) OnRETI() {}
+
+func (bus *singleStepBus) ReadPort(address uint16) uint8 {
+	value := uint8(0xFF)
+	if index := len(bus.actual); index < len(bus.expected) && bus.expected[index].IsRead {
+		value = bus.expected[index].Value
 	}
-	return 0xFF
+	bus.actual = append(bus.actual, singleStepPort{Address: address, Value: value, IsRead: true})
+	return value
 }
 
-func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
+func (bus *singleStepBus) WritePort(address uint16, value uint8) {
+	bus.actual = append(bus.actual, singleStepPort{Address: address, Value: value})
+}
 
 // getSingleStepDir returns the path to the z80 SingleStepTests data directory,
 // skipping the test if it is not found.
@@ -198,12 +194,8 @@ func runSingleStepCase(tc *singleStepTest) error {
 		mem.Write(uint16(entry[0]), uint8(entry[1]))
 	}
 
-	// Create CPU with I/O handler if ports are used.
-	var opts []Option
-	if len(tc.Ports) > 0 {
-		opts = append(opts, WithIOHandler(newTestIOHandler(tc.Ports)))
-	}
-	cpu, err := New(mem, opts...)
+	bus := &singleStepBus{Memory: mem, expected: tc.Ports}
+	cpu, err := NewWithBus(bus)
 	if err != nil {
 		return fmt.Errorf("creating CPU: %w", err)
 	}
@@ -216,7 +208,10 @@ func runSingleStepCase(tc *singleStepTest) error {
 		return fmt.Errorf("Step: %w", err)
 	}
 
-	// Compare final state.
+	if !slices.Equal(bus.actual, bus.expected) {
+		return fmt.Errorf("ports: got %v, want %v", bus.actual, bus.expected)
+	}
+
 	return compareSingleStepState(cpu, mem, &tc.Final)
 }
 
@@ -251,7 +246,7 @@ func setSingleStepState(cpu *CPU, s *singleStepState) {
 	// Interrupt state.
 	cpu.iff1 = s.IFF1 != 0
 	cpu.iff2 = s.IFF2 != 0
-	cpu.im = s.IM
+	cpu.im = InterruptMode(s.IM)
 
 	// Q register for SCF/CCF X/Y flag behavior.
 	cpu.q = s.Q
@@ -352,7 +347,7 @@ func compareSingleStepInterrupts(cpu *CPU, expected *singleStepState) error {
 	if err := compareReg8("IFF2", boolToUint8(cpu.iff2), expected.IFF2); err != nil {
 		return err
 	}
-	return compareReg8("IM", cpu.im, expected.IM)
+	return compareReg8("IM", uint8(cpu.im), expected.IM)
 }
 
 // setAltFlags sets shadow flag register from a byte value.

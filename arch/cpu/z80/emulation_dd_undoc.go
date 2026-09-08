@@ -3,28 +3,28 @@ package z80
 // Undocumented DD prefix instructions - IXH/IXL half-register operations
 
 // IXH returns the high byte of IX.
-func (c *CPU) IXH() uint8 { return uint8(c.IX >> 8) }
+func (cpu *CPU) IXH() uint8 { return uint8(cpu.IX >> 8) }
 
 // IXL returns the low byte of IX.
-func (c *CPU) IXL() uint8 { return uint8(c.IX) }
+func (cpu *CPU) IXL() uint8 { return uint8(cpu.IX) }
 
 // SetIXH sets the high byte of IX.
-func (c *CPU) SetIXH(v uint8) { c.IX = uint16(v)<<8 | uint16(c.IXL()) }
+func (cpu *CPU) SetIXH(v uint8) { cpu.IX = uint16(v)<<8 | uint16(cpu.IXL()) }
 
 // SetIXL sets the low byte of IX.
-func (c *CPU) SetIXL(v uint8) { c.IX = uint16(c.IXH())<<8 | uint16(v) }
+func (cpu *CPU) SetIXL(v uint8) { cpu.IX = uint16(cpu.IXH())<<8 | uint16(v) }
 
 // INC/DEC IXH/IXL
 
-func ddIncIXH(c *CPU) error { c.SetIXH(c.inc8(c.IXH())); return nil }
-func ddDecIXH(c *CPU) error { c.SetIXH(c.dec8(c.IXH())); return nil }
-func ddIncIXL(c *CPU) error { c.SetIXL(c.inc8(c.IXL())); return nil }
-func ddDecIXL(c *CPU) error { c.SetIXL(c.dec8(c.IXL())); return nil }
+func ddIncIXH(cpu *CPU) error { cpu.SetIXH(cpu.inc8(cpu.IXH())); return nil }
+func ddDecIXH(cpu *CPU) error { cpu.SetIXH(cpu.dec8(cpu.IXH())); return nil }
+func ddIncIXL(cpu *CPU) error { cpu.SetIXL(cpu.inc8(cpu.IXL())); return nil }
+func ddDecIXL(cpu *CPU) error { cpu.SetIXL(cpu.dec8(cpu.IXL())); return nil }
 
 // LD IXH/IXL,n
 
-func ddLdIXHn(c *CPU, _ ...any) error {
-	c.SetIXH(c.bus.Read(c.PC + 2))
+func ddLdIXHn(cpu *CPU, _ ...any) error {
+	cpu.SetIXH(cpu.bus.Read(cpu.PC + 2))
 	return nil
 }
 

@@ -5,77 +5,77 @@ import "math/bits"
 // ED prefix instruction implementations - Extended instructions
 
 // 16-bit ADC/SBC HL helper methods
-func (c *CPU) adcHL(value uint16) {
-	hl := uint16(c.H)<<8 | uint16(c.L)
-	c.MEMPTR = hl + 1
-	carry := uint32(c.Flags.C)
+func (cpu *CPU) adcHL(value uint16) {
+	hl := uint16(cpu.H)<<8 | uint16(cpu.L)
+	cpu.MEMPTR = hl + 1
+	carry := uint32(cpu.Flags.C)
 	result := uint32(hl) + uint32(value) + carry
 
-	c.H = uint8(result >> 8)
-	c.L = uint8(result)
+	cpu.H = uint8(result >> 8)
+	cpu.L = uint8(result)
 
 	r16 := uint16(result)
-	c.setS(uint8(r16 >> 8))
-	setFlag(&c.Flags.Z, r16 == 0)
-	c.setXY(uint8(r16 >> 8))
-	c.setC(result > 0xFFFF)
-	c.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
-	c.setPOverflow(((hl ^ value ^ 0x8000) & (r16 ^ hl) & 0x8000) != 0)
-	c.setN(false)
+	cpu.setS(uint8(r16 >> 8))
+	setFlag(&cpu.Flags.Z, r16 == 0)
+	cpu.setXY(uint8(r16 >> 8))
+	cpu.setC(result > 0xFFFF)
+	cpu.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
+	cpu.setPOverflow(((hl ^ value ^ 0x8000) & (r16 ^ hl) & 0x8000) != 0)
+	cpu.setN(false)
 }
 
-func (c *CPU) sbcHL(value uint16) {
-	hl := uint16(c.H)<<8 | uint16(c.L)
-	c.MEMPTR = hl + 1
-	carry := uint32(c.Flags.C)
+func (cpu *CPU) sbcHL(value uint16) {
+	hl := uint16(cpu.H)<<8 | uint16(cpu.L)
+	cpu.MEMPTR = hl + 1
+	carry := uint32(cpu.Flags.C)
 	result := uint32(hl) - uint32(value) - carry
 
-	c.H = uint8(result >> 8)
-	c.L = uint8(result)
+	cpu.H = uint8(result >> 8)
+	cpu.L = uint8(result)
 
 	r16 := uint16(result)
-	c.setS(uint8(r16 >> 8))
-	setFlag(&c.Flags.Z, r16 == 0)
-	c.setXY(uint8(r16 >> 8))
-	c.setC(result > 0xFFFF)
-	c.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
-	c.setPOverflow(((hl ^ value) & (hl ^ r16) & 0x8000) != 0)
-	c.setN(true)
+	cpu.setS(uint8(r16 >> 8))
+	setFlag(&cpu.Flags.Z, r16 == 0)
+	cpu.setXY(uint8(r16 >> 8))
+	cpu.setC(result > 0xFFFF)
+	cpu.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
+	cpu.setPOverflow(((hl ^ value) & (hl ^ r16) & 0x8000) != 0)
+	cpu.setN(true)
 }
 
 // setIOBlockFlags sets the full undocumented flag behavior for INI/IND/OUTI/OUTD.
 // value is the byte transferred, k is value + secondary (where secondary depends on instruction).
-func (c *CPU) setIOBlockFlags(value uint8, k uint16) {
-	c.setS(c.B)
-	c.setZ(c.B)
-	c.setXY(c.B)
-	setFlag(&c.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
+func (cpu *CPU) setIOBlockFlags(value uint8, k uint16) {
+	cpu.setS(cpu.B)
+	cpu.setZ(cpu.B)
+	cpu.setXY(cpu.B)
+	setFlag(&cpu.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
 	carry := k > 255
-	c.setH(carry)
-	c.setC(carry)
+	cpu.setH(carry)
+	cpu.setC(carry)
 	// P/V = parity of ((k & 7) ^ B)
-	c.setP(uint8(k&7) ^ c.B)
+	cpu.setP(uint8(k&7) ^ cpu.B)
 }
 
 // adjustIORepeatFlags applies additional flag modifications for repeat I/O instructions
 // (INIR/INDR/OTIR/OTDR) when the instruction will repeat (B != 0).
 // The flags PF and HF undergo additional transformations based on carry and data bit 7.
-func (c *CPU) adjustIORepeatFlags(value uint8, k uint16) {
+func (cpu *CPU) adjustIORepeatFlags(value uint8, k uint16) {
 	carry := k > 255
 	dataBit7 := value&0x80 != 0
 
 	switch {
 	case carry && dataBit7:
-		c.Flags.P ^= parityByte((c.B - 1) & 0x07)
-		c.Flags.P ^= 1
-		setFlag(&c.Flags.H, (c.B&0x0F) == 0x00)
+		cpu.Flags.P ^= parityByte((cpu.B - 1) & 0x07)
+		cpu.Flags.P ^= 1
+		setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x00)
 	case carry:
-		c.Flags.P ^= parityByte((c.B + 1) & 0x07)
-		c.Flags.P ^= 1
-		setFlag(&c.Flags.H, (c.B&0x0F) == 0x0F)
+		cpu.Flags.P ^= parityByte((cpu.B + 1) & 0x07)
+		cpu.Flags.P ^= 1
+		setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x0F)
 	default:
-		c.Flags.P ^= parityByte(c.B & 0x07)
-		c.Flags.P ^= 1
+		cpu.Flags.P ^= parityByte(cpu.B & 0x07)
+		cpu.Flags.P ^= 1
 	}
 }
 
@@ -87,17 +87,17 @@ func edNeg(c *CPU) error {
 
 // Interrupt mode instructions
 func edIm0(c *CPU, _ ...any) error {
-	c.im = 0
+	c.im = InterruptMode0
 	return nil
 }
 
 func edIm1(c *CPU, _ ...any) error {
-	c.im = 1
+	c.im = InterruptMode1
 	return nil
 }
 
 func edIm2(c *CPU, _ ...any) error {
-	c.im = 2
+	c.im = InterruptMode2
 	return nil
 }
 
@@ -391,7 +391,7 @@ func parityByte(v uint8) uint8 {
 func edIni(c *CPU) error {
 	c.MEMPTR = c.bc() + 1
 	hl := c.hl()
-	value := c.readPort(c.bc())
+	value := c.bus.ReadPort(c.bc())
 
 	c.bus.Write(hl, value)
 	c.setHL(hl + 1)
@@ -406,7 +406,7 @@ func edIni(c *CPU) error {
 func edInd(c *CPU) error {
 	c.MEMPTR = c.bc() - 1
 	hl := c.hl()
-	value := c.readPort(c.bc())
+	value := c.bus.ReadPort(c.bc())
 
 	c.bus.Write(hl, value)
 	c.setHL(hl - 1)
@@ -462,9 +462,9 @@ func edOuti(c *CPU) error {
 	hl := c.hl()
 	value := c.bus.Read(hl)
 
-	c.writePort(c.bc(), value)
-	c.setHL(hl + 1)
 	c.B--
+	c.bus.WritePort(c.bc(), value)
+	c.setHL(hl + 1)
 
 	c.MEMPTR = c.bc() + 1
 	lAfter := uint8(hl + 1) // L after increment
@@ -478,9 +478,9 @@ func edOutd(c *CPU) error {
 	hl := c.hl()
 	value := c.bus.Read(hl)
 
-	c.writePort(c.bc(), value)
-	c.setHL(hl - 1)
 	c.B--
+	c.bus.WritePort(c.bc(), value)
+	c.setHL(hl - 1)
 
 	c.MEMPTR = c.bc() - 1
 	lAfter := uint8(hl - 1) // L after decrement
@@ -537,7 +537,7 @@ func edOtdr(c *CPU) error {
 // Reads port C, sets flags from result, discards the value.
 func edInFC(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	value := c.readPort(c.bc())
+	value := c.bus.ReadPort(c.bc())
 	c.setSZP(value)
 	c.setH(false)
 	c.setN(false)
@@ -548,7 +548,7 @@ func edInFC(c *CPU, _ ...any) error {
 // Outputs 0 to port C.
 func edOut0C(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), 0)
+	c.bus.WritePort(c.bc(), 0)
 	return nil
 }
 
@@ -602,49 +602,49 @@ func edInAC(c *CPU, _ ...any) error {
 // edOutCB implements ED 41: OUT (C),B.
 func edOutCB(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.B)
+	c.bus.WritePort(c.bc(), c.B)
 	return nil
 }
 
 // edOutCC implements ED 49: OUT (C),C.
 func edOutCC(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.C)
+	c.bus.WritePort(c.bc(), c.C)
 	return nil
 }
 
 // edOutCD implements ED 51: OUT (C),D.
 func edOutCD(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.D)
+	c.bus.WritePort(c.bc(), c.D)
 	return nil
 }
 
 // edOutCE implements ED 59: OUT (C),E.
 func edOutCE(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.E)
+	c.bus.WritePort(c.bc(), c.E)
 	return nil
 }
 
 // edOutCH implements ED 61: OUT (C),H.
 func edOutCH(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.H)
+	c.bus.WritePort(c.bc(), c.H)
 	return nil
 }
 
 // edOutCL implements ED 69: OUT (C),L.
 func edOutCL(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.L)
+	c.bus.WritePort(c.bc(), c.L)
 	return nil
 }
 
 // edOutCA implements ED 79: OUT (C),A.
 func edOutCA(c *CPU, _ ...any) error {
 	c.MEMPTR = c.bc() + 1
-	c.writePort(c.bc(), c.A)
+	c.bus.WritePort(c.bc(), c.A)
 	return nil
 }
 
