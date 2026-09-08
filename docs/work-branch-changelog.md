@@ -10,14 +10,14 @@ with the current remote-tracking `main` branch.
 ## Current Branch State
 
 - Comparison range: `origin/main...HEAD`, currently
-  `1cac5af...dfc8a64` on `work2`, using the available remote-tracking ref.
+  `6042ff7...a492cc6` on `work2`, using the available remote-tracking ref.
 - Merge base: `2901134` (`cartridge: fix iNES header mirroring flags`, 2026-09-01).
-- Committed branch delta: 193 files, with 151 added and 42 modified; 27,799
-  insertions and 1,531 deletions.
+- Committed branch delta: 219 files, with 162 added and 57 modified; 30,588
+  insertions and 2,522 deletions.
 - `git diff --name-status --find-renames origin/main...HEAD` reports no deleted
   or renamed files in the current range.
-- These statistics cover committed changes only. The review fixes below and
-  this documentation refresh are uncommitted and excluded from the totals.
+- These statistics cover committed changes only. This documentation refresh is
+  uncommitted and excluded from the totals.
 
 ## Changes Already Absorbed From `main`
 
@@ -70,11 +70,14 @@ also present at the current `origin/main` tip; they are not unique to `work2`.
   tightens constructor, memory, interrupt, stepping, and option behavior, and
   adds focused CPU, interrupt, option, opcode, and step tests. Adds
   `InstructionsForVariant`, variant-specific memory-effect classification,
-  and corrected branch and indexed read-modify-write timing. `BRK` metadata
-  describes its one-byte encoding; interrupt return still skips the padding byte.
+  corrected branch and indexed read-modify-write timing, and a pinned release
+  qualification gate for 1,510,000 legal NMOS vectors plus the Dormann NMOS and
+  65C02 functional binaries. `BRK` metadata describes its one-byte encoding;
+  interrupt return still skips the padding byte.
 - **x86 and Z80:** Separates substantial instruction-name and registry data from
   core instruction definitions. Z80 also adopts private option state, a typed
-  pre-execution hook, nil-option handling, and registry and option tests.
+  pre-execution hook, nil-option handling, a full bus interface, and registry,
+  option, interrupt, ED-mirror, and external corpus tests.
 - **SM83 metadata:** Includes high-memory loads through C in the `LDH` registry.
 - **Sets:** Adds `Sorted` for ordered values and `SortedFunc` for custom
   comparators; both return a sorted slice without changing the set.
@@ -96,26 +99,27 @@ also present at the current `origin/main` tip; they are not unique to `work2`.
 - Adds a `testdata/Makefile` target for the Timendus CHIP-8 test suite and keeps
   the existing CPU test-data targets in the aggregate workflow.
 - Updates `README.md` with the new CPU packages.
-- Adds gap-closure plans for the Motorola 68000 and Z80, a Commodore 64 system
-  implementation plan, and this branch changelog.
+- Adds release qualification documentation for the 6502, gap-closure plans for
+  the Motorola 68000 and Z80, a Commodore 64 system implementation plan, and
+  this branch changelog.
 
-## Package Review and Uncommitted Fixes
+## Package Review and Gap Closure
 
 The review checked changes in every affected package group, focusing on public
-contracts, instruction metadata, interrupt boundaries, memory access, and system
-constants. The table records the additional work from this review; it does not
-claim exhaustive hardware conformance.
+contracts, instruction metadata, interrupt boundaries, memory access, timing, and
+system constants. The review and subsequent CPU gap-closure work are committed;
+this table does not claim exhaustive hardware conformance.
 
 | Package group | Review result |
 | --- | --- |
 | `arch/cpu/chip8` | Reviewed VIP defaults, quirks, waits, flag aliases, bounds, and API changes; six Timendus ROM checks pass. |
 | `arch/cpu/cpu6502` | Reviewed variant registries, memory effects, constructor checks, interrupt dispatch, and cycle corrections; existing short tests pass. |
 | `arch/cpu/cpu65816` | Fixed interrupt dispatch from `Step`, masked-IRQ wake from WAI, and emulation-mode program-bank clearing. |
-| `arch/cpu/cpu68000` | Implemented the no-op `TriggerIRQ`, separated interrupt entry from handler execution, and fixed multibyte memory wrapping. Conformance gaps remain. |
+| `arch/cpu/cpu68000` | Added checked CPU memory access, original 68000 bus/address-error frames, optional bus-error callbacks, reset recovery, and operand-dependent timing. The full 1,000,060-vector runner now has 3,739 documented reference discrepancies. |
 | `arch/cpu/cpu6809` | Fixed zero-cycle hardware interrupt entry: NMI/IRQ take 19 cycles and FIRQ takes 10. |
 | `arch/cpu/sm83` | Fixed interrupt step boundaries, delayed EI cancellation by DI, and HALT-bug operand fetching. Reused the decoded opcode for immediate operands. |
 | `arch/cpu/x86` | Reviewed instruction-name and registry extraction; no additional behavioral fix identified. |
-| `arch/cpu/z80` | Corrected INF/OUTF encoding and execution through the existing ED70/ED71 implementations, added reverse metadata, and fixed a declaration-order lint issue. |
+| `arch/cpu/z80` | Unified interrupt acceptance, completed bus-supplied IM 0 RST and IM 2 vectors, fixed HALT/EI/LD A,I/R behavior and 16-bit block-output ports, verified ED mirrors, and corrected ignored DD/FD-prefix flag behavior. All 1,604,000 external vectors and both 67-group ZEX exercisers pass. |
 | `arch/system/atari2600`, `register`, `cartridge` | Reviewed system/register definitions; fixed 3F bank size/count, write hotspots, and hotspot address mirroring. |
 | `arch/system/coco`, `register` | Corrected SAM rate, RAM-size, and memory-map descriptions and replaced misnamed memory-map constants. |
 | `arch/system/vectrex`, `register` | Reviewed memory-map and register foundations; existing short tests pass. |
@@ -143,16 +147,27 @@ claim exhaustive hardware conformance.
   and the return address after `EI; HALT`, following
   [Pan Docs on interrupts](https://gbdev.io/pandocs/Interrupts.html) and
   [HALT](https://gbdev.io/pandocs/halt.html).
+- **Z80:** `Step` and `CheckInterrupts` now share one acceptance path. NMI has
+  priority and preserves IFF2, IRQ entry is a separate step, HALT wakes when an
+  interrupt is accepted, and EI defers IRQ acceptance through the following
+  instruction. IM 0 accepts all device-supplied RST opcodes with the retained
+  RST 38h fallback; IM 2 uses the device byte and supports a vector word that
+  wraps from FFFF to 0000. Interrupt entry updates R, MEMPTR, cycles, and the
+  NMOS LD A,I/R parity quirk consistently.
 
 ### Memory, Metadata, and System Corrections
 
-- **68000 memory:** Mask every byte of word/long accesses to the 24-bit bus.
-  Previously, even an aligned long access at `$FFFFFE` could panic. Regression
-  tests verify big-endian reads and writes across the address-space boundary.
-- **Z80:** INF/OUTF previously encoded IND/OUTD (`ED AA`/`ED AB`) and modified
-  B, HL, and memory. They now use `ED 70`/`ED 71`, 12-cycle metadata, and the
-  canonical port handlers. Tests check metadata, preserved registers/flags,
-  and the corresponding SingleStepTests vectors.
+- **68000 faults and timing:** CPU word and long accesses reject odd addresses,
+  preserve partial transfers, wrap physical bus addresses at 24 bits, and build
+  the original processor's 14-byte bus/address-error frame. Optional host bus
+  callbacks can raise vector 2. Reset recovers a CPU halted by a double fault.
+  Central timing calculations cover addressing modes, branches, shifts,
+  multiply/divide, MOVEM/MOVEP, exceptions, and operand-dependent costs.
+- **Z80 bus and metadata:** `NewWithBus` exposes full 16-bit port addresses,
+  interrupt data, and RETI notification while `New` retains its eight-bit I/O
+  compatibility adapter. INF/OUTF use ED 70/71 and canonical port handlers;
+  block output uses B after decrement. Dedicated tests execute every NEG, IM,
+  RETN/RETI, and IN/OUT ED mirror and ensure only ED 4D emits `OnRETI`.
 - **Atari cartridges:** 3F uses 2 KB banks, so a 64 KB image has 32 banks.
   Writes through `$003F` are hotspots, and CPU addresses are masked to the
   6507's 13-bit bus before lookup. Tests cover offsets, bounds, and mirrors.
@@ -162,9 +177,10 @@ claim exhaustive hardware conformance.
 - **CoCo SAM:** R0/R1 select CPU rate, M0/M1 select RAM size, and TY at
   `$FFDE/$FFDF` selects the memory map. Corrected names and address tests follow
   [MAME's MC6883 SAM implementation](https://github.com/mamedev/mame/blob/master/src/devices/machine/6883sam.cpp).
-- **Documentation:** Refreshed committed counts and package coverage here and
-  corrected the 68000 plan's obsolete claim that SingleStepTests integration
-  had not been implemented.
+- **Documentation:** Rebuilt the 68000 and Z80 plans as implementation records
+  with explicit limits, corpus revisions, discrepancies, and validation results.
+  Added a pinned 6502 release-qualification procedure and refreshed committed
+  counts and package coverage here.
 
 ## API and Behavior Migration
 
@@ -177,12 +193,19 @@ claim exhaustive hardware conformance.
 - With the review fixes, 65C816 callers can rely on `Step` for interrupt
   dispatch. Interrupt entry in 65C816, 68000, and SM83 is a separate step from
   the first handler instruction; instruction-count loops must account for it.
+- 68000 hosts may implement `BusErrorHandler` to fault CPU bus transfers and can
+  call `Reset` to recover from a double-fault halt. Existing `Memory` and `Bus`
+  implementations remain source-compatible.
 - CoCo callers using `SAMRateClear`/`SAMRateSet` must choose the intended
   operation: `SAMR0*`/`SAMR1*` for CPU rate, or the corrected
   `SAMTYClear`/`SAMTYSet` for memory mapping. The misleading names are removed.
 - 3F consumers must use the corrected 2 KB offsets and bank count. A
   `TriggerBank` result of zero identifies a write hotspot for this scheme;
   the written value supplies the bank number.
+- Z80 hosts needing full port addresses, interrupt vectors, or RETI notification
+  use `NewWithBus`; existing `New(memory, WithIOHandler(...))` callers retain
+  low-eight-bit port behavior. Interrupt acceptance consumes a step. Arbitrary
+  device-supplied IM 0 instructions remain unsupported outside RST opcodes.
 - Direct users of Z80 INF/OUTF handlers must use `ParamFunc`; their obsolete
   block-I/O `NoParamFunc` handlers have been removed.
 
@@ -193,21 +216,21 @@ claim exhaustive hardware conformance.
 | Modified | 1 | `Makefile` | Extends CPU integration-test coverage. |
 | Modified | 1 | `README.md` | Lists the new CPU packages. |
 | Added / Modified | 4 / 6 | `arch/cpu/chip8/` | Adds compatibility options, registry separation, correctness fixes, and Timendus ROM tests. |
-| Added / Modified | 8 / 20 | `arch/cpu/cpu6502/` | Refactors structure, variant metadata, timing, and focused tests. |
-| Added | 30 | `arch/cpu/cpu65816/` | Adds the WDC 65C816 emulator and tests. |
-| Added | 29 | `arch/cpu/cpu68000/` | Adds the Motorola 68000 emulator and tests. |
+| Added / Modified | 9 / 21 | `arch/cpu/cpu6502/` | Refactors structure and timing and adds focused tests and pinned release qualification. |
+| Added | 31 | `arch/cpu/cpu65816/` | Adds the WDC 65C816 emulator, interrupt corrections, and tests. |
+| Added | 34 | `arch/cpu/cpu68000/` | Adds the Motorola 68000 emulator, checked faults, timing, full-corpus runner, and tests. |
 | Added | 27 | `arch/cpu/cpu6809/` | Adds the Motorola 6809 emulator and tests. |
-| Added | 24 | `arch/cpu/sm83/` | Adds the Sharp SM83 emulator and tests. |
+| Added | 25 | `arch/cpu/sm83/` | Adds the Sharp SM83 emulator, interrupt/fetch regressions, and tests. |
 | Added / Modified | 2 / 2 | `arch/cpu/x86/` | Moves instruction names and registry data into cohesive files. |
-| Added / Modified | 4 / 9 | `arch/cpu/z80/` | Aligns registry, option, and undocumented-instruction metadata and tests. |
+| Added / Modified | 6 / 23 | `arch/cpu/z80/` | Aligns APIs and metadata, closes interrupt and bus gaps, and adds conformance tests. |
 | Added | 8 | `arch/system/atari2600/` | Adds system/register definitions, cartridge metadata, and tests. |
 | Added | 6 | `arch/system/coco/` | Adds CoCo system/register definitions and tests. |
 | Added | 5 | `arch/system/vectrex/` | Adds Vectrex system/register definitions and tests. |
-| Added | 4 | `docs/` | Adds implementation plans and branch tracking. |
+| Added | 5 | `docs/` | Adds qualification, implementation plans, and branch tracking. |
 | Modified | 2 | `set/` | Adds sorted projections and tests, also present at the remote main tip. |
 | Modified | 1 | `testdata/Makefile` | Integrates the Timendus CHIP-8 ROM suite. |
 
-The grouped counts above total the exact 151 added and 42 modified files
+The grouped counts above total the exact 162 added and 57 modified files
 reported for `origin/main...HEAD`; no row represents a rename.
 
 ## Verification
@@ -222,23 +245,29 @@ Review validation on 2026-09-07:
 | CHIP-8 `TestROMConformance` | Pass: six Timendus ROM checks. |
 | SM83 `TestSingleStep` and interrupt/fetch regressions | Pass. |
 | 65C816 `TestSingleStep` with `-tags singlestep` | Pass. |
-| Z80 `TestSingleStep/ed_70.json` and `ed_71.json` | Pass. |
-| 68000 `TestSingleStep` with `-tags singlestep` | Fails: 206,547 passed and 992 failed among 207,539 executed vectors. |
+| Z80 `TestSingleStep` | Pass: 1,604,000 vectors with register, flag, memory, and full port-transaction checks. |
+| Z80 `TestZexdoc` and `TestZexall` | Pass: all 67 groups in each exerciser. |
+| 68000 `TestSingleStep` with `-tags singlestep` | Fails: 996,321 passed and 3,739 failed among all 1,000,060 vectors. |
 | `git diff --check` and committed range/count reconciliation | Pass. |
 
-The 68000 runner stops each file after ten failures, so these counts are not a
-full-corpus pass rate. Running the same suite with a Go overlay containing the
-unchanged `dfc8a64` implementations produced the same counts and failure
-patterns. These failures predate the review fixes. The aggregate
-`make test-integration` target is therefore not reported as passing.
+The 68000 runner now limits diagnostics after ten failures per file while still
+executing every vector. Its remaining failures are 3,736 ASR flag cases, two
+ASL byte cases whose references alter upper register bits, and one DIVU-by-zero
+exception-PC case. The gap-closure plan records why those references were not
+followed. The aggregate `make test-integration` target is therefore not reported
+as passing. The pinned 6502 release gate is documented but is not claimed as run
+by this changelog update.
 
 ## Remaining Gaps
 
-- **68000 conformance:** Prioritize address errors and exception frames,
-  active/saved stack-pointer reporting, and BCD/flag discrepancies exposed by
-  the vector suite. Bus errors, timing, and prefetch fidelity also remain in
-  [the gap-closure plan](cpu68000-gap-closure-plan.md). Unit-test success does
-  not establish full instruction or bus-cycle accuracy.
+- **68000 conformance:** Resolve the 3,739 disputed reference vectors through
+  independent confirmation or upstream corrections. Prefetch, wait states, and
+  exact bus sequencing remain deferred in
+  [the gap-closure plan](cpu68000-gap-closure-plan.md); architectural-state and
+  instruction-timing tests do not establish bus-cycle accuracy.
+- **Z80 timing and IM 0:** T-state callbacks and contention remain deferred.
+  Device-supplied IM 0 supports RST opcodes; arbitrary and multi-byte bus
+  instructions need a separate design. See [the Z80 plan](z80-gap-closure-plan.md).
 - **System foundations:** Atari 2600, CoCo, and Vectrex additions provide
   definitions and helpers, not complete machines with video, audio, timers,
   and peripheral execution. Atari scheme detection needs a richer interface
