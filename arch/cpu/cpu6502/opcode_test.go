@@ -85,6 +85,19 @@ func TestUnofficialInstructions(t *testing.T) {
 	assert.True(t, unofficialCount < len(Opcodes)/2, "Too many unofficial instructions")
 }
 
+func TestNMOSLegalOpcodeCountExcludesJam(t *testing.T) {
+	legal := 0
+	for _, opcode := range Opcodes {
+		if !opcode.Instruction.Unofficial {
+			legal++
+		}
+		if opcode.Instruction.Name == KilName {
+			assert.True(t, opcode.Instruction.Unofficial)
+		}
+	}
+	assert.Equal(t, 151, legal)
+}
+
 func TestInstructionRegistriesCoverOpcodeTables(t *testing.T) {
 	t.Parallel()
 
