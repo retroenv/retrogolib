@@ -3,13 +3,13 @@ package cpu68000
 // Bit manipulation instructions: BTST, BSET, BCLR, BCHG.
 
 // getBitNumber returns the bit number from the source operand.
-func (c *CPU) getBitNumber(d DecodedOpcode) uint32 {
+func (cpu *CPU) getBitNumber(d DecodedOpcode) uint32 {
 	if d.SrcMode == 7 && d.SrcReg == 4 {
 		// Immediate bit number.
-		return c.readImmediate(SizeByte)
+		return cpu.readImmediate(SizeByte)
 	}
 	// Register bit number.
-	return c.D[d.SrcReg]
+	return cpu.D[d.SrcReg]
 }
 
 func execBTST(c *CPU, d DecodedOpcode) error {

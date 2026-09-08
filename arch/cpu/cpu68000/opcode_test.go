@@ -6,6 +6,27 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+func TestOverlappingOpcodeFamilies(t *testing.T) {
+	// Broad masks previously decoded these legal forms as BCD or bit operations.
+	tests := []struct {
+		opcode      uint16
+		instruction *Instruction
+	}{
+		{opcode: 0xC92D, instruction: insAND},
+		{opcode: 0x8D14, instruction: insOR},
+		{opcode: 0x0108, instruction: insMOVEP},
+		{opcode: 0x0188, instruction: insMOVEP},
+		{opcode: 0xC101, instruction: insABCD},
+		{opcode: 0x8101, instruction: insSBCD},
+	}
+
+	for _, tt := range tests {
+		opcode, err := decodeOpcode(tt.opcode)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.instruction, opcode.Instruction)
+	}
+}
+
 func TestDecodeLine0_ORI(t *testing.T) {
 	// ORI.B #imm,<ea> = 0000 000 0 00 mmm rrr
 	d, err := decodeOpcode(0x0000) // ORI.B #imm,D0

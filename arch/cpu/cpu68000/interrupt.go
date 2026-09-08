@@ -28,93 +28,139 @@ const (
 
 // TriggerIRQ queues an interrupt at level 1-7; level 7 is non-maskable.
 // The highest requested level remains pending until accepted. Other values are ignored.
-func (c *CPU) TriggerIRQ(level uint8) {
+func (cpu *CPU) TriggerIRQ(level uint8) {
 	if level == 0 || level > 7 {
 		return
 	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.pendingIRQ = max(c.pendingIRQ, level)
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.pendingIRQ = max(cpu.pendingIRQ, level)
 }
 
 // processException processes an exception with the given vector number.
 // It saves the current state and loads the new PC from the vector table.
-func (c *CPU) processException(vector int) error {
+func (cpu *CPU) processException(vector int) error {
 	// Save current SR.
-	oldSR := c.GetSR()
+	oldSR := cpu.GetSR()
+	switch vector {
+	case VectorTrace:
+		cpu.cycles += 34
+	case VectorCHK:
+		cpu.cycles += 30
+	case VectorDivZero:
+		cpu.cycles += 38
+	default:
+		cpu.cycles = cpu.stepCycles + 34
+	}
+	cpu.exceptionRaised = true
+	cpu.exceptionAccess = vector == VectorIllegal || vector == VectorPrivilege || vector == VectorTrace ||
+		vector == VectorLineA || vector == VectorLineF
 
 	// Enter supervisor mode and clear trace.
-	c.sr |= MaskSupervisor
-	c.sr &^= MaskTrace
+	cpu.sr |= MaskSupervisor
+	cpu.sr &^= MaskTrace
 
 	// If switching from user to supervisor, swap stack pointers.
 	if oldSR&MaskSupervisor == 0 {
-		c.USP = c.sp
-		c.sp = c.SSP
+		cpu.USP = cpu.sp
+		cpu.sp = cpu.SSP
 	}
 
 	// Push PC and SR onto the supervisor stack.
-	c.push32(c.PC)
-	c.push16(oldSR)
+	pc := cpu.PC
+	if vector == VectorIllegal || vector == VectorPrivilege || vector == VectorLineA || vector == VectorLineF {
+		pc = cpu.instructionPC
+	}
+	cpu.push32(pc)
+	cpu.push16(oldSR)
 
 	// Load new PC from vector table.
 	vectorAddr := uint32(vector) * 4
-	c.PC = c.bus.ReadLong(vectorAddr)
+	cpu.PC = vectorAddr
+	cpu.operandPCOffset = 0
+	cpu.PC = cpu.readBusLong(vectorAddr)
 
-	c.stopped = false
+	cpu.stopped = false
 
 	return nil
 }
 
 // processInterruptException processes an interrupt exception for the given level.
-func (c *CPU) processInterruptException(level uint8) {
+func (cpu *CPU) processInterruptException(level uint8) {
 	// Save current SR.
-	oldSR := c.GetSR()
+	oldSR := cpu.GetSR()
+	cpu.exceptionAccess, cpu.exceptionRaised = true, true
 
 	// Enter supervisor mode, clear trace, set interrupt mask.
-	c.sr |= MaskSupervisor
-	c.sr &^= MaskTrace
-	c.sr = (c.sr & ^uint16(MaskIPM)) | (uint16(level) << FlagIPM0)
+	cpu.sr |= MaskSupervisor
+	cpu.sr &^= MaskTrace
+	cpu.sr = (cpu.sr & ^uint16(MaskIPM)) | (uint16(level) << FlagIPM0)
 
 	// If switching from user to supervisor, swap stack pointers.
 	if oldSR&MaskSupervisor == 0 {
-		c.USP = c.sp
-		c.sp = c.SSP
+		cpu.USP = cpu.sp
+		cpu.sp = cpu.SSP
 	}
 
 	// Push PC and SR.
-	c.push32(c.PC)
-	c.push16(oldSR)
+	cpu.push32(cpu.PC)
+	cpu.push16(oldSR)
 
 	// Get vector from bus.
-	vector := c.bus.IRQAcknowledge(level)
+	vector := cpu.bus.IRQAcknowledge(level)
 
 	// Load new PC from vector table.
 	vectorAddr := vector * 4
-	c.PC = c.bus.ReadLong(vectorAddr)
+	cpu.PC = vectorAddr
+	cpu.PC = cpu.readBusLong(vectorAddr)
 
-	c.stopped = false
-	c.cycles += 44
+	cpu.stopped = false
+	cpu.cycles += 44
 }
 
 // checkInterrupts checks for pending interrupts and processes them.
 // Returns true if an interrupt was processed.
-func (c *CPU) checkInterrupts() bool {
-	level := max(c.bus.IRQLevel(), c.pendingIRQ)
+func (cpu *CPU) checkInterrupts() bool {
+	level := max(cpu.bus.IRQLevel(), cpu.pendingIRQ)
 	if level == 0 {
 		return false
 	}
 
-	mask := c.InterruptMask()
+	mask := cpu.InterruptMask()
 
 	// Level 7 is non-maskable. Other levels must be higher than mask.
 	if level < 7 && level <= mask {
 		return false
 	}
 
-	if level == c.pendingIRQ {
-		c.pendingIRQ = 0
+	if level == cpu.pendingIRQ {
+		cpu.pendingIRQ = 0
 	}
-	c.processInterruptException(level)
+	cpu.processInterruptException(level)
 	return true
+}
+
+func (cpu *CPU) acceptAccessFault(fault *accessError) error {
+	err := catchAccessFault(func() error {
+		cpu.SetSR((cpu.GetSR() | MaskSupervisor) &^ MaskTrace)
+		cpu.exceptionAccess, cpu.exceptionRaised = true, true
+		cpu.stopped = false
+		cpu.cycles = cpu.stepCycles + fault.cycles + 50
+		// The original 68000 has no format word. Its seven-word fault frame
+		// starts with SSW, address, IR, followed by the ordinary SR/PC frame.
+		cpu.push32(fault.pc)
+		cpu.push16(fault.sr)
+		cpu.push16(fault.word)
+		cpu.push32(fault.address)
+		cpu.push16(fault.status)
+		cpu.PC = cpu.readBusLong(uint32(fault.vector) * 4)
+		if cpu.PC&1 != 0 {
+			cpu.raiseAccessFault(cpu.PC, false, programSpace, VectorAddressErr, ErrAddressError)
+		}
+		return nil
+	})
+	if err != nil {
+		cpu.halted, cpu.faultHalted = true, true
+	}
+	return nil
 }

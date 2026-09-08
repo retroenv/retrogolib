@@ -13,7 +13,7 @@ type EffectiveAddress struct {
 
 // decodeEA decodes an effective address from the mode and register fields.
 // It reads extension words from the instruction stream as needed.
-func (c *CPU) decodeEA(mode, reg uint8, size OperandSize) (EffectiveAddress, error) {
+func (cpu *CPU) decodeEA(mode, reg uint8, size OperandSize) (EffectiveAddress, error) {
 	ea := EffectiveAddress{
 		Mode: mode,
 		Reg:  reg,
@@ -22,38 +22,39 @@ func (c *CPU) decodeEA(mode, reg uint8, size OperandSize) (EffectiveAddress, err
 
 	switch mode {
 	case 0: // Data register direct: Dn
-		ea.Value = c.getRegD(reg, size)
+		ea.Value = cpu.getRegD(reg, size)
 		return ea, nil
 
 	case 1: // Address register direct: An
-		ea.Value = c.getRegA(reg)
+		ea.Value = cpu.getRegA(reg)
 		return ea, nil
 
 	case 2: // Address register indirect: (An)
-		ea.Address = c.getRegA(reg)
+		ea.Address = cpu.getRegA(reg)
 		return ea, nil
 
 	case 3: // Postincrement: (An)+
-		ea.Address = c.getRegA(reg)
-		c.setRegA(reg, c.getRegA(reg)+incrementSize(reg, size))
+		ea.Address = cpu.getRegA(reg)
+		cpu.setRegA(reg, cpu.getRegA(reg)+incrementSize(reg, size))
 		return ea, nil
 
 	case 4: // Predecrement: -(An)
-		c.setRegA(reg, c.getRegA(reg)-incrementSize(reg, size))
-		ea.Address = c.getRegA(reg)
+		cpu.accessCycles += 2
+		cpu.setRegA(reg, cpu.getRegA(reg)-incrementSize(reg, size))
+		ea.Address = cpu.getRegA(reg)
 		return ea, nil
 
 	case 5: // Displacement: d16(An)
-		disp := int16(c.readWord())
-		ea.Address = uint32(int32(c.getRegA(reg)) + int32(disp))
+		disp := int16(cpu.readWord())
+		ea.Address = uint32(int32(cpu.getRegA(reg)) + int32(disp))
 		return ea, nil
 
 	case 6: // Indexed: d8(An,Xn)
-		ea.Address = c.decodeIndexed(c.getRegA(reg))
+		ea.Address = cpu.decodeIndexed(cpu.getRegA(reg))
 		return ea, nil
 
 	case 7: // Extended modes based on register field
-		return c.decodeEAMode7(ea)
+		return cpu.decodeEAMode7(ea)
 
 	default:
 		return ea, fmt.Errorf("%w: mode %d reg %d", ErrInvalidAddressMode, mode, reg)
@@ -61,30 +62,30 @@ func (c *CPU) decodeEA(mode, reg uint8, size OperandSize) (EffectiveAddress, err
 }
 
 // decodeEAMode7 handles the extended addressing modes (mode 7, reg 0-4).
-func (c *CPU) decodeEAMode7(ea EffectiveAddress) (EffectiveAddress, error) {
+func (cpu *CPU) decodeEAMode7(ea EffectiveAddress) (EffectiveAddress, error) {
 	switch ea.Reg {
 	case 0: // Absolute short: (xxx).W
-		addr := int16(c.readWord())
-		ea.Address = uint32(int32(addr)) & addressMask
+		addr := int16(cpu.readWord())
+		ea.Address = uint32(int32(addr))
 		return ea, nil
 
 	case 1: // Absolute long: (xxx).L
-		ea.Address = c.readLong() & addressMask
+		ea.Address = cpu.readLong()
 		return ea, nil
 
 	case 2: // PC displacement: d16(PC)
-		pcBefore := c.PC
-		disp := int16(c.readWord())
+		pcBefore := cpu.PC
+		disp := int16(cpu.readWord())
 		ea.Address = uint32(int32(pcBefore) + int32(disp))
 		return ea, nil
 
 	case 3: // PC indexed: d8(PC,Xn)
-		pcBefore := c.PC
-		ea.Address = c.decodeIndexed(pcBefore)
+		pcBefore := cpu.PC
+		ea.Address = cpu.decodeIndexed(pcBefore)
 		return ea, nil
 
 	case 4: // Immediate: #imm
-		ea.Value = c.readImmediate(ea.Size)
+		ea.Value = cpu.readImmediate(ea.Size)
 		return ea, nil
 
 	default:
@@ -94,8 +95,9 @@ func (c *CPU) decodeEAMode7(ea EffectiveAddress) (EffectiveAddress, error) {
 
 // decodeIndexed decodes an indexed extension word and returns the computed address.
 // Extension word format: D/A | Reg | W/L | 0 | 0 | 0 | displacement(8 bits).
-func (c *CPU) decodeIndexed(baseAddr uint32) uint32 {
-	ext := c.readWord()
+func (cpu *CPU) decodeIndexed(baseAddr uint32) uint32 {
+	ext := cpu.readWord()
+	cpu.accessCycles += 2
 
 	disp := int8(ext & 0xFF)
 	indexReg := (ext >> 12) & 7
@@ -105,9 +107,9 @@ func (c *CPU) decodeIndexed(baseAddr uint32) uint32 {
 	var indexValue int32
 
 	if isAddrReg {
-		indexValue = int32(c.getRegA(uint8(indexReg)))
+		indexValue = int32(cpu.getRegA(uint8(indexReg)))
 	} else {
-		indexValue = int32(c.D[indexReg])
+		indexValue = int32(cpu.D[indexReg])
 	}
 
 	if !isLong {
@@ -118,22 +120,22 @@ func (c *CPU) decodeIndexed(baseAddr uint32) uint32 {
 }
 
 // readEA reads the value at an effective address.
-func (c *CPU) readEA(ea EffectiveAddress) (uint32, error) {
+func (cpu *CPU) readEA(ea EffectiveAddress) (uint32, error) {
 	switch ea.Mode {
 	case 0: // Data register direct
-		return c.getRegD(ea.Reg, ea.Size), nil
+		return cpu.getRegD(ea.Reg, ea.Size), nil
 
 	case 1: // Address register direct
-		return c.getRegA(ea.Reg), nil
+		return cpu.getRegA(ea.Reg), nil
 
 	case 2, 3, 4, 5, 6: // Memory modes
-		return c.readMemory(ea.Address, ea.Size)
+		return cpu.readMemory(ea.Address, ea.Size)
 
 	case 7:
 		if ea.Reg == 4 { // Immediate
 			return ea.Value, nil
 		}
-		return c.readMemory(ea.Address, ea.Size)
+		return cpu.readMemory(ea.Address, ea.Size)
 
 	default:
 		return 0, fmt.Errorf("%w: read mode %d", ErrInvalidAddressMode, ea.Mode)
@@ -141,22 +143,22 @@ func (c *CPU) readEA(ea EffectiveAddress) (uint32, error) {
 }
 
 // writeEA writes a value to an effective address.
-func (c *CPU) writeEA(ea EffectiveAddress, value uint32) error {
+func (cpu *CPU) writeEA(ea EffectiveAddress, value uint32) error {
 	switch ea.Mode {
 	case 0: // Data register direct
-		c.setRegD(ea.Reg, value, ea.Size)
+		cpu.setRegD(ea.Reg, value, ea.Size)
 		return nil
 
 	case 1: // Address register direct
-		c.setRegA(ea.Reg, value)
+		cpu.setRegA(ea.Reg, value)
 		return nil
 
 	case 2, 3, 4, 5, 6: // Memory modes
-		return c.writeMemory(ea.Address, value, ea.Size)
+		return cpu.writeMemory(ea.Address, value, ea.Size)
 
 	case 7:
 		if ea.Reg <= 1 { // Absolute short/long
-			return c.writeMemory(ea.Address, value, ea.Size)
+			return cpu.writeMemory(ea.Address, value, ea.Size)
 		}
 		return fmt.Errorf("%w: write mode 7 reg %d", ErrInvalidAddressMode, ea.Reg)
 
@@ -166,30 +168,28 @@ func (c *CPU) writeEA(ea EffectiveAddress, value uint32) error {
 }
 
 // readMemory reads a value from memory at the given address with the given size.
-func (c *CPU) readMemory(addr uint32, size OperandSize) (uint32, error) {
-	addr &= addressMask
+func (cpu *CPU) readMemory(addr uint32, size OperandSize) (uint32, error) {
 	switch size {
 	case SizeByte:
-		return uint32(c.bus.Read(addr)), nil
+		return uint32(cpu.readByte(addr)), nil
 	case SizeWord:
-		return uint32(c.bus.ReadWord(addr)), nil
+		return uint32(cpu.readBusWord(addr, dataSpace)), nil
 	case SizeLong:
-		return c.bus.ReadLong(addr), nil
+		return cpu.readBusLong(addr), nil
 	default:
 		return 0, ErrInvalidOperandSize
 	}
 }
 
 // writeMemory writes a value to memory at the given address with the given size.
-func (c *CPU) writeMemory(addr, value uint32, size OperandSize) error {
-	addr &= addressMask
+func (cpu *CPU) writeMemory(addr, value uint32, size OperandSize) error {
 	switch size {
 	case SizeByte:
-		c.bus.Write(addr, uint8(value))
+		cpu.writeByte(addr, uint8(value))
 	case SizeWord:
-		c.bus.WriteWord(addr, uint16(value))
+		cpu.writeBusWord(addr, uint16(value))
 	case SizeLong:
-		c.bus.WriteLong(addr, value)
+		cpu.writeBusLong(addr, value)
 	default:
 		return ErrInvalidOperandSize
 	}

@@ -2,7 +2,7 @@ package cpu68000
 
 // Memory defines the interface for 68000 memory access.
 // The 68000 is big-endian: ReadWord reads [addr] as high byte, [addr+1] as low byte.
-// Word and long accesses at odd addresses trigger an address error exception.
+// The CPU checks alignment and raises address errors before calling Memory.
 type Memory interface {
 	// Read reads a byte from memory at the given address.
 	Read(address uint32) uint8

@@ -1,34 +1,18 @@
-// Package cpu68000 provides a Motorola 68000 CPU emulator with comprehensive instruction set
-// support and memory management functionality for retro computing systems.
+// Package cpu68000 emulates the original Motorola 68000, with 32-bit registers,
+// big-endian memory access, and a 24-bit external address bus.
 //
-// # Architecture Overview
+// A host supplies a Bus, optionally implementing BusErrorHandler to reject memory
+// transfers. Step executes an instruction or services an interrupt. Misaligned word
+// accesses and rejected transfers raise guest exceptions; faults during bus/address
+// error handling halt execution until Reset. CPU long accesses use two word transfers.
 //
-// The 68000 is a 32-bit CISC processor with a 16-bit external data bus and 24-bit
-// address bus (16MB addressable space). This implementation provides:
+// Cycles accounts for addressing modes and operand-dependent instruction timing.
+// Instruction prefetch, wait states, and complete bus-cycle timing are not emulated.
+// The conformance results and remaining discrepancies are documented in
+// docs/cpu68000-gap-closure-plan.md.
 //
-//   - Complete 68000 instruction set emulation (~68 mnemonics)
-//   - Hierarchical line-based opcode decoder (16 lines from top 4 bits)
-//   - 14 addressing modes with effective address resolution
-//   - 8 data registers (D0-D7, 32-bit) and 8 address registers (A0-A7)
-//   - Dual stack pointers (USP/SSP) for user/supervisor modes
-//   - 16-bit status register with CCR and system byte
-//   - 256-vector exception model
-//   - Big-endian byte order
-//   - Cycle-accurate timing for precise emulation
-//   - Thread-safe concurrent access through mutex locks
-//
-// # Usage Example
-//
-//	mem := cpu68000.NewBasicMemory()
-//	bus := cpu68000.NewBasicBus(mem)
-//	cpu, err := cpu68000.New(bus)
-//	if err != nil {
-//	    return fmt.Errorf("creating CPU: %w", err)
-//	}
-//
-//	for !cpu.Halted() {
-//	    if err := cpu.Step(); err != nil {
-//	        return fmt.Errorf("CPU execution error: %w", err)
-//	    }
-//	}
+// Step, Reset, and interrupt triggers are synchronized. Callers must serialize direct
+// register access and status updates with execution. Bus callbacks run under the CPU
+// lock and must not call locking CPU methods. State is a debugging snapshot, not a
+// complete save/restore format.
 package cpu68000

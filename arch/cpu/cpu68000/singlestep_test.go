@@ -192,22 +192,16 @@ func runTestFile(t *testing.T, path string) (pass, fail int) {
 	cases, err := loadTestCases(path)
 	assert.NoError(t, err)
 
-	const maxFailures = 10
-	reported := 0
+	const maxReports = 10
 
 	for i := range cases {
 		tc := &cases[i]
 
-		ok := runSingleTest(t, tc)
+		ok := runSingleTest(t, tc, fail < maxReports)
 		if ok {
 			pass++
 		} else {
 			fail++
-			reported++
-			if reported >= maxFailures {
-				t.Logf("Stopping after %d failures (of %d tests)", maxFailures, len(cases))
-				break
-			}
 		}
 	}
 
@@ -217,7 +211,7 @@ func runTestFile(t *testing.T, path string) (pass, fail int) {
 	return pass, fail
 }
 
-func runSingleTest(t *testing.T, tc *testCase) bool {
+func runSingleTest(t *testing.T, tc *testCase, reportFailure bool) bool {
 	t.Helper()
 
 	mem := newTestMemory()
@@ -260,10 +254,11 @@ func runSingleTest(t *testing.T, tc *testCase) bool {
 	// Execute one step.
 	err := cpu.Step()
 	if err != nil {
-		t.Run(tc.Name, func(t *testing.T) {
-			t.Helper()
-			t.Errorf("step error: %v", err)
-		})
+		if reportFailure {
+			t.Run(tc.Name, func(t *testing.T) {
+				assert.NoError(t, err)
+			})
+		}
 		return false
 	}
 
@@ -273,12 +268,11 @@ func runSingleTest(t *testing.T, tc *testCase) bool {
 		return true
 	}
 
-	t.Run(tc.Name, func(t *testing.T) {
-		t.Helper()
-		for _, d := range diffs {
-			t.Error(d)
-		}
-	})
+	if reportFailure {
+		t.Run(tc.Name, func(t *testing.T) {
+			assert.Empty(t, diffs)
+		})
+	}
 
 	return false
 }

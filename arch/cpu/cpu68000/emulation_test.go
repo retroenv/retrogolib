@@ -6,6 +6,151 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+func TestExtendedArithmeticCarry(t *testing.T) {
+	// Carry/borrow must include X even when neither original operand supplies it.
+	tests := []struct {
+		name           string
+		opcode         uint16
+		dst, src, want uint32
+	}{
+		{name: "ADDX byte", opcode: 0xD101, dst: 0xFF},
+		{name: "ADDX long", opcode: 0xD181, dst: 0xFFFFFFFF},
+		{name: "SUBX byte", opcode: 0x9101, want: 0xFF},
+		{name: "SUBX long", opcode: 0x9181, want: 0xFFFFFFFF},
+		{name: "NEGX byte", opcode: 0x4000, want: 0xFF},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu := newTestCPU(t)
+			cpu.D[0], cpu.D[1] = tt.dst, tt.src
+			cpu.Flags.X = 1
+			cpu.bus.WriteWord(cpu.PC, tt.opcode)
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, tt.want, cpu.D[0])
+			assert.Equal(t, uint8(1), cpu.Flags.C)
+			assert.Equal(t, uint8(1), cpu.Flags.X)
+		})
+	}
+}
+
+func TestDecimalCorrection(t *testing.T) {
+	// Decimal adjustment must preserve sticky Z and work with non-BCD nibbles.
+	tests := []struct {
+		name                          string
+		opcode                        uint16
+		src, dst, extend, result, ccr uint8
+	}{
+		{name: "ABCD carry", opcode: 0xC101, src: 1, dst: 0x99, result: 0, ccr: 0x15},
+		{name: "ABCD invalid digits", opcode: 0xC101, src: 0x0F, dst: 0x87, result: 0x9C, ccr: 8},
+		{name: "SBCD borrow", opcode: 0x8101, src: 1, result: 0x99, ccr: 0x19},
+		{name: "NBCD extend", opcode: 0x4800, extend: 1, result: 0x99, ccr: 0x19},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu := newTestCPU(t)
+			cpu.D[0], cpu.D[1] = 0x12340000|uint32(tt.dst), uint32(tt.src)
+			cpu.Flags.X, cpu.Flags.Z = tt.extend, 1
+			cpu.bus.WriteWord(cpu.PC, tt.opcode)
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, 0x12340000|uint32(tt.result), cpu.D[0])
+			assert.Equal(t, tt.ccr, cpu.GetCCR())
+		})
+	}
+}
+
+func TestMOVEPTransfersSpacedBytes(t *testing.T) {
+	// MOVEP was shadowed by bit-op decoding, with its direction reversed.
+	cpu := newTestCPU(t)
+	cpu.A[0], cpu.D[0] = 0x3000, 0x12345678
+	cpu.bus.WriteWord(cpu.PC, 0x01C8) // MOVEP.L D0,0(A0).
+	cpu.bus.WriteWord(cpu.PC+2, 0)
+	cpu.bus.WriteWord(cpu.PC+4, 0x0348) // MOVEP.L 0(A0),D1.
+	cpu.bus.WriteWord(cpu.PC+6, 0)
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0x12), cpu.bus.Read(0x3000))
+	assert.Equal(t, uint8(0), cpu.bus.Read(0x3001))
+	assert.Equal(t, uint8(0x78), cpu.bus.Read(0x3006))
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint32(0x12345678), cpu.D[1])
+}
+
+func TestMOVEMPredecrementRegisterOrder(t *testing.T) {
+	// Predecrement masks reverse the register numbering, not the mask iteration.
+	cpu := newTestCPU(t)
+	cpu.A[0], cpu.D[0], cpu.D[1] = 0x3000, 0x12345678, 0xABCDEF01
+	cpu.bus.WriteWord(cpu.PC, 0x48E0)
+	cpu.bus.WriteWord(cpu.PC+2, 0xC000) // D1 then D0.
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint32(0x2FF8), cpu.A[0])
+	assert.Equal(t, cpu.D[0], cpu.bus.ReadLong(0x2FF8))
+	assert.Equal(t, cpu.D[1], cpu.bus.ReadLong(0x2FFC))
+}
+
+func TestCMPMByteStackIncrement(t *testing.T) {
+	// Byte operations through A7 still advance the stack pointer by two.
+	cpu := newTestCPU(t)
+	cpu.A[0] = 0x3000
+	cpu.bus.WriteWord(cpu.PC, 0xBF08) // CMPM.B (A0)+,(A7)+.
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint32(0x3001), cpu.A[0])
+	assert.Equal(t, uint32(0x10002), cpu.A7())
+}
+
+func TestLINKStackPointerOperand(t *testing.T) {
+	// LINK A7 pushes the decremented SP value, unlike LINK with other registers.
+	cpu := newTestCPU(t)
+	cpu.bus.WriteWord(cpu.PC, 0x4E57)
+	cpu.bus.WriteWord(cpu.PC+2, 0xFFF0)
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint32(0xFFFC), cpu.bus.ReadLong(0xFFFC))
+	assert.Equal(t, uint32(0xFFEC), cpu.A7())
+}
+
+func TestASRSignExtensionBeyondOperandWidth(t *testing.T) {
+	// Motorola specifies that C/X receive the last bit shifted out, including
+	// sign-extension bits. Some external vectors incorrectly clear both flags.
+	for _, tt := range []struct {
+		opcode             uint16
+		value, count, want uint32
+	}{
+		{opcode: 0xE220, value: 0x12345680, count: 9, want: 0x123456FF},
+		{opcode: 0xE260, value: 0x12348000, count: 17, want: 0x1234FFFF},
+		{opcode: 0xE2A0, value: 0x80000000, count: 33, want: 0xFFFFFFFF},
+	} {
+		cpu := newTestCPU(t)
+		cpu.D[0], cpu.D[1] = tt.value, tt.count
+		cpu.bus.WriteWord(cpu.PC, tt.opcode)
+		assert.NoError(t, cpu.Step())
+		assert.Equal(t, tt.want, cpu.D[0])
+		assert.Equal(t, uint8(0x19), cpu.GetCCR())
+	}
+}
+
+func TestASLBytePreservesUpperRegister(t *testing.T) {
+	// These inputs expose two external vectors that change the untouched 24 bits.
+	for _, value := range []uint32{0xCDFB7FBE, 0x417C7E7D} {
+		cpu := newTestCPU(t)
+		cpu.D[2] = value
+		cpu.bus.WriteWord(cpu.PC, 0xE502) // ASL.B #2,D2.
+		assert.NoError(t, cpu.Step())
+		assert.Equal(t, value&0xFFFFFF00|(value<<2)&0xFF, cpu.D[2])
+	}
+}
+
+func TestDivideByZeroSavesFollowingInstruction(t *testing.T) {
+	// The divide-by-zero trap resumes at the instruction after DIVU.
+	cpu := newTestCPU(t)
+	cpu.A[0] = 0x3000
+	cpu.bus.WriteWord(cpu.PC, 0x80E8) // DIVU 0(A0),D0.
+	cpu.bus.WriteWord(cpu.PC+2, 0)
+	cpu.bus.WriteLong(VectorDivZero*4, 0x2000)
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint32(0x2000), cpu.PC)
+	assert.Equal(t, uint32(0x1004), cpu.bus.ReadLong(cpu.A7()+2))
+}
+
 // --- ALU Tests ---
 
 func TestADD_DataReg(t *testing.T) {

@@ -27,6 +27,8 @@ func execCHK(c *CPU, d DecodedOpcode) error {
 
 	dn := int16(c.D[d.DstReg])
 	upper := int16(src)
+	c.Flags.C, c.Flags.V = 0, 0
+	c.setFlagZ(uint32(uint16(dn)), SizeWord)
 
 	if dn < 0 {
 		c.Flags.N = 1

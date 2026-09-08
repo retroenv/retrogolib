@@ -34,81 +34,81 @@ const (
 const (
 	MaskTrace      = 1 << FlagTrace
 	MaskSupervisor = 1 << FlagSupervisor
-	MaskIPM        = 7 << FlagIPM0 // Interrupt priority mask (3 bits)
-	MaskSystem     = 0xFF00        // System byte mask
-	MaskCCR        = 0x001F        // CCR byte mask (X, N, Z, V, C)
+	MaskIPM        = 7 << FlagIPM0                        // Interrupt priority mask (3 bits)
+	MaskSystem     = MaskTrace | MaskSupervisor | MaskIPM // Implemented system bits.
+	MaskCCR        = 0x001F                               // CCR byte mask (X, N, Z, V, C)
 )
 
 // GetCCR returns the condition code register as a byte.
-func (c *CPU) GetCCR() uint8 {
-	return c.Flags.C |
-		c.Flags.V<<1 |
-		c.Flags.Z<<2 |
-		c.Flags.N<<3 |
-		c.Flags.X<<4
+func (cpu *CPU) GetCCR() uint8 {
+	return cpu.Flags.C |
+		cpu.Flags.V<<1 |
+		cpu.Flags.Z<<2 |
+		cpu.Flags.N<<3 |
+		cpu.Flags.X<<4
 }
 
 // GetSR returns the full 16-bit status register.
-func (c *CPU) GetSR() uint16 {
-	return c.sr&MaskSystem | uint16(c.GetCCR())
+func (cpu *CPU) GetSR() uint16 {
+	return cpu.sr&MaskSystem | uint16(cpu.GetCCR())
 }
 
 // SetCCR sets the condition code register from a byte value.
-func (c *CPU) SetCCR(ccr uint8) {
-	c.Flags.C = ccr & 1
-	c.Flags.V = (ccr >> 1) & 1
-	c.Flags.Z = (ccr >> 2) & 1
-	c.Flags.N = (ccr >> 3) & 1
-	c.Flags.X = (ccr >> 4) & 1
+func (cpu *CPU) SetCCR(ccr uint8) {
+	cpu.Flags.C = ccr & 1
+	cpu.Flags.V = (ccr >> 1) & 1
+	cpu.Flags.Z = (ccr >> 2) & 1
+	cpu.Flags.N = (ccr >> 3) & 1
+	cpu.Flags.X = (ccr >> 4) & 1
 }
 
 // SetSR sets the full 16-bit status register.
 // This may cause a privilege mode switch.
-func (c *CPU) SetSR(sr uint16) {
-	oldSupervisor := c.sr & MaskSupervisor
+func (cpu *CPU) SetSR(sr uint16) {
+	oldSupervisor := cpu.sr & MaskSupervisor
 
-	c.sr = sr & MaskSystem
-	c.SetCCR(uint8(sr & MaskCCR))
+	cpu.sr = sr & MaskSystem
+	cpu.SetCCR(uint8(sr & MaskCCR))
 
-	newSupervisor := c.sr & MaskSupervisor
+	newSupervisor := cpu.sr & MaskSupervisor
 
 	// Handle privilege mode switch.
 	if oldSupervisor != 0 && newSupervisor == 0 {
 		// Switching from supervisor to user mode: save SSP, load USP.
-		c.SSP = c.sp
-		c.sp = c.USP
+		cpu.SSP = cpu.sp
+		cpu.sp = cpu.USP
 	} else if oldSupervisor == 0 && newSupervisor != 0 {
 		// Switching from user to supervisor mode: save USP, load SSP.
-		c.USP = c.sp
-		c.sp = c.SSP
+		cpu.USP = cpu.sp
+		cpu.sp = cpu.SSP
 	}
 }
 
 // IsSupervisor returns whether the CPU is in supervisor mode.
-func (c *CPU) IsSupervisor() bool {
-	return c.sr&MaskSupervisor != 0
+func (cpu *CPU) IsSupervisor() bool {
+	return cpu.sr&MaskSupervisor != 0
 }
 
 // InterruptMask returns the current interrupt priority mask (0-7).
-func (c *CPU) InterruptMask() uint8 {
-	return uint8((c.sr & MaskIPM) >> FlagIPM0)
+func (cpu *CPU) InterruptMask() uint8 {
+	return uint8((cpu.sr & MaskIPM) >> FlagIPM0)
 }
 
 // setFlagN sets the negative flag based on the MSB of a value for the given size.
-func (c *CPU) setFlagN(value uint32, size OperandSize) {
+func (cpu *CPU) setFlagN(value uint32, size OperandSize) {
 	switch size {
 	case SizeByte:
-		setFlag(&c.Flags.N, value&0x80 != 0)
+		setFlag(&cpu.Flags.N, value&0x80 != 0)
 	case SizeWord:
-		setFlag(&c.Flags.N, value&0x8000 != 0)
+		setFlag(&cpu.Flags.N, value&0x8000 != 0)
 	case SizeLong:
-		setFlag(&c.Flags.N, value&0x80000000 != 0)
+		setFlag(&cpu.Flags.N, value&0x80000000 != 0)
 	}
 }
 
 // setFlagZ sets the zero flag based on a masked value for the given size.
-func (c *CPU) setFlagZ(value uint32, size OperandSize) {
-	setFlag(&c.Flags.Z, maskValue(value, size) == 0)
+func (cpu *CPU) setFlagZ(value uint32, size OperandSize) {
+	setFlag(&cpu.Flags.Z, maskValue(value, size) == 0)
 }
 
 // setFlag sets a flag to 1 if condition is true, 0 otherwise.

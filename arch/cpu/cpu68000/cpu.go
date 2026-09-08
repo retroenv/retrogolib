@@ -4,7 +4,8 @@ import (
 	"sync"
 )
 
-// State represents complete CPU state for save/load and debugging.
+// State is a register and execution-status snapshot for debugging.
+// It is not a complete save/restore format.
 type State struct {
 	D      [8]uint32 // Data registers D0-D7
 	A      [7]uint32 // Address registers A0-A6
@@ -18,7 +19,9 @@ type State struct {
 	Halted bool
 }
 
-// CPU represents a thread-safe Motorola 68000 microprocessor with full instruction set emulation.
+// CPU emulates a Motorola 68000 microprocessor.
+// Step, Reset, and interrupt triggers are synchronized. Callers must serialize
+// direct register access and status-register updates with execution.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -32,10 +35,19 @@ type CPU struct {
 
 	Flags Flags // CCR flags
 
-	cycles     uint64
-	halted     bool
-	stopped    bool  // STOP instruction state
-	pendingIRQ uint8 // Highest queued interrupt request, retained while masked.
+	cycles      uint64
+	halted      bool
+	stopped     bool  // STOP instruction state
+	pendingIRQ  uint8 // Highest queued interrupt request, retained while masked.
+	faultHalted bool  // Double fault; only external reset can resume execution.
+
+	instructionPC   uint32
+	instructionWord uint16
+	stepCycles      uint64
+	exceptionAccess bool
+	exceptionRaised bool
+	operandPCOffset int32
+	accessCycles    uint64
 
 	sr  uint16 // Status register system byte (high byte)
 	bus Bus
@@ -67,164 +79,193 @@ func New(bus Bus, options ...Option) (*CPU, error) {
 		c.SSP = opts.initialSP
 	} else {
 		// Standard 68000 reset: load SSP from vector 0, PC from vector 1.
-		c.SSP = bus.ReadLong(0x000000)
-		c.sp = c.SSP
-		c.PC = bus.ReadLong(0x000004)
+		if err := c.Reset(); err != nil {
+			return nil, err
+		}
+		c.cycles = 0
 	}
 
 	return c, nil
 }
 
 // A7 returns the active stack pointer based on the current privilege mode.
-func (c *CPU) A7() uint32 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.sp
+func (cpu *CPU) A7() uint32 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.sp
 }
 
 // Bus returns the attached bus interface.
 //
 //nolint:ireturn // intentional: Bus is the public API interface
-func (c *CPU) Bus() Bus {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.bus
+func (cpu *CPU) Bus() Bus {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.bus
 }
 
 // Cycles returns total CPU cycles executed.
-func (c *CPU) Cycles() uint64 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.cycles
+func (cpu *CPU) Cycles() uint64 {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.cycles
 }
 
 // Halt stops CPU execution.
-func (c *CPU) Halt() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.halted = true
+func (cpu *CPU) Halt() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.halted = true
 }
 
 // Halted returns CPU halt state.
-func (c *CPU) Halted() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.halted
+func (cpu *CPU) Halted() bool {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
+	return cpu.halted
 }
 
 // Resume continues CPU execution.
-func (c *CPU) Resume() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.halted = false
+func (cpu *CPU) Resume() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	if !cpu.faultHalted {
+		cpu.halted = false
+	}
 }
 
-// State returns complete CPU state.
-func (c *CPU) State() State {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+// Reset performs an external reset, loading SSP and PC from the reset vectors.
+// A failed vector read leaves the CPU halted and returns the access error.
+func (cpu *CPU) Reset() error {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	cpu.sr = MaskSupervisor | MaskIPM
+	cpu.Flags = Flags{}
+	cpu.pendingIRQ = 0
+	cpu.halted, cpu.stopped, cpu.faultHalted = false, false, false
+	cpu.exceptionAccess = true
+	cpu.exceptionRaised = false
+	cpu.instructionWord = 0
+	cpu.accessCycles = 0
+	cpu.cycles = 40
+	err := catchAccessFault(func() error {
+		cpu.sp = cpu.readBusLong(VectorResetSSP * 4)
+		cpu.SSP = cpu.sp
+		cpu.PC = cpu.readBusLong(VectorResetPC * 4)
+		return nil
+	})
+	cpu.exceptionAccess = false
+	if err != nil {
+		cpu.halted, cpu.faultHalted = true, true
+	}
+	return err
+}
+
+// State returns a register and execution-status snapshot.
+func (cpu *CPU) State() State {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
 
 	return State{
-		D:      c.D,
-		A:      c.A,
-		USP:    c.USP,
-		SSP:    c.SSP,
-		SP:     c.sp,
-		PC:     c.PC,
-		SR:     c.GetSR(),
-		Flags:  c.Flags,
-		Cycles: c.cycles,
-		Halted: c.halted,
+		D:      cpu.D,
+		A:      cpu.A,
+		USP:    cpu.USP,
+		SSP:    cpu.SSP,
+		SP:     cpu.sp,
+		PC:     cpu.PC,
+		SR:     cpu.GetSR(),
+		Flags:  cpu.Flags,
+		Cycles: cpu.cycles,
+		Halted: cpu.halted,
 	}
 }
 
 // push16 pushes a 16-bit word onto the stack (big-endian, predecrement).
-func (c *CPU) push16(value uint16) {
-	c.sp -= 2
-	c.bus.WriteWord(c.sp, value)
+func (cpu *CPU) push16(value uint16) {
+	cpu.sp -= 2
+	cpu.writeBusWord(cpu.sp, value)
 }
 
 // push32 pushes a 32-bit long word onto the stack (big-endian, predecrement).
-func (c *CPU) push32(value uint32) {
-	c.sp -= 4
-	c.bus.WriteLong(c.sp, value)
+func (cpu *CPU) push32(value uint32) {
+	cpu.sp -= 4
+	cpu.writeBusLong(cpu.sp, value)
 }
 
 // pop16 pops a 16-bit word from the stack (postincrement).
-func (c *CPU) pop16() uint16 {
-	value := c.bus.ReadWord(c.sp)
-	c.sp += 2
+func (cpu *CPU) pop16() uint16 {
+	value := cpu.readBusWord(cpu.sp, dataSpace)
+	cpu.sp += 2
 	return value
 }
 
 // pop32 pops a 32-bit long word from the stack (postincrement).
-func (c *CPU) pop32() uint32 {
-	value := c.bus.ReadLong(c.sp)
-	c.sp += 4
+func (cpu *CPU) pop32() uint32 {
+	value := cpu.readBusLong(cpu.sp)
+	cpu.sp += 4
 	return value
 }
 
 // readWord reads a word from the instruction stream and advances PC.
-func (c *CPU) readWord() uint16 {
-	value := c.bus.ReadWord(c.PC)
-	c.PC += 2
+func (cpu *CPU) readWord() uint16 {
+	value := cpu.readBusWord(cpu.PC, programSpace)
+	cpu.PC += 2
 	return value
 }
 
 // readLong reads a long from the instruction stream and advances PC.
-func (c *CPU) readLong() uint32 {
-	value := c.bus.ReadLong(c.PC)
-	c.PC += 4
-	return value
+func (cpu *CPU) readLong() uint32 {
+	high := uint32(cpu.readWord())
+	return high<<16 | uint32(cpu.readWord())
 }
 
 // readImmediate reads an immediate value from the instruction stream.
 // Byte-sized immediates occupy the low byte of a word.
-func (c *CPU) readImmediate(size OperandSize) uint32 {
+func (cpu *CPU) readImmediate(size OperandSize) uint32 {
 	switch size {
 	case SizeByte:
-		w := c.readWord()
+		w := cpu.readWord()
 		return uint32(w & 0xFF)
 	case SizeWord:
-		return uint32(c.readWord())
+		return uint32(cpu.readWord())
 	case SizeLong:
-		return c.readLong()
+		return cpu.readLong()
 	default:
 		return 0
 	}
 }
 
 // getRegD returns the value of data register Dn masked to the given size.
-func (c *CPU) getRegD(reg uint8, size OperandSize) uint32 {
-	return maskValue(c.D[reg], size)
+func (cpu *CPU) getRegD(reg uint8, size OperandSize) uint32 {
+	return maskValue(cpu.D[reg], size)
 }
 
 // setRegD sets the data register Dn, preserving upper bits for byte/word operations.
-func (c *CPU) setRegD(reg uint8, value uint32, size OperandSize) {
+func (cpu *CPU) setRegD(reg uint8, value uint32, size OperandSize) {
 	switch size {
 	case SizeByte:
-		c.D[reg] = (c.D[reg] & 0xFFFFFF00) | (value & 0xFF)
+		cpu.D[reg] = (cpu.D[reg] & 0xFFFFFF00) | (value & 0xFF)
 	case SizeWord:
-		c.D[reg] = (c.D[reg] & 0xFFFF0000) | (value & 0xFFFF)
+		cpu.D[reg] = (cpu.D[reg] & 0xFFFF0000) | (value & 0xFFFF)
 	case SizeLong:
-		c.D[reg] = value
+		cpu.D[reg] = value
 	}
 }
 
 // getRegA returns the value of address register An (A0-A6 or A7/SP).
-func (c *CPU) getRegA(reg uint8) uint32 {
+func (cpu *CPU) getRegA(reg uint8) uint32 {
 	if reg == 7 {
-		return c.sp
+		return cpu.sp
 	}
-	return c.A[reg]
+	return cpu.A[reg]
 }
 
 // setRegA sets the value of address register An (A0-A6 or A7/SP).
-func (c *CPU) setRegA(reg uint8, value uint32) {
+func (cpu *CPU) setRegA(reg uint8, value uint32) {
 	if reg == 7 {
-		c.sp = value
+		cpu.sp = value
 	} else {
-		c.A[reg] = value
+		cpu.A[reg] = value
 	}
 }
 

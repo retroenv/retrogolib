@@ -1,23 +1,41 @@
 package cpu68000
 
+import "math/bits"
+
 // Data movement instructions: MOVE, MOVEA, MOVEQ, MOVEM, MOVEP, EXG, LEA, PEA,
 // LINK, UNLK, SWAP.
 
 // getMovemReg returns the value of register i (0-7=D0-D7, 8-15=A0-A7).
-func (c *CPU) getMovemReg(i uint8) uint32 {
+func (cpu *CPU) getMovemReg(i uint8) uint32 {
 	if i < 8 {
-		return c.D[i]
+		return cpu.D[i]
 	}
-	return c.getRegA(i - 8)
+	return cpu.getRegA(i - 8)
 }
 
 // setMovemReg sets the value of register i (0-7=D0-D7, 8-15=A0-A7).
-func (c *CPU) setMovemReg(i uint8, value uint32) {
+func (cpu *CPU) setMovemReg(i uint8, value uint32) {
 	if i < 8 {
-		c.D[i] = value
+		cpu.D[i] = value
 	} else {
-		c.setRegA(i-8, value)
+		cpu.setRegA(i-8, value)
 	}
+}
+
+func (cpu *CPU) writeMovePredecrement(reg uint8, value uint32, size OperandSize) error {
+	cpu.setLogicFlags(value, size)
+	cpu.operandPCOffset = 0
+	// MOVE's destination decrement overlaps the next instruction prefetch.
+	cpu.accessCycles += 4
+	if size != SizeLong {
+		cpu.setRegA(reg, cpu.getRegA(reg)-incrementSize(reg, size))
+		return cpu.writeMemory(cpu.getRegA(reg), value, size)
+	}
+	cpu.setRegA(reg, cpu.getRegA(reg)-2)
+	cpu.writeBusWord(cpu.getRegA(reg), uint16(value))
+	cpu.setRegA(reg, cpu.getRegA(reg)-2)
+	cpu.writeBusWord(cpu.getRegA(reg), uint16(value>>16))
+	return nil
 }
 
 func execMOVE(c *CPU, d DecodedOpcode) error {
@@ -35,13 +53,29 @@ func execMOVE(c *CPU, d DecodedOpcode) error {
 		return err
 	}
 
-	dstEA, err := c.decodeEA(d.DstMode, d.DstReg, d.Size)
+	if d.DstMode == 4 {
+		return c.writeMovePredecrement(d.DstReg, src, d.Size)
+	}
+	dstMode := d.DstMode
+	if dstMode == 3 {
+		dstMode = 2
+	}
+	dstEA, err := c.decodeEA(dstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
 	}
 
 	c.setLogicFlags(src, d.Size)
-	return c.writeEA(dstEA, src)
+	if d.DstMode == 7 && d.DstReg == 1 && d.SrcMode >= 2 && (d.SrcMode != 7 || d.SrcReg != 4) {
+		c.operandPCOffset = -4
+	}
+	if err := c.writeEA(dstEA, src); err != nil {
+		return err
+	}
+	if d.DstMode == 3 {
+		c.setRegA(d.DstReg, dstEA.Address+incrementSize(d.DstReg, d.Size))
+	}
+	return nil
 }
 
 // execMOVESpecial handles MOVE to/from SR/CCR/USP.
@@ -67,22 +101,13 @@ func execMOVESpecial(c *CPU, d DecodedOpcode) error {
 		if err != nil {
 			return err
 		}
+		if _, err := c.readEA(dstEA); err != nil {
+			return err
+		}
 		return c.writeEA(dstEA, uint32(sr))
 
-	case 4: // MOVE to CCR
-		srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
-		if err != nil {
-			return err
-		}
-		src, err := c.readEA(srcEA)
-		if err != nil {
-			return err
-		}
-		c.SetCCR(uint8(src))
-		return nil
-
-	case 5: // MOVE to SR
-		if !c.IsSupervisor() {
+	case 4, 5: // MOVE to CCR/SR.
+		if d.Extra == 5 && !c.IsSupervisor() {
 			return c.processException(VectorPrivilege)
 		}
 		srcEA, err := c.decodeEA(d.SrcMode, d.SrcReg, SizeWord)
@@ -93,7 +118,11 @@ func execMOVESpecial(c *CPU, d DecodedOpcode) error {
 		if err != nil {
 			return err
 		}
-		c.SetSR(uint16(src))
+		if d.Extra == 4 {
+			c.SetCCR(uint8(src))
+		} else {
+			c.SetSR(uint16(src))
+		}
 		return nil
 
 	default:
@@ -127,6 +156,7 @@ func execMOVEQ(c *CPU, d DecodedOpcode) error {
 
 func execMOVEM(c *CPU, d DecodedOpcode) error {
 	mask := c.readWord()
+	c.cycles += uint64(bits.OnesCount16(mask)) * sizeCycles(d.Size, 4, 8)
 
 	if d.Extra == 0 {
 		// Register to memory.
@@ -141,7 +171,7 @@ func execMOVEMToMem(c *CPU, d DecodedOpcode, mask uint16) error {
 	if d.DstMode == 4 {
 		// Predecrement mode: register order is reversed (A7 first, D0 last).
 		addr := c.getRegA(d.DstReg)
-		for i := 15; i >= 0; i-- {
+		for i := range 16 {
 			if mask&(1<<uint(i)) == 0 {
 				continue
 			}
@@ -149,7 +179,10 @@ func execMOVEMToMem(c *CPU, d DecodedOpcode, mask uint16) error {
 			addr -= uint32(d.Size)
 			val := c.getMovemReg(15 - uint8(i))
 
-			if err := c.writeMemory(addr, val, d.Size); err != nil {
+			if d.Size == SizeLong {
+				c.writeBusWord(addr+2, uint16(val))
+				c.writeBusWord(addr, uint16(val>>16))
+			} else if err := c.writeMemory(addr, val, d.Size); err != nil {
 				return err
 			}
 		}
@@ -184,6 +217,9 @@ func execMOVEMToReg(c *CPU, d DecodedOpcode, mask uint16) error {
 	ea, err := c.decodeEA(d.SrcMode, d.SrcReg, d.Size)
 	if err != nil {
 		return err
+	}
+	if d.SrcMode == 3 && d.Size == SizeLong {
+		c.setRegA(d.SrcReg, ea.Address+2)
 	}
 
 	addr := ea.Address
@@ -222,13 +258,13 @@ func execMOVEP(c *CPU, d DecodedOpcode) error {
 		val := c.D[d.SrcReg]
 
 		if d.Size == SizeLong {
-			c.bus.Write(addr, uint8(val>>24))
-			c.bus.Write(addr+2, uint8(val>>16))
-			c.bus.Write(addr+4, uint8(val>>8))
-			c.bus.Write(addr+6, uint8(val))
+			c.writeByte(addr, uint8(val>>24))
+			c.writeByte(addr+2, uint8(val>>16))
+			c.writeByte(addr+4, uint8(val>>8))
+			c.writeByte(addr+6, uint8(val))
 		} else {
-			c.bus.Write(addr, uint8(val>>8))
-			c.bus.Write(addr+2, uint8(val))
+			c.writeByte(addr, uint8(val>>8))
+			c.writeByte(addr+2, uint8(val))
 		}
 		return nil
 	}
@@ -238,14 +274,14 @@ func execMOVEP(c *CPU, d DecodedOpcode) error {
 	addr := uint32(int32(c.getRegA(d.SrcReg)) + int32(disp))
 
 	if d.Size == SizeLong {
-		b0 := uint32(c.bus.Read(addr))
-		b1 := uint32(c.bus.Read(addr + 2))
-		b2 := uint32(c.bus.Read(addr + 4))
-		b3 := uint32(c.bus.Read(addr + 6))
+		b0 := uint32(c.readByte(addr))
+		b1 := uint32(c.readByte(addr + 2))
+		b2 := uint32(c.readByte(addr + 4))
+		b3 := uint32(c.readByte(addr + 6))
 		c.D[d.DstReg] = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
 	} else {
-		b0 := uint32(c.bus.Read(addr))
-		b1 := uint32(c.bus.Read(addr + 2))
+		b0 := uint32(c.readByte(addr))
+		b1 := uint32(c.readByte(addr + 2))
 		c.D[d.DstReg] = (c.D[d.DstReg] & 0xFFFF0000) | (b0 << 8) | b1
 	}
 	return nil
@@ -289,7 +325,11 @@ func execPEA(c *CPU, d DecodedOpcode) error {
 
 func execLINK(c *CPU, d DecodedOpcode) error {
 	// Push current An.
-	c.push32(c.getRegA(d.DstReg))
+	value := c.getRegA(d.DstReg)
+	if d.DstReg == 7 {
+		value -= 4
+	}
+	c.push32(value)
 	// An = SP.
 	c.setRegA(d.DstReg, c.sp)
 	// SP += displacement.

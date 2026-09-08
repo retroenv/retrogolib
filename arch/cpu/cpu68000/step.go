@@ -1,6 +1,9 @@
 package cpu68000
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // TraceStep contains all info needed to print a trace step.
 type TraceStep struct {
@@ -10,27 +13,53 @@ type TraceStep struct {
 }
 
 // Step services a pending interrupt, idles while stopped, or executes one instruction.
-func (c *CPU) Step() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (cpu *CPU) Step() error {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
+	defer cpu.synchronizeStackPointer()
 
-	if c.halted {
-		c.cycles += 4
+	cpu.stepCycles = cpu.cycles
+	cpu.instructionPC = cpu.PC
+	cpu.exceptionAccess, cpu.exceptionRaised = false, false
+	cpu.operandPCOffset = -2
+	cpu.accessCycles = 0
+	err := catchAccessFault(cpu.executeStep)
+	var fault *accessError
+	if errors.As(err, &fault) {
+		return cpu.acceptAccessFault(fault)
+	}
+	return err
+}
+
+func (cpu *CPU) synchronizeStackPointer() {
+	if cpu.IsSupervisor() {
+		cpu.SSP = cpu.sp
+	} else {
+		cpu.USP = cpu.sp
+	}
+}
+
+func (cpu *CPU) executeStep() error {
+	if cpu.halted {
+		cpu.cycles += 4
 		return nil
 	}
 
-	if c.checkInterrupts() {
+	if cpu.checkInterrupts() {
 		return nil
 	}
-	if c.stopped {
-		c.cycles += 4
+	if cpu.stopped {
+		cpu.cycles += 4
 		return nil
 	}
 
-	pcBefore := c.PC
+	pcBefore := cpu.PC
 
 	// Fetch and decode the opcode word.
-	opcodeWord := c.readWord()
+	opcodeWord := cpu.readWord()
+	cpu.instructionWord = opcodeWord
+	cpu.accessCycles = 0
+	trace := cpu.sr&MaskTrace != 0
 
 	decoded, err := decodeOpcode(opcodeWord)
 	if err != nil {
@@ -41,30 +70,41 @@ func (c *CPU) Step() error {
 		return fmt.Errorf("%w: 0x%04X at PC=%06X", ErrUnsupportedOpcode, opcodeWord, pcBefore)
 	}
 
-	if c.opts.tracing {
-		c.TraceStep = TraceStep{
+	if cpu.opts.tracing {
+		cpu.TraceStep = TraceStep{
 			PC:     pcBefore,
 			Opcode: decoded,
 			Words:  []uint16{opcodeWord},
 		}
 	}
 
-	c.cycles += uint64(decoded.Timing)
+	cpu.cycles += cpu.instructionCycles(decoded)
 
 	// Execute the instruction via its handler.
 	ins := decoded.Instruction
 	if ins.exec != nil {
-		if err := ins.exec(c, decoded); err != nil {
+		if err := ins.exec(cpu, decoded); err != nil {
 			return fmt.Errorf("executing %s at PC=%06X: %w", ins.Name, pcBefore, err)
 		}
 	}
+	cpu.checkInstructionAddress()
 
 	// Check for trace exception.
-	if c.sr&MaskTrace != 0 {
-		if err := c.processException(VectorTrace); err != nil {
+	if trace && !cpu.exceptionRaised {
+		if err := cpu.processException(VectorTrace); err != nil {
 			return fmt.Errorf("processing trace exception: %w", err)
 		}
 	}
 
 	return nil
+}
+
+func (cpu *CPU) checkInstructionAddress() {
+	if cpu.PC&1 != 0 {
+		// The next instruction prefetch faults before this step retires.
+		target := cpu.PC
+		cpu.PC -= 4
+		cpu.exceptionAccess = true
+		cpu.raiseAccessFault(target, false, programSpace, VectorAddressErr, ErrAddressError)
+	}
 }

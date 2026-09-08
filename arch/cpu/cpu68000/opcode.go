@@ -42,15 +42,13 @@ func decodeOpcode(opcode uint16) (DecodedOpcode, error) {
 
 // decodeLine0 decodes line 0: immediate operations and bit operations.
 func decodeLine0(opcode uint16) (DecodedOpcode, error) {
+	if opcode&0xF138 == 0x0108 {
+		return decodeLine0Movep(opcode)
+	}
 	// Bits 11-8 determine the specific operation.
 	if opcode&0x0100 != 0 {
 		// Bit operations with register (BTST/BCHG/BCLR/BSET Dn,<ea>).
 		return decodeLine0BitReg(opcode)
-	}
-
-	// Check for MOVEP.
-	if opcode&0x0138 == 0x0108 {
-		return decodeLine0Movep(opcode)
 	}
 
 	// Immediate operations.
@@ -105,7 +103,7 @@ func decodeLine0Movep(opcode uint16) (DecodedOpcode, error) {
 		Timing:      16,
 	}
 
-	if dir == 0 {
+	if dir != 0 {
 		// MOVEP Dn,d16(An)
 		d.SrcMode = 0
 		d.SrcReg = uint8(dn)
@@ -524,7 +522,7 @@ func decodeLine8(opcode uint16) (DecodedOpcode, error) {
 	opMode := (opcode >> 6) & 7
 
 	// SBCD
-	if opMode == 4 {
+	if opcode&0xF1F0 == 0x8100 {
 		return DecodedOpcode{
 			Instruction: insSBCD,
 			Size:        SizeByte,
@@ -594,7 +592,7 @@ func decodeLine9(opcode uint16) (DecodedOpcode, error) {
 func decodeLineA(opcode uint16) (DecodedOpcode, error) {
 	return DecodedOpcode{
 		Instruction: insILLEGAL,
-		Extra:       opcode & 0x0FFF,
+		Extra:       opcode,
 		Timing:      34,
 	}, nil
 }
@@ -670,12 +668,12 @@ func decodeLineC(opcode uint16) (DecodedOpcode, error) {
 	reg := opcode & 7
 	opMode := (opcode >> 6) & 7
 
-	switch opMode {
-	case 4: // ABCD
+	switch {
+	case opcode&0xF1F0 == 0xC100:
 		return DecodedOpcode{Instruction: insABCD, Size: SizeByte, SrcReg: uint8(reg), DstReg: uint8(dn), Extra: opcode & 0x8, Timing: 6}, nil
-	case 3: // MULU
+	case opMode == 3: // MULU
 		return DecodedOpcode{Instruction: insMULU, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(dn), Timing: 70}, nil
-	case 7: // MULS
+	case opMode == 7: // MULS
 		return DecodedOpcode{Instruction: insMULS, Size: SizeWord, SrcMode: uint8(mode), SrcReg: uint8(reg), DstReg: uint8(dn), Timing: 70}, nil
 	}
 
@@ -844,7 +842,7 @@ func decodeLineEMemory(opcode uint16) (DecodedOpcode, error) {
 func decodeLineF(opcode uint16) (DecodedOpcode, error) {
 	return DecodedOpcode{
 		Instruction: insILLEGAL,
-		Extra:       opcode & 0x0FFF,
+		Extra:       opcode,
 		Timing:      34,
 	}, nil
 }

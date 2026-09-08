@@ -3,11 +3,11 @@ package cpu68000
 // Shift and rotate instructions: ASL, ASR, LSL, LSR, ROL, ROR, ROXL, ROXR.
 
 // shiftCount returns the shift/rotate count from the opcode extra field.
-func (c *CPU) shiftCount(d DecodedOpcode) uint32 {
+func (cpu *CPU) shiftCount(d DecodedOpcode) uint32 {
 	count := uint32(d.Extra & 7)
 	if d.Extra&0x20 != 0 {
 		// Count from register.
-		count = c.D[d.Extra&7] % 64
+		count = cpu.D[d.Extra&7] % 64
 	} else if count == 0 {
 		count = 8
 	}
@@ -15,20 +15,20 @@ func (c *CPU) shiftCount(d DecodedOpcode) uint32 {
 }
 
 // shiftMemory performs a memory shift/rotate operation.
-func (c *CPU) shiftMemory(d DecodedOpcode, op func(uint32) uint32) error {
-	ea, err := c.decodeEA(d.DstMode, d.DstReg, SizeWord)
+func (cpu *CPU) shiftMemory(d DecodedOpcode, op func(uint32) uint32) error {
+	ea, err := cpu.decodeEA(d.DstMode, d.DstReg, SizeWord)
 	if err != nil {
 		return err
 	}
-	val, err := c.readEA(ea)
+	val, err := cpu.readEA(ea)
 	if err != nil {
 		return err
 	}
 
 	result := op(val)
-	c.setFlagN(result, SizeWord)
-	c.setFlagZ(result, SizeWord)
-	return c.writeEA(ea, result)
+	cpu.setFlagN(result, SizeWord)
+	cpu.setFlagZ(result, SizeWord)
+	return cpu.writeEA(ea, result)
 }
 
 func execASL(c *CPU, d DecodedOpcode) error {
