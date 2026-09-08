@@ -2,10 +2,13 @@ package cpu65816
 
 import "fmt"
 
-// Step executes the next instruction and returns any error.
+// Step services a pending interrupt or executes the next instruction.
 func (c *CPU) Step() error {
 	if c.stopped {
 		return nil // STP: halted until RESET
+	}
+	if c.CheckInterrupts() {
+		return nil
 	}
 	if c.waiting {
 		return nil // WAI: waiting for interrupt

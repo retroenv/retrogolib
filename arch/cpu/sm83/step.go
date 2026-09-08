@@ -15,13 +15,14 @@ type TraceStep struct {
 	CustomData string // custom data field that can be used in the pre execution hook
 }
 
-// Step executes the next instruction in the CPU.
+// Step services a pending interrupt, idles while halted, or executes one instruction.
 func (c *CPU) Step() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Handle interrupts first
-	c.HandleInterrupts()
+	if c.handleInterrupts() {
+		return nil
+	}
 
 	if c.halted {
 		// CPU is halted, just advance cycles
@@ -51,14 +52,8 @@ func (c *CPU) Step() error {
 	}
 
 	// Enable IME after instruction if EI was the previous instruction
-	if pendingIME {
+	if pendingIME && opcode.Instruction != DiInst {
 		c.ime = true
-	}
-
-	// Handle HALT bug: if HALT bug is active, PC doesn't increment
-	if c.haltBug {
-		c.haltBug = false
-		c.PC = oldPC
 	}
 
 	return nil
@@ -98,10 +93,16 @@ func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) e
 
 // decodeNextInstruction decodes the current instruction at the program counter.
 func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
+	fetchPC := c.PC
 	opcodeByte := c.memory.Read(c.PC)
+	if c.haltBug {
+		// Suppress this fetch's increment; operands start at the opcode address.
+		c.PC--
+		c.haltBug = false
+	}
 
 	if opcodeByte == PrefixCB {
-		return c.decodeCBInstruction()
+		return c.decodeCBInstruction(fetchPC)
 	}
 
 	opcode := Opcodes[opcodeByte]
@@ -111,7 +112,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 
 	if c.opts.tracing {
 		c.TraceStep = TraceStep{
-			PC:             c.PC,
+			PC:             fetchPC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{opcodeByte},
 		}
@@ -120,7 +121,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 }
 
 // decodeCBInstruction decodes CB-prefixed instructions (bit operations).
-func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
+func (c *CPU) decodeCBInstruction(fetchPC uint16) (Opcode, uint8, error) {
 	opcodeByte := c.memory.Read(c.PC + 1)
 
 	opcode := CBOpcodes[opcodeByte]
@@ -130,7 +131,7 @@ func (c *CPU) decodeCBInstruction() (Opcode, uint8, error) {
 
 	if c.opts.tracing {
 		c.TraceStep = TraceStep{
-			PC:             c.PC,
+			PC:             fetchPC,
 			Opcode:         opcode,
 			OpcodeOperands: []byte{PrefixCB, opcodeByte},
 		}

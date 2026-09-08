@@ -21,7 +21,8 @@ type State struct {
 	Cycles uint64
 }
 
-// CPU represents a thread-safe WDC 65C816 microprocessor.
+// CPU represents a WDC 65C816 microprocessor.
+// Interrupt triggers may run concurrently with Step; callers must serialize all other access.
 type CPU struct {
 	mu sync.RWMutex
 

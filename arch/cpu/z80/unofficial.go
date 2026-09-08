@@ -24,27 +24,20 @@ var SLL = &Instruction{
 	ParamFunc: sll,
 }
 
-// INF/OUTF - Undocumented port instructions
-// These behave like INI/IND/OUTI/OUTD but affect flags differently
-
-// INF - Input and decrement with different flag behavior
+// INF is the INF mnemonic for IN F,(C): read the port into flags and discard the data.
 var INF = &Instruction{
 	Name:       InfName,
 	Unofficial: true,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0xAA, Size: 2, Cycles: 16}, // ED AA
-	},
-	NoParamFunc: inf,
+	Addressing: EdInFC.Addressing,
+	ParamFunc:  edInFC,
 }
 
-// OUTF - Output and decrement with different flag behavior
+// OUTF is the OUTF mnemonic for OUT (C),0: write zero without changing flags.
 var OUTF = &Instruction{
 	Name:       OutfName,
 	Unofficial: true,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0xAB, Size: 2, Cycles: 16}, // ED AB
-	},
-	NoParamFunc: outf,
+	Addressing: EdOut0C.Addressing,
+	ParamFunc:  edOut0C,
 }
 
 // Undocumented flag effects for various instructions
@@ -134,52 +127,6 @@ func sll(c *CPU, params ...any) error {
 	c.setSZP(result)
 	c.setH(false)
 	c.setN(false)
-
-	return nil
-}
-
-// inf performs input and decrement (undocumented port instruction)
-func inf(c *CPU) error {
-	// Read from port C into memory location (HL)
-	value := c.readPort(c.bc())
-	address := uint16(c.H)<<8 | uint16(c.L)
-	c.bus.Write(address, value)
-
-	// Decrement HL
-	hl := address - 1
-	c.H = uint8(hl >> 8)
-	c.L = uint8(hl & 0xFF)
-
-	// Decrement B
-	c.B--
-
-	// Set flags (undocumented behavior may differ from documented INI/IND)
-	setFlag(&c.Flags.Z, c.B == 0)
-	c.setN(true)
-
-	return nil
-}
-
-// outf performs output and decrement (undocumented port instruction)
-func outf(c *CPU) error {
-	// Read from memory location (HL)
-	address := uint16(c.H)<<8 | uint16(c.L)
-	value := c.bus.Read(address)
-
-	// Output to port C
-	c.writePort(c.bc(), value)
-
-	// Decrement HL
-	hl := address - 1
-	c.H = uint8(hl >> 8)
-	c.L = uint8(hl & 0xFF)
-
-	// Decrement B
-	c.B--
-
-	// Set flags (undocumented behavior may differ from documented OUTI/OUTD)
-	setFlag(&c.Flags.Z, c.B == 0)
-	c.setN(true)
 
 	return nil
 }

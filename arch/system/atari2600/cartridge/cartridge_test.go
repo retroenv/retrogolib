@@ -89,7 +89,7 @@ func TestLoadBankedROMs(t *testing.T) {
 		{"12K FA", atari2600.CartridgeSize12K, SchemeFA, 3},
 		{"16K F6", atari2600.CartridgeSize16K, SchemeF6, 4},
 		{"32K F4", atari2600.CartridgeSize32K, SchemeF4, 8},
-		{"64K 3F", atari2600.CartridgeSize64K, Scheme3F, 16},
+		{"64K 3F", atari2600.CartridgeSize64K, Scheme3F, 32},
 	}
 
 	for _, tt := range tests {
@@ -218,7 +218,8 @@ func TestTriggerBank3F(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, cart.TriggerBank(0x003F))
-	assert.Equal(t, -1, cart.TriggerBank(0x003E)) // not the trigger
+	assert.Equal(t, 0, cart.TriggerBank(0x003E)) // All writes through $3F select a bank.
+	assert.Equal(t, 0, cart.TriggerBank(0x0000))
 	assert.Equal(t, -1, cart.TriggerBank(0x0040)) // not the trigger
 }
 
@@ -245,4 +246,26 @@ func TestBankingSchemeString(t *testing.T) {
 	assert.Equal(t, "F4", SchemeF4.String())
 	assert.Equal(t, "3F", Scheme3F.String())
 	assert.Equal(t, "BankingScheme(99)", BankingScheme(99).String())
+}
+
+func TestBankOffset3F(t *testing.T) {
+	// 3F divides the cartridge window into 2 KB segments, not 4 KB banks.
+	cart, err := Load(bytes.NewReader(make([]byte, atari2600.CartridgeSize64K)))
+	assert.NoError(t, err)
+	offset, err := cart.BankOffset(1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0x800, offset)
+	offset, err = cart.BankOffset(31)
+	assert.NoError(t, err)
+	assert.Equal(t, 0xF800, offset)
+	_, err = cart.BankOffset(32)
+	assert.Error(t, err)
+}
+
+func TestTriggerBankAddressMirror(t *testing.T) {
+	// Hotspots are decoded on the 6507's 13-bit bus, including high CPU addresses.
+	cart, err := Load(bytes.NewReader(make([]byte, atari2600.CartridgeSize8K)))
+	assert.NoError(t, err)
+	assert.Equal(t, 0, cart.TriggerBank(0xFFF8))
+	assert.Equal(t, 1, cart.TriggerBank(0xFFF9))
 }

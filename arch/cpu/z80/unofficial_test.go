@@ -95,13 +95,14 @@ func TestUndocumentedInstructionMap(t *testing.T) {
 
 func TestUndocumentedPortInstructionDefinitions(t *testing.T) {
 	t.Parallel()
+	// INF/OUTF used to encode IND/OUTD and modify B, HL, and memory instead.
 
 	tests := []struct {
 		instruction *Instruction
 		opcode      byte
 	}{
-		{instruction: INF, opcode: 0xAA},
-		{instruction: OUTF, opcode: 0xAB},
+		{instruction: INF, opcode: 0x70},
+		{instruction: OUTF, opcode: 0x71},
 	}
 
 	for _, test := range tests {
@@ -109,7 +110,21 @@ func TestUndocumentedPortInstructionDefinitions(t *testing.T) {
 		assert.Equal(t, PrefixED, info.Prefix)
 		assert.Equal(t, test.opcode, info.Opcode)
 		assert.Equal(t, byte(2), info.Size)
+		assert.Equal(t, byte(12), info.Cycles)
+		assert.Equal(t, info, EDOpcodes[test.opcode].Instruction.Addressing[ImpliedAddressing])
 		assert.True(t, test.instruction.Unofficial)
+
+		memory := NewBasicMemory()
+		cpu, err := New(memory)
+		assert.NoError(t, err)
+		cpu.B, cpu.C, cpu.H, cpu.L = 2, 3, 4, 5
+		cpu.Flags.C = 1
+		assert.NotNil(t, test.instruction.ParamFunc)
+		assert.NoError(t, test.instruction.ParamFunc(cpu))
+		assert.Equal(t, uint16(0x0203), cpu.BC())
+		assert.Equal(t, uint16(0x0405), cpu.HL())
+		assert.Equal(t, byte(0), memory.Read(0x0405))
+		assert.Equal(t, byte(1), cpu.Flags.C)
 	}
 }
 

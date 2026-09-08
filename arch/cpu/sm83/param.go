@@ -35,8 +35,7 @@ func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, error) {
 
 // readImmediateParam reads an 8-bit or 16-bit immediate value based on instruction size.
 func readImmediateParam(c *CPU) ([]any, []byte, error) {
-	opcode := c.memory.Read(c.PC)
-	opcodeInfo := Opcodes[opcode]
+	opcodeInfo := Opcodes[c.currentOpcode]
 
 	if opcodeInfo.Size == 3 {
 		// 16-bit immediate (3-byte instruction: opcode + low byte + high byte)

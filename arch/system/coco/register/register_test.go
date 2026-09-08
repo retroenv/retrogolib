@@ -31,5 +31,27 @@ func TestPIA1RegisterCompleteness(t *testing.T) {
 func TestSAMRegisterRange(t *testing.T) {
 	// SAM registers span $FFC0-$FFDF (32 bytes)
 	assert.Equal(t, uint16(0xFFC0), uint16(SAMV0Clear))
-	assert.Equal(t, uint16(0xFFDF), uint16(SAMRateSet))
+	assert.Equal(t, uint16(0xFFDF), uint16(SAMTYSet))
+}
+
+func TestSAMControlAddresses(t *testing.T) {
+	// TY at $FFDE/$FFDF changes the memory map, not CPU speed. Rate uses R0/R1.
+	tests := []struct {
+		name                     string
+		clearAddress, setAddress uint16
+		wantClear                uint16
+	}{
+		{name: "rate R0", clearAddress: SAMR0Clear, setAddress: SAMR0Set, wantClear: 0xFFD6},
+		{name: "rate R1", clearAddress: SAMR1Clear, setAddress: SAMR1Set, wantClear: 0xFFD8},
+		{name: "memory size M0", clearAddress: SAMM0Clear, setAddress: SAMM0Set, wantClear: 0xFFDA},
+		{name: "memory size M1", clearAddress: SAMM1Clear, setAddress: SAMM1Set, wantClear: 0xFFDC},
+		{name: "memory map TY", clearAddress: SAMTYClear, setAddress: SAMTYSet, wantClear: 0xFFDE},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.wantClear, tt.clearAddress)
+			assert.Equal(t, tt.wantClear+1, tt.setAddress)
+		})
+	}
 }

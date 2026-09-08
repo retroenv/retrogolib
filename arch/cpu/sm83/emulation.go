@@ -17,8 +17,12 @@ func nop(_ *CPU) error {
 	return nil
 }
 
-// halt halts the CPU.
+// halt waits for an interrupt, or suppresses the next fetch increment if one is pending.
 func halt(c *CPU) error {
+	if !c.ime && c.memory.Read(AddrIE)&c.memory.Read(AddrIF)&0x1F != 0 {
+		c.haltBug = true
+		return nil
+	}
 	c.halted = true
 	return nil
 }

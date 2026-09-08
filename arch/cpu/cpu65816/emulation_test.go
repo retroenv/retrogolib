@@ -947,13 +947,10 @@ func TestWAI_HaltsAndResumes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, beforePC, cpu.PC)
 
-	// TriggerNMI clears waiting and queues interrupt
+	// Step releases WAI and services the queued NMI before fetching an opcode.
 	cpu.TriggerNMI()
+	assert.NoError(t, cpu.Step())
 	assert.False(t, cpu.waiting)
-
-	// CheckInterrupts dispatches the NMI (separate from Step in this emulator)
-	handled := cpu.CheckInterrupts()
-	assert.True(t, handled)
 	assert.Equal(t, uint16(0x9000), cpu.PC)
 }
 

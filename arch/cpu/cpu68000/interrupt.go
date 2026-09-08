@@ -26,9 +26,15 @@ const (
 	VectorTrap15      = 47 // TRAP #15
 )
 
-// TriggerIRQ triggers a maskable interrupt at the given level (1-7).
-func (c *CPU) TriggerIRQ(_ uint8) {
-	// IRQ level is read from bus on each step.
+// TriggerIRQ queues an interrupt at level 1-7; level 7 is non-maskable.
+// The highest requested level remains pending until accepted. Other values are ignored.
+func (c *CPU) TriggerIRQ(level uint8) {
+	if level == 0 || level > 7 {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.pendingIRQ = max(c.pendingIRQ, level)
 }
 
 // processException processes an exception with the given vector number.
@@ -94,7 +100,7 @@ func (c *CPU) processInterruptException(level uint8) {
 // checkInterrupts checks for pending interrupts and processes them.
 // Returns true if an interrupt was processed.
 func (c *CPU) checkInterrupts() bool {
-	level := c.bus.IRQLevel()
+	level := max(c.bus.IRQLevel(), c.pendingIRQ)
 	if level == 0 {
 		return false
 	}
@@ -106,6 +112,9 @@ func (c *CPU) checkInterrupts() bool {
 		return false
 	}
 
+	if level == c.pendingIRQ {
+		c.pendingIRQ = 0
+	}
 	c.processInterruptException(level)
 	return true
 }

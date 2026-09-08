@@ -37,6 +37,12 @@ var interruptVectors = [5]uint16{
 // Called at the beginning of each Step.
 // Returns true if an interrupt was serviced.
 func (c *CPU) HandleInterrupts() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.handleInterrupts()
+}
+
+func (c *CPU) handleInterrupts() bool {
 	ie := c.memory.Read(AddrIE)
 	ifReg := c.memory.Read(AddrIF)
 	pending := ie & ifReg & 0x1F
@@ -46,15 +52,7 @@ func (c *CPU) HandleInterrupts() bool {
 	}
 
 	// Any pending interrupt wakes the CPU from HALT, even if IME is disabled.
-	if c.halted {
-		c.halted = false
-		// HALT bug: if IME is disabled and there's a pending interrupt,
-		// the next instruction's first byte is read twice.
-		if !c.ime {
-			c.haltBug = true
-			return false
-		}
-	}
+	c.halted = false
 
 	if !c.ime {
 		return false
@@ -66,6 +64,11 @@ func (c *CPU) HandleInterrupts() bool {
 		if pending&bit != 0 {
 			c.ime = false
 			c.imeDelay = false
+			if c.haltBug {
+				// EI; HALT returns to HALT when its delayed enable accepts an interrupt.
+				c.PC--
+				c.haltBug = false
+			}
 
 			// Clear the interrupt flag.
 			c.memory.Write(AddrIF, ifReg&^bit)

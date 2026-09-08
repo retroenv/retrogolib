@@ -489,14 +489,20 @@ var EdOtdr = &Instruction{
 var EdInFC = &Instruction{
 	Name:       InName,
 	Unofficial: true,
-	ParamFunc:  edInFC,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0x70, Size: 2, Cycles: 12},
+	},
+	ParamFunc: edInFC,
 }
 
 // EdOut0C outputs 0 to port C (OUT (C),0, ED prefix, undocumented).
 var EdOut0C = &Instruction{
 	Name:       OutName,
 	Unofficial: true,
-	ParamFunc:  edOut0C,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ImpliedAddressing: {Prefix: PrefixED, Opcode: 0x71, Size: 2, Cycles: 12},
+	},
+	ParamFunc: edOut0C,
 }
 
 // EdNop is an undocumented ED NOP instruction.

@@ -32,9 +32,10 @@ type CPU struct {
 
 	Flags Flags // CCR flags
 
-	cycles  uint64
-	halted  bool
-	stopped bool // STOP instruction state
+	cycles     uint64
+	halted     bool
+	stopped    bool  // STOP instruction state
+	pendingIRQ uint8 // Highest queued interrupt request, retained while masked.
 
 	sr  uint16 // Status register system byte (high byte)
 	bus Bus

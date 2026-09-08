@@ -71,16 +71,16 @@ func (mem *BasicMemory) Read(address uint32) uint8 {
 // ReadWord reads a 16-bit word from memory at the given address (big-endian).
 func (mem *BasicMemory) ReadWord(address uint32) uint16 {
 	addr := address & addressMask
-	return uint16(mem.data[addr])<<8 | uint16(mem.data[addr+1])
+	return uint16(mem.data[addr])<<8 | uint16(mem.data[(addr+1)&addressMask])
 }
 
 // ReadLong reads a 32-bit long word from memory at the given address (big-endian).
 func (mem *BasicMemory) ReadLong(address uint32) uint32 {
 	addr := address & addressMask
 	return uint32(mem.data[addr])<<24 |
-		uint32(mem.data[addr+1])<<16 |
-		uint32(mem.data[addr+2])<<8 |
-		uint32(mem.data[addr+3])
+		uint32(mem.data[(addr+1)&addressMask])<<16 |
+		uint32(mem.data[(addr+2)&addressMask])<<8 |
+		uint32(mem.data[(addr+3)&addressMask])
 }
 
 // Write writes a byte to memory at the given address.
@@ -92,16 +92,16 @@ func (mem *BasicMemory) Write(address uint32, value uint8) {
 func (mem *BasicMemory) WriteWord(address uint32, value uint16) {
 	addr := address & addressMask
 	mem.data[addr] = uint8(value >> 8)
-	mem.data[addr+1] = uint8(value)
+	mem.data[(addr+1)&addressMask] = uint8(value)
 }
 
 // WriteLong writes a 32-bit long word to memory at the given address (big-endian).
 func (mem *BasicMemory) WriteLong(address uint32, value uint32) {
 	addr := address & addressMask
 	mem.data[addr] = uint8(value >> 24)
-	mem.data[addr+1] = uint8(value >> 16)
-	mem.data[addr+2] = uint8(value >> 8)
-	mem.data[addr+3] = uint8(value)
+	mem.data[(addr+1)&addressMask] = uint8(value >> 16)
+	mem.data[(addr+2)&addressMask] = uint8(value >> 8)
+	mem.data[(addr+3)&addressMask] = uint8(value)
 }
 
 // LoadROM loads ROM data into memory starting at address 0.

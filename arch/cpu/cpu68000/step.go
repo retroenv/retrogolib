@@ -9,7 +9,7 @@ type TraceStep struct {
 	Words  []uint16      // Instruction words
 }
 
-// Step executes the next instruction in the CPU.
+// Step services a pending interrupt, idles while stopped, or executes one instruction.
 func (c *CPU) Step() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -19,16 +19,13 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	if c.stopped {
-		c.cycles += 4
-		if c.checkInterrupts() {
-			c.stopped = false
-		}
+	if c.checkInterrupts() {
 		return nil
 	}
-
-	// Check for pending interrupts.
-	c.checkInterrupts()
+	if c.stopped {
+		c.cycles += 4
+		return nil
+	}
 
 	pcBefore := c.PC
 

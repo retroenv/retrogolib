@@ -79,6 +79,7 @@ func (c *CPU) handleNMI(stackState bool) {
 	if stackState {
 		c.Flags.E = 1
 		c.pushEntireState(c.PC)
+		c.cycles += 19
 	}
 	c.Flags.I = 1
 	c.Flags.F = 1
@@ -90,6 +91,7 @@ func (c *CPU) handleFIRQ(stackState bool) {
 		c.Flags.E = 0
 		c.pushS16(c.PC)
 		c.pushS8(c.GetCC())
+		c.cycles += 10
 	}
 	c.Flags.I = 1
 	c.Flags.F = 1
@@ -100,6 +102,7 @@ func (c *CPU) handleIRQ(stackState bool) {
 	if stackState {
 		c.Flags.E = 1
 		c.pushEntireState(c.PC)
+		c.cycles += 19
 	}
 	c.Flags.I = 1
 	c.PC = c.memory.ReadVector(VectorIRQ)

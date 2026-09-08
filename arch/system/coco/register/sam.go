@@ -32,19 +32,19 @@ const (
 	SAMP1Clear = 0xFFD4
 	SAMP1Set   = 0xFFD5
 
-	// RAM size select bits (R0-R1)
+	// CPU rate bits (R1:R0): 00 slow, 01 dual speed, 10/11 fast.
 	SAMR0Clear = 0xFFD6
 	SAMR0Set   = 0xFFD7
 	SAMR1Clear = 0xFFD8
 	SAMR1Set   = 0xFFD9
 
-	// Memory map type (M0-M1)
+	// RAM size bits (M1:M0): 00 4 KB, 01 16 KB, 10 64 KB dynamic, 11 64 KB static.
 	SAMM0Clear = 0xFFDA
 	SAMM0Set   = 0xFFDB
 	SAMM1Clear = 0xFFDC
 	SAMM1Set   = 0xFFDD
 
-	// CPU rate select
-	SAMRateClear = 0xFFDE // Normal speed (0.895 MHz)
-	SAMRateSet   = 0xFFDF // Double speed (1.79 MHz)
+	// Memory map type (TY): RAM/ROM when clear, all RAM when set.
+	SAMTYClear = 0xFFDE
+	SAMTYSet   = 0xFFDF
 )

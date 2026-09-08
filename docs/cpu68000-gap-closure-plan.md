@@ -5,10 +5,11 @@ working.
 
 ## Design Principle
 
-The 68000 implementation is instruction-accurate with full instruction coverage, all 14
-addressing modes, privilege modes, and basic exception handling. The gaps are in exception
-fidelity, alignment checking, and timing accuracy. Each phase is backward-compatible -- the
-existing Memory/Bus interfaces are extended, not replaced.
+The 68000 implementation covers instruction families, effective addressing, privilege
+modes, and basic exception handling, but its SingleStepTests suite still fails. Full
+instruction accuracy is not established. Known gaps include exception fidelity, alignment,
+stack-pointer reporting, BCD/flag behavior, and timing. The phases below aim to preserve the
+existing Memory/Bus interfaces while correcting behavior.
 
 ---
 
@@ -199,18 +200,30 @@ Only needed for:
 
 ## Phase 6: SingleStepTests Integration
 
-### Problem
-The 68000 currently uses hand-written unit tests only. The TomHarte/ProcessorTests project
-provides 73,000+ JSON test vectors generated from MAME's die-accurate 68000 core, serving
-as ground truth for validation.
+### Status: Runner Implemented, Conformance Failing
 
-### Change
-Add a test runner that loads and executes SingleStepTests JSON vectors, similar to the
-approach used for the Z80 and 65816 packages.
+The runner exists in `arch/cpu/cpu68000/singlestep_test.go`, behind the `singlestep`
+build tag. `make -C testdata cpu68000` downloads the vectors, and the root
+`make test-integration` target includes this suite.
 
-### Impact
-This would validate instruction correctness against the most accurate known reference and
-likely uncover edge cases in flag handling, exception behavior, and cycle counts.
+Run it directly with:
+
+```sh
+go test -tags singlestep ./arch/cpu/cpu68000 -run TestSingleStep -count=1 -timeout 120s
+```
+
+The 2026-09-07 review recorded 206,547 passing and 992 failing vectors among 207,539
+executed. The runner stops each file after ten failures; this is not a full-corpus pass
+rate. An overlay using the unchanged `dfc8a64` implementation produced the same counts
+and failure patterns as the review fixes. See [the branch changelog](work-branch-changelog.md)
+for the validation scope.
+
+### Next Work
+
+Use the existing failures to drive the fixes instead of adding another runner. Alongside
+the exception phases, investigate active/saved stack-pointer reporting and BCD/flag
+discrepancies. The runner compares architectural state and memory; it does not yet validate
+the full bus transaction sequence or cycle timing.
 
 ---
 
@@ -223,8 +236,8 @@ likely uncover edge cases in flag handling, exception behavior, and cycle counts
 | 3 | Bus error support | No (optional interface) | Medium | Planned |
 | 4 | Variable cycle timing | No (timing values change) | Low | Planned |
 | 5 | Prefetch queue emulation | No | Low | Deferred |
-| 6 | SingleStepTests integration | No | Medium | Planned |
+| 6 | SingleStepTests integration | No | Medium | Runner implemented; conformance failures remain |
 
-Phases 1-3 would bring retrogolib to parity with Musashi for functional emulation.
-Phase 4 improves timing accuracy. Phase 5 approaches Moira's bus-cycle-exact accuracy.
-Phase 6 provides comprehensive validation against the die-accurate MAME reference.
+Phases 1-3 address exception fidelity. Phase 4 improves timing, and Phase 5 adds prefetch
+behavior. The existing Phase 6 runner supplies regression evidence throughout this work;
+passing it alone will not establish full bus-cycle accuracy.
