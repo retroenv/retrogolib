@@ -6,7 +6,7 @@
 //
 // # Basic Usage
 //
-// Load configuration directly into a struct:
+// Open a configuration file and unmarshal it into a struct:
 //
 //	type AppConfig struct {
 //	    CPU   string `config:"emulation.cpu"`
@@ -15,15 +15,38 @@
 //	}
 //
 //	var cfg AppConfig
-//	if err := config.Load("app.conf", &cfg); err != nil {
+//	document, err := config.Open("app.conf", config.Options{})
+//	if err != nil {
 //	    return err
 //	}
+//	if err := document.Unmarshal(&cfg); err != nil {
+//	    return err
+//	}
+//
+// # Parser Options and Dynamic Entries
+//
+// Open accepts a filename; Parse accepts an io.Reader, including strings.NewReader
+// or bytes.NewReader for in-memory input. Both accept Options, whose zero value
+// retains case-insensitive defaults. Options{CaseSensitive: true} preserves and compares
+// section names, keys, struct tags, and automatic field names exactly.
+//
+// Entries and Sections iterate loaded source entries and headers in file order,
+// with line numbers. They do not expose mutable internal maps or include new
+// fields added by Marshal without a source location.
+//
+// For INI-style symbol files, RawValues retains quotes and escape sequences;
+// CommentPrefixes: ";#" enables either comment character; InlineComments allows
+// trailing comments outside double quotes. LiteralSections exempts selected
+// sections' values from inline comments, using the configured case policy.
+// AllowRepeatedSections permits reopening a section but still rejects duplicate
+// keys. The zero Options value keeps the original parsing behavior. Parse
+// accepts a leading UTF-8 BOM and enforces the existing 10 MiB/100,000-line limits.
 //
 // # Comment Preservation
 //
 // For write operations that preserve comments and formatting:
 //
-//	configObj, err := config.LoadConfig("app.conf")
+//	configObj, err := config.Open("app.conf", config.Options{})
 //	if err != nil {
 //	    return err
 //	}
@@ -133,13 +156,13 @@
 // Required field validation:
 // - Returns UnmarshalError with ErrRequiredField for missing required fields
 // - Works with default values (field is required but uses default if missing)
-// - Validates during Load(), LoadBytes(), and Config.Unmarshal() operations
+// - Validates during Config.Unmarshal()
 // - Provides clear error messages indicating which field and section are missing
 //
 // Example error handling:
 //
 //	var cfg AppConfig
-//	if err := config.Load("app.conf", &cfg); err != nil {
+//	if err := document.Unmarshal(&cfg); err != nil {
 //	    var unmarshalErr *config.UnmarshalError
 //	    if errors.As(err, &unmarshalErr) && errors.Is(unmarshalErr.Err, config.ErrRequiredField) {
 //	        log.Printf("Required field missing: %s in section %s", unmarshalErr.Key, unmarshalErr.Section)

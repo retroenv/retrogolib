@@ -53,6 +53,10 @@ func (c *Config) SaveBytes() ([]byte, error) {
 				if value, exists := section[element.Key]; exists {
 					// Reconstruct line with updated value
 					buf.WriteString(c.formatKeyValue(element.Key, value))
+					if element.InlineComment != "" {
+						buf.WriteByte(' ')
+						buf.WriteString(element.InlineComment)
+					}
 					buf.WriteByte('\n')
 				} else {
 					// Key was removed, skip this line
@@ -70,6 +74,9 @@ func (c *Config) SaveBytes() ([]byte, error) {
 
 // formatKeyValue formats a key-value pair matching original style.
 func (c *Config) formatKeyValue(key string, value Value) string {
+	if c.options.RawValues {
+		return key + " = " + value.Raw
+	}
 	switch value.vtype {
 	case stringType:
 		// Always quote strings to maintain consistency and handle spaces
@@ -85,7 +92,7 @@ func (c *Config) formatKeyValue(key string, value Value) string {
 	case floatType:
 		return fmt.Sprintf("%s = %g", key, value.parsed.(float64))
 	}
-	return fmt.Sprintf("%s = %s", key, value.Raw)
+	return key + " = " + value.Raw
 }
 
 // appendNewContent adds new sections/keys that weren't in the original file.

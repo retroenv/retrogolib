@@ -82,25 +82,25 @@ func (c *Config) parseDottedPath(path string) (section, key string) {
 	// The last part is the key, everything before is the section
 	lastDot := strings.LastIndex(path, ".")
 	if lastDot != -1 {
-		return strings.ToLower(path[:lastDot]), strings.ToLower(path[lastDot+1:])
+		return c.normalizeName(path[:lastDot]), c.normalizeName(path[lastDot+1:])
 	}
 
 	// Fallback to original logic (should not happen since caller checked Contains)
 	pathParts := strings.SplitN(path, ".", 2)
-	return strings.ToLower(pathParts[0]), strings.ToLower(pathParts[1])
+	return c.normalizeName(pathParts[0]), c.normalizeName(pathParts[1])
 }
 
 // parseSimplePath parses a simple path (no dots) into section and key.
 func (c *Config) parseSimplePath(path, parentSection string) (section, key string) {
 	if parentSection != "" {
-		return strings.ToLower(parentSection), strings.ToLower(path)
+		return c.normalizeName(parentSection), c.normalizeName(path)
 	}
-	return "", strings.ToLower(path) // Use empty string for root-level keys
+	return "", c.normalizeName(path) // Use empty string for root-level keys
 }
 
 // generateFieldTag creates an automatic config tag for fields without explicit tags.
 func (c *Config) generateFieldTag(fieldName, parentSection string, isStruct bool) string {
-	fieldNameLower := strings.ToLower(fieldName)
+	fieldNameLower := c.normalizeName(fieldName)
 
 	if isStruct {
 		// For nested structs, return just the field name (section will be combined with parent in unmarshal/marshal logic)
@@ -136,13 +136,13 @@ func (c *Config) unmarshalNestedStruct(field reflect.StructField, fieldValue ref
 	// Handle tag parsing for nested structs
 	if strings.Contains(tag, ".") {
 		// For explicit nested tags like "system.cpu", use the full tag as section name
-		sectionName = strings.ToLower(tag)
+		sectionName = c.normalizeName(tag)
 	} else {
 		// For simple tags (automatic mapping), combine with parent section
 		if parentSection != "" {
-			sectionName = parentSection + "." + strings.ToLower(tag)
+			sectionName = parentSection + "." + c.normalizeName(tag)
 		} else {
-			sectionName = strings.ToLower(tag)
+			sectionName = c.normalizeName(tag)
 		}
 	}
 
@@ -328,13 +328,13 @@ func (c *Config) marshalNestedStruct(field reflect.StructField, fieldValue refle
 	var sectionName string
 	if strings.Contains(tag, ".") {
 		// For explicit nested tags like "system.cpu", use the full tag as section name
-		sectionName = strings.ToLower(tag)
+		sectionName = c.normalizeName(tag)
 	} else {
 		// For simple tags, combine with parent section
 		if parentSection != "" {
-			sectionName = parentSection + "." + strings.ToLower(tag)
+			sectionName = parentSection + "." + c.normalizeName(tag)
 		} else {
-			sectionName = strings.ToLower(tag)
+			sectionName = c.normalizeName(tag)
 		}
 	}
 

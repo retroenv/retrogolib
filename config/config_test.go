@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"strings"
@@ -83,7 +84,7 @@ type AppConfig struct {
 	Debug bool   `config:"app.debug"` // Explicit tag
 }
 
-func TestLoad_Success(t *testing.T) {
+func TestUnmarshal_Success(t *testing.T) {
 	data := `[emulation]
 cpu = "6502"
 speed = 1789773
@@ -96,7 +97,9 @@ timeout = 5.5
 code_base_address = 0x8000`
 
 	var cfg TestConfig
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, "6502", cfg.CPU)
 	assert.Equal(t, 1789773, cfg.Speed)
@@ -105,7 +108,7 @@ code_base_address = 0x8000`
 	assert.Equal(t, 0x8000, cfg.Address)
 }
 
-func TestLoad_NestedStruct(t *testing.T) {
+func TestUnmarshal_NestedStruct(t *testing.T) {
 	data := `[emulation]
 cpu = "6502"
 speed = 1789773
@@ -116,7 +119,9 @@ timeout = 2.5
 port = 8080`
 
 	var cfg NestedConfig
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, "6502", cfg.Emulation.CPU)
 	assert.Equal(t, 1789773, cfg.Emulation.Speed)
@@ -125,7 +130,7 @@ port = 8080`
 	assert.Equal(t, 8080, cfg.Network.Port)
 }
 
-func TestLoadConfig_CommentPreservation(t *testing.T) {
+func TestParse_CommentPreservation(t *testing.T) {
 	data := `# RetroGoLib Configuration
 # Main emulation settings
 
@@ -140,7 +145,7 @@ debug = false
 [network]
 timeout = 5.0`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Check comments are preserved (should be 5: global comments + section comments)
@@ -164,7 +169,7 @@ func TestMarshalUnmarshal_RoundTrip(t *testing.T) {
 	}
 
 	// Create config and marshal
-	config, err := LoadConfigBytes([]byte(`[emulation]
+	config, err := Parse(strings.NewReader(`[emulation]
 cpu = "old"
 speed = 1000
 debug = false
@@ -173,7 +178,7 @@ debug = false
 timeout = 1.0
 
 [nes]
-code_base_address = 0x6000`))
+code_base_address = 0x6000`), Options{})
 	assert.NoError(t, err)
 
 	err = config.Marshal(&original)
@@ -198,7 +203,7 @@ cpu = "6502"
 speed = 1789773
 debug = false`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Modify a value
@@ -238,7 +243,9 @@ func TestUnmarshalError_InvalidType(t *testing.T) {
 name = 42` // Number instead of string
 
 	var cfg InvalidConfig
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 
 	var unmarshalErr *UnmarshalError
 	assert.ErrorAs(t, err, &unmarshalErr)
@@ -252,7 +259,7 @@ func TestParseError_InvalidFormat(t *testing.T) {
 	data := `[emulation]
 invalid line without equals`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 
 	var parseErr *ParseError
 	assert.ErrorAs(t, err, &parseErr)
@@ -269,7 +276,7 @@ bool_true = true
 bool_false = false
 float_val = 3.14159`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	section := config.sections["types"]
@@ -302,7 +309,7 @@ func TestNewContent_Addition(t *testing.T) {
 	data := `[existing]
 old_key = "old_value"`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Add new section and key
@@ -396,7 +403,9 @@ no_default_int = 999`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var cfg DefaultTestConfig
-			err := LoadBytes([]byte(tt.data), &cfg)
+			parsed, err := Parse(strings.NewReader(tt.data), Options{})
+			assert.NoError(t, err)
+			err = parsed.Unmarshal(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, cfg)
 		})
@@ -604,7 +613,9 @@ api_key = "secret123"`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var cfg RequiredTestConfig
-			err := LoadBytes([]byte(tt.data), &cfg)
+			parsed, err := Parse(strings.NewReader(tt.data), Options{})
+			assert.NoError(t, err)
+			err = parsed.Unmarshal(&cfg)
 			assert.NoError(t, err)
 			// Verify required fields are populated
 			assert.NotEmpty(t, cfg.DatabaseURL)
@@ -643,7 +654,9 @@ port = 8080`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var cfg RequiredTestConfig
-			err := LoadBytes([]byte(tt.data), &cfg)
+			parsed, err := Parse(strings.NewReader(tt.data), Options{})
+			assert.NoError(t, err)
+			err = parsed.Unmarshal(&cfg)
 			assert.Error(t, err)
 			var unmarshalErr *UnmarshalError
 			assert.ErrorAs(t, err, &unmarshalErr)
@@ -660,7 +673,9 @@ database_url = "postgres://localhost/test"
 api_key = "secret123"`
 
 	var cfg RequiredTestConfig
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Required fields should be present
@@ -748,7 +763,7 @@ user = "admin"
 password = "secret"
 port = 3306`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 	assert.ErrorIs(t, err, ErrDuplicateSection)
 	assert.ErrorContains(t, err, "section 'database' first defined at line 1")
 }
@@ -761,7 +776,7 @@ key1 = "value1"
 [config]
 key2 = "value2"`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 	assert.ErrorIs(t, err, ErrDuplicateSection)
 	assert.ErrorContains(t, err, "section 'config' first defined at line 1")
 }
@@ -773,7 +788,7 @@ timeout = 30
 retries = 3
 timeout = 60`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 	assert.ErrorIs(t, err, ErrDuplicateKey)
 	assert.ErrorContains(t, err, "key 'timeout' in section 'settings' first defined at line 2")
 }
@@ -788,7 +803,7 @@ version = "1.0"
 host = "localhost"
 port = 5432`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Verify app section
@@ -807,7 +822,7 @@ port = 5432`
 	savedData, err := config.SaveBytes()
 	assert.NoError(t, err)
 
-	reloadedConfig, err := LoadConfigBytes(savedData)
+	reloadedConfig, err := Parse(bytes.NewReader(savedData), Options{})
 	assert.NoError(t, err)
 	assert.Len(t, config.sections, len(reloadedConfig.sections))
 }
@@ -862,7 +877,7 @@ version = "1.0"`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := LoadConfigBytes([]byte(tt.data))
+			_, err := Parse(strings.NewReader(tt.data), Options{})
 			assert.ErrorIs(t, err, ErrDuplicateSection)
 			assert.ErrorContains(t, err, tt.sectionName)
 			assert.ErrorContains(t, err, "first defined at line")
@@ -908,7 +923,7 @@ key = "value2"`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := LoadConfigBytes([]byte(tt.data))
+			_, err := Parse(strings.NewReader(tt.data), Options{})
 			assert.ErrorIs(t, err, ErrDuplicateKey)
 			assert.ErrorContains(t, err, tt.expectedKey)
 			assert.ErrorContains(t, err, tt.section)
@@ -923,7 +938,7 @@ func TestCaseInsensitiveKeys(t *testing.T) {
 Key = "value1"
 KEY = "value2"`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 	assert.ErrorIs(t, err, ErrDuplicateKey)
 	assert.ErrorContains(t, err, "key 'KEY' in section 'test' first defined at line")
 }
@@ -937,7 +952,7 @@ PORT = 5432
 [Logging]
 level = "info"`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Sections are normalized to lowercase
@@ -964,7 +979,7 @@ port = 6379
 [app]
 port = 8080`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Verify same key names in different sections work fine
@@ -1004,7 +1019,7 @@ enabled = true
 ttl = 3600
 max_size = 1000`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Verify all sections loaded correctly
@@ -1048,7 +1063,7 @@ key = "value"`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := LoadConfigBytes([]byte(tt.data))
+			_, err := Parse(strings.NewReader(tt.data), Options{})
 			assert.NoError(t, err)
 		})
 	}
@@ -1062,7 +1077,7 @@ key = "value"
 [valid]
 duplicate = "error"`
 
-	_, err := LoadConfigBytes([]byte(data))
+	_, err := Parse(strings.NewReader(data), Options{})
 	assert.Error(t, err)
 
 	var parseErr *ParseError
@@ -1080,7 +1095,7 @@ func TestSecurityValidation(t *testing.T) {
 			largeData[i] = 'a'
 		}
 
-		_, err := LoadConfigBytes(largeData)
+		_, err := Parse(bytes.NewReader(largeData), Options{})
 		assert.ErrorIs(t, err, ErrConfigTooLarge)
 	})
 
@@ -1092,7 +1107,7 @@ func TestSecurityValidation(t *testing.T) {
 			fmt.Fprintf(&buf, "key%d = value%d\n", i, i)
 		}
 
-		_, err := LoadConfigBytes([]byte(buf.String()))
+		_, err := Parse(strings.NewReader(buf.String()), Options{})
 		assert.ErrorIs(t, err, ErrTooManyLines)
 	})
 
@@ -1100,7 +1115,7 @@ func TestSecurityValidation(t *testing.T) {
 		longName := strings.Repeat("a", maxNameLength+1)
 		data := fmt.Sprintf("[%s]\nkey = value", longName)
 
-		_, err := LoadConfigBytes([]byte(data))
+		_, err := Parse(strings.NewReader(data), Options{})
 		assert.ErrorIs(t, err, ErrSectionNameTooLong)
 	})
 
@@ -1108,7 +1123,7 @@ func TestSecurityValidation(t *testing.T) {
 		longKey := strings.Repeat("a", maxNameLength+1)
 		data := fmt.Sprintf("[section]\n%s = value", longKey)
 
-		_, err := LoadConfigBytes([]byte(data))
+		_, err := Parse(strings.NewReader(data), Options{})
 		assert.ErrorIs(t, err, ErrKeyNameTooLong)
 	})
 }
@@ -1141,7 +1156,9 @@ host = "localhost"`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "test", cfg.Name)
@@ -1181,7 +1198,9 @@ ttl = 3600`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "localhost", cfg.Database.Host)
@@ -1213,7 +1232,9 @@ connection_string = "postgres://localhost/db"`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "web-server", cfg.ServerName)
@@ -1236,7 +1257,9 @@ secret = "should-not-load"`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "test", cfg.Name)
@@ -1259,7 +1282,9 @@ mixedcase = true`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "test", cfg.MyField)
@@ -1360,7 +1385,9 @@ policy = "write-through"`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Verify 3-level deep access
@@ -1378,7 +1405,11 @@ func TestDeepNesting_FourLevels(t *testing.T) {
 	data := getFourLevelTestData()
 	cfg := getFourLevelConfig()
 
-	err := LoadBytes([]byte(data), cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+
+	assert.NoError(t, err)
+
+	err = parsed.Unmarshal(cfg)
 	assert.NoError(t, err)
 
 	verifyFourLevelResults(t, cfg)
@@ -1437,7 +1468,9 @@ decimal = false`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Verify automatic mapping works at all levels
@@ -1459,7 +1492,11 @@ func TestDeepNesting_MixedTagsAndAuto(t *testing.T) {
 	data := getMixedTagsTestData()
 	cfg := getMixedTagsConfig()
 
-	err := LoadBytes([]byte(data), cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+
+	assert.NoError(t, err)
+
+	err = parsed.Unmarshal(cfg)
 	assert.NoError(t, err)
 
 	verifyMixedTagsResults(t, cfg)
@@ -1498,7 +1535,9 @@ level = 2`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Values from config
@@ -1556,7 +1595,9 @@ size = 0x2000`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "NES", cfg.Platform.Name)
@@ -1604,7 +1645,7 @@ func TestDeepNesting_Marshal(t *testing.T) {
 	}
 
 	// Create empty config and marshal struct into it
-	configObj, err := LoadConfigBytes([]byte("# empty config"))
+	configObj, err := Parse(strings.NewReader("# empty config"), Options{})
 	assert.NoError(t, err)
 
 	err = configObj.Marshal(&cfg)
@@ -1666,7 +1707,9 @@ level = "info"`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Verify root-level keys
@@ -1704,7 +1747,9 @@ height = 240`
 	}
 
 	var cfg Config
-	err := LoadBytes([]byte(data), &cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+	assert.NoError(t, err)
+	err = parsed.Unmarshal(&cfg)
 	assert.NoError(t, err)
 
 	// Verify automatic mapping for root-level keys
@@ -1744,7 +1789,7 @@ func TestRootLevelKeysMarshal(t *testing.T) {
 	}
 
 	// Create empty config and marshal struct into it
-	configObj, err := LoadConfigBytes([]byte("# empty config"))
+	configObj, err := Parse(strings.NewReader("# empty config"), Options{})
 	assert.NoError(t, err)
 
 	err = configObj.Marshal(&cfg)
@@ -1774,7 +1819,11 @@ func TestRootLevelKeysIntegration(t *testing.T) {
 	data := getIntegrationTestData()
 	cfg := getIntegrationConfig()
 
-	err := LoadBytes([]byte(data), cfg)
+	parsed, err := Parse(strings.NewReader(data), Options{})
+
+	assert.NoError(t, err)
+
+	err = parsed.Unmarshal(cfg)
 	assert.NoError(t, err)
 
 	verifyIntegrationResults(t, cfg)
@@ -1966,7 +2015,7 @@ func verifyIntegrationResults(t *testing.T, cfg *integrationConfig) {
 func testIntegrationMarshal(t *testing.T, cfg *integrationConfig) {
 	t.Helper()
 	// Test marshaling back
-	configObj, err := LoadConfigBytes([]byte("# empty"))
+	configObj, err := Parse(strings.NewReader("# empty"), Options{})
 	assert.NoError(t, err)
 
 	err = configObj.Marshal(cfg)

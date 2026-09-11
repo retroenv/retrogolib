@@ -10,7 +10,7 @@ import (
 )
 
 // Example demonstrates basic configuration loading.
-func ExampleLoad() {
+func ExampleParse() {
 	configData := `[emulation]
 cpu = "6502"
 speed = 1789773
@@ -27,7 +27,11 @@ code_base_address = 0x8000`
 	}
 
 	var cfg AppConfig
-	if err := config.LoadBytes([]byte(configData), &cfg); err != nil {
+	document, err := config.Parse(strings.NewReader(configData), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document.Unmarshal(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
@@ -38,7 +42,7 @@ code_base_address = 0x8000`
 }
 
 // Example demonstrates nested struct configuration.
-func ExampleLoad_nestedStruct() {
+func ExampleParse_nestedStruct() {
 	configData := `[emulation]
 cpu = "6502"
 speed = 1789773
@@ -63,7 +67,11 @@ output = "console"`
 	}
 
 	var cfg AppConfig
-	if err := config.LoadBytes([]byte(configData), &cfg); err != nil {
+	document, err := config.Parse(strings.NewReader(configData), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document.Unmarshal(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
@@ -85,7 +93,7 @@ speed = 1789773
 debug = false`
 
 	// Load config preserving comments
-	configObj, err := config.LoadConfigBytes([]byte(configData))
+	configObj, err := config.Parse(strings.NewReader(configData), config.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -138,7 +146,7 @@ func ExampleConfig_Marshal_addNew() {
 	configData := `[existing]
 old_key = "old_value"`
 
-	configObj, err := config.LoadConfigBytes([]byte(configData))
+	configObj, err := config.Parse(strings.NewReader(configData), config.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -192,7 +200,11 @@ name = 42` // Number instead of string
 	}
 
 	var cfg Config
-	err := config.LoadBytes([]byte(configData), &cfg)
+	parsed, err := config.Parse(strings.NewReader(configData), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = parsed.Unmarshal(&cfg)
 	if err != nil {
 		var unmarshalErr *config.UnmarshalError
 		if errors.As(err, &unmarshalErr) {
@@ -214,7 +226,7 @@ hex_value = 0xFF00
 boolean = true
 float_val = 3.14159`
 
-	configObj, err := config.LoadConfigBytes([]byte(configData))
+	configObj, err := config.Parse(strings.NewReader(configData), config.Options{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -263,7 +275,11 @@ func ExampleConfig_defaultValues() {
 	emptyConfig := ``
 
 	var cfg1 GameConfig
-	if err := config.LoadBytes([]byte(emptyConfig), &cfg1); err != nil {
+	document1, err := config.Parse(strings.NewReader(emptyConfig), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document1.Unmarshal(&cfg1); err != nil {
 		log.Fatal(err)
 	}
 
@@ -281,7 +297,11 @@ debug = true
 volume = 0.5`
 
 	var cfg2 GameConfig
-	if err := config.LoadBytes([]byte(partialConfig), &cfg2); err != nil {
+	document2, err := config.Parse(strings.NewReader(partialConfig), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document2.Unmarshal(&cfg2); err != nil {
 		log.Fatal(err)
 	}
 
@@ -323,12 +343,15 @@ key = "secret-api-key-123"
 port = 3000`
 
 	var cfg1 ServerConfig
-	if err := config.LoadBytes([]byte(validConfig), &cfg1); err != nil {
+	document1, err := config.Parse(strings.NewReader(validConfig), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document1.Unmarshal(&cfg1); err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Valid config loaded successfully:\n")
-	fmt.Printf("Database: %s\n", cfg1.DatabaseURL)
+	fmt.Printf("Valid config loaded successfully:\nDatabase: %s\n", cfg1.DatabaseURL)
 	fmt.Printf("API Key: %s\n", cfg1.APIKey)
 	fmt.Printf("Port: %d\n", cfg1.Port)
 	fmt.Printf("Debug: %t (optional, zero-value)\n", cfg1.Debug)
@@ -343,7 +366,11 @@ url = "postgres://localhost/myapp"
 port = 3000`
 
 	var cfg2 ServerConfig
-	if err := config.LoadBytes([]byte(invalidConfig), &cfg2); err != nil {
+	document2, err := config.Parse(strings.NewReader(invalidConfig), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document2.Unmarshal(&cfg2); err != nil {
 		var unmarshalErr *config.UnmarshalError
 		if errors.As(err, &unmarshalErr) && errors.Is(unmarshalErr.Err, config.ErrRequiredField) {
 			fmt.Printf("\nRequired field validation failed:\n")
@@ -363,8 +390,8 @@ port = 3000`
 	// Missing field: key in section: api
 }
 
-// ExampleLoad_automaticFieldMapping demonstrates automatic field mapping for untagged fields.
-func ExampleLoad_automaticFieldMapping() {
+// ExampleParse_automaticFieldMapping demonstrates automatic field mapping for untagged fields.
+func ExampleParse_automaticFieldMapping() {
 	configData := `name = "retro-emulator"
 port = 8080
 debug = true
@@ -397,7 +424,11 @@ port = 6379`
 	}
 
 	var cfg AppConfig
-	if err := config.LoadBytes([]byte(configData), &cfg); err != nil {
+	document, err := config.Parse(strings.NewReader(configData), config.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := document.Unmarshal(&cfg); err != nil {
 		log.Fatal(err)
 	}
 

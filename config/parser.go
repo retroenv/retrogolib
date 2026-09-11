@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,10 @@ func (p *parser) parse() error {
 
 	for i, line := range lines {
 		p.line = i + 1
+		// Accept a UTF-8 byte order mark only at the start of the input.
+		if i == 0 {
+			line = strings.TrimPrefix(line, "\uFEFF")
+		}
 		if err := p.parseLine(line); err != nil {
 			return &ParseError{
 				Line: p.line,
@@ -47,6 +52,10 @@ func (p *parser) parse() error {
 func (p *parser) parseLine(line string) error {
 	original := line
 	trimmed := strings.TrimSpace(line)
+	// Ignore trailing header comments when parsing; keep the original line for Save.
+	if strings.HasPrefix(trimmed, "[") && p.config.options.InlineComments {
+		trimmed = stripInlineComment(trimmed, p.config.options.CommentPrefixes)
+	}
 
 	// Track original structure element
 	element := StructureElement{
@@ -59,7 +68,7 @@ func (p *parser) parseLine(line string) error {
 	case trimmed == "":
 		element.Type = emptyLineElement
 
-	case strings.HasPrefix(trimmed, "#"):
+	case strings.ContainsRune(p.config.options.CommentPrefixes, rune(trimmed[0])):
 		element.Type = commentElement
 		comment := Comment{
 			Line:    p.line,
@@ -99,10 +108,9 @@ func (p *parser) parseSection(trimmed string, element *StructureElement) error {
 		return fmt.Errorf("%w: %d characters exceeds limit of %d", ErrSectionNameTooLong, len(sectionName), maxNameLength)
 	}
 
-	// Normalize section name to lowercase for case-insensitive comparison
-	normalizedSection := strings.ToLower(sectionName)
+	normalizedSection := p.config.normalizeName(sectionName)
 	sectionKey := "section:" + normalizedSection
-	if p.seenItems.Contains(sectionKey) {
+	if p.seenItems.Contains(sectionKey) && !p.config.options.AllowRepeatedSections {
 		firstLine := p.itemLines[sectionKey]
 		return fmt.Errorf("%w: section '%s' first defined at line %d", ErrDuplicateSection, sectionName, firstLine)
 	}
@@ -113,6 +121,7 @@ func (p *parser) parseSection(trimmed string, element *StructureElement) error {
 
 	p.currentSection = normalizedSection
 	element.Section = normalizedSection
+	// Reopened sections share their existing values and duplicate-key tracking.
 	if p.config.sections[normalizedSection] == nil {
 		p.config.sections[normalizedSection] = make(Section)
 	}
@@ -143,8 +152,7 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 		sectionName = "" // Use empty string for root-level keys
 	}
 
-	// Normalize key name to lowercase for case-insensitive comparison
-	normalizedKey := strings.ToLower(key)
+	normalizedKey := p.config.normalizeName(key)
 	keyItem := "key:" + sectionName + ":" + normalizedKey
 	if p.seenItems.Contains(keyItem) {
 		firstLine := p.itemLines[keyItem]
@@ -161,6 +169,16 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 	element.Key = normalizedKey
 	element.Section = sectionName
 
+	// Literal sections keep comment characters in values, using the configured case policy.
+	if p.config.options.InlineComments && !slices.ContainsFunc(p.config.options.LiteralSections, func(section string) bool {
+		return p.config.normalizeName(section) == sectionName
+	}) {
+
+		clean := stripInlineComment(valueStr, p.config.options.CommentPrefixes)
+		// Retain the removed suffix so Save can restore the trailing comment.
+		element.InlineComment = strings.TrimSpace(valueStr[len(clean):])
+		valueStr = clean
+	}
 	value, err := p.parseValue(valueStr)
 	if err != nil {
 		return fmt.Errorf("parsing value for key %s: %w", key, err)
@@ -176,6 +194,9 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 
 // parseValue parses a configuration value and determines its type.
 func (p *parser) parseValue(valueStr string) (Value, error) {
+	if p.config.options.RawValues {
+		return Value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
+	}
 	if valueStr == "" {
 		return Value{Raw: "", parsed: "", vtype: stringType}, nil
 	}
@@ -216,4 +237,27 @@ func (p *parser) parseValue(valueStr string) (Value, error) {
 
 	// Default to string
 	return Value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
+}
+
+// stripInlineComment trims whitespace and removes comments outside double quotes.
+// Within quotes, a backslash escapes the next character, including another quote.
+func stripInlineComment(value, prefixes string) string {
+	quoted, escaped := false, false
+	for i, ch := range value {
+		if escaped {
+			escaped = false
+			continue
+		}
+		if quoted && ch == '\\' {
+			escaped = true
+			continue
+		}
+		if ch == '"' {
+			quoted = !quoted
+		}
+		if !quoted && strings.ContainsRune(prefixes, ch) {
+			return strings.TrimSpace(value[:i])
+		}
+	}
+	return strings.TrimSpace(value)
 }
