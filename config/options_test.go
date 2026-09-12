@@ -107,7 +107,10 @@ func TestRawINIOptions(t *testing.T) {
 
 func TestInlineCommentQuotes(t *testing.T) {
 	cfg, err := Parse(strings.NewReader("Text = \"quoted \\\"; # retained\" ; discarded"),
-		Options{CommentPrefixes: ";#", InlineComments: true})
+		Options{
+			CommentPrefixes: ";#",
+			InlineComments:  true,
+		})
 	assert.NoError(t, err)
 	assert.Equal(t, `quoted "; # retained`, slices.Collect(cfg.Entries())[0].Value.Raw)
 	for _, input := range []string{"; unsupported by default", "[A] ; unsupported by default"} {

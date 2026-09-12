@@ -371,7 +371,11 @@ func (c *Config) marshalSimpleField(field reflect.StructField, fieldValue reflec
 func (c *Config) parseDefaultValue(defaultStr string, fieldType reflect.Type) (Value, error) {
 	switch fieldType.Kind() {
 	case reflect.String:
-		return Value{Raw: defaultStr, parsed: defaultStr, vtype: stringType}, nil
+		return Value{
+			Raw:    defaultStr,
+			parsed: defaultStr,
+			vtype:  stringType,
+		}, nil
 
 	case reflect.Int, reflect.Int32, reflect.Int64:
 		// Check for hex format first
@@ -380,28 +384,44 @@ func (c *Config) parseDefaultValue(defaultStr string, fieldType reflect.Type) (V
 			if err != nil {
 				return Value{}, fmt.Errorf("invalid hex default value %q: %w", defaultStr, err)
 			}
-			return Value{Raw: defaultStr, parsed: int(parsed), vtype: hexType}, nil
+			return Value{
+				Raw:    defaultStr,
+				parsed: int(parsed),
+				vtype:  hexType,
+			}, nil
 		}
 		// Regular integer
 		parsed, err := strconv.ParseInt(defaultStr, 10, 64)
 		if err != nil {
 			return Value{}, fmt.Errorf("invalid int default value %q: %w", defaultStr, err)
 		}
-		return Value{Raw: defaultStr, parsed: int(parsed), vtype: intType}, nil
+		return Value{
+			Raw:    defaultStr,
+			parsed: int(parsed),
+			vtype:  intType,
+		}, nil
 
 	case reflect.Bool:
 		parsed, err := strconv.ParseBool(defaultStr)
 		if err != nil {
 			return Value{}, fmt.Errorf("invalid bool default value %q: %w", defaultStr, err)
 		}
-		return Value{Raw: defaultStr, parsed: parsed, vtype: boolType}, nil
+		return Value{
+			Raw:    defaultStr,
+			parsed: parsed,
+			vtype:  boolType,
+		}, nil
 
 	case reflect.Float32, reflect.Float64:
 		parsed, err := strconv.ParseFloat(defaultStr, 64)
 		if err != nil {
 			return Value{}, fmt.Errorf("invalid float default value %q: %w", defaultStr, err)
 		}
-		return Value{Raw: defaultStr, parsed: parsed, vtype: floatType}, nil
+		return Value{
+			Raw:    defaultStr,
+			parsed: parsed,
+			vtype:  floatType,
+		}, nil
 
 	default:
 		return Value{}, fmt.Errorf("unsupported field type for default value: %s", fieldType)
@@ -412,20 +432,48 @@ func (c *Config) parseDefaultValue(defaultStr string, fieldType reflect.Type) (V
 func (c *Config) convertToValue(val any) (Value, error) {
 	switch v := val.(type) {
 	case string:
-		return Value{Raw: v, parsed: v, vtype: stringType}, nil
+		return Value{
+			Raw:    v,
+			parsed: v,
+			vtype:  stringType,
+		}, nil
 	case int:
-		return Value{Raw: strconv.Itoa(v), parsed: v, vtype: intType}, nil
+		return Value{
+			Raw:    strconv.Itoa(v),
+			parsed: v,
+			vtype:  intType,
+		}, nil
 	case int32:
-		return Value{Raw: strconv.Itoa(int(v)), parsed: int(v), vtype: intType}, nil
+		return Value{
+			Raw:    strconv.Itoa(int(v)),
+			parsed: int(v),
+			vtype:  intType,
+		}, nil
 	case int64:
-		return Value{Raw: strconv.Itoa(int(v)), parsed: int(v), vtype: intType}, nil
+		return Value{
+			Raw:    strconv.Itoa(int(v)),
+			parsed: int(v),
+			vtype:  intType,
+		}, nil
 	case bool:
-		return Value{Raw: strconv.FormatBool(v), parsed: v, vtype: boolType}, nil
+		return Value{
+			Raw:    strconv.FormatBool(v),
+			parsed: v,
+			vtype:  boolType,
+		}, nil
 	case float64:
-		return Value{Raw: strconv.FormatFloat(v, 'g', -1, 64), parsed: v, vtype: floatType}, nil
+		return Value{
+			Raw:    strconv.FormatFloat(v, 'g', -1, 64),
+			parsed: v,
+			vtype:  floatType,
+		}, nil
 	case float32:
 		f64 := float64(v)
-		return Value{Raw: strconv.FormatFloat(f64, 'g', -1, 32), parsed: f64, vtype: floatType}, nil
+		return Value{
+			Raw:    strconv.FormatFloat(f64, 'g', -1, 32),
+			parsed: f64,
+			vtype:  floatType,
+		}, nil
 	default:
 		return Value{}, fmt.Errorf("%w: %T", ErrUnsupportedType, val)
 	}

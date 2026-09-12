@@ -20,6 +20,14 @@ type parser struct {
 	itemLines      map[string]int  // Track line numbers for sections and keys
 }
 
+func newValue(raw string, parsed any, valueType ValueType) Value {
+	return Value{
+		Raw:    raw,
+		parsed: parsed,
+		vtype:  valueType,
+	}
+}
+
 // parse parses the configuration data.
 func (p *parser) parse() error {
 	content := string(p.data)
@@ -195,10 +203,10 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 // parseValue parses a configuration value and determines its type.
 func (p *parser) parseValue(valueStr string) (Value, error) {
 	if p.config.options.RawValues {
-		return Value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
+		return newValue(valueStr, valueStr, stringType), nil
 	}
 	if valueStr == "" {
-		return Value{Raw: "", parsed: "", vtype: stringType}, nil
+		return newValue("", "", stringType), nil
 	}
 
 	// Check for quoted string
@@ -207,13 +215,13 @@ func (p *parser) parseValue(valueStr string) (Value, error) {
 		if err != nil {
 			return Value{}, fmt.Errorf("invalid quoted string: %w", err)
 		}
-		return Value{Raw: unquoted, parsed: unquoted, vtype: stringType}, nil
+		return newValue(unquoted, unquoted, stringType), nil
 	}
 
 	// Check for boolean
 	if valueStr == "true" || valueStr == "false" {
 		parsed, _ := strconv.ParseBool(valueStr)
-		return Value{Raw: valueStr, parsed: parsed, vtype: boolType}, nil
+		return newValue(valueStr, parsed, boolType), nil
 	}
 
 	// Check for hexadecimal
@@ -222,21 +230,21 @@ func (p *parser) parseValue(valueStr string) (Value, error) {
 		if err != nil {
 			return Value{}, fmt.Errorf("invalid hex value: %w", err)
 		}
-		return Value{Raw: valueStr, parsed: int(parsed), vtype: hexType}, nil
+		return newValue(valueStr, int(parsed), hexType), nil
 	}
 
 	// Check for integer
 	if intVal, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
-		return Value{Raw: valueStr, parsed: int(intVal), vtype: intType}, nil
+		return newValue(valueStr, int(intVal), intType), nil
 	}
 
 	// Check for float
 	if floatVal, err := strconv.ParseFloat(valueStr, 64); err == nil {
-		return Value{Raw: valueStr, parsed: floatVal, vtype: floatType}, nil
+		return newValue(valueStr, floatVal, floatType), nil
 	}
 
 	// Default to string
-	return Value{Raw: valueStr, parsed: valueStr, vtype: stringType}, nil
+	return newValue(valueStr, valueStr, stringType), nil
 }
 
 // stripInlineComment trims whitespace and removes comments outside double quotes.

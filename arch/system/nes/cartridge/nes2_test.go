@@ -148,7 +148,11 @@ func TestNES2SaveValidation(t *testing.T) {
 
 func TestNES2PromotesLegacyRAM(t *testing.T) {
 	for _, battery := range []byte{0, 1} {
-		cart := &Cartridge{Mapper: 682, RAM: 1, Battery: battery}
+		cart := &Cartridge{
+			Mapper:  682,
+			RAM:     1,
+			Battery: battery,
+		}
 		var output bytes.Buffer
 		assert.NoError(t, cart.Save(&output))
 		loaded, err := LoadFile(bytes.NewReader(output.Bytes()))

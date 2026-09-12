@@ -105,7 +105,13 @@ func (c *Config) Entries() iter.Seq[Entry] {
 				continue
 			}
 			value, ok := c.sections[element.Section][element.Key]
-			if ok && !yield(Entry{Section: element.Section, Key: element.Key, Value: value, Line: element.Line}) {
+			if ok && !yield(Entry{
+				Section: element.Section,
+				Key:     element.Key,
+				Value:   value,
+				Line:    element.Line,
+			}) {
+
 				return
 			}
 		}
@@ -116,7 +122,11 @@ func (c *Config) Entries() iter.Seq[Entry] {
 func (c *Config) Sections() iter.Seq[SectionInfo] {
 	return func(yield func(SectionInfo) bool) {
 		for _, element := range c.structure {
-			if element.Type == sectionElement && !yield(SectionInfo{Name: element.Section, Line: element.Line}) {
+			if element.Type == sectionElement && !yield(SectionInfo{
+				Name: element.Section,
+				Line: element.Line,
+			}) {
+
 				return
 			}
 		}

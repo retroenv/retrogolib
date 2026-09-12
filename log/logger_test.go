@@ -86,7 +86,10 @@ func TestLoggerChildrenPreserveConfiguration(t *testing.T) {
 func TestLoggerLogUsesHandlerAndLevel(t *testing.T) {
 	var buf bytes.Buffer
 	handler := slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: DebugLevel})
-	logger := NewWithConfig(Config{Level: InfoLevel, Handler: handler})
+	logger := NewWithConfig(Config{
+		Level:   InfoLevel,
+		Handler: handler,
+	})
 
 	logger.Log(nil, DebugLevel, "Filtered")
 	logger.Log(nil, InfoLevel, "Visible")
