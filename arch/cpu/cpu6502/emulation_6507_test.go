@@ -182,6 +182,8 @@ func TestVariant6507IrqIsNoOp(t *testing.T) {
 	// TriggerIrq should be a no-op.
 	cpu.TriggerIrq()
 	assert.Equal(t, false, cpu.triggerIrq)
+	cpu.SetIRQ(true)
+	assert.Equal(t, false, cpu.irqLine)
 
 	// CheckInterrupts should not fire.
 	fired := cpu.CheckInterrupts()

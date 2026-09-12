@@ -69,4 +69,26 @@
 // This implementation includes cycle-accurate timing and historically accurate
 // behavior, including the famous JMP ($xxFF) page boundary bug for maximum
 // compatibility with original 6502 software.
+//
+// # Interrupt and Stall Behavior
+//
+// SetIRQ models the level-sensitive IRQ input. The caller keeps the input active
+// until the interrupt source clears it. TriggerIrq queues one request for callers
+// that do not model the input level. TriggerNMI records one edge because NMI is
+// edge-sensitive. CheckInterrupts gives NMI priority and services IRQ only when
+// the interrupt-disable flag is clear.
+//
+// The CPU reads the NMI and IRQ/BRK vectors during each interrupt sequence.
+// This permits mapped memory and interrupt-priority hardware to supply the vector
+// that is active at that time. Hardware interrupts push a status byte with the B
+// bit clear. BRK pushes the B bit set.
+//
+// StallCycles models an external hold, such as RDY or DMA. Each stalled Step
+// advances the cycle count by one without fetching or executing an instruction.
+// Interrupt sampling waits until the stall ends.
+//
+// These rules follow sections 3.4, 3.6, 3.10, and 3.15 and Table 3-1 of the
+// [W65C02S Datasheet].
+//
+// [W65C02S Datasheet]: https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf
 package cpu6502

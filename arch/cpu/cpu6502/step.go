@@ -16,6 +16,13 @@ type TraceStep struct {
 
 // Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
+	if c.stallCycles != 0 {
+		// A hardware hold stops instruction execution while the clock continues.
+		c.stallCycles--
+		c.cycles++
+		return nil
+	}
+
 	c.branchTaken = false
 	oldPC := c.PC
 	opcode, err := c.decodeNextInstruction()

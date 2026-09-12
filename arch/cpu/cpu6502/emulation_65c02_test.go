@@ -458,7 +458,7 @@ func TestInterruptClearsDecimalFlag65C02(t *testing.T) {
 	cpu.SP = 0xFD
 	cpu.Flags.D = 1
 
-	cpu.executeInterrupt(testIrqAddress)
+	cpu.executeInterrupt(IrqAddress)
 
 	assert.Equal(t, 0, cpu.Flags.D) // D flag cleared on 65C02
 	assert.Equal(t, testIrqAddress, cpu.PC)

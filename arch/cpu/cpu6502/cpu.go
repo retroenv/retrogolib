@@ -37,13 +37,10 @@ type CPU struct {
 
 	// Interrupt control
 	triggerIrq bool // IRQ interrupt triggered
-	triggerNmi bool // NMI interrupt triggered
+	irqLine    bool // IRQ input level
 	irqRunning bool // IRQ handler executing
+	triggerNmi bool // NMI interrupt triggered
 	nmiRunning bool // NMI handler executing
-
-	// Interrupt vectors
-	irqAddress uint16 // IRQ/BRK handler address (from $FFFE-$FFFF)
-	nmiAddress uint16 // NMI handler address (from $FFFA-$FFFB)
 
 	opts      Options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
@@ -69,10 +66,7 @@ func New(memory *Memory, options ...Option) *CPU {
 		memory: memory,
 	}
 
-	// read interrupt handler addresses
-	c.nmiAddress = memory.ReadWordBug(NMIAddress)
 	c.PC = memory.ReadWordBug(ResetAddress)
-	c.irqAddress = memory.ReadWordBug(IrqAddress)
 
 	c.setFlags(initialFlags)
 	return c
@@ -83,9 +77,9 @@ func (c *CPU) Cycles() uint64 {
 	return c.cycles
 }
 
-// StallCycles stalls the CPU for the given amount of cycles. This is used for DMA transfer in the PPU.
+// StallCycles adds cycles during which Step does not execute an instruction.
 func (c *CPU) StallCycles(cycles uint16) {
-	c.stallCycles = cycles
+	c.stallCycles += cycles
 }
 
 // State returns the current state of the CPU.
@@ -112,7 +106,7 @@ func (c *CPU) State() State {
 		Interrupts: Interrupts{
 			NMITriggered: c.triggerNmi,
 			NMIRunning:   c.nmiRunning,
-			IrqTriggered: c.triggerIrq,
+			IrqTriggered: c.triggerIrq || c.irqLine,
 			IrqRunning:   c.irqRunning,
 		},
 	}
@@ -142,11 +136,6 @@ func (c *CPU) ValidateState() error {
 		return errors.New("CPU memory is nil")
 	}
 
-	// Validate interrupt addresses are reasonable
-	if c.nmiAddress == 0 && c.irqAddress == 0 {
-		return errors.New("both interrupt vectors are zero")
-	}
-
 	return nil
 }
 
@@ -167,6 +156,7 @@ func (c *CPU) Reset() {
 	// Reset interrupt state
 	c.triggerIrq = false
 	c.triggerNmi = false
+	c.irqLine = false
 	c.irqRunning = false
 	c.nmiRunning = false
 
@@ -174,11 +164,9 @@ func (c *CPU) Reset() {
 	c.cycles = initialCycles
 	c.stallCycles = 0
 
-	// Reload interrupt vectors
+	// Reload the reset vector.
 	if c.memory != nil {
-		c.nmiAddress = c.memory.ReadWordBug(NMIAddress)
 		c.PC = c.memory.ReadWordBug(ResetAddress)
-		c.irqAddress = c.memory.ReadWordBug(IrqAddress)
 	}
 }
 
