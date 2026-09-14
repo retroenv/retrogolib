@@ -11,13 +11,16 @@ import (
 type Cartridge struct {
 	PRG     []byte // PRG-ROM banks
 	CHR     []byte // CHR-ROM banks
-	RAM     byte   // PRG-RAM banks
+	RAM     byte   // Legacy iNES PRG-RAM size in 8 KiB banks; NES 2.0 uses NES2.RAMSizes.
 	Trainer []byte
+
+	// NES2 is nil for legacy iNES files. NES 2.0 RAM sizes are explicit, including zero.
+	NES2 *NES2Metadata
 
 	Mapper      uint16     // mapper type
 	Mirror      MirrorMode // mirroring mode
 	Battery     byte       // battery present
-	VideoFormat byte       // 0 NTSC, 1 PAL
+	VideoFormat byte       // 0 NTSC, 1 PAL, 2 multiple-region, 3 Dendy (NES 2.0).
 }
 
 // New returns a new cartridge.
@@ -31,23 +34,11 @@ func New() *Cartridge {
 	}
 }
 
-// Save the cartridge content in iNES format.
+// Save writes iNES, or NES 2.0 when the cartridge requires its fields or size encodings.
 func (c *Cartridge) Save(writer io.Writer) error {
-	header := header{
-		Magic:       iNESFileMagic,
-		NumPRG:      byte(len(c.PRG) / 16384),
-		NumCHR:      byte(len(c.CHR) / 8192),
-		NumRAM:      c.RAM,
-		VideoFormat: c.VideoFormat,
-	}
-
-	header.Control1, header.Control2 = ControlBytes(c.Battery, byte(c.Mirror), c.Mapper, len(c.Trainer) > 0)
-
-	// iNES 2.0 stores mapper bits 8-11 in header byte 8 low nibble.
-	// High nibble of byte 8 is the submapper number (0 = none).
-	if c.Mapper > 0xFF {
-		header.Control2 = (header.Control2 &^ 0x0C) | 0x08
-		header.NumRAM = byte((c.Mapper >> 8) & 0x0F)
+	header, err := c.fileHeader()
+	if err != nil {
+		return err
 	}
 
 	if err := binary.Write(writer, binary.LittleEndian, header); err != nil {
@@ -67,6 +58,12 @@ func (c *Cartridge) Save(writer io.Writer) error {
 	if len(c.CHR) > 0 {
 		if err := binary.Write(writer, binary.LittleEndian, c.CHR); err != nil {
 			return fmt.Errorf("writing CHR: %w", err)
+		}
+	}
+
+	if c.NES2 != nil {
+		if _, err := writer.Write(c.NES2.MiscROM); err != nil {
+			return fmt.Errorf("writing miscellaneous ROM: %w", err)
 		}
 	}
 

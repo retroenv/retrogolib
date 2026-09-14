@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
@@ -16,7 +17,7 @@ key2 = 42
 # Section comment
 key3 = true`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Check sections exist
@@ -49,7 +50,7 @@ key = value
 
 `
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Should handle empty lines gracefully
@@ -72,7 +73,7 @@ quoted = "hello world"
 with_escapes = "line1\nline2\ttab"
 with_quotes = "say \"hello\""`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	section := config.sections["strings"]
@@ -87,7 +88,7 @@ lowercase = 0xff00
 uppercase = 0xFF00
 mixed = 0xAbCd`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	section := config.sections["hex"]
@@ -106,7 +107,7 @@ scientific = 1.23e-4
 zero = 0.0
 negative = -2.5`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	section := config.sections["floats"]
@@ -125,7 +126,7 @@ func TestParser_BooleanValues(t *testing.T) {
 true_val = true
 false_val = false`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	section := config.sections["booleans"]
@@ -150,7 +151,7 @@ key = "unterminated`},
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := LoadConfigBytes([]byte(tt.data))
+			_, err := Parse(strings.NewReader(tt.data), Options{})
 			assert.Error(t, err)
 		})
 	}
@@ -166,7 +167,7 @@ key1 = value1
 [section2]
 key2 = value2`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Check structure elements are tracked in order
@@ -194,7 +195,7 @@ func TestParser_WhitespaceHandling(t *testing.T) {
    key1   =   value1   
 	key2	=	"value2"	`
 
-	config, err := LoadConfigBytes([]byte(data))
+	config, err := Parse(strings.NewReader(data), Options{})
 	assert.NoError(t, err)
 
 	// Should handle whitespace correctly

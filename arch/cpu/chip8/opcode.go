@@ -82,38 +82,140 @@ var Opcodes = [16][]Opcode{
 }
 
 var (
-	Opcode00E0 = OpcodeInfo{Value: 0x00E0, Mask: 0xFFFF}
-	Opcode00EE = OpcodeInfo{Value: 0x00EE, Mask: 0xFFFF}
-	Opcode1000 = OpcodeInfo{Value: 0x1000, Mask: 0xF000}
-	Opcode2000 = OpcodeInfo{Value: 0x2000, Mask: 0xF000}
-	Opcode3000 = OpcodeInfo{Value: 0x3000, Mask: 0xF000}
-	Opcode4000 = OpcodeInfo{Value: 0x4000, Mask: 0xF000}
-	Opcode5000 = OpcodeInfo{Value: 0x5000, Mask: 0xF00F}
-	Opcode6000 = OpcodeInfo{Value: 0x6000, Mask: 0xF000}
-	Opcode7000 = OpcodeInfo{Value: 0x7000, Mask: 0xF000}
-	Opcode8000 = OpcodeInfo{Value: 0x8000, Mask: 0xF00F}
-	Opcode8001 = OpcodeInfo{Value: 0x8001, Mask: 0xF00F}
-	Opcode8002 = OpcodeInfo{Value: 0x8002, Mask: 0xF00F}
-	Opcode8003 = OpcodeInfo{Value: 0x8003, Mask: 0xF00F}
-	Opcode8004 = OpcodeInfo{Value: 0x8004, Mask: 0xF00F}
-	Opcode8005 = OpcodeInfo{Value: 0x8005, Mask: 0xF00F}
-	Opcode8006 = OpcodeInfo{Value: 0x8006, Mask: 0xF00F}
-	Opcode8007 = OpcodeInfo{Value: 0x8007, Mask: 0xF00F}
-	Opcode800E = OpcodeInfo{Value: 0x800E, Mask: 0xF00F}
-	Opcode9000 = OpcodeInfo{Value: 0x9000, Mask: 0xF00F}
-	OpcodeA000 = OpcodeInfo{Value: 0xA000, Mask: 0xF000}
-	OpcodeB000 = OpcodeInfo{Value: 0xB000, Mask: 0xF000}
-	OpcodeC000 = OpcodeInfo{Value: 0xC000, Mask: 0xF000}
-	OpcodeD000 = OpcodeInfo{Value: 0xD000, Mask: 0xF000}
-	OpcodeE09E = OpcodeInfo{Value: 0xE09E, Mask: 0xF0FF}
-	OpcodeE0A1 = OpcodeInfo{Value: 0xE0A1, Mask: 0xF0FF}
-	OpcodeF007 = OpcodeInfo{Value: 0xF007, Mask: 0xF0FF}
-	OpcodeF00A = OpcodeInfo{Value: 0xF00A, Mask: 0xF0FF}
-	OpcodeF015 = OpcodeInfo{Value: 0xF015, Mask: 0xF0FF}
-	OpcodeF018 = OpcodeInfo{Value: 0xF018, Mask: 0xF0FF}
-	OpcodeF01E = OpcodeInfo{Value: 0xF01E, Mask: 0xF0FF}
-	OpcodeF029 = OpcodeInfo{Value: 0xF029, Mask: 0xF0FF}
-	OpcodeF033 = OpcodeInfo{Value: 0xF033, Mask: 0xF0FF}
-	OpcodeF055 = OpcodeInfo{Value: 0xF055, Mask: 0xF0FF}
-	OpcodeF065 = OpcodeInfo{Value: 0xF065, Mask: 0xF0FF}
+	Opcode00E0 = OpcodeInfo{
+		Value: 0x00E0,
+		Mask:  0xFFFF,
+	}
+	Opcode00EE = OpcodeInfo{
+		Value: 0x00EE,
+		Mask:  0xFFFF,
+	}
+	Opcode1000 = OpcodeInfo{
+		Value: 0x1000,
+		Mask:  0xF000,
+	}
+	Opcode2000 = OpcodeInfo{
+		Value: 0x2000,
+		Mask:  0xF000,
+	}
+	Opcode3000 = OpcodeInfo{
+		Value: 0x3000,
+		Mask:  0xF000,
+	}
+	Opcode4000 = OpcodeInfo{
+		Value: 0x4000,
+		Mask:  0xF000,
+	}
+	Opcode5000 = OpcodeInfo{
+		Value: 0x5000,
+		Mask:  0xF00F,
+	}
+	Opcode6000 = OpcodeInfo{
+		Value: 0x6000,
+		Mask:  0xF000,
+	}
+	Opcode7000 = OpcodeInfo{
+		Value: 0x7000,
+		Mask:  0xF000,
+	}
+	Opcode8000 = OpcodeInfo{
+		Value: 0x8000,
+		Mask:  0xF00F,
+	}
+	Opcode8001 = OpcodeInfo{
+		Value: 0x8001,
+		Mask:  0xF00F,
+	}
+	Opcode8002 = OpcodeInfo{
+		Value: 0x8002,
+		Mask:  0xF00F,
+	}
+	Opcode8003 = OpcodeInfo{
+		Value: 0x8003,
+		Mask:  0xF00F,
+	}
+	Opcode8004 = OpcodeInfo{
+		Value: 0x8004,
+		Mask:  0xF00F,
+	}
+	Opcode8005 = OpcodeInfo{
+		Value: 0x8005,
+		Mask:  0xF00F,
+	}
+	Opcode8006 = OpcodeInfo{
+		Value: 0x8006,
+		Mask:  0xF00F,
+	}
+	Opcode8007 = OpcodeInfo{
+		Value: 0x8007,
+		Mask:  0xF00F,
+	}
+	Opcode800E = OpcodeInfo{
+		Value: 0x800E,
+		Mask:  0xF00F,
+	}
+	Opcode9000 = OpcodeInfo{
+		Value: 0x9000,
+		Mask:  0xF00F,
+	}
+	OpcodeA000 = OpcodeInfo{
+		Value: 0xA000,
+		Mask:  0xF000,
+	}
+	OpcodeB000 = OpcodeInfo{
+		Value: 0xB000,
+		Mask:  0xF000,
+	}
+	OpcodeC000 = OpcodeInfo{
+		Value: 0xC000,
+		Mask:  0xF000,
+	}
+	OpcodeD000 = OpcodeInfo{
+		Value: 0xD000,
+		Mask:  0xF000,
+	}
+	OpcodeE09E = OpcodeInfo{
+		Value: 0xE09E,
+		Mask:  0xF0FF,
+	}
+	OpcodeE0A1 = OpcodeInfo{
+		Value: 0xE0A1,
+		Mask:  0xF0FF,
+	}
+	OpcodeF007 = OpcodeInfo{
+		Value: 0xF007,
+		Mask:  0xF0FF,
+	}
+	OpcodeF00A = OpcodeInfo{
+		Value: 0xF00A,
+		Mask:  0xF0FF,
+	}
+	OpcodeF015 = OpcodeInfo{
+		Value: 0xF015,
+		Mask:  0xF0FF,
+	}
+	OpcodeF018 = OpcodeInfo{
+		Value: 0xF018,
+		Mask:  0xF0FF,
+	}
+	OpcodeF01E = OpcodeInfo{
+		Value: 0xF01E,
+		Mask:  0xF0FF,
+	}
+	OpcodeF029 = OpcodeInfo{
+		Value: 0xF029,
+		Mask:  0xF0FF,
+	}
+	OpcodeF033 = OpcodeInfo{
+		Value: 0xF033,
+		Mask:  0xF0FF,
+	}
+	OpcodeF055 = OpcodeInfo{
+		Value: 0xF055,
+		Mask:  0xF0FF,
+	}
+	OpcodeF065 = OpcodeInfo{
+		Value: 0xF065,
+		Mask:  0xF0FF,
+	}
 )

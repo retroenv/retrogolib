@@ -182,9 +182,21 @@ func TestSetup_GlobalVariable(t *testing.T) {
 }
 
 func TestDimensions_Equality(t *testing.T) {
-	dims1 := gui.Dimensions{Width: 320, Height: 240, ScaleFactor: 2.0}
-	dims2 := gui.Dimensions{Width: 320, Height: 240, ScaleFactor: 2.0}
-	dims3 := gui.Dimensions{Width: 640, Height: 480, ScaleFactor: 1.0}
+	dims1 := gui.Dimensions{
+		Width:       320,
+		Height:      240,
+		ScaleFactor: 2.0,
+	}
+	dims2 := gui.Dimensions{
+		Width:       320,
+		Height:      240,
+		ScaleFactor: 2.0,
+	}
+	dims3 := gui.Dimensions{
+		Width:       640,
+		Height:      480,
+		ScaleFactor: 1.0,
+	}
 
 	assert.Equal(t, dims1, dims2, "Identical dimensions should be equal")
 	assert.NotEqual(t, dims1, dims3, "Different dimensions should not be equal")

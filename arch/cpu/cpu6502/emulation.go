@@ -185,23 +185,21 @@ func bpl(c *CPU, params ...any) error {
 
 // brk - Force Interrupt.
 func brk(c *CPU) error {
-	// BRK is a 2-byte instruction, the second byte is a signature/padding byte
-	c.push16(c.PC + 2) // Push PC+2 to skip the signature byte
-
-	// B exists only in the stacked status value and distinguishes BRK from IRQ/NMI.
-	status := c.GetFlags() | 0b0011_0000
-	c.push(status)
-	c.Flags.I = 1 // Disable interrupts
+	// BRK is a two-byte instruction. The second byte is a signature byte.
+	c.push16(c.PC + 2)
+	// BRK puts a one in the stacked B-bit position without changing Flags.B.
+	flags := c.GetFlags() | 0b0011_0000
+	c.push(flags)
+	c.Flags.I = 1
 
 	// 65C02: Clear D flag after pushing status on BRK
 	if c.opts.variant >= Variant65C02 {
 		c.Flags.D = 0
 	}
 
-	c.PC = c.irqAddress
+	c.PC = c.memory.ReadWord(IrqAddress)
 
 	c.mu.Lock()
-	c.triggerIrq = false
 	c.irqRunning = true
 	c.mu.Unlock()
 	return nil

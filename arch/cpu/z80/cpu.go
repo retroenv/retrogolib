@@ -132,8 +132,11 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 		return nil, ErrNilMemory
 	}
 
-	opts := newOptions(options...)
-	bus := &legacyBusAdapter{Memory: memory, ioHandler: opts.ioHandler}
+	opts := NewOptions(options...)
+	bus := &legacyBusAdapter{
+		Memory:    memory,
+		ioHandler: opts.ioHandler,
+	}
 	return newCPU(bus, opts)
 }
 

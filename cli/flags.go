@@ -119,7 +119,10 @@ func (fs *FlagSet) AddSection(name string, opts any) {
 			fs.required = append(fs.required, struct {
 				name string
 				ptr  any
-			}{name: info.Name, ptr: fieldVal.Addr().Interface()})
+			}{
+				name: info.Name,
+				ptr:  fieldVal.Addr().Interface(),
+			})
 		}
 
 		section.Flags = append(section.Flags, *info)
@@ -169,7 +172,10 @@ func (fs *FlagSet) AddPositional(opts any) {
 		fs.positional = append(fs.positional, struct {
 			info PositionalInfo
 			ptr  any
-		}{info: info, ptr: ptr})
+		}{
+			info: info,
+			ptr:  ptr,
+		})
 	}
 }
 

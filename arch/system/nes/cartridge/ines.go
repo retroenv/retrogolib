@@ -16,7 +16,8 @@ const (
 	fourScreenFlag
 )
 
-// LoadFile loads an .nes file in iNES format.
+// LoadFile loads an iNES or NES 2.0 file.
+// NES 2.0 ROM areas larger than 64 MiB are not supported.
 func LoadFile(reader io.Reader) (*Cartridge, error) {
 	var header header
 	if err := binary.Read(reader, binary.LittleEndian, &header); err != nil {
@@ -27,13 +28,11 @@ func LoadFile(reader io.Reader) (*Cartridge, error) {
 		return nil, errors.New("invalid file header magic")
 	}
 
-	mapper := uint16(mergeNibbles(highNibble(header.Control2), highNibble(header.Control1)))
-
-	// NES 2.0: if bits 2-3 of Control2 == 0b10, read extended mapper bits from byte 8.
 	if header.Control2&0x0C == 0x08 {
-		mapper |= uint16(header.NumRAM&0x0F) << 8
-		header.NumRAM = 0 // byte 8 is not RAM size in NES 2.0
+		return loadNES2(reader, header)
 	}
+
+	mapper := uint16(mergeNibbles(highNibble(header.Control2), highNibble(header.Control1)))
 
 	mirror := MirrorMode(header.Control1 & verticalMirroringFlag)
 

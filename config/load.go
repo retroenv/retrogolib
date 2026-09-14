@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"slices"
 
 	"github.com/retroenv/retrogolib/set"
 )
@@ -20,32 +22,17 @@ const (
 	configFilePermissions = 0644
 )
 
-// Load loads configuration from a file and unmarshalls it into the provided struct.
-func Load(filename string, v any) error {
-	config, err := LoadConfig(filename)
-	if err != nil {
-		return err
-	}
-	return config.Unmarshal(v)
-}
-
-// LoadBytes loads configuration from byte slice and unmarshalls it into the provided struct.
-func LoadBytes(data []byte, v any) error {
-	config, err := LoadConfigBytes(data)
-	if err != nil {
-		return err
-	}
-	return config.Unmarshal(v)
-}
-
-// LoadConfig loads configuration from a file, returning a Config for advanced operations.
-func LoadConfig(filename string) (*Config, error) {
-	data, err := os.ReadFile(filename)
+// Open parses a configuration file using options and remembers its path for Save.
+// The file is closed before Open returns.
+func Open(filename string, options Options) (*Config, error) {
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
-	config, err := LoadConfigBytes(data)
+	defer func() { _ = file.Close() }()
+
+	config, err := Parse(file, options)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +41,30 @@ func LoadConfig(filename string) (*Config, error) {
 	return config, nil
 }
 
-// LoadConfigBytes loads configuration from byte slice, returning a Config for advanced operations.
-func LoadConfigBytes(data []byte) (*Config, error) {
+// Parse reads configuration using options, limited to 10 MiB and 100,000 lines.
+// It does not close reader or associate a filename with the result.
+// Call Unmarshal on the result to populate a struct, or Entries to read dynamic keys.
+func Parse(reader io.Reader, options Options) (*Config, error) {
+	// Read one extra byte to distinguish oversized input from input exactly at the limit.
+	data, err := io.ReadAll(io.LimitReader(reader, maxConfigSize+1))
+	if err != nil {
+		return nil, fmt.Errorf("reading config: %w", err)
+	}
+	return parseConfig(data, options)
+}
+
+func parseConfig(data []byte, options Options) (*Config, error) {
 	if len(data) > maxConfigSize {
 		return nil, fmt.Errorf("%w: %d bytes exceeds limit of %d bytes", ErrConfigTooLarge, len(data), maxConfigSize)
 	}
 
+	// Keep the parser's options independent of later changes to the caller's slice.
+	options.LiteralSections = slices.Clone(options.LiteralSections)
+	if options.CommentPrefixes == "" {
+		options.CommentPrefixes = "#"
+	}
 	config := &Config{
+		options:  options,
 		sections: make(map[string]Section),
 	}
 
