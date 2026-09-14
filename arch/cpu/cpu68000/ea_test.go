@@ -206,7 +206,11 @@ func TestWriteEA_DataReg(t *testing.T) {
 	cpu := newTestCPU(t)
 	cpu.D[0] = 0xFFFFFFFF
 
-	ea := EffectiveAddress{Mode: 0, Reg: 0, Size: SizeByte}
+	ea := EffectiveAddress{
+		Mode: 0,
+		Reg:  0,
+		Size: SizeByte,
+	}
 	err := cpu.writeEA(ea, 0x42)
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0xFFFFFF42), cpu.D[0]) // Preserves upper bits
@@ -215,7 +219,12 @@ func TestWriteEA_DataReg(t *testing.T) {
 func TestWriteEA_Memory(t *testing.T) {
 	cpu := newTestCPU(t)
 
-	ea := EffectiveAddress{Mode: 2, Reg: 0, Size: SizeWord, Address: 0x2000}
+	ea := EffectiveAddress{
+		Mode:    2,
+		Reg:     0,
+		Size:    SizeWord,
+		Address: 0x2000,
+	}
 	err := cpu.writeEA(ea, 0x1234)
 	assert.NoError(t, err)
 	assert.Equal(t, uint16(0x1234), cpu.bus.ReadWord(0x2000))

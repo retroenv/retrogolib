@@ -179,8 +179,8 @@ func TestVariant6507IrqIsNoOp(t *testing.T) {
 	// Store initial state.
 	initialPC := cpu.PC
 
-	// TriggerIRQ should be a no-op.
-	cpu.TriggerIRQ()
+	// TriggerIrq should be a no-op.
+	cpu.TriggerIrq()
 	assert.Equal(t, false, cpu.triggerIrq)
 	cpu.SetIRQ(true)
 	assert.Equal(t, false, cpu.irqLine)
@@ -227,7 +227,7 @@ func TestVariant6507InterruptVsNMOS(t *testing.T) {
 	nmosMem.WriteWord(IrqAddress, testIrqAddress)
 	nmos := New(nmosMem)
 
-	nmos.TriggerIRQ()
+	nmos.TriggerIrq()
 	assert.Equal(t, true, nmos.triggerIrq)
 
 	nmos.TriggerNMI()
@@ -236,7 +236,7 @@ func TestVariant6507InterruptVsNMOS(t *testing.T) {
 	// 6507 should reject interrupts.
 	cpu6507 := cpuTestSetup6507(t)
 
-	cpu6507.TriggerIRQ()
+	cpu6507.TriggerIrq()
 	assert.Equal(t, false, cpu6507.triggerIrq)
 
 	cpu6507.TriggerNMI()

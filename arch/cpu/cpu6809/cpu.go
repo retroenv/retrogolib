@@ -125,7 +125,10 @@ func (c *CPU) Reset() {
 	c.S = 0
 	c.U = 0
 	c.DP = 0
-	c.Flags = Flags{I: 1, F: 1}
+	c.Flags = Flags{
+		I: 1,
+		F: 1,
+	}
 	c.cycles = 0
 
 	c.interruptMu.Lock()

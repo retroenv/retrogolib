@@ -9,7 +9,11 @@ import (
 func TestResolveEA(t *testing.T) {
 	t.Parallel()
 
-	cpu := &CPU{DB: 0x12, DP: 0x1000, SP: 0x2000}
+	cpu := &CPU{
+		DB: 0x12,
+		DP: 0x1000,
+		SP: 0x2000,
+	}
 	tests := []struct {
 		name  string
 		param any

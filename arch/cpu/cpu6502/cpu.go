@@ -53,7 +53,7 @@ type CPU struct {
 	triggerNmi bool // NMI interrupt triggered
 	nmiRunning bool // NMI handler executing
 
-	opts      Options
+	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	branchTaken bool // Set by branch to distinguish a self-loop from a fallthrough.

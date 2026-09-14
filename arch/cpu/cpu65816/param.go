@@ -301,5 +301,8 @@ func paramReaderBlockMove(c *CPU) ([]any, []byte, bool) {
 	// Encoding: dst bank, src bank (note: reversed in machine code)
 	dst := c.fetchByte(1)
 	src := c.fetchByte(2)
-	return []any{BlockMove{Src: src, Dst: dst}}, []byte{dst, src}, false
+	return []any{BlockMove{
+		Src: src,
+		Dst: dst,
+	}}, []byte{dst, src}, false
 }

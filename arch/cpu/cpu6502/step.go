@@ -17,10 +17,7 @@ type TraceStep struct {
 // Step consumes one stall cycle, services one pending interrupt, or executes
 // the next instruction.
 func (c *CPU) Step() error {
-	if c.stallCycles != 0 {
-		// A hardware hold stops instruction execution while the clock continues.
-		c.stallCycles--
-		c.cycles++
+	if c.consumeStallCycle() {
 		return nil
 	}
 

@@ -58,20 +58,8 @@ func (c *CPU) CheckInterrupts() bool {
 
 func (c *CPU) nmi() {
 	c.mu.Lock()
-	var address uint16
-	switch {
-	case c.triggerNmi:
-		c.triggerNmi = false
-		c.nmiRunning = true
-		address = c.nmiAddress
-	case c.triggerIrq && c.Flags.I == 0:
-		c.triggerIrq = false
-		c.irqRunning = true
-		address = c.irqAddress
-	default:
-		c.mu.Unlock()
-		return false
-	}
+	c.triggerNmi = false
+	c.nmiRunning = true
 	c.mu.Unlock()
 
 	c.executeInterrupt(NMIAddress)

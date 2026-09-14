@@ -26,7 +26,10 @@ func TestResetClearsTransientExecutionState(t *testing.T) {
 
 	cpu := cpuTestSetup(t)
 	cpu.branchTaken = true
-	cpu.TraceStep = TraceStep{PC: 0x1234, OpcodeOperands: []byte{0xea}}
+	cpu.TraceStep = TraceStep{
+		PC:             0x1234,
+		OpcodeOperands: []byte{0xea},
+	}
 
 	cpu.Reset()
 

@@ -85,7 +85,14 @@ func TestReadReleaseVectorsRejectsMissingAndEmptyData(t *testing.T) {
 }
 
 func TestValidateReleaseVector(t *testing.T) {
-	valid := ss6502TestCase{Name: "nop", Initial: ss6502State{PC: 0x8000, RAM: [][2]uint32{{0x8000, 0xea}}}, Cycles: [][]any{{32768, 234, "read"}, {32769, 0, "read"}}}
+	valid := ss6502TestCase{
+		Name: "nop",
+		Initial: ss6502State{
+			PC:  0x8000,
+			RAM: [][2]uint32{{0x8000, 0xea}},
+		},
+		Cycles: [][]any{{32768, 234, "read"}, {32769, 0, "read"}},
+	}
 	assert.NoError(t, validateReleaseVector(valid, 0xea))
 	assert.Error(t, validateReleaseVector(valid, 0xa9))
 	valid.Cycles = nil

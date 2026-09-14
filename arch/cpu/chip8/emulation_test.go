@@ -521,7 +521,11 @@ func TestReset(t *testing.T) {
 	c.DelayTimer = 10
 	c.SoundTimer = 5
 	c.RedrawScreen = true
-	c.keyWait = keyWait{active: true, register: 3, key: 4}
+	c.keyWait = keyWait{
+		active:   true,
+		register: 3,
+		key:      4,
+	}
 	c.drewThisFrame = true
 
 	c.Reset()
@@ -552,7 +556,11 @@ func TestStateRoundTrip(t *testing.T) {
 	c.I = 0x123
 	c.V[0] = 0x42
 	c.DelayTimer = 10
-	c.keyWait = keyWait{active: true, register: 2, key: 3}
+	c.keyWait = keyWait{
+		active:   true,
+		register: 2,
+		key:      3,
+	}
 	c.drewThisFrame = true
 
 	// Get state

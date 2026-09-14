@@ -33,7 +33,10 @@ func TestInterruptEntryPoints(t *testing.T) {
 			{name: "IM2", mode: InterruptMode2, data: 0xA5, vector: 0x4567, cycles: 19, acknowledges: 1},
 		} {
 			t.Run(fmt.Sprintf("%s/direct=%t", tt.name, direct), func(t *testing.T) {
-				bus := &testBus{Memory: NewBasicMemory(), irqData: tt.data}
+				bus := &testBus{
+					Memory:  NewBasicMemory(),
+					irqData: tt.data,
+				}
 				cpu, err := NewWithBus(bus, WithInitialPC(0x1234), WithInitialSP(0x8000))
 				assert.NoError(t, err)
 				assert.NoError(t, cpu.SetInterruptMode(tt.mode))
@@ -67,7 +70,10 @@ func TestInterruptEntryPoints(t *testing.T) {
 func TestIRQDataSampledBeforeStackWrites(t *testing.T) {
 	// Stack writes previously could change a mapped device before IRQData was sampled.
 	for _, mode := range []InterruptMode{InterruptMode0, InterruptMode2} {
-		bus := &stackMappedIRQBus{testBus: &testBus{Memory: NewBasicMemory()}, address: 0x7FFF}
+		bus := &stackMappedIRQBus{
+			testBus: &testBus{Memory: NewBasicMemory()},
+			address: 0x7FFF,
+		}
 		cpu, err := NewWithBus(bus, WithInitialPC(0x1234), WithInitialSP(0x8000))
 		assert.NoError(t, err)
 		assert.NoError(t, cpu.SetInterruptMode(mode))
@@ -84,7 +90,10 @@ func TestIRQDataSampledBeforeStackWrites(t *testing.T) {
 
 func TestIM0RestartVectors(t *testing.T) {
 	for vector := uint8(0); vector < 0x40; vector += 8 {
-		bus := &testBus{Memory: NewBasicMemory(), irqData: 0xC7 | vector}
+		bus := &testBus{
+			Memory:  NewBasicMemory(),
+			irqData: 0xC7 | vector,
+		}
 		cpu, err := NewWithBus(bus, WithInitialPC(0x1234))
 		assert.NoError(t, err)
 		cpu.EnableInterrupts()
@@ -96,7 +105,10 @@ func TestIM0RestartVectors(t *testing.T) {
 }
 
 func TestIM2VectorWrapsMemory(t *testing.T) {
-	bus := &testBus{Memory: NewBasicMemory(), irqData: 0xFF}
+	bus := &testBus{
+		Memory:  NewBasicMemory(),
+		irqData: 0xFF,
+	}
 	cpu, err := NewWithBus(bus, WithInitialSP(0x8000))
 	assert.NoError(t, err)
 	cpu.I = 0xFF

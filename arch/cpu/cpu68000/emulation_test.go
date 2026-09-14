@@ -6,6 +6,58 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+var conditionCases = []struct {
+	name  string
+	cond  uint16
+	flags Flags
+	want  bool
+}{
+	{"T", 0, Flags{}, true},
+	{"F", 1, Flags{}, false},
+	{"HI: !C&&!Z", 2, Flags{
+		C: 0,
+		Z: 0,
+	}, true},
+	{"HI: C=1", 2, Flags{
+		C: 1,
+		Z: 0,
+	}, false},
+	{"LS: C=1", 3, Flags{
+		C: 1,
+		Z: 0,
+	}, true},
+	{"CC: !C", 4, Flags{C: 0}, true},
+	{"CS: C", 5, Flags{C: 1}, true},
+	{"NE: !Z", 6, Flags{Z: 0}, true},
+	{"EQ: Z", 7, Flags{Z: 1}, true},
+	{"VC: !V", 8, Flags{V: 0}, true},
+	{"VS: V", 9, Flags{V: 1}, true},
+	{"PL: !N", 10, Flags{N: 0}, true},
+	{"MI: N", 11, Flags{N: 1}, true},
+	{"GE: N=V=0", 12, Flags{
+		N: 0,
+		V: 0,
+	}, true},
+	{"GE: N=V=1", 12, Flags{
+		N: 1,
+		V: 1,
+	}, true},
+	{"LT: N!=V", 13, Flags{
+		N: 1,
+		V: 0,
+	}, true},
+	{"GT: Z=0,N=V", 14, Flags{
+		Z: 0,
+		N: 0,
+		V: 0,
+	}, true},
+	{"LE: Z=1", 15, Flags{
+		Z: 1,
+		N: 0,
+		V: 0,
+	}, true},
+}
+
 func TestExtendedArithmeticCarry(t *testing.T) {
 	// Carry/borrow must include X even when neither original operand supplies it.
 	tests := []struct {
@@ -839,33 +891,7 @@ func TestILLEGAL(t *testing.T) {
 func TestConditions(t *testing.T) {
 	cpu := newTestCPU(t)
 
-	tests := []struct {
-		name  string
-		cond  uint16
-		flags Flags
-		want  bool
-	}{
-		{"T", 0, Flags{}, true},
-		{"F", 1, Flags{}, false},
-		{"HI: !C&&!Z", 2, Flags{C: 0, Z: 0}, true},
-		{"HI: C=1", 2, Flags{C: 1, Z: 0}, false},
-		{"LS: C=1", 3, Flags{C: 1, Z: 0}, true},
-		{"CC: !C", 4, Flags{C: 0}, true},
-		{"CS: C", 5, Flags{C: 1}, true},
-		{"NE: !Z", 6, Flags{Z: 0}, true},
-		{"EQ: Z", 7, Flags{Z: 1}, true},
-		{"VC: !V", 8, Flags{V: 0}, true},
-		{"VS: V", 9, Flags{V: 1}, true},
-		{"PL: !N", 10, Flags{N: 0}, true},
-		{"MI: N", 11, Flags{N: 1}, true},
-		{"GE: N=V=0", 12, Flags{N: 0, V: 0}, true},
-		{"GE: N=V=1", 12, Flags{N: 1, V: 1}, true},
-		{"LT: N!=V", 13, Flags{N: 1, V: 0}, true},
-		{"GT: Z=0,N=V", 14, Flags{Z: 0, N: 0, V: 0}, true},
-		{"LE: Z=1", 15, Flags{Z: 1, N: 0, V: 0}, true},
-	}
-
-	for _, tt := range tests {
+	for _, tt := range conditionCases {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu.Flags = tt.flags
 			got := cpu.evaluateCondition(tt.cond)

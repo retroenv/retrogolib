@@ -157,11 +157,18 @@ type testBus struct {
 }
 
 func (bus *testBus) ReadPort(address uint16) uint8 {
-	bus.ports = append(bus.ports, singleStepPort{Address: address, Value: bus.portValue, IsRead: true})
+	bus.ports = append(bus.ports, singleStepPort{
+		Address: address,
+		Value:   bus.portValue,
+		IsRead:  true,
+	})
 	return bus.portValue
 }
 func (bus *testBus) WritePort(address uint16, value uint8) {
-	bus.ports = append(bus.ports, singleStepPort{Address: address, Value: value})
+	bus.ports = append(bus.ports, singleStepPort{
+		Address: address,
+		Value:   value,
+	})
 }
 func (bus *testBus) IRQData() uint8 { bus.irqCalls++; return bus.irqData }
 func (bus *testBus) OnRETI()        { bus.retiCalls++ }

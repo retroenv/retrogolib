@@ -688,7 +688,10 @@ func TestMVN_SingleByte(t *testing.T) {
 	cpu.X = 0x1000
 	cpu.Y = 0x2000
 	mem.data[0x1000] = 0xAA
-	err := mvn(cpu, BlockMove{Src: 0x00, Dst: 0x00})
+	err := mvn(cpu, BlockMove{
+		Src: 0x00,
+		Dst: 0x00,
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, uint8(0xAA), mem.data[0x2000])
 	assert.Equal(t, uint16(0xFFFF), cpu.C)
@@ -705,7 +708,10 @@ func TestMVN_ThreeBytes(t *testing.T) {
 	mem.data[0x1000] = 0xAA
 	mem.data[0x1001] = 0xBB
 	mem.data[0x1002] = 0xCC
-	err := mvn(cpu, BlockMove{Src: 0x00, Dst: 0x00})
+	err := mvn(cpu, BlockMove{
+		Src: 0x00,
+		Dst: 0x00,
+	})
 	assert.NoError(t, err)
 	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
 		t.Errorf("MVN 3-byte: dst=%02X%02X%02X, want AABBCC",
@@ -863,7 +869,10 @@ func TestMVP_ThreeBytes(t *testing.T) {
 	mem.data[0x1000] = 0xAA
 	mem.data[0x1001] = 0xBB
 	mem.data[0x1002] = 0xCC
-	err := mvp(cpu, BlockMove{Src: 0x00, Dst: 0x00})
+	err := mvp(cpu, BlockMove{
+		Src: 0x00,
+		Dst: 0x00,
+	})
 	assert.NoError(t, err)
 	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
 		t.Errorf("MVP 3-byte: dst=%02X%02X%02X, want AABBCC",

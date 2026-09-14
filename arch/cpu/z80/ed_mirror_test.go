@@ -102,7 +102,10 @@ func TestFullBusPortAddresses(t *testing.T) {
 		{name: "OTDR", code: []byte{PrefixED, 0xBB}, port: 0x1134, value: 0xA5},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			bus := &testBus{Memory: NewBasicMemory(), portValue: 0xA5}
+			bus := &testBus{
+				Memory:    NewBasicMemory(),
+				portValue: 0xA5,
+			}
 			cpu, err := NewWithBus(bus)
 			assert.NoError(t, err)
 			cpu.A, cpu.B, cpu.C, cpu.H = 0x56, 0x12, 0x34, 0x80

@@ -158,7 +158,12 @@ func TestDoubleFaultRequiresReset(t *testing.T) {
 
 func TestResetBusError(t *testing.T) {
 	cause := errors.New("reset ROM missing")
-	bus := &rejectingBus{BasicBus: NewBasicBus(NewBasicMemory()), address: 4, reject: true, cause: cause}
+	bus := &rejectingBus{
+		BasicBus: NewBasicBus(NewBasicMemory()),
+		address:  4,
+		reject:   true,
+		cause:    cause,
+	}
 	cpu, err := New(bus)
 	assert.Nil(t, cpu)
 	assert.ErrorIs(t, err, ErrBusError)

@@ -143,12 +143,19 @@ func (bus *singleStepBus) ReadPort(address uint16) uint8 {
 	if index := len(bus.actual); index < len(bus.expected) && bus.expected[index].IsRead {
 		value = bus.expected[index].Value
 	}
-	bus.actual = append(bus.actual, singleStepPort{Address: address, Value: value, IsRead: true})
+	bus.actual = append(bus.actual, singleStepPort{
+		Address: address,
+		Value:   value,
+		IsRead:  true,
+	})
 	return value
 }
 
 func (bus *singleStepBus) WritePort(address uint16, value uint8) {
-	bus.actual = append(bus.actual, singleStepPort{Address: address, Value: value})
+	bus.actual = append(bus.actual, singleStepPort{
+		Address: address,
+		Value:   value,
+	})
 }
 
 // getSingleStepDir returns the path to the z80 SingleStepTests data directory,
@@ -194,7 +201,10 @@ func runSingleStepCase(tc *singleStepTest) error {
 		mem.Write(uint16(entry[0]), uint8(entry[1]))
 	}
 
-	bus := &singleStepBus{Memory: mem, expected: tc.Ports}
+	bus := &singleStepBus{
+		Memory:   mem,
+		expected: tc.Ports,
+	}
 	cpu, err := NewWithBus(bus)
 	if err != nil {
 		return fmt.Errorf("creating CPU: %w", err)

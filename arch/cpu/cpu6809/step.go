@@ -31,7 +31,10 @@ func (c *CPU) Step() error {
 
 func (c *CPU) decodeOpcode() (decodedOpcode, error) {
 	first := c.memory.Read(c.PC)
-	decoded := decodedOpcode{opcodeBytes: [2]byte{first}, baseOffset: 1}
+	decoded := decodedOpcode{
+		opcodeBytes: [2]byte{first},
+		baseOffset:  1,
+	}
 
 	switch first {
 	case Prefix10:

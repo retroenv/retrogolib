@@ -169,7 +169,11 @@ func (c *CPU) Reset() {
 	c.DB = 0
 	c.PB = 0
 	c.E = true
-	c.Flags = Flags{M: 1, X: 1, I: 1}
+	c.Flags = Flags{
+		M: 1,
+		X: 1,
+		I: 1,
+	}
 	c.cycles = initialCycles
 	c.stopped = false
 	c.waiting = false
