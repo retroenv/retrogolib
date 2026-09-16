@@ -3,17 +3,18 @@
 Tracks the committed changes introduced by `work2` since its common ancestor
 with the current remote-tracking `main` branch.
 
-**Last Updated:** 2026-09-07
+**Last Updated:** 2026-09-16
 
 ---
 
 ## Current Branch State
 
 - Comparison range: `origin/main...HEAD`, currently
-  `6042ff7...a492cc6` on `work2`, using the available remote-tracking ref.
-- Merge base: `2901134` (`cartridge: fix iNES header mirroring flags`, 2026-09-01).
-- Committed branch delta: 219 files, with 162 added and 57 modified; 30,588
-  insertions and 2,522 deletions.
+  `b100e8e...164e66e` on `work2`, using the current remote-tracking ref.
+- Merge base: `b100e8e` (`audio: add CGO-free PCM playback with SDL2 backend
+  (#13)`, 2026-09-16).
+- Committed branch delta: 213 files, with 161 added and 52 modified; 31,065
+  insertions and 2,475 deletions.
 - `git diff --name-status --find-renames origin/main...HEAD` reports no deleted
   or renamed files in the current range.
 - These statistics cover committed changes only. This documentation refresh is
@@ -21,19 +22,15 @@ with the current remote-tracking `main` branch.
 
 ## Changes Already Absorbed From `main`
 
-The merge base already contains earlier branch work that is therefore absent
-from the current branch-side diff:
+The current merge base contains work now shared with `main` and therefore absent
+from the branch-side diff:
 
 - The base CHIP-8, 6502/65C02, x86, and Z80 implementations and their initial
   architecture registration.
-- Earlier shared test infrastructure and test data support; this branch only
-  contributes the CPU targets and CHIP-8 additions described below.
-- Earlier CLI, configuration, and logging cleanups.
-- The NES cartridge iNES mirroring correction at the merge base.
-
-The `set.Sorted` and `set.SortedFunc` changes still appear in the branch-side
-diff because they follow the merge base. Their implementation and tests are
-also present at the current `origin/main` tip; they are not unique to `work2`.
+- Shared test infrastructure, CLI, configuration, logging, README, and set
+  sorting updates.
+- NES 2.0 cartridge support and 6502 live-interrupt and stall-cycle behavior.
+- Shared dynamic-library and SDL lifecycle support plus CGO-free PCM playback.
 
 ## Branch-Specific Changes
 
@@ -79,8 +76,6 @@ also present at the current `origin/main` tip; they are not unique to `work2`.
   pre-execution hook, nil-option handling, a full bus interface, and registry,
   option, interrupt, ED-mirror, and external corpus tests.
 - **SM83 metadata:** Includes high-memory loads through C in the `LDH` registry.
-- **Sets:** Adds `Sorted` for ordered values and `SortedFunc` for custom
-  comparators; both return a sorted slice without changing the set.
 
 ### System Foundations
 
@@ -95,10 +90,10 @@ also present at the current `origin/main` tip; they are not unique to `work2`.
 ### Test and Documentation Integration
 
 - Extends the root integration-test target for the 65C816, 68000, and SM83
-  suites.
+  suites, adds pinned 6502 release qualification, and retains a configurable
+  short-test timeout alongside `main`'s cross-platform build target.
 - Adds a `testdata/Makefile` target for the Timendus CHIP-8 test suite and keeps
   the existing CPU test-data targets in the aggregate workflow.
-- Updates `README.md` with the new CPU packages.
 - Adds release qualification documentation for the 6502, gap-closure plans for
   the Motorola 68000 and Z80, a Commodore 64 system implementation plan, and
   this branch changelog.
@@ -123,7 +118,6 @@ this table does not claim exhaustive hardware conformance.
 | `arch/system/atari2600`, `register`, `cartridge` | Reviewed system/register definitions; fixed 3F bank size/count, write hotspots, and hotspot address mirroring. |
 | `arch/system/coco`, `register` | Corrected SAM rate, RAM-size, and memory-map descriptions and replaced misnamed memory-map constants. |
 | `arch/system/vectrex`, `register` | Reviewed memory-map and register foundations; existing short tests pass. |
-| `set` | Reviewed non-mutating sorted projections; implementation and tests already match the remote main tip. |
 
 ### Interrupt and Fetch Corrections
 
@@ -189,7 +183,7 @@ this table does not claim exhaustive hardware conformance.
   interpreter behavior.
 - 6502 and Z80 callers configure constructors through typed functional options
   instead of the removed exported `Options`/`NewOptions` implementation API.
-  The 6502 interrupt trigger is now `TriggerIRQ`, replacing `TriggerIrq`.
+  The existing 6502 `TriggerIrq` method remains the public IRQ trigger.
 - With the review fixes, 65C816 callers can rely on `Step` for interrupt
   dispatch. Interrupt entry in 65C816, 68000, and SM83 is a separate step from
   the first handler instruction; instruction-count loops must account for it.
@@ -213,42 +207,40 @@ this table does not claim exhaustive hardware conformance.
 
 | Status | Count | Files | Purpose |
 | --- | ---: | --- | --- |
-| Modified | 1 | `Makefile` | Extends CPU integration-test coverage. |
-| Modified | 1 | `README.md` | Lists the new CPU packages. |
+| Modified | 1 | `Makefile` | Adds release qualification, configurable short-test timeouts, and broader CPU integration coverage. |
 | Added / Modified | 4 / 6 | `arch/cpu/chip8/` | Adds compatibility options, registry separation, correctness fixes, and Timendus ROM tests. |
-| Added / Modified | 9 / 21 | `arch/cpu/cpu6502/` | Refactors structure and timing and adds focused tests and pinned release qualification. |
+| Added / Modified | 8 / 20 | `arch/cpu/cpu6502/` | Refactors structure and timing and adds focused tests and pinned release qualification. |
 | Added | 31 | `arch/cpu/cpu65816/` | Adds the WDC 65C816 emulator, interrupt corrections, and tests. |
 | Added | 34 | `arch/cpu/cpu68000/` | Adds the Motorola 68000 emulator, checked faults, timing, full-corpus runner, and tests. |
 | Added | 27 | `arch/cpu/cpu6809/` | Adds the Motorola 6809 emulator and tests. |
 | Added | 25 | `arch/cpu/sm83/` | Adds the Sharp SM83 emulator, interrupt/fetch regressions, and tests. |
 | Added / Modified | 2 / 2 | `arch/cpu/x86/` | Moves instruction names and registry data into cohesive files. |
-| Added / Modified | 6 / 23 | `arch/cpu/z80/` | Aligns APIs and metadata, closes interrupt and bus gaps, and adds conformance tests. |
+| Added / Modified | 6 / 22 | `arch/cpu/z80/` | Aligns APIs and metadata, closes interrupt and bus gaps, and adds conformance tests. |
 | Added | 8 | `arch/system/atari2600/` | Adds system/register definitions, cartridge metadata, and tests. |
 | Added | 6 | `arch/system/coco/` | Adds CoCo system/register definitions and tests. |
 | Added | 5 | `arch/system/vectrex/` | Adds Vectrex system/register definitions and tests. |
 | Added | 5 | `docs/` | Adds qualification, implementation plans, and branch tracking. |
-| Modified | 2 | `set/` | Adds sorted projections and tests, also present at the remote main tip. |
 | Modified | 1 | `testdata/Makefile` | Integrates the Timendus CHIP-8 ROM suite. |
 
-The grouped counts above total the exact 162 added and 57 modified files
+The grouped counts above total the exact 161 added and 52 modified files
 reported for `origin/main...HEAD`; no row represents a rename.
 
 ## Verification
 
-Review validation on 2026-09-07:
+Validation recorded through 2026-09-16:
 
 | Check | Result |
 | --- | --- |
-| `go fmt ./...` | Pass. |
-| `make lint` | Pass: zero golangci-lint issues and no retrogolint violations. |
-| `make test` | Pass: repository short tests with the race detector. |
+| `go fmt ./...` | Pass after merging `origin/main` on 2026-09-16. |
+| `make lint` | Pass after merging `origin/main`: zero golangci-lint issues and no retrogolint violations. |
+| `make test` | Pass after merging `origin/main`: repository short tests with the race detector and a 60-second timeout. |
 | CHIP-8 `TestROMConformance` | Pass: six Timendus ROM checks. |
 | SM83 `TestSingleStep` and interrupt/fetch regressions | Pass. |
 | 65C816 `TestSingleStep` with `-tags singlestep` | Pass. |
 | Z80 `TestSingleStep` | Pass: 1,604,000 vectors with register, flag, memory, and full port-transaction checks. |
 | Z80 `TestZexdoc` and `TestZexall` | Pass: all 67 groups in each exerciser. |
 | 68000 `TestSingleStep` with `-tags singlestep` | Fails: 996,321 passed and 3,739 failed among all 1,000,060 vectors. |
-| `git diff --check` and committed range/count reconciliation | Pass. |
+| Committed range/count reconciliation | Pass for `origin/main...HEAD`. |
 
 The 68000 runner now limits diagnostics after ten failures per file while still
 executing every vector. Its remaining failures are 3,736 ASR flag cases, two
