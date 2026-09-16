@@ -1,10 +1,9 @@
 package sdl2
 
 import (
-	"fmt"
-	"runtime"
+	"sync"
 
-	"github.com/retroenv/retrogolib/gui/internal/dynlib"
+	sdllibrary "github.com/retroenv/retrogolib/internal/sdl2"
 )
 
 var (
@@ -56,29 +55,6 @@ var imports = map[string]any{
 	"SDL_UpdateTexture":   &UpdateTexture,
 }
 
-func getSDLSystemLibrary() (string, error) {
-	switch runtime.GOOS {
-	case "darwin":
-		return "libSDL2.dylib", nil
-	case "freebsd":
-		return "libSDL2.so", nil
-	case "linux":
-		return "libSDL2.so", nil
-	case "windows":
-		return "SDL2.dll", nil
-	default:
-		return "", fmt.Errorf("GOOS=%s is not supported", runtime.GOOS)
-	}
-}
-
-func setupLibrary() error {
-	libName, err := getSDLSystemLibrary()
-	if err != nil {
-		return fmt.Errorf("getting SDL library: %w", err)
-	}
-
-	if _, err := dynlib.LoadFunctions(libName, imports); err != nil {
-		return fmt.Errorf("loading SDL functions: %w", err)
-	}
-	return nil
-}
+var setupLibrary = sync.OnceValue(func() error {
+	return sdllibrary.LoadFunctions(imports)
+})

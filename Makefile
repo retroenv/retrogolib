@@ -1,5 +1,6 @@
 GOLANGCI_VERSION = v2.13.2
 RETROGOLINT_VERSION = v1.0.5
+TEST_TIMEOUT ?= 60s
 
 help: ## show help, shown by default if no target is specified
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -16,6 +17,12 @@ test: ## run tests
 
 test-6502-release: ## qualify NMOS legal opcodes and functional binaries using required pinned corpora
 	CPU6502_QUALIFY=1 go test -race -count=1 -v -timeout 10m -run '^TestRelease(NMOS|Dormann)$$' ./arch/cpu/cpu6502/
+
+build-platforms: ## cross-build supported desktop platforms without CGO
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build ./...
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./...
+	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build ./...
+	GOOS=freebsd GOARCH=amd64 CGO_ENABLED=0 go build -gcflags="github.com/ebitengine/purego/internal/fakecgo=-std" ./...
 
 test-integration: ## run long-running CPU integration tests
 	go test -v -run 'TestSingleStep|TestDormann' -timeout 0 -race ./arch/cpu/cpu6502/

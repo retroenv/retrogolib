@@ -3,13 +3,15 @@ package dynlib
 import (
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/ebitengine/purego"
 )
 
 // LoadFunctions opens a dynamic library and registers functions from it.
 func LoadFunctions(name string, imports map[string]any) (uintptr, error) {
-	lib, err := open(name)
+	entry, _ := libraries.LoadOrStore(name, sync.OnceValues(func() (uintptr, error) { return open(name) }))
+	lib, err := entry.(func() (uintptr, error))()
 	if err != nil {
 		return 0, err
 	}
@@ -19,6 +21,9 @@ func LoadFunctions(name string, imports map[string]any) (uintptr, error) {
 	}
 	return lib, nil
 }
+
+// Libraries stay loaded for the lifetime of their registered Go functions.
+var libraries sync.Map
 
 func registerFunction(lib uintptr, name string, ptr any) (err error) {
 	defer func() {
