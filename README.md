@@ -15,7 +15,7 @@ debuggers, disassemblers, and system-specific utilities.
 * **CPU emulation** - Chip-8, 6502-family, and Z80 emulators with tested instruction implementations
 * **Instruction definitions** - x86 definitions from the 8086 through the 80486 for static analysis tools
 * **System helpers** - NES cartridge, mapper, register, and parameter support
-* **CGO-free GUI support** - Interfaces and SDL integration designed for straightforward cross-compilation
+* **CGO-free GUI support** - SDL2 integration for Linux, Windows, macOS, and FreeBSD
 * **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
 * **Small dependency footprint** - Go 1.25+ with only `ebitengine/purego` as an external dependency
 
