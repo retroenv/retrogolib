@@ -52,10 +52,10 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     ├─ cli                         command-line application helpers
     ├─ config                      configuration loading, parsing, and persistence
     ├─ gui                         CGO-free GUI rendering abstractions
-    │  ├─ internal/dynlib          dynamic-library helpers for GUI backends
     │  ├─ internal/framebuffer     frame-buffer helpers for GUI backends
     │  └─ sdl2                     SDL2 GUI backend
     ├─ input                       keyboard and controller input helpers
+    ├─ internal                    shared dynamic-library and SDL2 subsystem helpers
     ├─ log                         nil-safe structured logging built on log/slog
     └─ set                         generic set data structures and operations
 
