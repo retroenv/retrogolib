@@ -300,7 +300,7 @@ func (c *CPU) srl(value uint8) uint8 {
 // bit tests bit n of value and sets flags.
 // For BIT on register operands, X/Y come from the register value.
 // For BIT on (HL), X/Y come from MEMPTR high byte - caller must handle this.
-func (c *CPU) bit(n uint8, value uint8) {
+func (c *CPU) bit(n, value uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
@@ -314,7 +314,7 @@ func (c *CPU) bit(n uint8, value uint8) {
 
 // bitMemptr tests bit n of value, setting X/Y from MEMPTR high byte.
 // Used for BIT n,(HL) and BIT n,(IX+d)/(IY+d).
-func (c *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
+func (c *CPU) bitMemptr(n, value, memptrHigh uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
@@ -327,12 +327,12 @@ func (c *CPU) bitMemptr(n uint8, value uint8, memptrHigh uint8) {
 }
 
 // setBit sets bit n of value.
-func (c *CPU) setBit(n uint8, value uint8) uint8 {
+func (c *CPU) setBit(n, value uint8) uint8 {
 	return value | (1 << n)
 }
 
 // res resets bit n of value.
-func (c *CPU) res(n uint8, value uint8) uint8 {
+func (c *CPU) res(n, value uint8) uint8 {
 	return value & ^(1 << n)
 }
 

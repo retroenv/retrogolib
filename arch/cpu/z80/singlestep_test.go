@@ -153,7 +153,7 @@ func (h *testIOHandler) ReadPort(port uint8) uint8 {
 	return 0xFF
 }
 
-func (h *testIOHandler) WritePort(_ uint8, _ uint8) {}
+func (h *testIOHandler) WritePort(_, _ uint8) {}
 
 // getSingleStepDir returns the path to the z80 SingleStepTests data directory,
 // skipping the test if it is not found.

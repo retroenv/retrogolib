@@ -73,7 +73,7 @@ func (mem *BasicMemory) ReadWord(address uint16) uint16 {
 }
 
 // WriteWord writes a 16-bit word to memory at the given address (little-endian).
-func (mem *BasicMemory) WriteWord(address uint16, value uint16) {
+func (mem *BasicMemory) WriteWord(address, value uint16) {
 	mem.Write(address, uint8(value))
 	mem.Write(address+1, uint8(value>>8))
 }

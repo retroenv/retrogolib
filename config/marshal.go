@@ -130,7 +130,9 @@ func (c *Config) updateValue(sectionName, key string, value any) error {
 }
 
 // unmarshalNestedStruct handles unmarshalling of nested struct fields.
-func (c *Config) unmarshalNestedStruct(field reflect.StructField, fieldValue reflect.Value, tag, parentSection string) error {
+func (c *Config) unmarshalNestedStruct(field reflect.StructField, fieldValue reflect.Value, tag,
+	parentSection string) error {
+
 	var sectionName string
 
 	// Handle tag parsing for nested structs
@@ -159,7 +161,9 @@ func (c *Config) unmarshalNestedStruct(field reflect.StructField, fieldValue ref
 }
 
 // unmarshalSimpleField handles unmarshalling of simple (non-struct) fields.
-func (c *Config) unmarshalSimpleField(field reflect.StructField, fieldValue reflect.Value, tag, parentSection string) error {
+func (c *Config) unmarshalSimpleField(field reflect.StructField, fieldValue reflect.Value, tag,
+	parentSection string) error {
+
 	tagInfo := c.parseTag(tag, parentSection)
 
 	// Get value from configuration
@@ -323,7 +327,9 @@ func (c *Config) marshalStruct(rv reflect.Value, parentSection string) error {
 }
 
 // marshalNestedStruct handles marshaling of nested struct fields.
-func (c *Config) marshalNestedStruct(field reflect.StructField, fieldValue reflect.Value, tag, parentSection string) error {
+func (c *Config) marshalNestedStruct(field reflect.StructField, fieldValue reflect.Value, tag,
+	parentSection string) error {
+
 	// Handle nested struct marshaling with deep nesting support
 	var sectionName string
 	if strings.Contains(tag, ".") {
@@ -351,7 +357,9 @@ func (c *Config) marshalNestedStruct(field reflect.StructField, fieldValue refle
 }
 
 // marshalSimpleField handles marshaling of simple (non-struct) fields.
-func (c *Config) marshalSimpleField(field reflect.StructField, fieldValue reflect.Value, tag, parentSection string) error {
+func (c *Config) marshalSimpleField(field reflect.StructField, fieldValue reflect.Value, tag,
+	parentSection string) error {
+
 	// Handle simple field marshaling
 	tagInfo := c.parseTag(tag, parentSection)
 

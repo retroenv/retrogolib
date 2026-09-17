@@ -151,7 +151,7 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 }
 
 // ReadAbsolute reads a byte from an address using absolute addressing.
-func (m *Memory) ReadAbsolute(address any, register any) (byte, error) {
+func (m *Memory) ReadAbsolute(address, register any) (byte, error) {
 	if register == nil {
 		return m.readAbsoluteOffset(address, 0)
 	}
@@ -216,7 +216,7 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 	}
 }
 
-func (m *Memory) readMemoryIndirect(address any, register any) (byte, error) {
+func (m *Memory) readMemoryIndirect(address, register any) (byte, error) {
 	pointer, err := m.indirectMemoryPointer(address, register)
 	if err != nil {
 		return 0, err
@@ -224,7 +224,7 @@ func (m *Memory) readMemoryIndirect(address any, register any) (byte, error) {
 	return m.Read(pointer), nil
 }
 
-func (m *Memory) indirectMemoryPointer(addressParam any, register any) (uint16, error) {
+func (m *Memory) indirectMemoryPointer(addressParam, register any) (uint16, error) {
 	if register == nil {
 		return 0, fmt.Errorf("%w: indirect memory addressing", ErrMissingParameter)
 	}
