@@ -5,12 +5,20 @@ import (
 )
 
 // TraceStep contains all info needed to print a trace step.
+// It is populated only for decoded instructions when tracing is enabled. It does
+// not describe hardware interrupt entry; StackEvent carries its own context so
+// stack hooks work independently of tracing.
 type TraceStep struct {
-	PC             uint16 // program counter
-	OpcodeOperands []byte // instruction opcode and operand bytes
-	Opcode         Opcode
+	// PC is the instruction address captured during decoding.
+	PC uint16
+	// OpcodeOperands contains the raw opcode byte followed by its operand bytes.
+	OpcodeOperands []byte
+	// Opcode contains the decoded instruction and addressing metadata.
+	Opcode Opcode
 
-	CustomData  string // custom data field that can be used in the pre execution hook
+	// CustomData contains caller-defined trace data set by the pre-execution hook.
+	CustomData string
+	// PageCrossed reports whether operand address resolution crossed a page.
 	PageCrossed bool
 }
 
@@ -33,6 +41,9 @@ func (c *CPU) Step() error {
 	c.cycles += uint64(opcode.Timing)
 
 	ins := opcode.Instruction
+	if ins == BrkInst {
+		c.interrupt = InterruptBRK
+	}
 	if ins.NoParamFunc != nil {
 		if c.opts.tracing {
 			c.TraceStep.PageCrossed = false
@@ -80,6 +91,10 @@ func (c *CPU) Step() error {
 // decodeNextInstruction decodes the current instruction at the program counter.
 func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	b := c.memory.Read(c.PC)
+	c.executionPC = c.PC
+	c.executionCycle = c.cycles
+	c.opcode = b
+	c.interrupt = InterruptNone
 
 	var opcode Opcode
 	switch {

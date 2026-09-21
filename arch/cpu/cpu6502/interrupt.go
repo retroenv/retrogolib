@@ -1,11 +1,17 @@
 package cpu6502
 
 // Interrupts contains the CPU interrupt info.
+// Running fields describe handler lifecycle through RTI; they do not identify
+// which instruction or interrupt caused an individual StackEvent.
 type Interrupts struct {
+	// NMITriggered reports whether an NMI is pending service.
 	NMITriggered bool
-	NMIRunning   bool
+	// NMIRunning reports whether an NMI handler is active until RTI executes.
+	NMIRunning bool
+	// IrqTriggered reports whether an IRQ request or input level is active.
 	IrqTriggered bool
-	IrqRunning   bool
+	// IrqRunning reports whether an IRQ or BRK handler is active until RTI executes.
+	IrqRunning bool
 }
 
 // TriggerIrq queues one interrupt request.
@@ -58,7 +64,7 @@ func (c *CPU) nmi() {
 	c.nmiRunning = true
 	c.mu.Unlock()
 
-	c.executeInterrupt(NMIAddress)
+	c.executeInterruptFrom(NMIAddress, InterruptNMI)
 }
 
 func (c *CPU) irq() {
@@ -67,10 +73,22 @@ func (c *CPU) irq() {
 	c.irqRunning = true
 	c.mu.Unlock()
 
-	c.executeInterrupt(IrqAddress)
+	c.executeInterruptFrom(IrqAddress, InterruptIRQ)
 }
 
 func (c *CPU) executeInterrupt(vectorAddress uint16) {
+	c.executeInterruptFrom(vectorAddress, InterruptNone)
+}
+
+func (c *CPU) executeInterruptFrom(vectorAddress uint16, source InterruptSource) {
+	if c.opts.stackEventHook != nil {
+		c.executionPC = c.PC
+		c.executionCycle = c.cycles
+		// Interrupt entry does not decode an instruction. Reading PC here would
+		// let an observation hook change mapped-memory state.
+		c.opcode = 0
+		c.interrupt = source
+	}
 	c.push16(c.PC)
 	// Hardware interrupts put a zero in the stacked B-bit position.
 	flags := c.GetFlags()&^0b0001_0000 | 0b0010_0000

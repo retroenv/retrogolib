@@ -16,9 +16,11 @@ type preExecutionHook func(cpu *CPU, ins *Instruction, params ...any)
 
 // Options contains options for the CPU.
 type Options struct {
-	variant          CPUVariant
-	tracing          bool
+	tracing bool
+	variant CPUVariant
+
 	preExecutionHook preExecutionHook
+	stackEventHook   StackEventHook // receives stack pushes and pulls during execution
 }
 
 // Option defines a Start parameter.
@@ -31,6 +33,14 @@ func NewOptions(optionList ...Option) Options {
 		option(&opts)
 	}
 	return opts
+}
+
+// WithStackEventHook sets a hook that receives each CPU stack push and pull.
+// A nil hook disables events. See StackEventHook for callback timing and usage.
+func WithStackEventHook(hook StackEventHook) func(*Options) {
+	return func(options *Options) {
+		options.stackEventHook = hook
+	}
 }
 
 // WithTracing enables tracing for the program.

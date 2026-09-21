@@ -11,12 +11,12 @@ type State struct {
 	A  uint8  // Accumulator (arithmetic and logic operations)
 	X  uint8  // X index register
 	Y  uint8  // Y index register
-	PC uint16 // Program counter
+	PC uint16 // Program counter captured when State was called
 	SP uint8  // Stack pointer ($0100-$01FF)
 
-	Cycles     uint64     // Total CPU cycles executed
+	Cycles     uint64     // Total CPU cycles captured when State was called
 	Flags      Flags      // Processor status flags
-	Interrupts Interrupts // Interrupt state
+	Interrupts Interrupts // Pending and running interrupt state, not the source of a stack event
 }
 
 // CPU represents a thread-safe 6502 microprocessor with full instruction set emulation.
@@ -27,25 +27,30 @@ type CPU struct {
 	A  uint8  // Accumulator (arithmetic and logic operations)
 	X  uint8  // X index register
 	Y  uint8  // Y index register
-	PC uint16 // Program counter
+	PC uint16 // Live program counter; StackEvent.PC captures an execution boundary
 	SP uint8  // Stack pointer ($0100-$01FF)
 
 	Flags Flags // Processor status register
 
-	cycles      uint64
+	cycles      uint64 // live total; executionCycle captures it before instruction timing is added
 	stallCycles uint16 // DMA transfer stall cycles
 
 	// Interrupt control
 	triggerIrq bool // IRQ interrupt triggered
 	irqLine    bool // IRQ input level
-	irqRunning bool // IRQ handler executing
+	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
 	triggerNmi bool // NMI interrupt triggered
-	nmiRunning bool // NMI handler executing
+	nmiRunning bool // NMI handler active until RTI; not the source of the current stack operation
 
 	opts      Options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	branchTaken bool // set by branch() to distinguish taken vs not-taken
+
+	executionCycle uint64          // cycle count at the current execution boundary
+	executionPC    uint16          // instruction address or interrupted program counter
+	interrupt      InterruptSource // interrupt source for the current stack operation
+	opcode         byte            // opcode for the current instruction, or zero for IRQ/NMI
 
 	memory *Memory
 }
@@ -72,7 +77,9 @@ func New(memory *Memory, options ...Option) *CPU {
 	return c
 }
 
-// Cycles returns the amount of CPU cycles executed since system start.
+// Cycles returns the live total CPU cycles executed since system start.
+// StackEvent.Cycle instead captures this total at the start of the instruction
+// or interrupt that produced the event.
 func (c *CPU) Cycles() uint64 {
 	return c.cycles
 }
@@ -163,6 +170,10 @@ func (c *CPU) Reset() {
 	// Reset cycles
 	c.cycles = initialCycles
 	c.stallCycles = 0
+	c.executionPC = 0
+	c.executionCycle = 0
+	c.opcode = 0
+	c.interrupt = InterruptNone
 
 	// Reload the reset vector.
 	if c.memory != nil {
@@ -196,10 +207,9 @@ func (c *CPU) branch(branchTo bool, param any) {
 
 // pop pops a byte from the stack and update the stack pointer.
 func (c *CPU) pop() byte {
-	// Note: Stack underflow check - SP == 0xFF indicates potential stack underflow
-	// In real 6502 hardware this wraps around, so we maintain that behavior for accuracy
-	_ = c.SP == 0xFF // Explicit check for documentation purposes
+	before := c.SP
 	c.SP++
+	c.emitStackEvent(StackPull, before)
 	return c.memory.Read(uint16(StackBase + int(c.SP)))
 }
 
@@ -212,11 +222,26 @@ func (c *CPU) pop16() uint16 {
 
 // push a value to the stack and update the stack pointer.
 func (c *CPU) push(value byte) {
+	before := c.SP
 	c.memory.Write(uint16(StackBase+int(c.SP)), value)
-	// Note: Stack overflow check - SP == 0x00 indicates potential stack overflow
-	// In real 6502 hardware this wraps around, so we maintain that behavior for accuracy
-	_ = c.SP == 0x00 // Explicit check for documentation purposes
 	c.SP--
+	c.emitStackEvent(StackPush, before)
+}
+
+func (c *CPU) emitStackEvent(operation StackOperation, before byte) {
+	if c.opts.stackEventHook == nil {
+		return
+	}
+
+	c.opts.stackEventHook(StackEvent{
+		After:     c.SP,
+		Before:    before,
+		Cycle:     c.executionCycle,
+		Interrupt: c.interrupt,
+		Opcode:    c.opcode,
+		Operation: operation,
+		PC:        c.executionPC,
+	})
 }
 
 // push16 a word to the stack and update the stack pointer.
