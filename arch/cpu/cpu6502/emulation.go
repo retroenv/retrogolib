@@ -837,7 +837,11 @@ func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
 	} else {
 		writeAddr = effectiveAddr
 	}
-	c.memory.Write(writeAddr, andValue)
+	if c.cycleActive {
+		c.writeCycle(writeAddr, andValue)
+	} else {
+		c.memory.Write(writeAddr, andValue)
+	}
 }
 
 // shx implements SHX/SXA (0x9E): stores X & (base_addr_hi + 1).

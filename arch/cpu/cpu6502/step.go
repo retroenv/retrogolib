@@ -24,6 +24,13 @@ type TraceStep struct {
 
 // Step executes the next instruction in the CPU.
 func (c *CPU) Step() error {
+	if c.opts.cycleHook != nil {
+		return c.stepCycles()
+	}
+	return c.stepInstruction()
+}
+
+func (c *CPU) stepInstruction() error {
 	if c.stallCycles != 0 {
 		// A hardware hold stops instruction execution while the clock continues.
 		c.stallCycles--

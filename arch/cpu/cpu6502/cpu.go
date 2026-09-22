@@ -32,14 +32,28 @@ type CPU struct {
 
 	Flags Flags // Processor status register
 
+	// Cycle accounting
 	cycles      uint64 // live total; executionCycle captures it before instruction timing is added
 	stallCycles uint16 // DMA transfer stall cycles
 
-	// Interrupt control
-	triggerIrq bool // IRQ interrupt triggered
+	// Bus-cycle execution
+	cycleActive bool // Bus-cycle execution is active inside an instruction or reset.
+	jamCycle    byte // Initial bus sequence after KIL.
+	jammed      bool // KIL stops instruction execution until reset.
+
+	// Interrupt inputs
 	irqLine    bool // IRQ input level
-	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
+	triggerIrq bool // IRQ interrupt triggered
 	triggerNmi bool // NMI interrupt triggered
+
+	// Interrupt sampling
+	irqPolled bool // IRQ selected by the instruction's last polling cycle.
+	irqSample bool // IRQ input and mask at the end of the last bus cycle.
+	nmiPolled bool // NMI selected by the instruction's last polling cycle.
+	nmiSample bool // NMI request at the end of the last bus cycle.
+
+	// Interrupt handler state
+	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
 	nmiRunning bool // NMI handler active until RTI; not the source of the current stack operation
 
 	opts      Options
@@ -148,6 +162,10 @@ func (c *CPU) ValidateState() error {
 
 // Reset resets the CPU to its initial state while preserving memory.
 func (c *CPU) Reset() {
+	if c.opts.cycleHook != nil && c.opts.variant < Variant65C02 {
+		c.resetCycles()
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -202,7 +220,9 @@ func (c *CPU) branch(branchTo bool, param any) {
 
 	c.PC = uint16(addr)
 	c.branchTaken = true
-	c.cycles++
+	if !c.cycleActive {
+		c.cycles++
+	}
 }
 
 // pop pops a byte from the stack and update the stack pointer.
@@ -210,6 +230,9 @@ func (c *CPU) pop() byte {
 	before := c.SP
 	c.SP++
 	c.emitStackEvent(StackPull, before)
+	if c.cycleActive {
+		return c.readCycle(uint16(StackBase + int(c.SP)))
+	}
 	return c.memory.Read(uint16(StackBase + int(c.SP)))
 }
 
@@ -223,7 +246,12 @@ func (c *CPU) pop16() uint16 {
 // push a value to the stack and update the stack pointer.
 func (c *CPU) push(value byte) {
 	before := c.SP
-	c.memory.Write(uint16(StackBase+int(c.SP)), value)
+	address := uint16(StackBase + int(c.SP))
+	if c.cycleActive {
+		c.writeCycle(address, value)
+	} else {
+		c.memory.Write(address, value)
+	}
 	c.SP--
 	c.emitStackEvent(StackPush, before)
 }

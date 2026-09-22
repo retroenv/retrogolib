@@ -193,7 +193,12 @@ func runSingleStepCase(t *testing.T, tc ss6502TestCase, variant CPUVariant) bool
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 
-	cpu := New(memory, WithVariant(variant))
+	cycles := &ssCycleRecorder{memory: mem}
+	options := []Option{WithVariant(variant)}
+	if variant < Variant65C02 {
+		options = append(options, WithCycleHook(cycles.clock))
+	}
+	cpu := New(memory, options...)
 
 	// Load initial CPU state.
 	cpu.PC = tc.Initial.PC
@@ -205,8 +210,34 @@ func runSingleStepCase(t *testing.T, tc ss6502TestCase, variant CPUVariant) bool
 
 	stepErr := cpu.Step()
 	assert.NoError(t, stepErr)
+	// KIL has no next instruction. The fixture records a finite halt interval.
+	for cpu.jammed && len(cycles.accesses) < len(tc.Cycles) {
+		assert.NoError(t, cpu.Step())
+	}
+	if variant < Variant65C02 {
+		assert.Equal(t, tc.Cycles, cycles.accesses, tc.Name)
+		assert.Equal(t, uint64(initialCycles+len(tc.Cycles)), cpu.Cycles(), tc.Name)
+	}
 
 	return verifySingleStepCase(t, tc, cpu, mem)
+}
+
+// ssCycleRecorder records the address, data, and direction of each bus cycle.
+type ssCycleRecorder struct {
+	accesses [][]any
+	memory   *ssSparseMemory
+}
+
+func (r *ssCycleRecorder) clock(cycle BusCycle) bool {
+	direction := "read"
+	value := cycle.Value
+	if cycle.Write {
+		direction = "write"
+	} else {
+		value = r.memory.Read(cycle.Address)
+	}
+	r.accesses = append(r.accesses, []any{float64(cycle.Address), float64(value), direction})
+	return false
 }
 
 // verifySingleStepCase compares the CPU state against the expected final state.

@@ -44,14 +44,18 @@ func (c *CPU) TriggerNMI() {
 // CheckInterrupts services a pending interrupt at an instruction boundary.
 // It returns true if it serviced an interrupt.
 func (c *CPU) CheckInterrupts() bool {
-	if c.stallCycles != 0 {
+	if c.stallCycles != 0 || c.jammed {
 		return false
 	}
-	if c.triggerNmi {
+	nmi, irq := c.triggerNmi, (c.triggerIrq || c.irqLine) && c.Flags.I == 0
+	if c.opts.cycleHook != nil {
+		nmi, irq = c.nmiPolled, c.irqPolled
+	}
+	if nmi {
 		c.nmi()
 		return true
 	}
-	if (c.triggerIrq || c.irqLine) && c.Flags.I == 0 {
+	if irq {
 		c.irq()
 		return true
 	}
@@ -81,6 +85,10 @@ func (c *CPU) executeInterrupt(vectorAddress uint16) {
 }
 
 func (c *CPU) executeInterruptFrom(vectorAddress uint16, source InterruptSource) {
+	if c.opts.cycleHook != nil && c.opts.variant < Variant65C02 {
+		c.interruptCycles(vectorAddress, source)
+		return
+	}
 	if c.opts.stackEventHook != nil {
 		c.executionPC = c.PC
 		c.executionCycle = c.cycles

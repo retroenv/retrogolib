@@ -19,6 +19,7 @@ type Options struct {
 	tracing bool
 	variant CPUVariant
 
+	cycleHook        CycleHook
 	preExecutionHook preExecutionHook
 	stackEventHook   StackEventHook // receives stack pushes and pulls during execution
 }
@@ -33,6 +34,14 @@ func NewOptions(optionList ...Option) Options {
 		option(&opts)
 	}
 	return opts
+}
+
+// WithCycleHook enables bus-cycle execution for NMOS CPU variants. The hook
+// clocks external devices before each bus access. See CycleHook for DMA use.
+func WithCycleHook(hook CycleHook) Option {
+	return func(options *Options) {
+		options.cycleHook = hook
+	}
 }
 
 // WithStackEventHook sets a hook that receives each CPU stack push and pull.
