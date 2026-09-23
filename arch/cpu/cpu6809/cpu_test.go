@@ -159,7 +159,7 @@ func (m *testMem) ReadWord(addr uint16) uint16 {
 	// Big-endian (6809 native)
 	return uint16(m.data[addr])<<8 | uint16(m.data[addr+1])
 }
-func (m *testMem) WriteWord(addr uint16, v uint16) {
+func (m *testMem) WriteWord(addr, v uint16) {
 	// Big-endian (6809 native)
 	m.data[addr] = uint8(v >> 8)
 	m.data[addr+1] = uint8(v)

@@ -87,7 +87,7 @@ func setupSDL(dimensions gui.Dimensions, backend gui.Backend) (uintptr, uintptr,
 }
 
 // renderSDL renders the image to the SDL window.
-func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer uintptr, tex uintptr) (bool, error) {
+func renderSDL(dimensions gui.Dimensions, backend gui.Backend, renderer, tex uintptr) (bool, error) {
 	var ev event
 	for ret := PollEvent(&ev); ret != 0; ret = PollEvent(&ev) {
 		switch ev.Type {

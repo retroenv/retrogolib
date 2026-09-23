@@ -53,7 +53,7 @@ func (m *Memory) ReadLong(address uint32) uint32 {
 }
 
 // WriteLong writes a 24-bit (3-byte) value in little-endian order.
-func (m *Memory) WriteLong(address uint32, value uint32) {
+func (m *Memory) WriteLong(address, value uint32) {
 	m.Write(address, uint8(value))
 	m.Write(address+1, uint8(value>>8))
 	m.Write(address+2, uint8(value>>16))

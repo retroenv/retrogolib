@@ -20,12 +20,12 @@ type State struct {
 	A  uint8  // Accumulator (arithmetic and logic operations)
 	X  uint8  // X index register
 	Y  uint8  // Y index register
-	PC uint16 // Program counter
+	PC uint16 // Program counter captured when State was called
 	SP uint8  // Stack pointer ($0100-$01FF)
 
-	Cycles     uint64     // Total CPU cycles executed
+	Cycles     uint64     // Total CPU cycles captured when State was called
 	Flags      Flags      // Processor status flags
-	Interrupts Interrupts // Interrupt state
+	Interrupts Interrupts // Pending and running interrupt state, not the source of a stack event
 }
 
 // CPU represents a 6502 microprocessor with full instruction set emulation.
@@ -38,25 +38,44 @@ type CPU struct {
 	A  uint8  // Accumulator (arithmetic and logic operations)
 	X  uint8  // X index register
 	Y  uint8  // Y index register
-	PC uint16 // Program counter
+	PC uint16 // Live program counter; StackEvent.PC captures an execution boundary
 	SP uint8  // Stack pointer ($0100-$01FF)
 
 	Flags Flags // Processor status register
 
-	cycles      uint64
+	// Cycle accounting
+	cycles      uint64 // live total; executionCycle captures it before instruction timing is added
 	stallCycles uint16 // DMA transfer stall cycles
 
-	// Interrupt control
-	triggerIrq bool // IRQ interrupt triggered
+	// Bus-cycle execution
+	cycleActive bool // Bus-cycle execution is active inside an instruction or reset.
+	jamCycle    byte // Initial bus sequence after KIL.
+	jammed      bool // KIL stops instruction execution until reset.
+
+	// Interrupt inputs
 	irqLine    bool // IRQ input level
-	irqRunning bool // IRQ handler executing
+	triggerIrq bool // IRQ interrupt triggered
 	triggerNmi bool // NMI interrupt triggered
-	nmiRunning bool // NMI handler executing
+
+	// Interrupt sampling
+	irqPolled bool // IRQ selected by the instruction's last polling cycle.
+	irqSample bool // IRQ input and mask at the end of the last bus cycle.
+	nmiPolled bool // NMI selected by the instruction's last polling cycle.
+	nmiSample bool // NMI request at the end of the last bus cycle.
+
+	// Interrupt handler state
+	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
+	nmiRunning bool // NMI handler active until RTI; not the source of the current stack operation
 
 	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	branchTaken bool // Set by branch to distinguish a self-loop from a fallthrough.
+
+	executionCycle uint64          // cycle count at the current execution boundary
+	executionPC    uint16          // instruction address or interrupted program counter
+	interrupt      InterruptSource // interrupt source for the current stack operation
+	opcode         byte            // opcode for the current instruction, or zero for IRQ/NMI
 
 	memory *Memory
 }
@@ -81,7 +100,9 @@ func New(memory *Memory, options ...Option) *CPU {
 	return c
 }
 
-// Cycles returns the amount of CPU cycles executed since system start.
+// Cycles returns the live total CPU cycles executed since system start.
+// StackEvent.Cycle instead captures this total at the start of the instruction
+// or interrupt that produced the event.
 func (c *CPU) Cycles() uint64 {
 	return c.cycles
 }
@@ -141,6 +162,10 @@ func (c *CPU) ValidateState() error {
 
 // Reset resets the CPU to its initial state while preserving memory.
 func (c *CPU) Reset() {
+	if c.opts.cycleHook != nil && c.opts.variant < Variant65C02 {
+		c.resetCycles()
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -165,6 +190,10 @@ func (c *CPU) Reset() {
 	c.stallCycles = 0
 	c.branchTaken = false
 	c.TraceStep = TraceStep{}
+	c.executionPC = 0
+	c.executionCycle = 0
+	c.opcode = 0
+	c.interrupt = InterruptNone
 
 	// Reload the reset vector.
 	if c.memory != nil {
@@ -195,14 +224,21 @@ func (c *CPU) branch(branchTo bool, params ...any) error {
 
 	c.PC = uint16(addr)
 	c.branchTaken = true
-	c.cycles++
+	if !c.cycleActive {
+		c.cycles++
+	}
 	return nil
 }
 
 // pop pops a byte from the stack and update the stack pointer.
 func (c *CPU) pop() byte {
 	// The 8-bit stack pointer wraps within page one, matching the hardware.
+	before := c.SP
 	c.SP++
+	c.emitStackEvent(StackPull, before)
+	if c.cycleActive {
+		return c.readCycle(uint16(StackBase + int(c.SP)))
+	}
 	return c.memory.Read(uint16(StackBase + int(c.SP)))
 }
 
@@ -215,8 +251,31 @@ func (c *CPU) pop16() uint16 {
 
 // push a value to the stack and update the stack pointer.
 func (c *CPU) push(value byte) {
-	c.memory.Write(uint16(StackBase+int(c.SP)), value)
+	before := c.SP
+	address := uint16(StackBase + int(c.SP))
+	if c.cycleActive {
+		c.writeCycle(address, value)
+	} else {
+		c.memory.Write(address, value)
+	}
 	c.SP--
+	c.emitStackEvent(StackPush, before)
+}
+
+func (c *CPU) emitStackEvent(operation StackOperation, before byte) {
+	if c.opts.stackEventHook == nil {
+		return
+	}
+
+	c.opts.stackEventHook(StackEvent{
+		After:     c.SP,
+		Before:    before,
+		Cycle:     c.executionCycle,
+		Interrupt: c.interrupt,
+		Opcode:    c.opcode,
+		Operation: operation,
+		PC:        c.executionPC,
+	})
 }
 
 // push16 a word to the stack and update the stack pointer.

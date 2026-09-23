@@ -37,7 +37,7 @@ func (m *BasicMemory) ReadWord(addr uint16) uint16 {
 }
 
 // WriteWord writes a 16-bit word to the specified address (little-endian).
-func (m *BasicMemory) WriteWord(addr uint16, value uint16) {
+func (m *BasicMemory) WriteWord(addr, value uint16) {
 	m.data[addr] = uint8(value)
 	m.data[addr+1] = uint8(value >> 8)
 }

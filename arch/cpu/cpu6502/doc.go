@@ -93,5 +93,25 @@
 // These rules follow sections 3.4, 3.6, 3.10, and 3.15 and Table 3-1 of the
 // [W65C02S Datasheet].
 //
+// # Stack Events
+//
+// WithStackEventHook observes each byte pushed or pulled by instructions and
+// IRQ/NMI entry, without adding memory accesses. For an initialized memory:
+//
+//	var events []cpu6502.StackEvent
+//	cpu := cpu6502.New(memory, cpu6502.WithStackEventHook(func(event cpu6502.StackEvent) {
+//		events = append(events, event)
+//	}))
+//
+// Events run synchronously after SP changes, after a push writes memory and
+// before a pull reads it. Hooks must not reenter execution or mutate CPU state
+// or memory. TXS, Reset, and direct SP assignments do not emit events.
+//
+// PC identifies the instruction or interrupted address. IRQ/NMI events have a
+// zero Opcode; use Interrupt to distinguish them from BRK. Cycle is the count
+// at the start of the instruction or interrupt, shared by all of its events,
+// rather than the timing of each bus access. Wrapped identifies an SP wrap
+// within page one; it does not by itself diagnose overflow or underflow.
+//
 // [W65C02S Datasheet]: https://www.westerndesigncenter.com/wdc/documentation/w65c02s.pdf
 package cpu6502

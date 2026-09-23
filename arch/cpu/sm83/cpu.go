@@ -192,7 +192,7 @@ func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 }
 
 // SetRegisterValue sets the value of a register by its 3-bit encoding.
-func (c *CPU) SetRegisterValue(reg uint8, value uint8) {
+func (c *CPU) SetRegisterValue(reg, value uint8) {
 	switch reg {
 	case 0:
 		c.B = value

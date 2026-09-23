@@ -31,7 +31,7 @@ func (c *CPU) readOperand16(param any) (uint16, error) {
 // -- 8-bit ALU operations --
 
 // add8 performs an 8-bit addition and sets H, N, Z, V, C flags.
-func (c *CPU) add8(a, b uint8, carry uint8) uint8 {
+func (c *CPU) add8(a, b, carry uint8) uint8 {
 	sum := uint16(a) + uint16(b) + uint16(carry)
 	result := uint8(sum)
 
@@ -44,7 +44,7 @@ func (c *CPU) add8(a, b uint8, carry uint8) uint8 {
 }
 
 // sub8 performs an 8-bit subtraction and sets N, Z, V, C flags.
-func (c *CPU) sub8(a, b uint8, carry uint8) uint8 {
+func (c *CPU) sub8(a, b, carry uint8) uint8 {
 	diff := int16(a) - int16(b) - int16(carry)
 	result := uint8(diff)
 

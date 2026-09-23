@@ -33,7 +33,7 @@ func (cpu *CPU) GetRegisterValue(reg uint8) uint8 {
 // SetRegisterValue sets the value of a register by its encoding number (0-7).
 // Register 6 writes to memory at (HL) instead of a direct register.
 // Invalid register numbers are silently ignored.
-func (cpu *CPU) SetRegisterValue(reg uint8, value uint8) {
+func (cpu *CPU) SetRegisterValue(reg, value uint8) {
 	switch reg {
 	case 0:
 		cpu.B = value

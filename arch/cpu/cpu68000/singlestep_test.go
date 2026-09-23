@@ -125,7 +125,7 @@ func (m *testMemory) WriteWord(address uint32, value uint16) {
 }
 
 // WriteLong writes a 32-bit long word to memory at the given address (big-endian).
-func (m *testMemory) WriteLong(address uint32, value uint32) {
+func (m *testMemory) WriteLong(address, value uint32) {
 	addr := address & addressMask
 	m.data[addr] = uint8(value >> 24)
 	m.data[addr+1] = uint8(value >> 16)

@@ -52,11 +52,7 @@ func (c *CPU) decodeOpcode() (decodedOpcode, error) {
 	}
 }
 
-func (c *CPU) decodePrefixedOpcode(
-	decoded decodedOpcode,
-	lookup func(uint8) (Opcode, bool),
-) (decodedOpcode, error) {
-
+func (c *CPU) decodePrefixedOpcode(decoded decodedOpcode, lookup func(uint8) (Opcode, bool)) (decodedOpcode, error) {
 	second := c.memory.Read(c.PC + 1)
 	op, ok := lookup(second)
 	if !ok {
