@@ -21,5 +21,5 @@ const (
 	PaletteSize = 32
 
 	// RAMEndAddress defines the end address of RAM in the NES.
-	RAMEndAddress = 0x0FFF
+	RAMEndAddress = 0x07FF
 )
