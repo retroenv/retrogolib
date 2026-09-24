@@ -16,7 +16,7 @@ func TestConstants(t *testing.T) {
 	assert.Equal(t, 4, NameTableCount)
 	assert.Equal(t, 0x400, NameTableSize)
 	assert.Equal(t, 32, PaletteSize)
-	assert.Equal(t, 0x0FFF, RAMEndAddress)
+	assert.Equal(t, 0x07FF, RAMEndAddress)
 }
 
 func TestMemoryLayout(t *testing.T) {
