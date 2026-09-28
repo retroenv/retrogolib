@@ -3,18 +3,18 @@
 Tracks the committed changes introduced by `work2` since its common ancestor
 with the current remote-tracking `main` branch.
 
-**Last Updated:** 2026-09-16
+**Last Updated:** 2026-09-28
 
 ---
 
 ## Current Branch State
 
 - Comparison range: `origin/main...HEAD`, currently
-  `b100e8e...164e66e` on `work2`, using the current remote-tracking ref.
-- Merge base: `b100e8e` (`audio: add CGO-free PCM playback with SDL2 backend
-  (#13)`, 2026-09-16).
-- Committed branch delta: 213 files, with 161 added and 52 modified; 31,065
-  insertions and 2,475 deletions.
+  `9f81a91...8ca69e4` on `work2`, using the current remote-tracking ref.
+- Merge base: `9f81a91` (`cpu6502: add opt-in bus-cycle execution with
+  interrupt polling`, 2026-09-22).
+- Committed branch delta: 215 files, with 161 added and 54 modified; 31,060
+  insertions and 2,481 deletions.
 - `git diff --name-status --find-renames origin/main...HEAD` reports no deleted
   or renamed files in the current range.
 - These statistics cover committed changes only. This documentation refresh is
@@ -31,6 +31,7 @@ from the branch-side diff:
   sorting updates.
 - NES 2.0 cartridge support and 6502 live-interrupt and stall-cycle behavior.
 - Shared dynamic-library and SDL lifecycle support plus CGO-free PCM playback.
+- 6502 stack-event hooks and opt-in bus-cycle execution with interrupt polling.
 
 ## Branch-Specific Changes
 
@@ -97,6 +98,7 @@ from the branch-side diff:
 - Adds release qualification documentation for the 6502, gap-closure plans for
   the Motorola 68000 and Z80, a Commodore 64 system implementation plan, and
   this branch changelog.
+- Corrects the NES internal RAM end address to `$07FF` and updates its test.
 
 ## Package Review and Gap Closure
 
@@ -219,10 +221,11 @@ this table does not claim exhaustive hardware conformance.
 | Added | 8 | `arch/system/atari2600/` | Adds system/register definitions, cartridge metadata, and tests. |
 | Added | 6 | `arch/system/coco/` | Adds CoCo system/register definitions and tests. |
 | Added | 5 | `arch/system/vectrex/` | Adds Vectrex system/register definitions and tests. |
+| Modified | 2 | `arch/system/nes/` | Corrects the internal RAM end address and its test. |
 | Added | 5 | `docs/` | Adds qualification, implementation plans, and branch tracking. |
 | Modified | 1 | `testdata/Makefile` | Integrates the Timendus CHIP-8 ROM suite. |
 
-The grouped counts above total the exact 161 added and 52 modified files
+The grouped counts above total the exact 161 added and 54 modified files
 reported for `origin/main...HEAD`; no row represents a rename.
 
 ## Verification
@@ -240,7 +243,7 @@ Validation recorded through 2026-09-16:
 | Z80 `TestSingleStep` | Pass: 1,604,000 vectors with register, flag, memory, and full port-transaction checks. |
 | Z80 `TestZexdoc` and `TestZexall` | Pass: all 67 groups in each exerciser. |
 | 68000 `TestSingleStep` with `-tags singlestep` | Fails: 996,321 passed and 3,739 failed among all 1,000,060 vectors. |
-| Committed range/count reconciliation | Pass for `origin/main...HEAD`. |
+| Committed range/count reconciliation | Pass for `origin/main...HEAD`: 215 files, 161 added, 54 modified, 31,060 insertions, and 2,481 deletions. |
 
 The 68000 runner now limits diagnostics after ten failures per file while still
 executing every vector. Its remaining failures are 3,736 ASR flag cases, two
