@@ -6,9 +6,11 @@ fast and need no downloads. Release qualification additionally requires two
 independent, pinned test collections; missing, altered, empty or wrong-revision
 data fails the enabled gate instead of silently skipping it.
 
-Provision the data in a new directory (about 1.3 GB for the NMOS vectors):
+Run these commands from the repository root. Git, Go, make, and network access
+are required. Provision the data in a new directory (about 1.3 GB for the NMOS vectors):
 
 ```sh
+set -eu
 qualification_data=$(mktemp -d)
 git clone --filter=blob:none --no-checkout https://github.com/SingleStepTests/65x02.git "$qualification_data/65x02"
 git -C "$qualification_data/65x02" sparse-checkout set 6502
@@ -30,10 +32,18 @@ The gate verifies each checkout's commit and clean state, then requires:
 - Dormann's NMOS functional binary reaching its success loop at `$3469`.
 - The separate 65C02 extended-opcode regression reaching `$24F1`.
 
-The target enables race detection and has a finite ten-minute deadline. It
-must not use `-short`. Ordinary `make test` uses a configurable 60-second
-per-package deadline because race-enabled CPU68000 tests need more headroom
-than the previous ten-second limit; no assertions or cases are removed.
+The target sets `CPU6502_QUALIFY=1`, enables race detection, disables test-result
+caching with `-count=1`, and sets a ten-minute deadline. Do not use `-short`.
+Without `CPU6502_QUALIFY=1`, the release tests skip. The optional integration
+tests and `make -C testdata cpu6502` do not enforce the pinned release revisions.
+
+Ordinary `make test` uses a 60-second deadline per package. Set `TEST_TIMEOUT`
+to change it, for example: `make test TEST_TIMEOUT=120s`.
+
+The runner constructs the CPU without `WithCycleHook`. It checks the default
+instruction execution path; it does not qualify the optional bus-cycle path.
+See [release_test.go](../arch/cpu/cpu6502/release_test.go) and
+[cycle.go](../arch/cpu/cpu6502/cycle.go).
 
 This qualifies observed instruction state and instruction cycle totals, not
 every bus access or undocumented opcode. It is not qualification of a complete
@@ -43,5 +53,5 @@ for the NMOS corpus.
 
 Sources: [SingleStepTests/65x02](https://github.com/SingleStepTests/65x02),
 [Klaus Dormann's functional tests](https://github.com/Klaus2m5/6502_65C02_functional_tests).
-The immutable revisions above, rather than moving default branches, define the
-release evidence.
+The revisions above define the required input data. This procedure does not
+record a passing run. Record the library commit and test output when the gate runs.

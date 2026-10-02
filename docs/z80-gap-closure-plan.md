@@ -1,6 +1,7 @@
 # Z80 Gap Closure Plan
 
-Updated 2026-09-07. The bus interface, interrupt vectors, RETI notification, NMOS
+Implementation record: 2026-09-07. Validation instructions reviewed: 2026-10-02.
+The bus interface, interrupt vectors, RETI notification, NMOS
 LD A,I/R quirk, and ED mirrors are implemented and covered by tests. Interrupt
 handling now uses one path for `Step` and `CheckInterrupts`. T-state callbacks
 remain deferred, and arbitrary IM 0 instruction execution remains unsupported.
@@ -106,24 +107,42 @@ the corpus. A focused regression test reproduces the former flag loss.
 
 The [SingleStepTests Z80 corpus](https://github.com/SingleStepTests/z80) at checkout
 `ebe1875d48f374bcfd4b505d8eb8ee751568b5f7` contains 1,604 files and 1,604,000 vectors.
-The complete run passes with register, flag, memory, and full port-transaction checks.
+The run recorded on 2026-09-07 passed with register, flag, memory, and full
+port-transaction checks. These are historical results, not a new test run.
 The runner does not compare the final Q latch, memory bus cycles, or T-state timing,
 and these vectors do not replace the dedicated interrupt tests.
 
+Run commands from the repository root. The single-step runner reads
+`testdata/z80/v1`; it has no environment-variable override. For a new checkout
+at the recorded revision, use:
+
 ```sh
-# Download only when the corpora are absent.
-make -C testdata z80
-
-go test ./arch/cpu/z80 -run '^TestSingleStep$' -count=1 -timeout 180s
-go test ./arch/cpu/z80 -run '^TestZex(doc|all)$' -count=1 -timeout 45m
-
-go fmt ./...
-make lint
-make test
+set -eu
+git clone --no-checkout https://github.com/SingleStepTests/z80.git testdata/z80
+git -C testdata/z80 checkout --detach ebe1875d48f374bcfd4b505d8eb8ee751568b5f7
+go test -v ./arch/cpu/z80 -run '^TestSingleStep$' -count=1 -timeout 180s
 ```
 
-`go fmt ./...` completed, `make lint` reported zero issues from both linters, and
-`make test` passed the repository's short tests with the race detector. ZEXDOC passed
+If `testdata/z80` already exists, inspect its revision and changes before use.
+Do not replace local data with the clone commands. The runner does not enforce
+the recorded revision or a clean checkout.
+
+For the exercisers, `make -C testdata zexall` downloads missing data or updates
+an existing checkout. Run:
+
+```sh
+make -C testdata zexall
+git -C testdata/zexall rev-parse HEAD
+go test -v ./arch/cpu/z80 -run '^TestZex(doc|all)$' -count=1 -timeout 45m
+```
+
+The original record does not identify the ZEXALL repository revision. Record
+it with each new result. `make -C testdata z80` downloads or updates both
+repositories; it does not pin either revision. Missing data causes these tests
+to skip. Inspect verbose output for skipped tests before reporting a pass.
+
+In the recorded run, `go fmt ./...` completed, and both linters in `make lint`
+reported zero issues. `make test` passed the short tests with the race detector. ZEXDOC passed
 all 67 groups in 397 seconds; ZEXALL passed all 67 groups, including undocumented
-flags, in 318 seconds. The external corpus and exerciser runs used the commands above
-without the race detector.
+flags, in 318 seconds. The external corpus and exerciser runs did not use the
+race detector. Durations depend on the host.

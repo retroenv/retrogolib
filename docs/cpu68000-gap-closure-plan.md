@@ -1,6 +1,7 @@
 # Motorola 68000 Gap Closure Plan
 
-Updated 2026-09-07. Phases 1–4 are implemented. The Phase 6 runner now executes the
+Implementation record: 2026-09-07. Validation instructions reviewed: 2026-10-02.
+Phases 1–4 are implemented. The Phase 6 runner now executes the
 entire corpus, with the remaining reference discrepancies recorded below. Phase 5
 remains deferred until a concrete use case requires instruction prefetch emulation.
 
@@ -92,6 +93,7 @@ state, or cycle counts.
 The corpus is [SingleStepTests/680x0](https://github.com/SingleStepTests/680x0), checkout
 `e0d5ece9670205cc84a0101081837deb446f86a3`, directory `68000/v1`. Both runs below use the
 same full-corpus runner; the baseline uses an overlay of the unchanged `754af72` CPU.
+The table records the 2026-09-07 runs. It does not report a new test run.
 
 | Implementation | Passed | Failed | Total |
 |----------------|-------:|-------:|------:|
@@ -140,18 +142,32 @@ upstream corrections before full corpus conformance can be claimed.
 
 ## Validation Commands
 
-The final implementation passed `go fmt ./...`, both linters in `make lint` with
+The 2026-09-07 implementation passed `go fmt ./...`, both linters in `make lint` with
 zero issues, and all repository short tests under `make test` with the race detector.
 Self-review confirmed that CPU memory transfers go through the checked access helpers;
 `git diff --check` passed. The final full-corpus run reproduced the counts above.
 
+Run from the repository root. To use the recorded corpus revision without
+changing an existing checkout:
+
 ```sh
-go fmt ./...
-make lint
-make test
-make -C testdata cpu68000
-go test -tags singlestep ./arch/cpu/cpu68000 -run '^TestSingleStep$' -count=1 -timeout 120s
+set -eu
+cpu68000_data=$(mktemp -d)
+git clone --filter=blob:none --no-checkout https://github.com/SingleStepTests/680x0.git "$cpu68000_data/680x0"
+git -C "$cpu68000_data/680x0" sparse-checkout set 68000/v1
+git -C "$cpu68000_data/680x0" checkout --detach e0d5ece9670205cc84a0101081837deb446f86a3
+CPU68000_TESTDATA="$cpu68000_data/680x0/68000/v1" \
+go test -v -tags singlestep ./arch/cpu/cpu68000 -run '^TestSingleStep$' -count=1 -timeout 120s
 ```
+
+`CPU68000_TESTDATA` must name the directory that contains the `.json.gz` files,
+not the repository root. The runner skips when the directory or test files are
+absent. It does not enforce the corpus revision or a clean checkout. Inspect
+the verbose output and vector totals before reporting a result.
+
+`make -C testdata cpu68000` downloads or updates the default corpus. It does
+not pin the revision above. Its default runner path is
+`testdata/cpu68000/680x0/68000/v1`.
 
 `make test` runs short tests with the race detector. The tagged integration command
 currently fails with the reference discrepancies above. Full prefetch and bus-sequence
