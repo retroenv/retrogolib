@@ -79,8 +79,14 @@ func TestCaseInsensitiveDefaults(t *testing.T) {
 }
 
 func TestRawINIOptions(t *testing.T) {
-	opts := Options{CaseSensitive: true, RawValues: true, CommentPrefixes: ";#", InlineComments: true,
-		LiteralSections: []string{"comments"}, AllowRepeatedSections: true}
+	opts := Options{
+		CaseSensitive:         true,
+		RawValues:             true,
+		CommentPrefixes:       ";#",
+		InlineComments:        true,
+		LiteralSections:       []string{"comments"},
+		AllowRepeatedSections: true,
+	}
 	input := "\uFEFF; header\r\n[Symbols] ; names\r\nPort = $2000 ; register\n" +
 		"Quote = \"literal; # text\" ; trailing\n[comments]\n$8000=Keep; # and = and \\n\n" +
 		"[Symbols]\nExpression=0x10+Port\nEscape=\"not an escape\\q\""
@@ -137,7 +143,9 @@ func TestOrderedIteratorsStop(t *testing.T) {
 func TestLiteralSectionsFollowCaseOption(t *testing.T) {
 	for _, sensitive := range []bool{false, true} {
 		cfg, err := Parse(strings.NewReader("[Comments]\nText=one; two"), Options{
-			CaseSensitive: sensitive, InlineComments: true, CommentPrefixes: ";",
+			CaseSensitive:   sensitive,
+			InlineComments:  true,
+			CommentPrefixes: ";",
 			LiteralSections: []string{"comments"},
 		})
 		assert.NoError(t, err)

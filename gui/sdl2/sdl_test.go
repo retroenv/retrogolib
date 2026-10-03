@@ -79,7 +79,9 @@ func TestSetupFailureCleanup(t *testing.T) {
 			}
 			CreateTexture = func(uintptr, uint32, int, int32, int32) uintptr { return 0 }
 			_, _, _, err := setupSDL(gui.Dimensions{
-				Width: 16, Height: 16, ScaleFactor: 1,
+				Width:       16,
+				Height:      16,
+				ScaleFactor: 1,
 			}, setupBackend{})
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "original error")

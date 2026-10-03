@@ -65,7 +65,9 @@ func (d *audioDevice) playback() *audio.Playback {
 	d.errors = make(chan error, 1)
 	go d.run()
 	return &audio.Playback{
-		Start: d.start, Stop: d.stop, Errors: d.errors,
+		Start:  d.start,
+		Stop:   d.stop,
+		Errors: d.errors,
 	}
 }
 
@@ -200,8 +202,10 @@ func openDevice(backend audio.Backend, format audio.Format, release func()) (*au
 	defer runtime.UnlockOSThread()
 
 	desired := AudioSpec{
-		Freq: int32(format.SampleRate), Format: uint16(format.Format),
-		Channels: uint8(format.Channels), Samples: uint16(format.Samples),
+		Freq:     int32(format.SampleRate),
+		Format:   uint16(format.Format),
+		Channels: uint8(format.Channels),
+		Samples:  uint16(format.Samples),
 	}
 	var obtained AudioSpec
 	id := OpenAudioDevice(nil, 0, &desired, &obtained, 0)
@@ -219,10 +223,13 @@ func openDevice(backend audio.Backend, format audio.Format, release func()) (*au
 	frames := max(int64(format.SampleRate)/50, 2*int64(max(format.Samples, int(obtained.Samples))))
 	interval := time.Second * time.Duration(format.Samples) / time.Duration(format.SampleRate) / 2
 	return &audioDevice{
-		deviceID: id, backend: backend, buffer: make([]byte, format.BufferSize()),
+		deviceID:    id,
+		backend:     backend,
+		buffer:      make([]byte, format.BufferSize()),
 		targetBytes: uint32(frames * int64(format.Channels*format.BytesPerSample())),
 		interval:    max(time.Millisecond, min(5*time.Millisecond, interval)),
-		paused:      true, release: release,
+		paused:      true,
+		release:     release,
 	}, nil
 }
 

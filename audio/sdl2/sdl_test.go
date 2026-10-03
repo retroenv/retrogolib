@@ -238,9 +238,14 @@ func (s *mockSDL) awaitEvent(t *testing.T, event string) {
 }
 
 func newTestBackend() *testBackend {
-	return &testBackend{format: audio.Format{
-		SampleRate: 44100, Channels: 2, Samples: 512, Format: audio.FormatS16,
-	}}
+	return &testBackend{
+		format: audio.Format{
+			SampleRate: 44100,
+			Channels:   2,
+			Samples:    512,
+			Format:     audio.FormatS16,
+		},
+	}
 }
 
 func newTestPlayback(t *testing.T, b *testBackend) (*audio.Playback, *audioDevice, *mockSDL) {

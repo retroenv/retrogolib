@@ -65,7 +65,7 @@ These behaviors follow the interrupt-response and HALT sections of the
 | NMI | 0066 | 11 |
 | IM 0 IRQ | RST target from IRQData; 0038 for the retained non-RST fallback | 13 |
 | IM 1 IRQ | 0038 | 13 |
-| IM 2 IRQ | Little-endian word at `(I << 8) | IRQData()` | 19 |
+| IM 2 IRQ | Little-endian word at `(I << 8) \| IRQData()` | 19 |
 
 IM 0/IM 2 sample `IRQData` once before pushing the interrupted PC. IM 2 supports
 odd vector addresses and wrapping the vector word from FFFF to 0000. IM 1 ignores

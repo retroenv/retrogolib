@@ -166,7 +166,9 @@ type integrationVideo struct{}
 func (*integrationVideo) Image() *image.RGBA { return image.NewRGBA(image.Rect(0, 0, 16, 16)) }
 func (*integrationVideo) Dimensions() gui.Dimensions {
 	return gui.Dimensions{
-		Width: 16, Height: 16, ScaleFactor: 1,
+		Width:       16,
+		Height:      16,
+		ScaleFactor: 1,
 	}
 }
 func (*integrationVideo) WindowTitle() string { return "audio coexistence test" }

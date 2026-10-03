@@ -44,8 +44,14 @@ func (cpu *CPU) raiseAccessFault(address uint32, write bool, space accessSpace, 
 		pc = uint32(int32(pc) + cpu.operandPCOffset)
 	}
 	panic(&accessError{
-		cause: cause, address: address, pc: pc, status: status,
-		sr: cpu.GetSR(), word: cpu.instructionWord, vector: vector, cycles: cpu.accessCycles,
+		cause:   cause,
+		address: address,
+		pc:      pc,
+		status:  status,
+		sr:      cpu.GetSR(),
+		word:    cpu.instructionWord,
+		vector:  vector,
+		cycles:  cpu.accessCycles,
 	})
 }
 

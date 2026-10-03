@@ -112,8 +112,13 @@ func TestBusErrorAbortsTransfer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu := newTestCPU(t)
-			bus := &rejectingBus{BasicBus: cpu.bus.(*BasicBus), address: tt.address,
-				write: tt.write, reject: true, cause: errors.New("unmapped device")}
+			bus := &rejectingBus{
+				BasicBus: cpu.bus.(*BasicBus),
+				address:  tt.address,
+				write:    tt.write,
+				reject:   true,
+				cause:    errors.New("unmapped device"),
+			}
 			cpu.bus = bus
 			cpu.A[0], cpu.D[0] = 0x3000, 0x12345678
 			bus.WriteWord(cpu.PC, tt.opcode)
@@ -135,8 +140,13 @@ func TestBusErrorAbortsTransfer(t *testing.T) {
 func TestDoubleFaultRequiresReset(t *testing.T) {
 	// A second fault while building the fault frame must halt without recursion.
 	cpu := newTestCPU(t)
-	bus := &rejectingBus{BasicBus: cpu.bus.(*BasicBus), address: 0x3000,
-		reject: true, rejectStack: true, cause: errors.New("bus unavailable")}
+	bus := &rejectingBus{
+		BasicBus:    cpu.bus.(*BasicBus),
+		address:     0x3000,
+		reject:      true,
+		rejectStack: true,
+		cause:       errors.New("bus unavailable"),
+	}
 	cpu.bus = bus
 	cpu.A[0] = 0x3000
 	bus.WriteWord(cpu.PC, 0x3010)
@@ -211,8 +221,12 @@ func TestStatusPrivilegeBeforeExtensionFetch(t *testing.T) {
 	// A forbidden SR write must trap before an inaccessible extension is read.
 	for _, opcode := range []uint16{0x007C, 0x027C, 0x0A7C} {
 		cpu := newTestCPU(t)
-		bus := &rejectingBus{BasicBus: cpu.bus.(*BasicBus), address: 0x1002,
-			reject: true, cause: errors.New("unmapped extension")}
+		bus := &rejectingBus{
+			BasicBus: cpu.bus.(*BasicBus),
+			address:  0x1002,
+			reject:   true,
+			cause:    errors.New("unmapped extension"),
+		}
 		cpu.bus = bus
 		cpu.USP = 0x8000
 		cpu.SetSR(0)
@@ -237,8 +251,12 @@ func TestByteAccessAtOddAddress(t *testing.T) {
 
 func TestFaultWhileFetchingExceptionVector(t *testing.T) {
 	cpu := newTestCPU(t)
-	bus := &rejectingBus{BasicBus: cpu.bus.(*BasicBus), address: VectorTrap0 * 4,
-		reject: true, cause: errors.New("unmapped vector")}
+	bus := &rejectingBus{
+		BasicBus: cpu.bus.(*BasicBus),
+		address:  VectorTrap0 * 4,
+		reject:   true,
+		cause:    errors.New("unmapped vector"),
+	}
 	cpu.bus = bus
 	bus.WriteWord(cpu.PC, 0x4E40) // TRAP #0.
 	bus.WriteLong(VectorBusError*4, 0x2000)

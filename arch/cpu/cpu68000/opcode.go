@@ -314,15 +314,25 @@ func decodeLine4(opcode uint16) (DecodedOpcode, error) {
 func decodeLine4MoveUSP(reg uint16, toUSP bool) (DecodedOpcode, error) {
 	if toUSP {
 		return DecodedOpcode{
-			Instruction: insMOVE, Size: SizeLong,
-			SrcMode: 1, SrcReg: uint8(reg), DstMode: 7, DstReg: 5,
-			Extra: 1, Timing: 4,
+			Instruction: insMOVE,
+			Size:        SizeLong,
+			SrcMode:     1,
+			SrcReg:      uint8(reg),
+			DstMode:     7,
+			DstReg:      5,
+			Extra:       1,
+			Timing:      4,
 		}, nil
 	}
 	return DecodedOpcode{
-		Instruction: insMOVE, Size: SizeLong,
-		SrcMode: 7, SrcReg: 5, DstMode: 1, DstReg: uint8(reg),
-		Extra: 2, Timing: 4,
+		Instruction: insMOVE,
+		Size:        SizeLong,
+		SrcMode:     7,
+		SrcReg:      5,
+		DstMode:     1,
+		DstReg:      uint8(reg),
+		Extra:       2,
+		Timing:      4,
 	}, nil
 }
 
