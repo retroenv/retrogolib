@@ -114,6 +114,9 @@ func TestSystemFromString(t *testing.T) {
 		{"valid chip8", "chip8", CHIP8System, true},
 		{"valid dos", "dos", DOS, true},
 		{"valid gameboy", "gameboy", GameBoy, true},
+		{"valid cpm", "cpm", CPM, true},
+		{"valid gameboy color", "gbc", GameBoyColor, true},
+		{"valid genesis", "genesis", Genesis, true},
 		{"valid generic", "generic", Generic, true},
 		{"valid nes", "nes", NES, true},
 		{"valid zx-spectrum", "zx-spectrum", ZXSpectrum, true},
@@ -135,7 +138,10 @@ func TestSystemFromString(t *testing.T) {
 
 func TestSupportedSystems(t *testing.T) {
 	got := SupportedSystems()
-	expected := []System{AppleIIGS, Atari2600, CHIP8System, CoCo, DOS, GameBoy, Generic, NES, SNES, Vectrex, ZXSpectrum}
+	expected := []System{
+		AppleIIGS, Atari2600, CHIP8System, CoCo, CPM, DOS, GameBoy, GameBoyColor,
+		Genesis, Generic, NES, SNES, Vectrex, ZXSpectrum,
+	}
 
 	assert.Len(t, expected, len(got))
 
@@ -157,6 +163,9 @@ func TestSystemConstants(t *testing.T) {
 	assert.Equal(t, "chip8", string(CHIP8System))
 	assert.Equal(t, "dos", string(DOS))
 	assert.Equal(t, "gameboy", string(GameBoy))
+	assert.Equal(t, "cpm", string(CPM))
+	assert.Equal(t, "gbc", string(GameBoyColor))
+	assert.Equal(t, "genesis", string(Genesis))
 	assert.Equal(t, "generic", string(Generic))
 	assert.Equal(t, "nes", string(NES))
 	assert.Equal(t, "zx-spectrum", string(ZXSpectrum))

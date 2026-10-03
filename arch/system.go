@@ -29,12 +29,21 @@ const (
 	// Uses the Motorola 6809E processor.
 	CoCo System = "coco"
 
+	// CPM represents the CP/M operating system.
+	CPM System = "cpm"
+
 	// DOS represents MS-DOS and compatible systems.
 	DOS System = "dos"
 
 	// GameBoy represents the Nintendo Game Boy handheld system.
 	// Includes original Game Boy, Game Boy Pocket, and Game Boy Color compatibility.
 	GameBoy System = "gameboy"
+
+	// GameBoyColor represents the Nintendo Game Boy Color system.
+	GameBoyColor System = "gbc"
+
+	// Genesis represents the Sega Genesis and Mega Drive systems.
+	Genesis System = "genesis"
 
 	// Generic represents a generic system without specific hardware quirks.
 	// Can be used for any CPU architecture when no system-specific behavior is needed.
@@ -62,8 +71,11 @@ var allSupportedSystems = []System{
 	Atari2600,
 	CHIP8System,
 	CoCo,
+	CPM,
 	DOS,
 	GameBoy,
+	GameBoyColor,
+	Genesis,
 	Generic,
 	NES,
 	SNES,
