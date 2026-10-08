@@ -33,6 +33,11 @@ func TestSystem_String(t *testing.T) {
 			system: NES,
 			want:   "nes",
 		},
+		{
+			name:   "Intellivision",
+			system: Intellivision,
+			want:   "intellivision",
+		},
 	}
 
 	for _, tt := range tests {
@@ -74,6 +79,7 @@ func TestSystem_IsValid(t *testing.T) {
 			system: NES,
 			want:   true,
 		},
+		{name: "Intellivision is valid", system: Intellivision, want: true},
 		{
 			name:   "ZXSpectrum is valid",
 			system: ZXSpectrum,
@@ -117,6 +123,7 @@ func TestSystemFromString(t *testing.T) {
 		{"valid cpm", "cpm", CPM, true},
 		{"valid gameboy color", "gbc", GameBoyColor, true},
 		{"valid genesis", "genesis", Genesis, true},
+		{"valid intellivision", "INTELLIVISION", Intellivision, true},
 		{"valid generic", "generic", Generic, true},
 		{"valid nes", "nes", NES, true},
 		{"valid zx-spectrum", "zx-spectrum", ZXSpectrum, true},
@@ -140,7 +147,7 @@ func TestSupportedSystems(t *testing.T) {
 	got := SupportedSystems()
 	expected := []System{
 		AppleIIGS, Atari2600, CHIP8System, CoCo, CPM, DOS, GameBoy, GameBoyColor,
-		Generic, Genesis, NES, SNES, Vectrex, ZXSpectrum,
+		Generic, Genesis, Intellivision, NES, SNES, Vectrex, ZXSpectrum,
 	}
 
 	assert.Len(t, expected, len(got))
@@ -166,6 +173,7 @@ func TestSystemConstants(t *testing.T) {
 	assert.Equal(t, "cpm", string(CPM))
 	assert.Equal(t, "gbc", string(GameBoyColor))
 	assert.Equal(t, "genesis", string(Genesis))
+	assert.Equal(t, "intellivision", string(Intellivision))
 	assert.Equal(t, "generic", string(Generic))
 	assert.Equal(t, "nes", string(NES))
 	assert.Equal(t, "zx-spectrum", string(ZXSpectrum))

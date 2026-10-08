@@ -52,6 +52,9 @@ const (
 	// - Sega Genesis/Mega Drive
 	CPU68000 Architecture = "68000"
 
+	// CP1610 represents the General Instrument CP1610 processor used in the Intellivision.
+	CP1610 Architecture = "cp1610"
+
 	// SM83 represents the Sharp SM83 (LR35902) processor used in:
 	// - Nintendo Game Boy
 	// - Nintendo Game Boy Color
@@ -81,6 +84,7 @@ var allSupportedArchitectures = []Architecture{
 	CPU65816,
 	CPU6809,
 	CPU68000,
+	CP1610,
 	SM83,
 	X86,
 	Z80,

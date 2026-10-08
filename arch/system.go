@@ -51,6 +51,10 @@ const (
 	// Uses the Motorola 68000 processor with a Z80 sound coprocessor.
 	Genesis System = "genesis"
 
+	// Intellivision represents the Mattel Intellivision game console.
+	// It uses the General Instrument CP1610 processor.
+	Intellivision System = "intellivision"
+
 	// NES represents the Nintendo Entertainment System (Famicom).
 	NES System = "nes"
 
@@ -79,6 +83,7 @@ var allSupportedSystems = []System{
 	GameBoyColor,
 	Generic,
 	Genesis,
+	Intellivision,
 	NES,
 	SNES,
 	Vectrex,

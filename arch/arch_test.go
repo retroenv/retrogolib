@@ -24,6 +24,11 @@ func TestArchitecture_String(t *testing.T) {
 			want: "68000",
 		},
 		{
+			name: "CP1610",
+			arch: CP1610,
+			want: "cp1610",
+		},
+		{
 			name: "Z80",
 			arch: Z80,
 			want: "z80",
@@ -62,6 +67,11 @@ func TestArchitecture_IsValid(t *testing.T) {
 		{
 			name: "Z80 is valid",
 			arch: Z80,
+			want: true,
+		},
+		{
+			name: "CP1610 is valid",
+			arch: CP1610,
 			want: true,
 		},
 		{
@@ -108,6 +118,7 @@ func TestFromString(t *testing.T) {
 	}{
 		{"valid 6502", "6502", CPU6502, true},
 		{"valid 68000", "68000", CPU68000, true},
+		{"valid cp1610", "CP1610", CP1610, true},
 		{"valid z80", "z80", Z80, true},
 		{"valid chip8", "chip8", CHIP8, true},
 		{"valid x86", "x86", X86, true},
@@ -129,7 +140,7 @@ func TestFromString(t *testing.T) {
 
 func TestSupportedArchitectures(t *testing.T) {
 	got := SupportedArchitectures()
-	expected := []Architecture{CHIP8, CPU6502, CPU65C02, CPU65816, CPU6809, CPU68000, SM83, X86, Z80}
+	expected := []Architecture{CHIP8, CPU6502, CPU65C02, CPU65816, CPU6809, CPU68000, CP1610, SM83, X86, Z80}
 
 	assert.Len(t, expected, len(got))
 
@@ -153,6 +164,7 @@ func TestConstants(t *testing.T) {
 	assert.Equal(t, "65816", string(CPU65816))
 	assert.Equal(t, "6809", string(CPU6809))
 	assert.Equal(t, "68000", string(CPU68000))
+	assert.Equal(t, "cp1610", string(CP1610))
 	assert.Equal(t, "chip8", string(CHIP8))
 	assert.Equal(t, "x86", string(X86))
 	assert.Equal(t, "z80", string(Z80))

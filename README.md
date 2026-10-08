@@ -12,9 +12,9 @@ debuggers, disassemblers, and system-specific utilities.
 
 ## Features
 
-* **CPU emulation** - Chip-8, 6502-family, 65C816, 6809, 68000, SM83, and Z80 emulators with tested instruction implementations
+* **CPU emulation** - Chip-8, CP1610, 6502-family, 65C816, 6809, 68000, SM83, and Z80 emulators with tested instruction implementations
 * **Instruction definitions** - x86 definitions from the 8086 through the 80486 for static analysis tools
-* **System helpers** - NES cartridge, mapper, register, and parameter support; Atari 2600, CoCo, and Vectrex memory-map and register definitions
+* **System helpers** - NES cartridge, mapper, register, and parameter support; Atari 2600, CoCo, Intellivision, and Vectrex memory-map and register definitions
 * **CGO-free GUI support** - Cross-platform rendering through SDL2 on Linux, Windows, macOS, and FreeBSD
 * **CGO-free audio support** - Backend-neutral PCM playback with SDL2 output, concurrency-safe controls, and asynchronous error reporting
 * **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
@@ -40,6 +40,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     ├─ arch                        shared architecture constants and types
     │  ├─ cpu
     │  │  ├─ chip8                 Chip-8 virtual machine with configurable quirks
+    │  │  ├─ cp1610                CP1610 emulator with instruction and opcode definitions
     │  │  ├─ cpu6502               MOS 6502-family emulator, including NMOS and 65C02 variants
     │  │  ├─ cpu65816              WDC 65C816 emulator with emulation and native modes
     │  │  ├─ cpu6809               Motorola 6809 emulator
@@ -53,6 +54,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     │     │  └─ register           TIA and RIOT register constants
     │     ├─ coco                  TRS-80 Color Computer memory map and vectors
     │     │  └─ register           SAM and PIA register constants
+    │     ├─ intellivision         Intellivision memory map and entry addresses
     │     ├─ nes                   Nintendo Entertainment System support
     │     │  ├─ cartridge          .nes ROM loading and saving
     │     │  ├─ codedatalog        FCEUX/Mesen-compatible code/data logging
