@@ -445,36 +445,42 @@ func (c *Config) convertToValue(val any) (Value, error) {
 			parsed: v,
 			vtype:  stringType,
 		}, nil
+
 	case int:
 		return Value{
 			Raw:    strconv.Itoa(v),
 			parsed: v,
 			vtype:  intType,
 		}, nil
+
 	case int32:
 		return Value{
 			Raw:    strconv.Itoa(int(v)),
 			parsed: int(v),
 			vtype:  intType,
 		}, nil
+
 	case int64:
 		return Value{
 			Raw:    strconv.Itoa(int(v)),
 			parsed: int(v),
 			vtype:  intType,
 		}, nil
+
 	case bool:
 		return Value{
 			Raw:    strconv.FormatBool(v),
 			parsed: v,
 			vtype:  boolType,
 		}, nil
+
 	case float64:
 		return Value{
 			Raw:    strconv.FormatFloat(v, 'g', -1, 64),
 			parsed: v,
 			vtype:  floatType,
 		}, nil
+
 	case float32:
 		f64 := float64(v)
 		return Value{
@@ -482,6 +488,7 @@ func (c *Config) convertToValue(val any) (Value, error) {
 			parsed: f64,
 			vtype:  floatType,
 		}, nil
+
 	default:
 		return Value{}, fmt.Errorf("%w: %T", ErrUnsupportedType, val)
 	}

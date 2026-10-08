@@ -81,12 +81,15 @@ func (c *Config) formatKeyValue(key string, value Value) string {
 	case stringType:
 		// Always quote strings to maintain consistency and handle spaces
 		return fmt.Sprintf("%s = %q", key, value.Raw)
+
 	case hexType:
 		if val, ok := value.parsed.(int); ok {
 			return fmt.Sprintf("%s = 0x%X", key, val)
 		}
+
 	case boolType:
 		return fmt.Sprintf("%s = %t", key, value.parsed.(bool))
+
 	case intType:
 		return fmt.Sprintf("%s = %d", key, value.parsed.(int))
 	case floatType:
@@ -108,6 +111,7 @@ func (c *Config) appendNewContent(buf *strings.Builder) {
 			if existingKeys[element.Section] == nil {
 				existingKeys[element.Section] = set.New[string]()
 			}
+
 		case keyValueElement:
 			if existingKeys[element.Section] == nil {
 				existingKeys[element.Section] = set.New[string]()

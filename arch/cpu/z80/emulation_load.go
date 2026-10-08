@@ -91,18 +91,22 @@ func ldIndirect(c *CPU, _ ...any) error {
 		addr := c.bc()
 		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
+
 	case 0x0A: // LD A,(BC) - load A from (BC)
 		addr := c.bc()
 		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
+
 	case 0x12: // LD (DE),A - store A at (DE)
 		addr := c.de()
 		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
+
 	case 0x1A: // LD A,(DE) - load A from (DE)
 		addr := c.de()
 		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
+
 	default:
 		return fmt.Errorf("unsupported indirect load opcode: 0x%02X", opcode)
 	}
@@ -125,16 +129,20 @@ func ldExtended(c *CPU, params ...any) error {
 	case 0x22: // LD (nn),HL - store HL to memory address nn
 		c.bus.WriteWord(addr, c.hl())
 		c.MEMPTR = addr + 1
+
 	case 0x2A: // LD HL,(nn) - load HL from memory address nn
 		value := c.bus.ReadWord(addr)
 		c.setHL(value)
 		c.MEMPTR = addr + 1
+
 	case 0x32: // LD (nn),A - store A to memory address nn
 		c.bus.Write(addr, c.A)
 		c.MEMPTR = (addr+1)&0xFF | uint16(c.A)<<8
+
 	case 0x3A: // LD A,(nn) - load A from memory address nn
 		c.A = c.bus.Read(addr)
 		c.MEMPTR = addr + 1
+
 	default:
 		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
 	}

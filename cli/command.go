@@ -68,6 +68,7 @@ func (cmd *Command) Execute(args []string) int {
 			fmt.Println("version not set")
 		}
 		return 0
+
 	case "--help", "-h", "help":
 		cmd.ShowUsage()
 		return 0

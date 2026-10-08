@@ -192,6 +192,7 @@ func Len(t Testing, object any, expectedLen int, msgAndArgs ...any) {
 		}
 		msg := "Length not equal: \nexpected: " + strconv.Itoa(expectedLen) + "\nactual  : " + strconv.Itoa(actualLen)
 		Fail(t, msg, msgAndArgs...)
+
 	default:
 		Fail(t, fmt.Sprintf("Object of type %T does not have a length", object), msgAndArgs...)
 	}
@@ -453,14 +454,17 @@ func isGreater(first, second any) bool {
 		if s, ok := second.(int); ok {
 			return f > s
 		}
+
 	case int64:
 		if s, ok := second.(int64); ok {
 			return f > s
 		}
+
 	case float64:
 		if s, ok := second.(float64); ok {
 			return f > s
 		}
+
 	case string:
 		if s, ok := second.(string); ok {
 			return f > s
@@ -498,18 +502,22 @@ func tryFastPathLess(first, second any) (result, ok bool) {
 		if s, ok := second.(int); ok {
 			return f < s, true
 		}
+
 	case int64:
 		if s, ok := second.(int64); ok {
 			return f < s, true
 		}
+
 	case uint64:
 		if s, ok := second.(uint64); ok {
 			return f < s, true
 		}
+
 	case float64:
 		if s, ok := second.(float64); ok {
 			return f < s, true
 		}
+
 	case string:
 		if s, ok := second.(string); ok {
 			return f < s, true
