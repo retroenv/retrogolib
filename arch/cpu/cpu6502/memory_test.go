@@ -55,6 +55,23 @@ func TestMemoryRequiresAddressParameter(t *testing.T) {
 	assert.ErrorIs(t, memory.WriteAddressModes(0), ErrMissingParameter)
 }
 
+func TestReadAddressModesNegativeIntIsAnAddress(t *testing.T) {
+	t.Parallel()
+
+	memory, err := NewMemory(&testMemory{})
+	assert.NoError(t, err)
+	memory.Write(0xffff, 0x42)
+
+	// A negative int is not an immediate value, so it is read as an address.
+	value, err := memory.ReadAddressModes(true, -1)
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0x42), value)
+
+	value, err = memory.ReadAddressModes(true, 0x42)
+	assert.NoError(t, err)
+	assert.Equal(t, uint8(0x42), value)
+}
+
 func TestReadAbsoluteIndexedTypesOffsetAddress(t *testing.T) {
 	t.Parallel()
 

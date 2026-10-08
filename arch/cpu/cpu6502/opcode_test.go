@@ -86,6 +86,8 @@ func TestUnofficialInstructions(t *testing.T) {
 }
 
 func TestNMOSLegalOpcodeCountExcludesJam(t *testing.T) {
+	t.Parallel()
+
 	legal := 0
 	for _, opcode := range Opcodes {
 		if !opcode.Instruction.Unofficial {
@@ -135,4 +137,12 @@ func TestOpcodeMemoryCategories(t *testing.T) {
 	assert.False(t, Opcodes[0x0a].ReadWritesMemory(MemoryReadWriteInstructions))
 	assert.True(t, Opcodes65C02[0x0f].ReadsMemory(MemoryReadInstructions))
 	assert.Equal(t, Bbr0.Name, Opcodes65C02[0x0f].Instruction.Name)
+
+	// Read-modify-write instructions belong to one category only.
+	for _, opcode := range []byte{0x0c, 0x1c} {
+		assert.False(t, Opcodes65C02[opcode].ReadsMemory(MemoryReadInstructions), "opcode 0x%02x", opcode)
+		assert.True(t, Opcodes65C02[opcode].ReadWritesMemory(MemoryReadWriteInstructions), "opcode 0x%02x", opcode)
+	}
+	assert.Equal(t, TsbInst.Name, Opcodes65C02[0x0c].Instruction.Name)
+	assert.Equal(t, TrbInst.Name, Opcodes65C02[0x1c].Instruction.Name)
 }

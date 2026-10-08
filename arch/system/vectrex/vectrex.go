@@ -31,17 +31,26 @@ const (
 	RAMMirrorEnd = 0xCFFF
 )
 
-// VIA (MC6522) address range.
+// VIA (6522) address range. The VIA decodes only A0-A3, so the 16 registers
+// repeat through the complete region.
 const (
 	// VIAStart is the first VIA register address.
 	VIAStart = 0xD000
 	// VIAEnd is the last VIA register address.
 	VIAEnd = 0xD00F
 
-	// VIAMirrorStart is the start of the VIA register mirror.
-	VIAMirrorStart = 0xD800
-	// VIAMirrorEnd is the end of the VIA register mirror.
-	VIAMirrorEnd = 0xD80F
+	// VIARegionEnd is the last address that selects the VIA.
+	VIARegionEnd = 0xD7FF
+	// VIAMirrorMask selects the VIA register offset from a mirrored address.
+	VIAMirrorMask = 0x000F
+)
+
+// Address range that selects RAM and VIA at the same time. Software must not use it.
+const (
+	// DualSelectStart is the first address that selects both RAM and VIA.
+	DualSelectStart = 0xD800
+	// DualSelectEnd is the last address that selects both RAM and VIA.
+	DualSelectEnd = 0xDFFF
 )
 
 // System ROM address range.
@@ -66,6 +75,10 @@ const (
 	IRQVector = 0xFFF8
 	// FIRQVector is the address of the FIRQ vector.
 	FIRQVector = 0xFFF6
+	// SWI2Vector is the address of the SWI2 vector.
+	SWI2Vector = 0xFFF4
+	// SWI3Vector is the address of the SWI3 vector.
+	SWI3Vector = 0xFFF2
 )
 
 // Standard cartridge sizes in bytes.

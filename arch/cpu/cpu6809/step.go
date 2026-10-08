@@ -41,6 +41,7 @@ func (c *CPU) decodeOpcode() (decodedOpcode, error) {
 		return c.decodePrefixedOpcode(decoded, GetPage2OpcodeInfo)
 	case Prefix11:
 		return c.decodePrefixedOpcode(decoded, GetPage3OpcodeInfo)
+
 	default:
 		op, ok := GetOpcodeInfo(first)
 		if !ok {

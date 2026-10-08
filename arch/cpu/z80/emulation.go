@@ -304,9 +304,9 @@ func (cpu *CPU) bit(n, value uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
-	setFlag(&cpu.Flags.Z, bitIsZero)
-	setFlag(&cpu.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
-	setFlag(&cpu.Flags.S, n == 7 && bit != 0)
+	cpu.setFlag(&cpu.Flags.Z, bitIsZero)
+	cpu.setFlag(&cpu.Flags.P, bitIsZero) // P/V same as Z for BIT instruction
+	cpu.setFlag(&cpu.Flags.S, n == 7 && bit != 0)
 	cpu.setH(true)
 	cpu.setN(false)
 	cpu.setXY(value) // X/Y from value for register BIT ops
@@ -318,9 +318,9 @@ func (cpu *CPU) bitMemptr(n, value, memptrHigh uint8) {
 	bit := (value >> n) & 1
 	bitIsZero := bit == 0
 
-	setFlag(&cpu.Flags.Z, bitIsZero)
-	setFlag(&cpu.Flags.P, bitIsZero)
-	setFlag(&cpu.Flags.S, n == 7 && bit != 0)
+	cpu.setFlag(&cpu.Flags.Z, bitIsZero)
+	cpu.setFlag(&cpu.Flags.P, bitIsZero)
+	cpu.setFlag(&cpu.Flags.S, n == 7 && bit != 0)
 	cpu.setH(true)
 	cpu.setN(false)
 	cpu.setXY(memptrHigh)

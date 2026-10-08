@@ -5,6 +5,7 @@ func (c *CPU) readOperand8(param any) (uint8, error) {
 	switch p := param.(type) {
 	case Immediate8:
 		return uint8(p), nil
+
 	default:
 		addr, err := c.resolveEA(param)
 		if err != nil {
@@ -19,6 +20,7 @@ func (c *CPU) readOperand16(param any) (uint16, error) {
 	switch p := param.(type) {
 	case Immediate16:
 		return uint16(p), nil
+
 	default:
 		addr, err := c.resolveEA(param)
 		if err != nil {
@@ -376,7 +378,7 @@ func lds(c *CPU, param any) error {
 	if err != nil {
 		return err
 	}
-	c.S = val
+	c.loadS(val)
 	c.setZN16(c.S)
 	c.Flags.V = 0
 	return nil
@@ -525,7 +527,7 @@ func leas(c *CPU, param any) error {
 		return err
 	}
 
-	c.S = addr
+	c.loadS(addr)
 
 	return nil
 }

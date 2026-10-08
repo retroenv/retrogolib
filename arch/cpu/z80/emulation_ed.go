@@ -16,7 +16,7 @@ func (cpu *CPU) adcHL(value uint16) {
 
 	r16 := uint16(result)
 	cpu.setS(uint8(r16 >> 8))
-	setFlag(&cpu.Flags.Z, r16 == 0)
+	cpu.setFlag(&cpu.Flags.Z, r16 == 0)
 	cpu.setXY(uint8(r16 >> 8))
 	cpu.setC(result > 0xFFFF)
 	cpu.setH((hl&0x0FFF)+(value&0x0FFF)+uint16(carry) > 0x0FFF)
@@ -35,7 +35,7 @@ func (cpu *CPU) sbcHL(value uint16) {
 
 	r16 := uint16(result)
 	cpu.setS(uint8(r16 >> 8))
-	setFlag(&cpu.Flags.Z, r16 == 0)
+	cpu.setFlag(&cpu.Flags.Z, r16 == 0)
 	cpu.setXY(uint8(r16 >> 8))
 	cpu.setC(result > 0xFFFF)
 	cpu.setH((hl & 0x0FFF) < (value&0x0FFF)+uint16(carry))
@@ -49,7 +49,7 @@ func (cpu *CPU) setIOBlockFlags(value uint8, k uint16) {
 	cpu.setS(cpu.B)
 	cpu.setZ(cpu.B)
 	cpu.setXY(cpu.B)
-	setFlag(&cpu.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
+	cpu.setFlag(&cpu.Flags.N, value&0x80 != 0) // N = bit 7 of transferred value
 	carry := k > 255
 	cpu.setH(carry)
 	cpu.setC(carry)
@@ -68,11 +68,13 @@ func (cpu *CPU) adjustIORepeatFlags(value uint8, k uint16) {
 	case carry && dataBit7:
 		cpu.Flags.P ^= parityByte((cpu.B - 1) & 0x07)
 		cpu.Flags.P ^= 1
-		setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x00)
+		cpu.setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x00)
+
 	case carry:
 		cpu.Flags.P ^= parityByte((cpu.B + 1) & 0x07)
 		cpu.Flags.P ^= 1
-		setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x0F)
+		cpu.setFlag(&cpu.Flags.H, (cpu.B&0x0F) == 0x0F)
+
 	default:
 		cpu.Flags.P ^= parityByte(cpu.B & 0x07)
 		cpu.Flags.P ^= 1

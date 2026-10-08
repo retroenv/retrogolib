@@ -133,6 +133,7 @@ func (d *audioDevice) pump() error {
 		select {
 		case <-d.stopRequested:
 			return nil
+
 		case reply := <-d.startRequests:
 			if ticks != nil {
 				reply <- nil
@@ -145,6 +146,7 @@ func (d *audioDevice) pump() error {
 			}
 			ticker = time.NewTicker(d.interval)
 			ticks = ticker.C
+
 		case <-ticks:
 			if err := d.processAudioFrame(); err != nil {
 				return err

@@ -84,6 +84,7 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest, required bool)
 	if err != nil {
 		if required {
 			assert.NoError(t, err)
+			return
 		}
 		t.Skipf("test binary not found at %s (run 'make -C testdata cpu6502' to download): %v", path, err)
 	}

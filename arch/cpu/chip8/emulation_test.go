@@ -521,10 +521,11 @@ func TestReset(t *testing.T) {
 	c.DelayTimer = 10
 	c.SoundTimer = 5
 	c.RedrawScreen = true
-	c.keyWait = keyWait{
-		active:   true,
-		register: 3,
-		key:      4,
+	c.keyWait = KeyWait{
+		Active:   true,
+		Pressed:  true,
+		Key:      4,
+		Register: 3,
 	}
 	c.drewThisFrame = true
 
@@ -541,7 +542,7 @@ func TestReset(t *testing.T) {
 	assert.Equal(t, uint8(0), c.DelayTimer)
 	assert.Equal(t, uint8(0), c.SoundTimer)
 	assert.False(t, c.RedrawScreen)
-	assert.Equal(t, newKeyWait(), c.keyWait)
+	assert.Equal(t, KeyWait{}, c.keyWait)
 	assert.False(t, c.drewThisFrame)
 
 	// Verify font data is preserved
@@ -556,10 +557,11 @@ func TestStateRoundTrip(t *testing.T) {
 	c.I = 0x123
 	c.V[0] = 0x42
 	c.DelayTimer = 10
-	c.keyWait = keyWait{
-		active:   true,
-		register: 2,
-		key:      3,
+	c.keyWait = KeyWait{
+		Active:   true,
+		Pressed:  true,
+		Key:      3,
+		Register: 2,
 	}
 	c.drewThisFrame = true
 
@@ -569,8 +571,8 @@ func TestStateRoundTrip(t *testing.T) {
 	assert.Equal(t, uint16(0x123), state.I)
 	assert.Equal(t, uint8(0x42), state.V[0])
 	assert.Equal(t, uint8(10), state.DelayTimer)
-	assert.Equal(t, c.keyWait, state.keyWait)
-	assert.True(t, state.drewThisFrame)
+	assert.Equal(t, c.keyWait, state.KeyWait)
+	assert.True(t, state.DrewThisFrame)
 
 	// Create new CPU and set state
 	c2 := New()

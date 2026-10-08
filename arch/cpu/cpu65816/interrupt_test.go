@@ -89,7 +89,7 @@ func TestSTPIgnoresInterruptsUntilReset(t *testing.T) {
 	cpu.TriggerNMI()
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint16(0x8001), cpu.PC)
-	assert.Equal(t, cycles, cpu.Cycles())
+	assert.Equal(t, cycles+1, cpu.Cycles(), "a stopped Step consumes one idle cycle")
 	cpu.Reset()
 	assert.False(t, cpu.stopped)
 	assert.False(t, cpu.CheckInterrupts())

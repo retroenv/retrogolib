@@ -74,6 +74,8 @@ func TestReleaseDormann(t *testing.T) {
 }
 
 func TestReadReleaseVectorsRejectsMissingAndEmptyData(t *testing.T) {
+	t.Parallel()
+
 	for _, contents := range []string{"", "[]", "[{}]", "not json"} {
 		path := filepath.Join(t.TempDir(), "ea.json")
 		assert.NoError(t, os.WriteFile(path, []byte(contents), 0o644))
@@ -85,6 +87,8 @@ func TestReadReleaseVectorsRejectsMissingAndEmptyData(t *testing.T) {
 }
 
 func TestValidateReleaseVector(t *testing.T) {
+	t.Parallel()
+
 	valid := ss6502TestCase{
 		Name: "nop",
 		Initial: ss6502State{

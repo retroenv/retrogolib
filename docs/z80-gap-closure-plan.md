@@ -40,9 +40,13 @@ could not detect this error. IN F,(C) and OUT (C),0 also use the full address, w
 OUT (C),0 following NMOS behavior.
 
 Bus callbacks and execution hooks run under the CPU lock and must not call locking
-CPU methods. Direct register access and interrupt configuration must be serialized
-with execution. `State` is a debugging snapshot and does not contain every internal
-latch needed for save/restore.
+CPU methods, which include `State`, the register pair getters, the interrupt
+triggers, and the interrupt configuration methods (`EnableInterrupts`,
+`DisableInterrupts`, `SetInterruptMode`, `GetInterruptMode`, `InterruptsEnabled`).
+Those methods take the CPU lock, so other goroutines can call them while the CPU
+runs. Direct register field access must be serialized with execution. `State` is a
+debugging snapshot and does not contain every internal latch needed for save/restore;
+`State.Interrupts.IM` has the `InterruptMode` type.
 
 ## Interrupt Acceptance
 
@@ -51,7 +55,11 @@ same acceptance logic as `Step`, including bus-supplied vectors and the LD A,I/R
 An accepted interrupt consumes its own step: the first handler instruction executes
 on the following `Step` call. HALT checks pending interrupts before idling; accepted
 interrupts release it. Idle HALT cycles and interrupt acknowledgments increment R's
-low seven bits while preserving bit 7.
+low seven bits while preserving bit 7. An idle HALT cycle is an instruction boundary:
+it ends the EI delay and the LD A,I/R quirk window, and it resets Q. With tracing
+enabled, an accepted interrupt sets `TraceStep.PC` to the handler address and
+`TraceStep.Opcode.Timing` to the acceptance T-states; the instruction and operand
+fields are empty.
 
 NMI has priority, preserves IFF2 across nested NMIs, and leaves a pending IRQ queued.
 EI sets the enable flip-flops immediately but inhibits IRQ acceptance until the next
@@ -103,14 +111,22 @@ The baseline single-step run failed four files: DD/FD-prefixed SCF and CCF. Igno
 index prefixes now clear Q before SCF/CCF derive the undocumented X/Y flags, matching
 the corpus. A focused regression test reproduces the former flag loss.
 
+Q follows the hardware rule: after an instruction that writes F through the ALU
+flag logic, Q holds F; after any other instruction, Q is zero. Loading F directly
+with POP AF or EX AF,AF' leaves Q zero, as the corpus records. The former model
+latched F after every instruction, so SCF or CCF after a non-flag instruction such
+as NOP or LD lost the X/Y bits that F carried. The single-step runner now compares
+the final Q value of every vector.
+
 ## Validation
 
 The [SingleStepTests Z80 corpus](https://github.com/SingleStepTests/z80) at checkout
 `ebe1875d48f374bcfd4b505d8eb8ee751568b5f7` contains 1,604 files and 1,604,000 vectors.
 The run recorded on 2026-09-07 passed with register, flag, memory, and full
-port-transaction checks. These are historical results, not a new test run.
-The runner does not compare the final Q latch, memory bus cycles, or T-state timing,
-and these vectors do not replace the dedicated interrupt tests.
+port-transaction checks. A run on 2026-10-07 at the same checkout passed all
+1,604 files with the added Q comparison. The runner compares the final Q latch
+but not memory bus cycles or T-state timing, and these vectors do not replace
+the dedicated interrupt tests.
 
 Run commands from the repository root. The single-step runner reads
 `testdata/z80/v1`; it has no environment-variable override. For a new checkout

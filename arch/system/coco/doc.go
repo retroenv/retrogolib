@@ -11,10 +11,11 @@
 //	$A000-$BFFF  Color BASIC ROM (8 KB)
 //	$C000-$FEFF  Cartridge ROM space (16 KB minus I/O)
 //	$FF00-$FF03  PIA 0 (keyboard, joystick, cassette)
-//	$FF04-$FF07  Reserved
-//	$FF08-$FF0B  Reserved (CoCo 3: GIME)
+//	$FF04-$FF1F  PIA 0 mirrors
 //	$FF20-$FF23  PIA 1 (VDG control, serial, sound)
+//	$FF24-$FF3F  PIA 1 mirrors
 //	$FF40-$FF5F  Floppy disk controller
+//	$FF90-$FFBF  GIME registers (CoCo 3 only)
 //	$FFC0-$FFDF  SAM registers
 //	$FFF0-$FFFF  Interrupt vectors
 package coco

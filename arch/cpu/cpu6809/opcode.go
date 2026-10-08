@@ -16,7 +16,7 @@ type Opcode struct {
 	Instruction      *Instruction
 	Addressing       AddressingMode
 	Timing           byte // Base cycle count
-	Size             byte // Base size in bytes (not including indexed postbyte extra)
+	Size             byte // Size in bytes including prefix and postbyte, but not indexed offset bytes
 	BranchTakenCycle bool // Conditional long branches take one extra cycle when taken.
 }
 

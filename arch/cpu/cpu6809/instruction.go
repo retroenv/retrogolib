@@ -13,11 +13,12 @@ type Instruction struct {
 	paramFunc   func(c *CPU, param any) error
 }
 
-// OpcodeInfo contains the opcode byte(s) and instruction size.
+// OpcodeInfo contains the opcode bytes, the instruction size and the base cycle count.
 type OpcodeInfo struct {
 	Prefix byte // Prefix byte (0x00 for base page, 0x10 for page 2, 0x11 for page 3)
 	Opcode byte
-	Size   byte // Total size in bytes including prefix
+	Size   byte // Total size in bytes including prefix and postbyte
+	Cycles byte // Base cycle count, equal to the opcode table timing
 }
 
 // HasAddressing returns true if the instruction supports any of the given modes.
@@ -35,7 +36,7 @@ var AbxInst = &Instruction{
 	ID:   Abx,
 	Name: AbxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x3A, Size: 1},
+		ImpliedAddressing: {Opcode: 0x3A, Size: 1, Cycles: 3},
 	},
 	noParamFunc: abx,
 }
@@ -45,10 +46,10 @@ var AdcaInst = &Instruction{
 	ID:   Adca,
 	Name: AdcaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x89, Size: 2},
-		DirectAddressing:    {Opcode: 0x99, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA9, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB9, Size: 3},
+		ImmediateAddressing: {Opcode: 0x89, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x99, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA9, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB9, Size: 3, Cycles: 5},
 	},
 	paramFunc: adca,
 }
@@ -58,10 +59,10 @@ var AdcbInst = &Instruction{
 	ID:   Adcb,
 	Name: AdcbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC9, Size: 2},
-		DirectAddressing:    {Opcode: 0xD9, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE9, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF9, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC9, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD9, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE9, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF9, Size: 3, Cycles: 5},
 	},
 	paramFunc: adcb,
 }
@@ -71,10 +72,10 @@ var AddaInst = &Instruction{
 	ID:   Adda,
 	Name: AddaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x8B, Size: 2},
-		DirectAddressing:    {Opcode: 0x9B, Size: 2},
-		IndexedAddressing:   {Opcode: 0xAB, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xBB, Size: 3},
+		ImmediateAddressing: {Opcode: 0x8B, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x9B, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xAB, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xBB, Size: 3, Cycles: 5},
 	},
 	paramFunc: adda,
 }
@@ -84,10 +85,10 @@ var AddbInst = &Instruction{
 	ID:   Addb,
 	Name: AddbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xCB, Size: 2},
-		DirectAddressing:    {Opcode: 0xDB, Size: 2},
-		IndexedAddressing:   {Opcode: 0xEB, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xFB, Size: 3},
+		ImmediateAddressing: {Opcode: 0xCB, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xDB, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xEB, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xFB, Size: 3, Cycles: 5},
 	},
 	paramFunc: addb,
 }
@@ -97,10 +98,10 @@ var AdddInst = &Instruction{
 	ID:   Addd,
 	Name: AdddName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0xC3, Size: 3},
-		DirectAddressing:      {Opcode: 0xD3, Size: 2},
-		IndexedAddressing:     {Opcode: 0xE3, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xF3, Size: 3},
+		Immediate16Addressing: {Opcode: 0xC3, Size: 3, Cycles: 4},
+		DirectAddressing:      {Opcode: 0xD3, Size: 2, Cycles: 6},
+		IndexedAddressing:     {Opcode: 0xE3, Size: 2, Cycles: 6},
+		ExtendedAddressing:    {Opcode: 0xF3, Size: 3, Cycles: 7},
 	},
 	paramFunc: addd,
 }
@@ -110,10 +111,10 @@ var AndaInst = &Instruction{
 	ID:   Anda,
 	Name: AndaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x84, Size: 2},
-		DirectAddressing:    {Opcode: 0x94, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA4, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB4, Size: 3},
+		ImmediateAddressing: {Opcode: 0x84, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x94, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA4, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB4, Size: 3, Cycles: 5},
 	},
 	paramFunc: anda,
 }
@@ -123,10 +124,10 @@ var AndbInst = &Instruction{
 	ID:   Andb,
 	Name: AndbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC4, Size: 2},
-		DirectAddressing:    {Opcode: 0xD4, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE4, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF4, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC4, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD4, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE4, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF4, Size: 3, Cycles: 5},
 	},
 	paramFunc: andb,
 }
@@ -136,7 +137,7 @@ var AndccInst = &Instruction{
 	ID:   Andcc,
 	Name: AndccName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x1C, Size: 2},
+		ImmediateAddressing: {Opcode: 0x1C, Size: 2, Cycles: 3},
 	},
 	paramFunc: andcc,
 }
@@ -146,29 +147,29 @@ var AslInst = &Instruction{
 	ID:   Asl,
 	Name: AslName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x08, Size: 2},
-		IndexedAddressing:  {Opcode: 0x68, Size: 2},
-		ExtendedAddressing: {Opcode: 0x78, Size: 3},
+		DirectAddressing:   {Opcode: 0x08, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x68, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x78, Size: 3, Cycles: 7},
 	},
 	paramFunc: aslMem,
 }
 
 // AslaInst - Arithmetic Shift Left A (inherent).
 var AslaInst = &Instruction{
-	ID:   Asl,
-	Name: AslName,
+	ID:   Asla,
+	Name: AslaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x48, Size: 1},
+		ImpliedAddressing: {Opcode: 0x48, Size: 1, Cycles: 2},
 	},
 	noParamFunc: asla,
 }
 
 // AslbInst - Arithmetic Shift Left B (inherent).
 var AslbInst = &Instruction{
-	ID:   Asl,
-	Name: AslName,
+	ID:   Aslb,
+	Name: AslbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x58, Size: 1},
+		ImpliedAddressing: {Opcode: 0x58, Size: 1, Cycles: 2},
 	},
 	noParamFunc: aslb,
 }
@@ -178,29 +179,29 @@ var AsrInst = &Instruction{
 	ID:   Asr,
 	Name: AsrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x07, Size: 2},
-		IndexedAddressing:  {Opcode: 0x67, Size: 2},
-		ExtendedAddressing: {Opcode: 0x77, Size: 3},
+		DirectAddressing:   {Opcode: 0x07, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x67, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x77, Size: 3, Cycles: 7},
 	},
 	paramFunc: asrMem,
 }
 
 // AsraInst - Arithmetic Shift Right A (inherent).
 var AsraInst = &Instruction{
-	ID:   Asr,
-	Name: AsrName,
+	ID:   Asra,
+	Name: AsraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x47, Size: 1},
+		ImpliedAddressing: {Opcode: 0x47, Size: 1, Cycles: 2},
 	},
 	noParamFunc: asra,
 }
 
 // AsrbInst - Arithmetic Shift Right B (inherent).
 var AsrbInst = &Instruction{
-	ID:   Asr,
-	Name: AsrName,
+	ID:   Asrb,
+	Name: AsrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x57, Size: 1},
+		ImpliedAddressing: {Opcode: 0x57, Size: 1, Cycles: 2},
 	},
 	noParamFunc: asrb,
 }
@@ -210,10 +211,10 @@ var BitaInst = &Instruction{
 	ID:   Bita,
 	Name: BitaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x85, Size: 2},
-		DirectAddressing:    {Opcode: 0x95, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA5, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB5, Size: 3},
+		ImmediateAddressing: {Opcode: 0x85, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x95, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA5, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB5, Size: 3, Cycles: 5},
 	},
 	paramFunc: bita,
 }
@@ -223,10 +224,10 @@ var BitbInst = &Instruction{
 	ID:   Bitb,
 	Name: BitbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC5, Size: 2},
-		DirectAddressing:    {Opcode: 0xD5, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE5, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF5, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC5, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD5, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE5, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF5, Size: 3, Cycles: 5},
 	},
 	paramFunc: bitb,
 }
@@ -235,7 +236,7 @@ var BitbInst = &Instruction{
 var BccInst = &Instruction{
 	ID:         Bcc,
 	Name:       BccName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x24, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x24, Size: 2, Cycles: 3}},
 	paramFunc:  bccFn,
 }
 
@@ -243,7 +244,7 @@ var BccInst = &Instruction{
 var BcsInst = &Instruction{
 	ID:         Bcs,
 	Name:       BcsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x25, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x25, Size: 2, Cycles: 3}},
 	paramFunc:  bcsFn,
 }
 
@@ -251,7 +252,7 @@ var BcsInst = &Instruction{
 var BeqInst = &Instruction{
 	ID:         Beq,
 	Name:       BeqName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x27, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x27, Size: 2, Cycles: 3}},
 	paramFunc:  beqFn,
 }
 
@@ -259,7 +260,7 @@ var BeqInst = &Instruction{
 var BgeInst = &Instruction{
 	ID:         Bge,
 	Name:       BgeName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2C, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2C, Size: 2, Cycles: 3}},
 	paramFunc:  bgeFn,
 }
 
@@ -267,7 +268,7 @@ var BgeInst = &Instruction{
 var BgtInst = &Instruction{
 	ID:         Bgt,
 	Name:       BgtName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2E, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2E, Size: 2, Cycles: 3}},
 	paramFunc:  bgtFn,
 }
 
@@ -275,7 +276,7 @@ var BgtInst = &Instruction{
 var BhiInst = &Instruction{
 	ID:         Bhi,
 	Name:       BhiName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x22, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x22, Size: 2, Cycles: 3}},
 	paramFunc:  bhiFn,
 }
 
@@ -283,7 +284,7 @@ var BhiInst = &Instruction{
 var BleInst = &Instruction{
 	ID:         Ble,
 	Name:       BleName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2F, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2F, Size: 2, Cycles: 3}},
 	paramFunc:  bleFn,
 }
 
@@ -291,7 +292,7 @@ var BleInst = &Instruction{
 var BlsInst = &Instruction{
 	ID:         Bls,
 	Name:       BlsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x23, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x23, Size: 2, Cycles: 3}},
 	paramFunc:  blsFn,
 }
 
@@ -299,7 +300,7 @@ var BlsInst = &Instruction{
 var BltInst = &Instruction{
 	ID:         Blt,
 	Name:       BltName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2D, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2D, Size: 2, Cycles: 3}},
 	paramFunc:  bltFn,
 }
 
@@ -307,7 +308,7 @@ var BltInst = &Instruction{
 var BmiInst = &Instruction{
 	ID:         Bmi,
 	Name:       BmiName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2B, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2B, Size: 2, Cycles: 3}},
 	paramFunc:  bmiFn,
 }
 
@@ -315,7 +316,7 @@ var BmiInst = &Instruction{
 var BneInst = &Instruction{
 	ID:         Bne,
 	Name:       BneName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x26, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x26, Size: 2, Cycles: 3}},
 	paramFunc:  bneFn,
 }
 
@@ -323,7 +324,7 @@ var BneInst = &Instruction{
 var BplInst = &Instruction{
 	ID:         Bpl,
 	Name:       BplName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2A, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x2A, Size: 2, Cycles: 3}},
 	paramFunc:  bplFn,
 }
 
@@ -331,7 +332,7 @@ var BplInst = &Instruction{
 var BraInst = &Instruction{
 	ID:         Bra,
 	Name:       BraName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x20, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x20, Size: 2, Cycles: 3}},
 	paramFunc:  braFn,
 }
 
@@ -339,7 +340,7 @@ var BraInst = &Instruction{
 var BrnInst = &Instruction{
 	ID:         Brn,
 	Name:       BrnName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x21, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x21, Size: 2, Cycles: 3}},
 	paramFunc:  brnFn,
 }
 
@@ -347,7 +348,7 @@ var BrnInst = &Instruction{
 var BsrInst = &Instruction{
 	ID:         Bsr,
 	Name:       BsrName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x8D, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x8D, Size: 2, Cycles: 7}},
 	paramFunc:  bsrFn,
 }
 
@@ -355,7 +356,7 @@ var BsrInst = &Instruction{
 var BvcInst = &Instruction{
 	ID:         Bvc,
 	Name:       BvcName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x28, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x28, Size: 2, Cycles: 3}},
 	paramFunc:  bvcFn,
 }
 
@@ -363,7 +364,7 @@ var BvcInst = &Instruction{
 var BvsInst = &Instruction{
 	ID:         Bvs,
 	Name:       BvsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x29, Size: 2}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeAddressing: {Opcode: 0x29, Size: 2, Cycles: 3}},
 	paramFunc:  bvsFn,
 }
 
@@ -372,29 +373,29 @@ var ClrInst = &Instruction{
 	ID:   Clr,
 	Name: ClrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x0F, Size: 2},
-		IndexedAddressing:  {Opcode: 0x6F, Size: 2},
-		ExtendedAddressing: {Opcode: 0x7F, Size: 3},
+		DirectAddressing:   {Opcode: 0x0F, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x6F, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x7F, Size: 3, Cycles: 7},
 	},
 	paramFunc: clrMem,
 }
 
 // ClraInst - Clear A (inherent).
 var ClraInst = &Instruction{
-	ID:   Clr,
-	Name: ClrName,
+	ID:   Clra,
+	Name: ClraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x4F, Size: 1},
+		ImpliedAddressing: {Opcode: 0x4F, Size: 1, Cycles: 2},
 	},
 	noParamFunc: clra,
 }
 
 // ClrbInst - Clear B (inherent).
 var ClrbInst = &Instruction{
-	ID:   Clr,
-	Name: ClrName,
+	ID:   Clrb,
+	Name: ClrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x5F, Size: 1},
+		ImpliedAddressing: {Opcode: 0x5F, Size: 1, Cycles: 2},
 	},
 	noParamFunc: clrb,
 }
@@ -404,10 +405,10 @@ var CmpaInst = &Instruction{
 	ID:   Cmpa,
 	Name: CmpaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x81, Size: 2},
-		DirectAddressing:    {Opcode: 0x91, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA1, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB1, Size: 3},
+		ImmediateAddressing: {Opcode: 0x81, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x91, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA1, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB1, Size: 3, Cycles: 5},
 	},
 	paramFunc: cmpa,
 }
@@ -417,10 +418,10 @@ var CmpbInst = &Instruction{
 	ID:   Cmpb,
 	Name: CmpbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC1, Size: 2},
-		DirectAddressing:    {Opcode: 0xD1, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE1, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF1, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC1, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD1, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE1, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF1, Size: 3, Cycles: 5},
 	},
 	paramFunc: cmpb,
 }
@@ -430,10 +431,10 @@ var CmpdInst = &Instruction{
 	ID:   Cmpd,
 	Name: CmpdName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x83, Size: 4},
-		DirectAddressing:      {Prefix: 0x10, Opcode: 0x93, Size: 3},
-		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xA3, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xB3, Size: 4},
+		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x83, Size: 4, Cycles: 5},
+		DirectAddressing:      {Prefix: 0x10, Opcode: 0x93, Size: 3, Cycles: 7},
+		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xA3, Size: 3, Cycles: 7},
+		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xB3, Size: 4, Cycles: 8},
 	},
 	paramFunc: cmpd,
 }
@@ -443,10 +444,10 @@ var CmpsInst = &Instruction{
 	ID:   Cmps,
 	Name: CmpsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x11, Opcode: 0x8C, Size: 4},
-		DirectAddressing:      {Prefix: 0x11, Opcode: 0x9C, Size: 3},
-		IndexedAddressing:     {Prefix: 0x11, Opcode: 0xAC, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x11, Opcode: 0xBC, Size: 4},
+		Immediate16Addressing: {Prefix: 0x11, Opcode: 0x8C, Size: 4, Cycles: 5},
+		DirectAddressing:      {Prefix: 0x11, Opcode: 0x9C, Size: 3, Cycles: 7},
+		IndexedAddressing:     {Prefix: 0x11, Opcode: 0xAC, Size: 3, Cycles: 7},
+		ExtendedAddressing:    {Prefix: 0x11, Opcode: 0xBC, Size: 4, Cycles: 8},
 	},
 	paramFunc: cmps,
 }
@@ -456,10 +457,10 @@ var CmpuInst = &Instruction{
 	ID:   Cmpu,
 	Name: CmpuName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x11, Opcode: 0x83, Size: 4},
-		DirectAddressing:      {Prefix: 0x11, Opcode: 0x93, Size: 3},
-		IndexedAddressing:     {Prefix: 0x11, Opcode: 0xA3, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x11, Opcode: 0xB3, Size: 4},
+		Immediate16Addressing: {Prefix: 0x11, Opcode: 0x83, Size: 4, Cycles: 5},
+		DirectAddressing:      {Prefix: 0x11, Opcode: 0x93, Size: 3, Cycles: 7},
+		IndexedAddressing:     {Prefix: 0x11, Opcode: 0xA3, Size: 3, Cycles: 7},
+		ExtendedAddressing:    {Prefix: 0x11, Opcode: 0xB3, Size: 4, Cycles: 8},
 	},
 	paramFunc: cmpu,
 }
@@ -469,10 +470,10 @@ var CmpxInst = &Instruction{
 	ID:   Cmpx,
 	Name: CmpxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0x8C, Size: 3},
-		DirectAddressing:      {Opcode: 0x9C, Size: 2},
-		IndexedAddressing:     {Opcode: 0xAC, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xBC, Size: 3},
+		Immediate16Addressing: {Opcode: 0x8C, Size: 3, Cycles: 4},
+		DirectAddressing:      {Opcode: 0x9C, Size: 2, Cycles: 6},
+		IndexedAddressing:     {Opcode: 0xAC, Size: 2, Cycles: 6},
+		ExtendedAddressing:    {Opcode: 0xBC, Size: 3, Cycles: 7},
 	},
 	paramFunc: cmpx,
 }
@@ -482,10 +483,10 @@ var CmpyInst = &Instruction{
 	ID:   Cmpy,
 	Name: CmpyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x8C, Size: 4},
-		DirectAddressing:      {Prefix: 0x10, Opcode: 0x9C, Size: 3},
-		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xAC, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xBC, Size: 4},
+		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x8C, Size: 4, Cycles: 5},
+		DirectAddressing:      {Prefix: 0x10, Opcode: 0x9C, Size: 3, Cycles: 7},
+		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xAC, Size: 3, Cycles: 7},
+		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xBC, Size: 4, Cycles: 8},
 	},
 	paramFunc: cmpy,
 }
@@ -495,29 +496,29 @@ var ComInst = &Instruction{
 	ID:   Com,
 	Name: ComName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x03, Size: 2},
-		IndexedAddressing:  {Opcode: 0x63, Size: 2},
-		ExtendedAddressing: {Opcode: 0x73, Size: 3},
+		DirectAddressing:   {Opcode: 0x03, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x63, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x73, Size: 3, Cycles: 7},
 	},
 	paramFunc: comMem,
 }
 
 // ComaInst - Complement A (inherent).
 var ComaInst = &Instruction{
-	ID:   Com,
-	Name: ComName,
+	ID:   Coma,
+	Name: ComaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x43, Size: 1},
+		ImpliedAddressing: {Opcode: 0x43, Size: 1, Cycles: 2},
 	},
 	noParamFunc: coma,
 }
 
 // CombInst - Complement B (inherent).
 var CombInst = &Instruction{
-	ID:   Com,
-	Name: ComName,
+	ID:   Comb,
+	Name: CombName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x53, Size: 1},
+		ImpliedAddressing: {Opcode: 0x53, Size: 1, Cycles: 2},
 	},
 	noParamFunc: comb,
 }
@@ -527,7 +528,7 @@ var CwaiInst = &Instruction{
 	ID:   Cwai,
 	Name: CwaiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x3C, Size: 2},
+		ImmediateAddressing: {Opcode: 0x3C, Size: 2, Cycles: 20},
 	},
 	paramFunc: cwaiFn,
 }
@@ -537,7 +538,7 @@ var DaaInst = &Instruction{
 	ID:   Daa,
 	Name: DaaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x19, Size: 1},
+		ImpliedAddressing: {Opcode: 0x19, Size: 1, Cycles: 2},
 	},
 	noParamFunc: daaFn,
 }
@@ -547,29 +548,29 @@ var DecInst = &Instruction{
 	ID:   Dec,
 	Name: DecName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x0A, Size: 2},
-		IndexedAddressing:  {Opcode: 0x6A, Size: 2},
-		ExtendedAddressing: {Opcode: 0x7A, Size: 3},
+		DirectAddressing:   {Opcode: 0x0A, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x6A, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x7A, Size: 3, Cycles: 7},
 	},
 	paramFunc: decMem,
 }
 
 // DecaInst - Decrement A (inherent).
 var DecaInst = &Instruction{
-	ID:   Dec,
-	Name: DecName,
+	ID:   Deca,
+	Name: DecaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x4A, Size: 1},
+		ImpliedAddressing: {Opcode: 0x4A, Size: 1, Cycles: 2},
 	},
 	noParamFunc: deca,
 }
 
 // DecbInst - Decrement B (inherent).
 var DecbInst = &Instruction{
-	ID:   Dec,
-	Name: DecName,
+	ID:   Decb,
+	Name: DecbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x5A, Size: 1},
+		ImpliedAddressing: {Opcode: 0x5A, Size: 1, Cycles: 2},
 	},
 	noParamFunc: decb,
 }
@@ -579,10 +580,10 @@ var EoraInst = &Instruction{
 	ID:   Eora,
 	Name: EoraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x88, Size: 2},
-		DirectAddressing:    {Opcode: 0x98, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA8, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB8, Size: 3},
+		ImmediateAddressing: {Opcode: 0x88, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x98, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA8, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB8, Size: 3, Cycles: 5},
 	},
 	paramFunc: eora,
 }
@@ -592,10 +593,10 @@ var EorbInst = &Instruction{
 	ID:   Eorb,
 	Name: EorbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC8, Size: 2},
-		DirectAddressing:    {Opcode: 0xD8, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE8, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF8, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC8, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD8, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE8, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF8, Size: 3, Cycles: 5},
 	},
 	paramFunc: eorb,
 }
@@ -605,7 +606,7 @@ var ExgInst = &Instruction{
 	ID:   Exg,
 	Name: ExgName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0x1E, Size: 2},
+		RegisterAddressing: {Opcode: 0x1E, Size: 2, Cycles: 8},
 	},
 	paramFunc: exgFn,
 }
@@ -615,29 +616,29 @@ var IncInst = &Instruction{
 	ID:   Inc,
 	Name: IncName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x0C, Size: 2},
-		IndexedAddressing:  {Opcode: 0x6C, Size: 2},
-		ExtendedAddressing: {Opcode: 0x7C, Size: 3},
+		DirectAddressing:   {Opcode: 0x0C, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x6C, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x7C, Size: 3, Cycles: 7},
 	},
 	paramFunc: incMem,
 }
 
 // IncaInst - Increment A (inherent).
 var IncaInst = &Instruction{
-	ID:   Inc,
-	Name: IncName,
+	ID:   Inca,
+	Name: IncaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x4C, Size: 1},
+		ImpliedAddressing: {Opcode: 0x4C, Size: 1, Cycles: 2},
 	},
 	noParamFunc: inca,
 }
 
 // IncbInst - Increment B (inherent).
 var IncbInst = &Instruction{
-	ID:   Inc,
-	Name: IncName,
+	ID:   Incb,
+	Name: IncbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x5C, Size: 1},
+		ImpliedAddressing: {Opcode: 0x5C, Size: 1, Cycles: 2},
 	},
 	noParamFunc: incb,
 }
@@ -647,9 +648,9 @@ var JmpInst = &Instruction{
 	ID:   Jmp,
 	Name: JmpName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x0E, Size: 2},
-		IndexedAddressing:  {Opcode: 0x6E, Size: 2},
-		ExtendedAddressing: {Opcode: 0x7E, Size: 3},
+		DirectAddressing:   {Opcode: 0x0E, Size: 2, Cycles: 3},
+		IndexedAddressing:  {Opcode: 0x6E, Size: 2, Cycles: 3},
+		ExtendedAddressing: {Opcode: 0x7E, Size: 3, Cycles: 4},
 	},
 	paramFunc: jmpFn,
 }
@@ -659,9 +660,9 @@ var JsrInst = &Instruction{
 	ID:   Jsr,
 	Name: JsrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x9D, Size: 2},
-		IndexedAddressing:  {Opcode: 0xAD, Size: 2},
-		ExtendedAddressing: {Opcode: 0xBD, Size: 3},
+		DirectAddressing:   {Opcode: 0x9D, Size: 2, Cycles: 7},
+		IndexedAddressing:  {Opcode: 0xAD, Size: 2, Cycles: 7},
+		ExtendedAddressing: {Opcode: 0xBD, Size: 3, Cycles: 8},
 	},
 	paramFunc: jsrFn,
 }
@@ -670,7 +671,7 @@ var JsrInst = &Instruction{
 var LbccInst = &Instruction{
 	ID:         Lbcc,
 	Name:       LbccName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x24, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x24, Size: 4, Cycles: 5}},
 	paramFunc:  bccFn,
 }
 
@@ -678,7 +679,7 @@ var LbccInst = &Instruction{
 var LbcsInst = &Instruction{
 	ID:         Lbcs,
 	Name:       LbcsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x25, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x25, Size: 4, Cycles: 5}},
 	paramFunc:  bcsFn,
 }
 
@@ -686,7 +687,7 @@ var LbcsInst = &Instruction{
 var LbeqInst = &Instruction{
 	ID:         Lbeq,
 	Name:       LbeqName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x27, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x27, Size: 4, Cycles: 5}},
 	paramFunc:  beqFn,
 }
 
@@ -694,7 +695,7 @@ var LbeqInst = &Instruction{
 var LbgeInst = &Instruction{
 	ID:         Lbge,
 	Name:       LbgeName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2C, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2C, Size: 4, Cycles: 5}},
 	paramFunc:  bgeFn,
 }
 
@@ -702,7 +703,7 @@ var LbgeInst = &Instruction{
 var LbgtInst = &Instruction{
 	ID:         Lbgt,
 	Name:       LbgtName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2E, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2E, Size: 4, Cycles: 5}},
 	paramFunc:  bgtFn,
 }
 
@@ -710,7 +711,7 @@ var LbgtInst = &Instruction{
 var LbhiInst = &Instruction{
 	ID:         Lbhi,
 	Name:       LbhiName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x22, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x22, Size: 4, Cycles: 5}},
 	paramFunc:  bhiFn,
 }
 
@@ -718,7 +719,7 @@ var LbhiInst = &Instruction{
 var LbleInst = &Instruction{
 	ID:         Lble,
 	Name:       LbleName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2F, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2F, Size: 4, Cycles: 5}},
 	paramFunc:  bleFn,
 }
 
@@ -726,7 +727,7 @@ var LbleInst = &Instruction{
 var LblsInst = &Instruction{
 	ID:         Lbls,
 	Name:       LblsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x23, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x23, Size: 4, Cycles: 5}},
 	paramFunc:  blsFn,
 }
 
@@ -734,7 +735,7 @@ var LblsInst = &Instruction{
 var LbltInst = &Instruction{
 	ID:         Lblt,
 	Name:       LbltName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2D, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2D, Size: 4, Cycles: 5}},
 	paramFunc:  bltFn,
 }
 
@@ -742,7 +743,7 @@ var LbltInst = &Instruction{
 var LbmiInst = &Instruction{
 	ID:         Lbmi,
 	Name:       LbmiName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2B, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2B, Size: 4, Cycles: 5}},
 	paramFunc:  bmiFn,
 }
 
@@ -750,7 +751,7 @@ var LbmiInst = &Instruction{
 var LbneInst = &Instruction{
 	ID:         Lbne,
 	Name:       LbneName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x26, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x26, Size: 4, Cycles: 5}},
 	paramFunc:  bneFn,
 }
 
@@ -758,7 +759,7 @@ var LbneInst = &Instruction{
 var LbplInst = &Instruction{
 	ID:         Lbpl,
 	Name:       LbplName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2A, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x2A, Size: 4, Cycles: 5}},
 	paramFunc:  bplFn,
 }
 
@@ -766,7 +767,7 @@ var LbplInst = &Instruction{
 var LbraInst = &Instruction{
 	ID:         Lbra,
 	Name:       LbraName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x16, Size: 3}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x16, Size: 3, Cycles: 5}},
 	paramFunc:  braFn,
 }
 
@@ -774,7 +775,7 @@ var LbraInst = &Instruction{
 var LbrnInst = &Instruction{
 	ID:         Lbrn,
 	Name:       LbrnName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x21, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x21, Size: 4, Cycles: 5}},
 	paramFunc:  brnFn,
 }
 
@@ -782,7 +783,7 @@ var LbrnInst = &Instruction{
 var LbsrInst = &Instruction{
 	ID:         Lbsr,
 	Name:       LbsrName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x17, Size: 3}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Opcode: 0x17, Size: 3, Cycles: 9}},
 	paramFunc:  bsrFn,
 }
 
@@ -790,7 +791,7 @@ var LbsrInst = &Instruction{
 var LbvcInst = &Instruction{
 	ID:         Lbvc,
 	Name:       LbvcName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x28, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x28, Size: 4, Cycles: 5}},
 	paramFunc:  bvcFn,
 }
 
@@ -798,7 +799,7 @@ var LbvcInst = &Instruction{
 var LbvsInst = &Instruction{
 	ID:         Lbvs,
 	Name:       LbvsName,
-	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x29, Size: 4}},
+	Addressing: map[AddressingMode]OpcodeInfo{RelativeLongAddressing: {Prefix: 0x10, Opcode: 0x29, Size: 4, Cycles: 5}},
 	paramFunc:  bvsFn,
 }
 
@@ -807,10 +808,10 @@ var LdaInst = &Instruction{
 	ID:   Lda,
 	Name: LdaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x86, Size: 2},
-		DirectAddressing:    {Opcode: 0x96, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA6, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB6, Size: 3},
+		ImmediateAddressing: {Opcode: 0x86, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x96, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA6, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB6, Size: 3, Cycles: 5},
 	},
 	paramFunc: lda,
 }
@@ -820,10 +821,10 @@ var LdbInst = &Instruction{
 	ID:   Ldb,
 	Name: LdbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC6, Size: 2},
-		DirectAddressing:    {Opcode: 0xD6, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE6, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF6, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC6, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD6, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE6, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF6, Size: 3, Cycles: 5},
 	},
 	paramFunc: ldb,
 }
@@ -833,10 +834,10 @@ var LddInst = &Instruction{
 	ID:   Ldd,
 	Name: LddName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0xCC, Size: 3},
-		DirectAddressing:      {Opcode: 0xDC, Size: 2},
-		IndexedAddressing:     {Opcode: 0xEC, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xFC, Size: 3},
+		Immediate16Addressing: {Opcode: 0xCC, Size: 3, Cycles: 3},
+		DirectAddressing:      {Opcode: 0xDC, Size: 2, Cycles: 5},
+		IndexedAddressing:     {Opcode: 0xEC, Size: 2, Cycles: 5},
+		ExtendedAddressing:    {Opcode: 0xFC, Size: 3, Cycles: 6},
 	},
 	paramFunc: ldd,
 }
@@ -846,10 +847,10 @@ var LdsInst = &Instruction{
 	ID:   Lds,
 	Name: LdsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x10, Opcode: 0xCE, Size: 4},
-		DirectAddressing:      {Prefix: 0x10, Opcode: 0xDE, Size: 3},
-		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xEE, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xFE, Size: 4},
+		Immediate16Addressing: {Prefix: 0x10, Opcode: 0xCE, Size: 4, Cycles: 4},
+		DirectAddressing:      {Prefix: 0x10, Opcode: 0xDE, Size: 3, Cycles: 6},
+		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xEE, Size: 3, Cycles: 6},
+		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xFE, Size: 4, Cycles: 7},
 	},
 	paramFunc: lds,
 }
@@ -859,10 +860,10 @@ var LduInst = &Instruction{
 	ID:   Ldu,
 	Name: LduName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0xCE, Size: 3},
-		DirectAddressing:      {Opcode: 0xDE, Size: 2},
-		IndexedAddressing:     {Opcode: 0xEE, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xFE, Size: 3},
+		Immediate16Addressing: {Opcode: 0xCE, Size: 3, Cycles: 3},
+		DirectAddressing:      {Opcode: 0xDE, Size: 2, Cycles: 5},
+		IndexedAddressing:     {Opcode: 0xEE, Size: 2, Cycles: 5},
+		ExtendedAddressing:    {Opcode: 0xFE, Size: 3, Cycles: 6},
 	},
 	paramFunc: ldu,
 }
@@ -872,10 +873,10 @@ var LdxInst = &Instruction{
 	ID:   Ldx,
 	Name: LdxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0x8E, Size: 3},
-		DirectAddressing:      {Opcode: 0x9E, Size: 2},
-		IndexedAddressing:     {Opcode: 0xAE, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xBE, Size: 3},
+		Immediate16Addressing: {Opcode: 0x8E, Size: 3, Cycles: 3},
+		DirectAddressing:      {Opcode: 0x9E, Size: 2, Cycles: 5},
+		IndexedAddressing:     {Opcode: 0xAE, Size: 2, Cycles: 5},
+		ExtendedAddressing:    {Opcode: 0xBE, Size: 3, Cycles: 6},
 	},
 	paramFunc: ldx,
 }
@@ -885,10 +886,10 @@ var LdyInst = &Instruction{
 	ID:   Ldy,
 	Name: LdyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x8E, Size: 4},
-		DirectAddressing:      {Prefix: 0x10, Opcode: 0x9E, Size: 3},
-		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xAE, Size: 3},
-		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xBE, Size: 4},
+		Immediate16Addressing: {Prefix: 0x10, Opcode: 0x8E, Size: 4, Cycles: 4},
+		DirectAddressing:      {Prefix: 0x10, Opcode: 0x9E, Size: 3, Cycles: 6},
+		IndexedAddressing:     {Prefix: 0x10, Opcode: 0xAE, Size: 3, Cycles: 6},
+		ExtendedAddressing:    {Prefix: 0x10, Opcode: 0xBE, Size: 4, Cycles: 7},
 	},
 	paramFunc: ldy,
 }
@@ -898,7 +899,7 @@ var LeaxInst = &Instruction{
 	ID:   Leax,
 	Name: LeaxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		IndexedAddressing: {Opcode: 0x30, Size: 2},
+		IndexedAddressing: {Opcode: 0x30, Size: 2, Cycles: 4},
 	},
 	paramFunc: leax,
 }
@@ -908,7 +909,7 @@ var LeayInst = &Instruction{
 	ID:   Leay,
 	Name: LeayName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		IndexedAddressing: {Opcode: 0x31, Size: 2},
+		IndexedAddressing: {Opcode: 0x31, Size: 2, Cycles: 4},
 	},
 	paramFunc: leay,
 }
@@ -918,7 +919,7 @@ var LeasInst = &Instruction{
 	ID:   Leas,
 	Name: LeasName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		IndexedAddressing: {Opcode: 0x32, Size: 2},
+		IndexedAddressing: {Opcode: 0x32, Size: 2, Cycles: 4},
 	},
 	paramFunc: leas,
 }
@@ -928,7 +929,7 @@ var LeauInst = &Instruction{
 	ID:   Leau,
 	Name: LeauName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		IndexedAddressing: {Opcode: 0x33, Size: 2},
+		IndexedAddressing: {Opcode: 0x33, Size: 2, Cycles: 4},
 	},
 	paramFunc: leau,
 }
@@ -938,29 +939,29 @@ var LsrInst = &Instruction{
 	ID:   Lsr,
 	Name: LsrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x04, Size: 2},
-		IndexedAddressing:  {Opcode: 0x64, Size: 2},
-		ExtendedAddressing: {Opcode: 0x74, Size: 3},
+		DirectAddressing:   {Opcode: 0x04, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x64, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x74, Size: 3, Cycles: 7},
 	},
 	paramFunc: lsrMem,
 }
 
 // LsraInst - Logical Shift Right A (inherent).
 var LsraInst = &Instruction{
-	ID:   Lsr,
-	Name: LsrName,
+	ID:   Lsra,
+	Name: LsraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x44, Size: 1},
+		ImpliedAddressing: {Opcode: 0x44, Size: 1, Cycles: 2},
 	},
 	noParamFunc: lsra,
 }
 
 // LsrbInst - Logical Shift Right B (inherent).
 var LsrbInst = &Instruction{
-	ID:   Lsr,
-	Name: LsrName,
+	ID:   Lsrb,
+	Name: LsrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x54, Size: 1},
+		ImpliedAddressing: {Opcode: 0x54, Size: 1, Cycles: 2},
 	},
 	noParamFunc: lsrb,
 }
@@ -970,7 +971,7 @@ var MulInst = &Instruction{
 	ID:   Mul,
 	Name: MulName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x3D, Size: 1},
+		ImpliedAddressing: {Opcode: 0x3D, Size: 1, Cycles: 11},
 	},
 	noParamFunc: mulFn,
 }
@@ -980,29 +981,29 @@ var NegInst = &Instruction{
 	ID:   Neg,
 	Name: NegName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x00, Size: 2},
-		IndexedAddressing:  {Opcode: 0x60, Size: 2},
-		ExtendedAddressing: {Opcode: 0x70, Size: 3},
+		DirectAddressing:   {Opcode: 0x00, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x60, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x70, Size: 3, Cycles: 7},
 	},
 	paramFunc: negMem,
 }
 
 // NegaInst - Negate A (inherent).
 var NegaInst = &Instruction{
-	ID:   Neg,
-	Name: NegName,
+	ID:   Nega,
+	Name: NegaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x40, Size: 1},
+		ImpliedAddressing: {Opcode: 0x40, Size: 1, Cycles: 2},
 	},
 	noParamFunc: nega,
 }
 
 // NegbInst - Negate B (inherent).
 var NegbInst = &Instruction{
-	ID:   Neg,
-	Name: NegName,
+	ID:   Negb,
+	Name: NegbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x50, Size: 1},
+		ImpliedAddressing: {Opcode: 0x50, Size: 1, Cycles: 2},
 	},
 	noParamFunc: negb,
 }
@@ -1012,7 +1013,7 @@ var NopInst = &Instruction{
 	ID:   Nop,
 	Name: NopName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x12, Size: 1},
+		ImpliedAddressing: {Opcode: 0x12, Size: 1, Cycles: 2},
 	},
 	noParamFunc: nop,
 }
@@ -1022,10 +1023,10 @@ var OraInst = &Instruction{
 	ID:   Ora,
 	Name: OraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x8A, Size: 2},
-		DirectAddressing:    {Opcode: 0x9A, Size: 2},
-		IndexedAddressing:   {Opcode: 0xAA, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xBA, Size: 3},
+		ImmediateAddressing: {Opcode: 0x8A, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x9A, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xAA, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xBA, Size: 3, Cycles: 5},
 	},
 	paramFunc: ora,
 }
@@ -1035,10 +1036,10 @@ var OrbInst = &Instruction{
 	ID:   Orb,
 	Name: OrbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xCA, Size: 2},
-		DirectAddressing:    {Opcode: 0xDA, Size: 2},
-		IndexedAddressing:   {Opcode: 0xEA, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xFA, Size: 3},
+		ImmediateAddressing: {Opcode: 0xCA, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xDA, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xEA, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xFA, Size: 3, Cycles: 5},
 	},
 	paramFunc: orb,
 }
@@ -1048,7 +1049,7 @@ var OrccInst = &Instruction{
 	ID:   Orcc,
 	Name: OrccName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x1A, Size: 2},
+		ImmediateAddressing: {Opcode: 0x1A, Size: 2, Cycles: 3},
 	},
 	paramFunc: orcc,
 }
@@ -1058,7 +1059,7 @@ var PshsInst = &Instruction{
 	ID:   Pshs,
 	Name: PshsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		StackAddressing: {Opcode: 0x34, Size: 2},
+		StackAddressing: {Opcode: 0x34, Size: 2, Cycles: 5},
 	},
 	paramFunc: pshsFn,
 }
@@ -1068,7 +1069,7 @@ var PshuInst = &Instruction{
 	ID:   Pshu,
 	Name: PshuName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		StackAddressing: {Opcode: 0x36, Size: 2},
+		StackAddressing: {Opcode: 0x36, Size: 2, Cycles: 5},
 	},
 	paramFunc: pshuFn,
 }
@@ -1078,7 +1079,7 @@ var PulsInst = &Instruction{
 	ID:   Puls,
 	Name: PulsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		StackAddressing: {Opcode: 0x35, Size: 2},
+		StackAddressing: {Opcode: 0x35, Size: 2, Cycles: 5},
 	},
 	paramFunc: pulsFn,
 }
@@ -1088,7 +1089,7 @@ var PuluInst = &Instruction{
 	ID:   Pulu,
 	Name: PuluName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		StackAddressing: {Opcode: 0x37, Size: 2},
+		StackAddressing: {Opcode: 0x37, Size: 2, Cycles: 5},
 	},
 	paramFunc: puluFn,
 }
@@ -1098,29 +1099,29 @@ var RolInst = &Instruction{
 	ID:   Rol,
 	Name: RolName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x09, Size: 2},
-		IndexedAddressing:  {Opcode: 0x69, Size: 2},
-		ExtendedAddressing: {Opcode: 0x79, Size: 3},
+		DirectAddressing:   {Opcode: 0x09, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x69, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x79, Size: 3, Cycles: 7},
 	},
 	paramFunc: rolMem,
 }
 
 // RolaInst - Rotate Left A (inherent).
 var RolaInst = &Instruction{
-	ID:   Rol,
-	Name: RolName,
+	ID:   Rola,
+	Name: RolaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x49, Size: 1},
+		ImpliedAddressing: {Opcode: 0x49, Size: 1, Cycles: 2},
 	},
 	noParamFunc: rola,
 }
 
 // RolbInst - Rotate Left B (inherent).
 var RolbInst = &Instruction{
-	ID:   Rol,
-	Name: RolName,
+	ID:   Rolb,
+	Name: RolbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x59, Size: 1},
+		ImpliedAddressing: {Opcode: 0x59, Size: 1, Cycles: 2},
 	},
 	noParamFunc: rolb,
 }
@@ -1130,29 +1131,29 @@ var RorInst = &Instruction{
 	ID:   Ror,
 	Name: RorName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x06, Size: 2},
-		IndexedAddressing:  {Opcode: 0x66, Size: 2},
-		ExtendedAddressing: {Opcode: 0x76, Size: 3},
+		DirectAddressing:   {Opcode: 0x06, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x66, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x76, Size: 3, Cycles: 7},
 	},
 	paramFunc: rorMem,
 }
 
 // RoraInst - Rotate Right A (inherent).
 var RoraInst = &Instruction{
-	ID:   Ror,
-	Name: RorName,
+	ID:   Rora,
+	Name: RoraName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x46, Size: 1},
+		ImpliedAddressing: {Opcode: 0x46, Size: 1, Cycles: 2},
 	},
 	noParamFunc: rora,
 }
 
 // RorbInst - Rotate Right B (inherent).
 var RorbInst = &Instruction{
-	ID:   Ror,
-	Name: RorName,
+	ID:   Rorb,
+	Name: RorbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x56, Size: 1},
+		ImpliedAddressing: {Opcode: 0x56, Size: 1, Cycles: 2},
 	},
 	noParamFunc: rorb,
 }
@@ -1162,7 +1163,7 @@ var RtiInst = &Instruction{
 	ID:   Rti,
 	Name: RtiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x3B, Size: 1},
+		ImpliedAddressing: {Opcode: 0x3B, Size: 1, Cycles: 6},
 	},
 	noParamFunc: rtiFn,
 }
@@ -1172,7 +1173,7 @@ var RtsInst = &Instruction{
 	ID:   Rts,
 	Name: RtsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x39, Size: 1},
+		ImpliedAddressing: {Opcode: 0x39, Size: 1, Cycles: 5},
 	},
 	noParamFunc: rtsFn,
 }
@@ -1182,10 +1183,10 @@ var SbcaInst = &Instruction{
 	ID:   Sbca,
 	Name: SbcaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x82, Size: 2},
-		DirectAddressing:    {Opcode: 0x92, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA2, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB2, Size: 3},
+		ImmediateAddressing: {Opcode: 0x82, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x92, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA2, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB2, Size: 3, Cycles: 5},
 	},
 	paramFunc: sbca,
 }
@@ -1195,10 +1196,10 @@ var SbcbInst = &Instruction{
 	ID:   Sbcb,
 	Name: SbcbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC2, Size: 2},
-		DirectAddressing:    {Opcode: 0xD2, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE2, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF2, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC2, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD2, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE2, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF2, Size: 3, Cycles: 5},
 	},
 	paramFunc: sbcb,
 }
@@ -1208,7 +1209,7 @@ var SexInst = &Instruction{
 	ID:   Sex,
 	Name: SexName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x1D, Size: 1},
+		ImpliedAddressing: {Opcode: 0x1D, Size: 1, Cycles: 2},
 	},
 	noParamFunc: sexFn,
 }
@@ -1218,9 +1219,9 @@ var StaInst = &Instruction{
 	ID:   Sta,
 	Name: StaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x97, Size: 2},
-		IndexedAddressing:  {Opcode: 0xA7, Size: 2},
-		ExtendedAddressing: {Opcode: 0xB7, Size: 3},
+		DirectAddressing:   {Opcode: 0x97, Size: 2, Cycles: 4},
+		IndexedAddressing:  {Opcode: 0xA7, Size: 2, Cycles: 4},
+		ExtendedAddressing: {Opcode: 0xB7, Size: 3, Cycles: 5},
 	},
 	paramFunc: sta,
 }
@@ -1230,9 +1231,9 @@ var StbInst = &Instruction{
 	ID:   Stb,
 	Name: StbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0xD7, Size: 2},
-		IndexedAddressing:  {Opcode: 0xE7, Size: 2},
-		ExtendedAddressing: {Opcode: 0xF7, Size: 3},
+		DirectAddressing:   {Opcode: 0xD7, Size: 2, Cycles: 4},
+		IndexedAddressing:  {Opcode: 0xE7, Size: 2, Cycles: 4},
+		ExtendedAddressing: {Opcode: 0xF7, Size: 3, Cycles: 5},
 	},
 	paramFunc: stb,
 }
@@ -1242,9 +1243,9 @@ var StdInst = &Instruction{
 	ID:   Std,
 	Name: StdName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0xDD, Size: 2},
-		IndexedAddressing:  {Opcode: 0xED, Size: 2},
-		ExtendedAddressing: {Opcode: 0xFD, Size: 3},
+		DirectAddressing:   {Opcode: 0xDD, Size: 2, Cycles: 5},
+		IndexedAddressing:  {Opcode: 0xED, Size: 2, Cycles: 5},
+		ExtendedAddressing: {Opcode: 0xFD, Size: 3, Cycles: 6},
 	},
 	paramFunc: std,
 }
@@ -1254,9 +1255,9 @@ var StsInst = &Instruction{
 	ID:   Sts,
 	Name: StsName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Prefix: 0x10, Opcode: 0xDF, Size: 3},
-		IndexedAddressing:  {Prefix: 0x10, Opcode: 0xEF, Size: 3},
-		ExtendedAddressing: {Prefix: 0x10, Opcode: 0xFF, Size: 4},
+		DirectAddressing:   {Prefix: 0x10, Opcode: 0xDF, Size: 3, Cycles: 6},
+		IndexedAddressing:  {Prefix: 0x10, Opcode: 0xEF, Size: 3, Cycles: 6},
+		ExtendedAddressing: {Prefix: 0x10, Opcode: 0xFF, Size: 4, Cycles: 7},
 	},
 	paramFunc: sts,
 }
@@ -1266,9 +1267,9 @@ var StuInst = &Instruction{
 	ID:   Stu,
 	Name: StuName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0xDF, Size: 2},
-		IndexedAddressing:  {Opcode: 0xEF, Size: 2},
-		ExtendedAddressing: {Opcode: 0xFF, Size: 3},
+		DirectAddressing:   {Opcode: 0xDF, Size: 2, Cycles: 5},
+		IndexedAddressing:  {Opcode: 0xEF, Size: 2, Cycles: 5},
+		ExtendedAddressing: {Opcode: 0xFF, Size: 3, Cycles: 6},
 	},
 	paramFunc: stu,
 }
@@ -1278,9 +1279,9 @@ var StxInst = &Instruction{
 	ID:   Stx,
 	Name: StxName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x9F, Size: 2},
-		IndexedAddressing:  {Opcode: 0xAF, Size: 2},
-		ExtendedAddressing: {Opcode: 0xBF, Size: 3},
+		DirectAddressing:   {Opcode: 0x9F, Size: 2, Cycles: 5},
+		IndexedAddressing:  {Opcode: 0xAF, Size: 2, Cycles: 5},
+		ExtendedAddressing: {Opcode: 0xBF, Size: 3, Cycles: 6},
 	},
 	paramFunc: stx,
 }
@@ -1290,9 +1291,9 @@ var StyInst = &Instruction{
 	ID:   Sty,
 	Name: StyName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Prefix: 0x10, Opcode: 0x9F, Size: 3},
-		IndexedAddressing:  {Prefix: 0x10, Opcode: 0xAF, Size: 3},
-		ExtendedAddressing: {Prefix: 0x10, Opcode: 0xBF, Size: 4},
+		DirectAddressing:   {Prefix: 0x10, Opcode: 0x9F, Size: 3, Cycles: 6},
+		IndexedAddressing:  {Prefix: 0x10, Opcode: 0xAF, Size: 3, Cycles: 6},
+		ExtendedAddressing: {Prefix: 0x10, Opcode: 0xBF, Size: 4, Cycles: 7},
 	},
 	paramFunc: sty,
 }
@@ -1302,10 +1303,10 @@ var SubaInst = &Instruction{
 	ID:   Suba,
 	Name: SubaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0x80, Size: 2},
-		DirectAddressing:    {Opcode: 0x90, Size: 2},
-		IndexedAddressing:   {Opcode: 0xA0, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xB0, Size: 3},
+		ImmediateAddressing: {Opcode: 0x80, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0x90, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xA0, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xB0, Size: 3, Cycles: 5},
 	},
 	paramFunc: suba,
 }
@@ -1315,10 +1316,10 @@ var SubbInst = &Instruction{
 	ID:   Subb,
 	Name: SubbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xC0, Size: 2},
-		DirectAddressing:    {Opcode: 0xD0, Size: 2},
-		IndexedAddressing:   {Opcode: 0xE0, Size: 2},
-		ExtendedAddressing:  {Opcode: 0xF0, Size: 3},
+		ImmediateAddressing: {Opcode: 0xC0, Size: 2, Cycles: 2},
+		DirectAddressing:    {Opcode: 0xD0, Size: 2, Cycles: 4},
+		IndexedAddressing:   {Opcode: 0xE0, Size: 2, Cycles: 4},
+		ExtendedAddressing:  {Opcode: 0xF0, Size: 3, Cycles: 5},
 	},
 	paramFunc: subb,
 }
@@ -1328,10 +1329,10 @@ var SubdInst = &Instruction{
 	ID:   Subd,
 	Name: SubdName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		Immediate16Addressing: {Opcode: 0x83, Size: 3},
-		DirectAddressing:      {Opcode: 0x93, Size: 2},
-		IndexedAddressing:     {Opcode: 0xA3, Size: 2},
-		ExtendedAddressing:    {Opcode: 0xB3, Size: 3},
+		Immediate16Addressing: {Opcode: 0x83, Size: 3, Cycles: 4},
+		DirectAddressing:      {Opcode: 0x93, Size: 2, Cycles: 6},
+		IndexedAddressing:     {Opcode: 0xA3, Size: 2, Cycles: 6},
+		ExtendedAddressing:    {Opcode: 0xB3, Size: 3, Cycles: 7},
 	},
 	paramFunc: subd,
 }
@@ -1341,7 +1342,7 @@ var SwiInst = &Instruction{
 	ID:   Swi,
 	Name: SwiName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x3F, Size: 1},
+		ImpliedAddressing: {Opcode: 0x3F, Size: 1, Cycles: 19},
 	},
 	noParamFunc: swiFn,
 }
@@ -1351,7 +1352,7 @@ var Swi2Inst = &Instruction{
 	ID:   Swi2,
 	Name: Swi2Name,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Prefix: 0x10, Opcode: 0x3F, Size: 2},
+		ImpliedAddressing: {Prefix: 0x10, Opcode: 0x3F, Size: 2, Cycles: 20},
 	},
 	noParamFunc: swi2Fn,
 }
@@ -1361,7 +1362,7 @@ var Swi3Inst = &Instruction{
 	ID:   Swi3,
 	Name: Swi3Name,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Prefix: 0x11, Opcode: 0x3F, Size: 2},
+		ImpliedAddressing: {Prefix: 0x11, Opcode: 0x3F, Size: 2, Cycles: 20},
 	},
 	noParamFunc: swi3Fn,
 }
@@ -1371,7 +1372,7 @@ var SyncInst = &Instruction{
 	ID:   Sync,
 	Name: SyncName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x13, Size: 1},
+		ImpliedAddressing: {Opcode: 0x13, Size: 1, Cycles: 4},
 	},
 	noParamFunc: syncFn,
 }
@@ -1381,7 +1382,7 @@ var TfrInst = &Instruction{
 	ID:   Tfr,
 	Name: TfrName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		RegisterAddressing: {Opcode: 0x1F, Size: 2},
+		RegisterAddressing: {Opcode: 0x1F, Size: 2, Cycles: 6},
 	},
 	paramFunc: tfrFn,
 }
@@ -1391,29 +1392,29 @@ var TstInst = &Instruction{
 	ID:   Tst,
 	Name: TstName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		DirectAddressing:   {Opcode: 0x0D, Size: 2},
-		IndexedAddressing:  {Opcode: 0x6D, Size: 2},
-		ExtendedAddressing: {Opcode: 0x7D, Size: 3},
+		DirectAddressing:   {Opcode: 0x0D, Size: 2, Cycles: 6},
+		IndexedAddressing:  {Opcode: 0x6D, Size: 2, Cycles: 6},
+		ExtendedAddressing: {Opcode: 0x7D, Size: 3, Cycles: 7},
 	},
 	paramFunc: tstMem,
 }
 
 // TstaInst - Test A (inherent).
 var TstaInst = &Instruction{
-	ID:   Tst,
-	Name: TstName,
+	ID:   Tsta,
+	Name: TstaName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x4D, Size: 1},
+		ImpliedAddressing: {Opcode: 0x4D, Size: 1, Cycles: 2},
 	},
 	noParamFunc: tsta,
 }
 
 // TstbInst - Test B (inherent).
 var TstbInst = &Instruction{
-	ID:   Tst,
-	Name: TstName,
+	ID:   Tstb,
+	Name: TstbName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x5D, Size: 1},
+		ImpliedAddressing: {Opcode: 0x5D, Size: 1, Cycles: 2},
 	},
 	noParamFunc: tstb,
 }

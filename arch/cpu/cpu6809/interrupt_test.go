@@ -8,7 +8,7 @@ import (
 
 func TestStepServicesPendingNMI(t *testing.T) {
 	cpu, mem := newTestCPU(t)
-	cpu.S = 0x0200
+	cpu.loadS(0x0200)
 	mem.WriteWord(VectorNMI, 0x9000)
 	mem.data[0x9000] = 0x3B // RTI
 
@@ -115,7 +115,7 @@ func TestInterruptEntryCycles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu, mem := newTestCPU(t)
-			cpu.S = 0x200
+			cpu.loadS(0x200)
 			cpu.Flags.I, cpu.Flags.F = 0, 0
 			mem.WriteWord(tt.vector, 0x9000)
 			tt.trigger(cpu)
@@ -125,4 +125,55 @@ func TestInterruptEntryCycles(t *testing.T) {
 			assert.Equal(t, uint16(0x200)-tt.stackBytes, cpu.S)
 		})
 	}
+}
+
+func TestNMIInhibitedUntilStackPointerLoad(t *testing.T) {
+	// A pending NMI must wait until the program loads S for the first time.
+	tests := []struct {
+		name    string
+		program []byte
+		wantS   uint16
+	}{
+		{name: "LDS immediate", program: []byte{0x10, 0xCE, 0x02, 0x00}, wantS: 0x0200},
+		{name: "LEAS indexed", program: []byte{0x32, 0x89, 0x00, 0x00}, wantS: 0x0200},
+		{name: "TFR X,S", program: []byte{0x1F, 0x14}, wantS: 0x0200},
+		{name: "EXG S,X", program: []byte{0x1E, 0x41}, wantS: 0x0200},
+		{name: "PULU S", program: []byte{0x37, 0x40}, wantS: 0x0200},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu, mem := newTestCPU(t)
+			cpu.X = 0x0200
+			cpu.U = 0x0300
+			mem.WriteWord(0x0300, 0x0200)
+			mem.WriteWord(VectorNMI, 0x9000)
+			mem.data[0x8000] = 0x12 // NOP
+			copy(mem.data[0x8001:], tt.program)
+
+			cpu.TriggerNMI()
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, uint16(0x8001), cpu.PC, "NMI must not be serviced before S is loaded")
+
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, tt.wantS, cpu.S)
+			assert.Equal(t, uint16(0x8001)+uint16(len(tt.program)), cpu.PC)
+
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, uint16(0x9000), cpu.PC, "NMI must be serviced after S is loaded")
+			assert.Equal(t, tt.wantS-12, cpu.S)
+		})
+	}
+}
+
+func TestResetDisarmsNMI(t *testing.T) {
+	cpu, mem := newTestCPU(t)
+	mem.WriteWord(VectorNMI, 0x9000)
+	mem.data[0x8000] = 0x12 // NOP
+	cpu.loadS(0x0200)
+	cpu.Reset()
+
+	cpu.TriggerNMI()
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x8001), cpu.PC)
 }

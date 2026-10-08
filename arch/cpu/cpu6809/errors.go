@@ -7,6 +7,6 @@ var (
 	ErrInvalidIndexPostbyte      = errors.New("invalid index postbyte")
 	ErrInvalidOpcode             = errors.New("invalid opcode")
 	ErrInvalidParameterType      = errors.New("invalid parameter type")
-	ErrNilMemory                 = errors.New("memory is nil")
+	ErrNilMemory                 = errors.New("memory cannot be nil")
 	ErrUnsupportedAddressingMode = errors.New("unsupported addressing mode")
 )

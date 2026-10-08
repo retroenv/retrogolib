@@ -22,11 +22,16 @@ type State struct {
 	Cycles uint64
 	Flags  Flags
 
-	IME    bool // Interrupt Master Enable
-	Halted bool
+	IME      bool // Interrupt Master Enable
+	IMEDelay bool // IME becomes set after the next instruction (EI executed)
+	HaltBug  bool // The next opcode fetch does not increment PC
+	Halted   bool
+	Stopped  bool
 }
 
-// CPU represents a thread-safe SM83 microprocessor.
+// CPU represents an SM83 microprocessor.
+// Step and the accessor methods lock the CPU. The exported register fields and
+// the register access methods do not lock, so callers must serialize them with Step.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -45,10 +50,11 @@ type CPU struct {
 
 	Flags Flags // Flag register
 
-	cycles uint64
-	halted bool
+	cycles  uint64
+	halted  bool
+	stopped bool // STOP executed, only a pending joypad interrupt releases it
 
-	// Interrupt control
+	// Interrupt control.
 	ime      bool // Interrupt Master Enable
 	imeDelay bool // IME is enabled after the instruction following EI
 	haltBug  bool // HALT bug: PC fails to increment after HALT with IME=0 and pending interrupt
@@ -101,6 +107,13 @@ func (c *CPU) Halt() {
 	c.halted = true
 }
 
+// Stopped returns whether a STOP instruction waits for a joypad interrupt.
+func (c *CPU) Stopped() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.stopped
+}
+
 // Resume continues CPU execution.
 func (c *CPU) Resume() {
 	c.mu.Lock()
@@ -114,20 +127,40 @@ func (c *CPU) State() State {
 	defer c.mu.RUnlock()
 
 	return State{
-		A:      c.A,
-		B:      c.B,
-		C:      c.C,
-		D:      c.D,
-		E:      c.E,
-		H:      c.H,
-		L:      c.L,
-		SP:     c.SP,
-		PC:     c.PC,
-		Cycles: c.cycles,
-		Flags:  c.Flags,
-		IME:    c.ime,
-		Halted: c.halted,
+		A:        c.A,
+		B:        c.B,
+		C:        c.C,
+		D:        c.D,
+		E:        c.E,
+		H:        c.H,
+		L:        c.L,
+		SP:       c.SP,
+		PC:       c.PC,
+		Cycles:   c.cycles,
+		Flags:    c.Flags,
+		IME:      c.ime,
+		IMEDelay: c.imeDelay,
+		HaltBug:  c.haltBug,
+		Halted:   c.halted,
+		Stopped:  c.stopped,
 	}
+}
+
+// SetState restores a complete CPU state from a snapshot.
+func (c *CPU) SetState(s State) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.A, c.B, c.C, c.D, c.E, c.H, c.L = s.A, s.B, s.C, s.D, s.E, s.H, s.L
+	c.SP = s.SP
+	c.PC = s.PC
+	c.cycles = s.Cycles
+	c.Flags = s.Flags
+	c.ime = s.IME
+	c.imeDelay = s.IMEDelay
+	c.haltBug = s.HaltBug
+	c.halted = s.Halted
+	c.stopped = s.Stopped
 }
 
 // Memory returns the attached memory controller.
@@ -168,7 +201,7 @@ func (c *CPU) AF() uint16 {
 }
 
 // GetRegisterValue returns the value of a register by its 3-bit encoding.
-// Encoding: B=0, C=1, D=2, E=3, H=4, L=5, (HL)=6, A=7
+// Encoding: B=0, C=1, D=2, E=3, H=4, L=5, (HL)=6, A=7.
 func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 	switch reg {
 	case 0:

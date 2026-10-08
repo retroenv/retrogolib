@@ -22,8 +22,8 @@ type TraceStep struct {
 	PageCrossed bool
 }
 
-// Step consumes one stall cycle, services one pending interrupt, or executes
-// the next instruction.
+// Step consumes one stall cycle or executes the next instruction. It does not
+// service interrupts; call CheckInterrupts at an instruction boundary.
 func (c *CPU) Step() error {
 	if c.opts.cycleHook != nil {
 		return c.stepCycles()
@@ -33,6 +33,7 @@ func (c *CPU) Step() error {
 
 func (c *CPU) stepInstruction() error {
 	if c.consumeStallCycle() {
+		c.cycles++
 		return nil
 	}
 

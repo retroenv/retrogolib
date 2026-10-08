@@ -7,16 +7,22 @@ import (
 
 // ldVxK waits for a key press and release before resuming execution.
 func (c *CPU) ldVxK(reg uint16) error {
-	if !c.keyWait.active {
-		c.keyWait = newKeyWait()
-		c.keyWait.active = true
-		c.keyWait.register = reg
+	if !c.keyWait.Active {
+		c.keyWait = KeyWait{
+			Active:   true,
+			Register: uint8(reg),
+		}
+	}
+	// A restored snapshot can carry invalid indices.
+	if c.keyWait.Register >= uint8(len(c.V)) || c.keyWait.Key >= uint8(len(c.Key)) {
+		return fmt.Errorf("%w: key wait register 0x%X, key 0x%X", ErrRegisterOutOfBounds, c.keyWait.Register, c.keyWait.Key)
 	}
 
-	if c.keyWait.key < 0 {
+	if !c.keyWait.Pressed {
 		for key, pressed := range c.Key {
 			if pressed {
-				c.keyWait.key = int8(key)
+				c.keyWait.Pressed = true
+				c.keyWait.Key = uint8(key)
 				break
 			}
 		}
@@ -24,14 +30,13 @@ func (c *CPU) ldVxK(reg uint16) error {
 		return nil
 	}
 
-	key := byte(c.keyWait.key)
-	if c.Key[key] {
+	if c.Key[c.keyWait.Key] {
 		return nil
 	}
 
-	c.V[c.keyWait.register] = key
+	c.V[c.keyWait.Register] = c.keyWait.Key
 	c.PC += 2
-	c.keyWait = newKeyWait()
+	c.keyWait = KeyWait{}
 
 	return nil
 }
@@ -161,12 +166,14 @@ func jp(c *CPU, param uint16) error {
 	switch mode {
 	case 0x1: // JP addr
 		c.PC = addr
+
 	case 0xb: // JP V0, addr
 		register := uint16(0)
 		if c.quirks.JumpUsesVX {
 			register = (addr & 0x0F00) >> 8
 		}
 		c.PC = addr + uint16(c.V[register])
+
 	default:
 		return fmt.Errorf("invalid mode for jp: %04X", mode)
 	}

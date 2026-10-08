@@ -91,6 +91,7 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 		return m.writeMemoryZeroPage(address, value, register)
 	case Indirect, IndirectResolved:
 		return m.writeMemoryIndirect(address, value, register)
+
 	case ZeroPageIndirect:
 		// Zero page indirect: the resolved address is in the next param
 		if register == nil {
@@ -102,6 +103,7 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 		}
 		m.Write(uint16(resolved), value)
 		return nil
+
 	default:
 		return fmt.Errorf("%w: write mode type %T", ErrUnsupportedAddressingMode, param)
 	}
@@ -210,6 +212,7 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 			return 0, fmt.Errorf("%w: memory pointer read with offset", ErrUnsupportedAddressingMode)
 		}
 		return *addr, nil
+
 	case uint16:
 		return m.Read(addr + offset), nil
 	case int:

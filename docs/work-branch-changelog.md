@@ -12,25 +12,24 @@ architectures. Paths below are relative to the RetroGoLib repository root.
 
 | Item | Verified value |
 | --- | --- |
-| Review date | 2026-10-02 |
+| Review date | 2026-10-07 |
 | Source branch | `work2` |
-| Fixed source commit | `5b533ce3d91f023bbcebe8d6849feed53ff1774b` |
+| Fixed source commit | `4fabd875b5ad29b7ec6e22bed501af4335905e4d` |
 | Target ref | `origin/main` |
 | Target commit | `9b578e97f6b30c6d3bfeb1bf75a9867927d0ea75` |
 | Merge base | `9f81a91c9f86d10f539a9932428e2985a5ea4027` |
 | Local `main` | `9f81a91c9f86d10f539a9932428e2985a5ea4027`; behind the target |
 | Original branch range | `origin/main...HEAD`, equivalent to merge base through fixed source |
-| Original branch delta | 215 files: 161 added, 54 modified; 31,063 insertions, 2,481 deletions |
-| Target-to-source endpoint delta | 213 files: 161 added, 52 modified; 31,061 insertions, 2,479 deletions |
+| Original branch delta | 223 files: 161 added, 62 modified; 31,841 insertions, 2,496 deletions |
+| Target-to-source endpoint delta | 221 files: 161 added, 60 modified; 31,839 insertions, 2,494 deletions |
 | File status detection | `git diff --name-status --find-renames origin/main...HEAD`; no renames or deletions |
 
-These values use local refs. No fetch was run. The counts cover committed
-changes at the fixed source commit. They exclude the five documentation edits
-already in the working tree when this plan started. Those edits are in
-`docs/cpu6502-release-qualification.md`, `docs/cpu68000-gap-closure-plan.md`,
-`docs/system-implementation-plan-c64.md`, `docs/work-branch-changelog.md`, and
-`docs/z80-gap-closure-plan.md`. Preserve them. Use their reviewed text when the
-owning documentation part is prepared; record that text's commit separately.
+A fetch on 2026-10-07 confirmed that the target commit did not move. The
+counts cover committed changes at the fixed source commit. They exclude the
+uncommitted review corrections recorded in “Review corrections (2026-10-07)”
+below. Those corrections change behavior in every CPU package and in the new
+system packages; preserve them, and include each correction in the part that
+owns its file. Recompute the range statistics after they are committed.
 
 ### Work already on the target
 
@@ -151,6 +150,8 @@ independent system packages do not need to wait for unrelated CPU changes.
 | P21 | Complete 68000 package and recorded limits | P01 | Faults, timing, disputed reference vectors |
 | P22 | 68000 integration gate | P21 | Blocked until reference discrepancies are resolved |
 | P23 | C64 plan, product docs, and final audit | Included code parts | No missing or unassigned hunks |
+| P24 | CP/M, Game Boy Color, and Genesis identifiers | P00 | Identifier naming and ordering |
+| P25 | Struct-literal formatting in audio, config, and GUI | P00 | No behavior change |
 
 A brace list names every file, for example `arch/cpu/x86/{instruction,instructions}.go`.
 Rows without a partial-hunk instruction own the complete source delta for the
@@ -283,24 +284,21 @@ registries have their intended entries and exact sizes.
 | File | Hunks |
 | --- | --- |
 | `arch/cpu/cpu6502/emulation.go` | Remove only the moved unofficial handlers after adding their new owner. Keep P04's branch/RTI changes. |
-| `arch/cpu/cpu6502/emulation_unofficial.go` | Add the moved handlers, simplified comments, and `axs` flag helper. **Adapt `shWrite` as described below.** |
-| `arch/cpu/cpu6502/cycle_test.go` | **Add on target:** SH-family cycle-hook write regressions. This file has no original branch delta. |
+| `arch/cpu/cpu6502/emulation_unofficial.go` | Add the moved handlers, simplified comments, and `axs` flag helper. Use the corrected `shWrite` from the review corrections. |
+| `arch/cpu/cpu6502/cycle_test.go` | `TestBusCycleSHFamilyWrites` from the review corrections. |
 
-The fixed source is not a behavior-preserving copy for `shWrite`. The target
-uses `writeCycle` when `cycleActive` is true; the source's new file always calls
-`memory.Write`. The unchanged `cycle.go:memoryCycles` still calls SHA, SHX,
-SHY, and TAS handlers directly. Copying the new file unchanged would omit the
-write callback and cycle accounting in that path.
-
-Keep the target's `cycleActive` conditional in the moved helper. Test opcodes
-`93`, `9F`, `9E`, `9C`, and `9B` with and without page crossing. Check the
-corrupted write address, value, one final write callback, and total cycles.
-Also check default instruction-path results. This candidate repair does not
-require an unrelated change to `cycle.go`.
+The committed fixed source is not a behavior-preserving copy for `shWrite`:
+its new file always calls `memory.Write`, while the target uses `writeCycle`
+when `cycleActive` is true. The unchanged `cycle.go:memoryCycles` calls the
+SHA, SHX, SHY, and TAS handlers directly, so the committed hunk drops the
+write callback and one cycle in bus-cycle mode; five NMOS single-step files
+(`93`, `9B`, `9C`, `9E`, `9F`) fail with it. The uncommitted review correction
+restores the `cycleActive` dispatch and adds the regression test. Extract the
+corrected file, not the committed hunk.
 
 **Focused check:** `./arch/cpu/cpu6502` with existing and added bus-cycle tests.
-**Exit:** No duplicate handlers; all moved behavior is retained. The source
-hunk that discards cycle-hook writes is recorded as superseded, not merged.
+**Exit:** No duplicate handlers; all moved behavior is retained; the SH-family
+bus-cycle test passes without downloaded data.
 
 ### P07 — Add pinned release qualification
 
@@ -475,7 +473,7 @@ packages, so they do not depend on P18–P21.
 | `arch/system/atari2600/atari2600.go` | Address ranges, reset vector, RAM/mirror constants, cartridge sizes, and 13-bit address mask. |
 | `arch/system/atari2600/atari2600_test.go` | Memory ranges, mirrors, vectors, sizes, and address masking. |
 | `arch/system/atari2600/doc.go` | System foundation scope and CPU relationship. |
-| `arch/system/atari2600/register/tia.go` | TIA read/write registers and bit definitions. |
+| `arch/system/atari2600/register/tia.go` | TIA read/write register addresses and name maps. |
 | `arch/system/atari2600/register/riot.go` | RIOT registers and console/joystick bit definitions. |
 | `arch/system/atari2600/register/register_test.go` | Register addresses, completeness, and input bits. |
 | `arch/system/atari2600/cartridge/cartridge.go` | BankingScheme, image loading, size detection, bank offsets/counts, and hotspot lookup. |
@@ -497,7 +495,7 @@ behavior. Do not present these helpers as a complete cartridge emulator.
 | `arch/system/coco/coco.go` | Memory, I/O, interrupt vectors, and cartridge constants. |
 | `arch/system/coco/coco_test.go` | Address ranges, vectors, sizes, and overlap checks. |
 | `arch/system/coco/doc.go` | Package scope. |
-| `arch/system/coco/register/pia.go` | PIA register addresses and control bits. |
+| `arch/system/coco/register/pia.go` | PIA register addresses. |
 | `arch/system/coco/register/sam.go` | SAM set/clear addresses, CPU rate, RAM size, and memory-map definitions. |
 | `arch/system/coco/register/register_test.go` | PIA completeness and corrected SAM control addresses. |
 
@@ -515,7 +513,7 @@ branch-only `SAMRate*` names. CPU rate, RAM size, and memory mapping are distinc
 | `arch/system/vectrex/vectrex.go` | RAM, ROM, cartridge, VIA, and interrupt-vector constants. |
 | `arch/system/vectrex/vectrex_test.go` | Ranges, vectors, cartridge sizes, mirrors, and overlap checks. |
 | `arch/system/vectrex/doc.go` | Package scope. |
-| `arch/system/vectrex/register/via.go` | VIA registers and control/interrupt/button bits. |
+| `arch/system/vectrex/register/via.go` | VIA registers, port B signal bits, PSG button bits, and interrupt bits. |
 | `arch/system/vectrex/register/register_test.go` | Register addresses, completeness, buttons, and IRQ bits. |
 
 **Focused packages:** `./arch/system/vectrex`, `./arch/system/vectrex/register`.
@@ -762,7 +760,7 @@ P23 can record that deferral, but must not call the complete plan finished.
 | `docs/z80-gap-closure-plan.md` | P14 owns the record; preserve historical results and add candidate evidence separately. |
 | `docs/cpu68000-gap-closure-plan.md` | P21/P22 own the record; preserve unresolved limits until evidence closes them. |
 | `docs/work-branch-changelog.md` | Update source-branch progress and remaining hunks. Keep branch tracking out of product documentation. |
-| `README.md` | **Add on target:** update package/support listings only for packages actually merged. This file has no original branch delta. |
+| `README.md` | Use the uncommitted source delta: feature list and package tree for the new CPU and system packages. List only packages actually merged. |
 | `Makefile` | Change the integration-target description to the source's CPU wording; verify all included package lines and P22's status. |
 
 API notes must accompany their code parts, not wait for this final audit.
@@ -782,6 +780,32 @@ file/hunk inventory. Reuse code results when no code or test inputs changed.
 **Exit:** No unexplained path or hunk. If P22 remains deferred, identify it as
 remaining work instead of reporting all source changes merged.
 
+### P24 — Add CP/M, Game Boy Color, and Genesis system identifiers
+
+| File | Hunks |
+| --- | --- |
+| `arch/system.go` | `CPM`, `GameBoyColor` (`"gbc"`), and `Genesis` constants; alphabetical placement; corrected `GameBoy` comment. |
+| `arch/system_test.go` | Parse, constant, and `SupportedSystems` cases for the three identifiers. |
+
+`"gbc"` is the only abbreviated identifier. Dependent tools already use it as
+the profile name, so keep it and its comment. `Generic` sorts before `Genesis`.
+
+**Focused check:** `./arch`.
+**Exit:** All three identifiers parse and appear once in `SupportedSystems`.
+
+### P25 — Apply struct-literal formatting without behavior change
+
+| File | Hunks |
+| --- | --- |
+| `audio/sdl2/sdl.go` | One field per line in multi-line struct literals. |
+| `audio/format_test.go`, `audio/sdl2/sdl_integration_test.go`, `audio/sdl2/sdl_test.go`, `config/options_test.go`, `gui/sdl2/sdl_test.go` | Same formatting in test literals. |
+
+These hunks satisfy a newer `retrogolint` rule than the pinned `v1.0.6`. The
+pinned linter accepts both layouts. Verify with `gofmt -l` and the package tests.
+
+**Focused check:** `./audio/...`, `./config`, `./gui/sdl2`.
+**Exit:** No semantic diff; `git diff -w` shows only layout changes.
+
 ## Shared-file ownership
 
 This table is the extraction checklist for files whose complete source diff
@@ -790,6 +814,7 @@ must be divided across candidates. Phase tables above name tests and symbols.
 | File | Part ownership |
 | --- | --- |
 | `Makefile` | P01 timeout; P07 release target; P19 SM83 integration; P20 65C816 integration; P22 68000 integration; P23 help text. Preserve baseline platform targets. |
+| `README.md` | P23 package listings; no other part changes it. |
 | `arch/cpu/cpu6502/cpu.go` | P02 options; P03 construction/state/reset/constants; P04 branch/stall/interrupt contract. |
 | `arch/cpu/cpu6502/cpu_test.go` | P03 constructor/state/reset tests; P04 branch validation. |
 | `arch/cpu/cpu6502/emulation.go` | P04 branch/RTI fixes; P06 unofficial-handler removal. |
@@ -815,7 +840,7 @@ packages carry all their shared test helpers in their first candidate.
 
 ## Complete path inventory
 
-The phase tables assign all 215 paths in the original three-dot range.
+The phase tables assign all 223 paths in the original three-dot range.
 Counts below describe unique paths; mixed files count once. These statistics
 use the exact range and file statuses recorded at the start of this plan.
 
@@ -834,19 +859,23 @@ use the exact range and file statuses recorded at the start of this plan.
 | Added | 6 | `arch/system/coco/` | P16 |
 | Added | 5 | `arch/system/vectrex/` | P17 |
 | Modified | 2 | `arch/system/nes/{nes,nes_test}.go` | P00: already present on target |
+| Modified | 2 | `arch/system.go`, `arch/system_test.go` | P24 |
+| Modified | 6 | `audio/`, `config/options_test.go`, `gui/sdl2/sdl_test.go` | P25 |
 | Added | 5 | `docs/` | P00/P07/P14/P21–P23 |
 | Modified | 1 | `testdata/Makefile` | P09 |
 
-Total: 161 added and 54 modified files. No row is a rename. Excluding the two
-identical NES files leaves 213 endpoint-different files. One of those is this
-source-only tracking document. Thus 212 original product paths remain for
+Total: 161 added and 62 modified files. No row is a rename. Excluding the two
+identical NES files leaves 221 endpoint-different files. One of those is this
+source-only tracking document. Thus 220 original product paths remain for
 extraction, including the conditional P22 Makefile hunk and the reviewed C64
-plan. A path count does not measure completion of mixed-file hunks.
+plan. A path count does not measure completion of mixed-file hunks. The
+uncommitted review corrections add `README.md` and six new test files to this
+inventory when they are committed.
 
-Candidate-only work is separate from the 215-path inventory: P04's concurrency
-regression if needed, P06's cycle tests, required reverse-mapping tests missing
-from new packages, P22's evidence-driven corrections, and P23's README update.
-Do not report that work as already supplied or tested by the source branch.
+Candidate-only work is separate from the 223-path inventory: P22's
+evidence-driven corrections. The review corrections below supply the P04
+concurrency regression, the P06 cycle tests, the reverse-mapping tests for the
+new packages, and the README update on the source branch.
 
 ## Historical evidence and unresolved limits
 
@@ -862,19 +891,162 @@ this planning task or proof that an extracted candidate passes.
 | Z80 single-step | 1,604,000 vectors passed. |
 | Z80 ZEXDOC / ZEXALL | All 67 groups passed in each; corpus revision was not recorded. |
 | Tagged 68000 single-step | 996,321 passed; 3,739 failed; 1,000,060 total. |
-| Pinned 6502 release gate | Procedure exists; the changelog did not claim an executed passing run. |
+| Pinned 6502 release gate | Procedure existed; no executed run was recorded before 2026-10-07. |
 
 Preserve the 68000 discrepancies and the Z80 arbitrary-IM-0/T-state limits
 in their package documents. The new system packages remain foundations.
 The C64 plan remains future system work. The source's SH-family cycle-write
 regression is an explicit target adaptation in P06.
 
+## Review corrections (2026-10-07)
+
+A code review of the complete branch on 2026-10-07 found defects that the
+external corpora could not detect, and added the tests that the plan listed
+as candidate-only work. The corrections are uncommitted working-tree changes
+on the source branch. Each correction belongs to the part that owns its file
+and must travel with that part. The behavior changes below are also public
+contract changes; record them in the candidate PRs.
+
+### Z80 (P12–P14)
+
+- Q follows the hardware rule: Q is F after an instruction that writes F
+  through the ALU flag logic and zero after any other instruction. POP AF and
+  EX AF,AF' leave Q zero, as the corpus records. The runner now compares the
+  final Q latch. The former model latched F after every instruction.
+- An idle HALT cycle is an instruction boundary: it ends the EI delay and the
+  LD A,I/R quirk window, and it resets Q. `Halt()` followed by `TriggerIRQ()`
+  no longer leaves the CPU halted with the request pending.
+- `EnableInterrupts`, `DisableInterrupts`, `SetInterruptMode`,
+  `GetInterruptMode`, and `InterruptsEnabled` take the CPU lock.
+- `State.Interrupts.IM` has the `InterruptMode` type.
+- With tracing enabled, an accepted interrupt fills `TraceStep` with the
+  handler address and the acceptance T-states.
+- New tests in `interrupt_test.go` and `q_test.go`; `WithIOHandler` and the
+  legacy adapter are documented. `docs/z80-gap-closure-plan.md` records the
+  contract changes.
+
+### 6809 (P18)
+
+- The 22 inherent accumulator forms (NEGA/NEGB through CLRA/CLRB) have their
+  own mnemonics, `OpcodeID` values, and registry entries. The former metadata
+  reused the memory form's name, so a disassembler printed `neg` for `$40`.
+- NMI is inhibited after reset until the first program load of S (LDS, LEAS,
+  TFR/EXG into S, PULU of S).
+- Extended indirect postbytes `$BF`, `$DF`, and `$FF` cost 5 cycles like `$9F`.
+- TFR/EXG mixed sizes follow observed silicon: A and B read as `$FF00|r`, CC
+  and DP as the duplicated byte, invalid codes as `$FFFF`.
+- `OpcodeInfo` carries `Cycles`; `OpcodeID` values are renumbered
+  alphabetically (22 new IDs); one `TestVerifyOpcodes` covers all three pages
+  with pointer identity in both directions.
+
+### SM83 (P19)
+
+- BIT/RES/SET carry `BitOpcodes` reverse mappings for all 64 (bit, register)
+  encodings; new `opcode_test.go` verifies both tables with zero skips.
+- STOP has its own state that only a pending joypad interrupt ends; HALT keeps
+  its wake rule. Idle Steps add one machine cycle.
+- The four LDH forms are one `LdhInst` with `RegisterOpcodes`; `ldh` is in the
+  memory read and write sets.
+- `State` gains `IMEDelay`, `HaltBug`, and `Stopped`, and `SetState` restores
+  them. Dead error, operand, and parameter declarations are removed.
+- The corpus runner compares cycle counts; opcodes `$10` and `$76` are the only
+  exclusions, with the reason recorded in the test.
+
+### 65C816 (P20)
+
+- MVN/MVP move one byte per Step and keep PC on the opcode until C wraps; the
+  14-iteration harness rule left production code. One byte costs 7 cycles.
+- Branch page-cross penalties apply only to taken branches.
+- Direct-page and stack-relative 16-bit reads, writes, and read-modify-write
+  operations stay in bank 0.
+- Cycle rules for M and X width, `DL != 0`, indexed page crossing, 16-bit
+  read-modify-write, and native-mode BRK/COP are implemented through
+  per-opcode `CycleRule` flags. The corpus runner compares cycle counts; WAI,
+  STP, and unfinished block moves are the only exclusions.
+- `ErrNilMemory`, `ErrInvalidParameterType`, and `ErrMissingParameter` are
+  used; `State.Interrupts` mirrors cpu6502; `BranchTarget` replaces untyped
+  branch operands; idle WAI/STP Steps add one cycle; `ReadLong`-style helpers
+  and `ReadVector` are gone from the `Memory` contract; `ReadWritesMemory` is
+  added; `TestVerifyOpcodes` compares reverse opcode values.
+
+### 68000 (P21–P22)
+
+- Every decoder validates addressing-mode classes and size bits; 7,935
+  formerly executed illegal encodings now raise vector 4. The new
+  `opcode_map_test.go` checks all 65,536 words against the official opcode map.
+- Unassigned opcode words raise the illegal-instruction exception instead of
+  returning a host error; the unused error values are removed.
+- Level-7 interrupts are edge-sensitive; a held level 7 no longer re-enters
+  the handler on every Step.
+- DIVS by zero sets N=V=C=0 and Z=1 (WinUAE reference).
+- Trace stays pending across TRAP, TRAPV, CHK, and divide-by-zero exceptions.
+- Scc to memory reads the destination before it writes.
+- `ReadLong`/`WriteLong` leave the `Memory` interface; `WithSystemType` is
+  removed; the acknowledged vector is masked to eight bits; memory category
+  sets are regenerated from the handlers.
+- Corpus result after the corrections: 996,321 passed, 3,739 failed, same
+  classes. `docs/cpu68000-gap-closure-plan.md` records the independent
+  references for the disputed vectors.
+
+### 6502 (P03–P07) and CHIP-8 (P09)
+
+- `shWrite` keeps the `cycleActive` dispatch (see P06); `TestBusCycleSHFamilyWrites`
+  covers opcodes `93`, `9B`, `9C`, `9E`, and `9F` with and without page crossing.
+- 65C02 INC/DEC abs,X return to a fixed 7 cycles; only ASL/LSR/ROL/ROR abs,X
+  are 6+1 on the 65C02. The committed 6+1 metadata for `DE`/`FE` mismatched
+  half of the wdc65c02 corpus vectors.
+- 65C02 ADC/SBC add one cycle in decimal mode. `$5C` stays an 8-cycle NOP as
+  the W65C02S datasheet states; the emulator-generated wdc65c02 corpus records
+  4 cycles for it and is not followed on this point.
+- The documented concurrency contract is now true: `StallCycles`, `SetIRQ`,
+  `CheckInterrupts`, and the bus-cycle interrupt sampling take the lock. A
+  `-race` test drives triggers from another goroutine in both execution modes.
+  The bus-cycle path pays one uncontended read lock per cycle.
+- `Step` documentation no longer claims interrupt service. TRB/TSB leave the
+  memory read set. Name tables and `Instructions` are sorted; numeric
+  `OpcodeID` values are unchanged. The required-data Dormann test returns after
+  its assertion.
+- CHIP-8 `State` exports `KeyWait` and `DrewThisFrame`, so an external
+  serializer can round-trip a pending FX0A wait; restored indices are validated.
+- New tests: independent `InstructionsForVariant` maps, negative-int address
+  reads, 65C02 timing cases, and the CHIP-8 snapshot cases.
+
+### System packages (P15–P17) and identifiers (P24)
+
+- Vectrex: the VIA is a 6522, mirrored every 16 bytes through `$D000-$D7FF`;
+  `$D800-$DFFF` selects RAM and VIA together and is marked as unusable; the
+  joystick buttons come from PSG register 14, not VIA port B; port B signal
+  bits and SWI2/SWI3 vectors are added. The former `$D800` VIA mirror and
+  `ButtonRight`-style port B constants are removed.
+- Atari 2600: the SWCHB difficulty comments read `0=B/amateur, 1=A/pro`; the
+  package doc lists TIA read registers at `$0000-$000D`.
+- CoCo: the package doc lists PIA mirrors and places GIME at `$FF90-$FFBF`.
+- `arch/system.go`: `Generic` sorts before `Genesis`; the Game Boy comments no
+  longer overlap.
+- `README.md`: feature list and package tree include all new packages.
+
+### Checks run on 2026-10-07
+
+| Check | Result |
+| --- | --- |
+| `make build`, `make build-platforms`, `go vet ./...` | Passed before and after the corrections. |
+| `golangci-lint run ./...` | 0 issues. |
+| `retrogolint` `v1.0.6` (pinned) | 0 issues with `-exclude-dirs testdata`; the local `testdata/` clones contain `README.MD` files that the tool tries to parse. |
+| `make test` | Passed. |
+| Z80 single-step | 1,604 files passed with Q comparison. |
+| SM83 single-step | 500 files, 500,000 cases passed with cycle comparison. |
+| Tagged 65C816 single-step | 512 files, 5,120,000 cases passed with cycle comparison. |
+| Tagged 68000 single-step | 996,321 passed; 3,739 failed; unchanged classes. |
+| 6502 single-step (local corpus) | nes6502, 6502, synertek65c02, rockwell65c02: 256 files each passed; wdc65c02: 254 passed, 2 empty files skipped. |
+| Pinned 6502 release gate | `TestReleaseNMOS` 151 files, 1,510,000 vectors passed; `TestReleaseDormann` both binaries passed. |
+
 ## Progress record
 
-P00–P23 are planned. No candidate was extracted or merged by this task.
-The two NES paths are already on the verified target. This task checked local
+P00–P25 are planned. No candidate was extracted or merged. The two NES paths
+are already on the verified target. The 2026-10-02 planning task checked local
 refs, source diffs, target interfaces, test/helper ownership, and documentation
-inventory. It did not run Go tests, linters, external corpora, or benchmarks.
+inventory without running Go checks. The 2026-10-07 review ran the checks in
+the table above and left its corrections uncommitted on the source branch.
 
 For each future part, record:
 

@@ -37,17 +37,21 @@ func (c *CPU) decodeIndexedRegisterMode(postbyte uint8, reg uint16, mode uint8) 
 	case 0x00: // ,R+
 		c.setIndexedRegister(postbyte, reg+1)
 		return reg, nil, nil
+
 	case 0x01: // ,R++
 		c.setIndexedRegister(postbyte, reg+2)
 		return reg, nil, nil
+
 	case 0x02: // ,-R
 		reg--
 		c.setIndexedRegister(postbyte, reg)
 		return reg, nil, nil
+
 	case 0x03: // ,--R
 		reg -= 2
 		c.setIndexedRegister(postbyte, reg)
 		return reg, nil, nil
+
 	default: // ,R
 		return reg, nil, nil
 	}
@@ -72,13 +76,16 @@ func (c *CPU) decodeIndexedOffsetMode(baseOffset, reg uint16, mode uint8) (uint1
 	case 0x08: // n,R (8-bit offset)
 		value := c.fetchByte(baseOffset + 1)
 		return uint16(int32(reg) + int32(int8(value))), []byte{value}, nil
+
 	case 0x09: // n,R (16-bit offset)
 		value, operands := c.fetchOperandWord(baseOffset + 1)
 		return uint16(int32(reg) + int32(int16(value))), operands, nil
+
 	case 0x0C: // n,PCR (8-bit offset)
 		value := c.fetchByte(baseOffset + 1)
 		pc := c.PC + baseOffset + 2
 		return uint16(int32(pc) + int32(int8(value))), []byte{value}, nil
+
 	default: // n,PCR (16-bit offset)
 		value, operands := c.fetchOperandWord(baseOffset + 1)
 		pc := c.PC + baseOffset + 3
@@ -184,7 +191,8 @@ func indexedModeCycles(postbyte uint8) uint64 {
 	if postbyte&0x80 == 0 {
 		return 1
 	}
-	if postbyte == 0x9F {
+	// Extended indirect ignores the register bits, so $9F, $BF, $DF and $FF decode alike.
+	if postbyte&0x9F == 0x9F {
 		return 5
 	}
 
@@ -201,32 +209,42 @@ func readOpParam(c *CPU, mode AddressingMode, baseOffset uint16) (any, []byte, e
 	switch mode {
 	case ImpliedAddressing:
 		return nil, nil, nil
+
 	case ImmediateAddressing:
 		value := c.fetchByte(baseOffset)
 		return Immediate8(value), []byte{value}, nil
+
 	case Immediate16Addressing:
 		value, operands := c.fetchOperandWord(baseOffset)
 		return Immediate16(value), operands, nil
+
 	case DirectAddressing:
 		value := c.fetchByte(baseOffset)
 		return DirectPage(value), []byte{value}, nil
+
 	case ExtendedAddressing:
 		value, operands := c.fetchOperandWord(baseOffset)
 		return Extended16(value), operands, nil
+
 	case IndexedAddressing:
 		return readIndexedParam(c, baseOffset)
+
 	case RelativeAddressing:
 		offset := int8(c.fetchByte(baseOffset))
 		target := uint16(int32(c.PC) + int32(baseOffset) + 1 + int32(offset))
 		return target, []byte{uint8(offset)}, nil
+
 	case RelativeLongAddressing:
 		return readRelativeLongParam(c, baseOffset)
+
 	case RegisterAddressing:
 		value := c.fetchByte(baseOffset)
 		return RegisterPair(value), []byte{value}, nil
+
 	case StackAddressing:
 		value := c.fetchByte(baseOffset)
 		return StackMask(value), []byte{value}, nil
+
 	default:
 		return nil, nil, fmt.Errorf("%w: mode 0x%x", ErrUnsupportedAddressingMode, mode)
 	}

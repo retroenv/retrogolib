@@ -7,44 +7,74 @@ import (
 	"github.com/retroenv/retrogolib/set"
 )
 
-// TestOpcodeTableConsistency verifies each opcode references an instruction that has
-// that addressing mode registered.
-func TestOpcodeTableConsistency(t *testing.T) {
-	for i := range 256 {
-		op := Opcodes[i]
-		if op.Instruction == nil {
-			continue
+// opcodeTables lists the three opcode pages with their prefix byte.
+var opcodeTables = []struct {
+	name   string
+	prefix byte
+	table  *[256]Opcode
+}{
+	{name: "base", prefix: 0x00, table: &Opcodes},
+	{name: "page 2", prefix: Prefix10, table: &OpcodesPage2},
+	{name: "page 3", prefix: Prefix11, table: &OpcodesPage3},
+}
+
+// TestVerifyOpcodes ensures bidirectional opcode mapping consistency over all
+// three opcode pages. Every table entry must map back to an OpcodeInfo with the
+// same prefix, opcode byte, size and cycle count, every OpcodeInfo must map
+// forward to the same instruction pointer, and every reachable instruction
+// must be registered under its own name.
+func TestVerifyOpcodes(t *testing.T) {
+	reachable := set.Set[*Instruction]{}
+
+	for _, page := range opcodeTables {
+		for b, op := range page.table {
+			ins := op.Instruction
+			if ins == nil {
+				continue
+			}
+			reachable[ins] = struct{}{}
+
+			info, ok := ins.Addressing[op.Addressing]
+			assert.True(t, ok, "%s opcode 0x%02X: %s has no addressing entry for mode %d",
+				page.name, b, ins.Name, op.Addressing)
+			assert.Equal(t, page.prefix, info.Prefix, "%s opcode 0x%02X: %s prefix", page.name, b, ins.Name)
+			assert.Equal(t, byte(b), info.Opcode, "%s opcode 0x%02X: %s opcode byte", page.name, b, ins.Name)
+			assert.Equal(t, op.Size, info.Size, "%s opcode 0x%02X: %s size", page.name, b, ins.Name)
+			assert.Equal(t, op.Timing, info.Cycles, "%s opcode 0x%02X: %s cycles", page.name, b, ins.Name)
 		}
-		_, ok := op.Instruction.Addressing[op.Addressing]
-		assert.True(t, ok, "base opcode 0x%02X: instruction %s missing addressing mode %d",
-			i, op.Instruction.Name, op.Addressing)
+	}
+
+	for ins := range reachable {
+		assert.True(t, Instructions[ins.Name] == ins, "instruction %s is not registered under its name", ins.Name)
+		assert.Equal(t, ins.ID, NameToOpcodeID[ins.Name], "instruction %s opcode ID", ins.Name)
+
+		for mode, info := range ins.Addressing {
+			table := tableForPrefix(info.Prefix)
+			assert.NotNil(t, table, "instruction %s has unknown prefix 0x%02X", ins.Name, info.Prefix)
+			if table == nil {
+				continue
+			}
+			op := table[info.Opcode]
+			assert.True(t, op.Instruction == ins, "instruction %s opcode 0x%02X 0x%02X maps to a different instruction",
+				ins.Name, info.Prefix, info.Opcode)
+			assert.Equal(t, mode, op.Addressing, "instruction %s opcode 0x%02X 0x%02X addressing",
+				ins.Name, info.Prefix, info.Opcode)
+		}
+	}
+
+	assert.Len(t, Instructions, len(reachable), "registry size must equal the reachable instruction count")
+	for name, ins := range Instructions {
+		assert.True(t, reachable.Contains(ins), "registered instruction %s is not in any opcode table", name)
 	}
 }
 
-// TestPage2OpcodeConsistency verifies page 2 opcodes.
-func TestPage2OpcodeConsistency(t *testing.T) {
-	for i := range 256 {
-		op := OpcodesPage2[i]
-		if op.Instruction == nil {
-			continue
+func tableForPrefix(prefix byte) *[256]Opcode {
+	for _, page := range opcodeTables {
+		if page.prefix == prefix {
+			return page.table
 		}
-		_, ok := op.Instruction.Addressing[op.Addressing]
-		assert.True(t, ok, "page 2 opcode 0x10 0x%02X: instruction %s missing addressing mode %d",
-			i, op.Instruction.Name, op.Addressing)
 	}
-}
-
-// TestPage3OpcodeConsistency verifies page 3 opcodes.
-func TestPage3OpcodeConsistency(t *testing.T) {
-	for i := range 256 {
-		op := OpcodesPage3[i]
-		if op.Instruction == nil {
-			continue
-		}
-		_, ok := op.Instruction.Addressing[op.Addressing]
-		assert.True(t, ok, "page 3 opcode 0x11 0x%02X: instruction %s missing addressing mode %d",
-			i, op.Instruction.Name, op.Addressing)
-	}
+	return nil
 }
 
 // TestGetOpcodeInfo verifies the lookup function.
@@ -57,67 +87,12 @@ func TestGetOpcodeInfo(t *testing.T) {
 
 // TestOpcodeTimings verifies that all defined opcodes have non-zero timing.
 func TestOpcodeTimings(t *testing.T) {
-	for i := range 256 {
-		op := Opcodes[i]
-		if op.Instruction == nil {
-			continue
-		}
-		assert.NotEqual(t, byte(0), op.Timing, "base opcode 0x%02X has zero timing", i)
-	}
-}
-
-// TestBidirectionalOpcodeMapping verifies that instruction addressing maps match the opcode tables.
-func TestBidirectionalOpcodeMapping(t *testing.T) {
-	// Check base page: for each instruction's addressing entry with no prefix,
-	// the opcode table should point back to that instruction.
-	for name, inst := range Instructions {
-		for mode, info := range inst.Addressing {
-			if info.Prefix != 0 {
-				continue // skip prefixed opcodes
-			}
-			op := Opcodes[info.Opcode]
-			assert.NotNil(t, op.Instruction,
-				"instruction %s opcode 0x%02X not in base table", name, info.Opcode)
-			if op.Instruction != nil {
-				assert.Equal(t, mode, op.Addressing,
-					"instruction %s opcode 0x%02X: addressing mismatch", name, info.Opcode)
-			}
-		}
-	}
-}
-
-// TestBidirectionalPage2OpcodeMapping verifies page 2 opcode mappings.
-func TestBidirectionalPage2OpcodeMapping(t *testing.T) {
-	for name, inst := range Instructions {
-		for mode, info := range inst.Addressing {
-			if info.Prefix != 0x10 {
+	for _, page := range opcodeTables {
+		for i, op := range page.table {
+			if op.Instruction == nil {
 				continue
 			}
-			op := OpcodesPage2[info.Opcode]
-			assert.NotNil(t, op.Instruction,
-				"instruction %s opcode 0x10 0x%02X not in page 2 table", name, info.Opcode)
-			if op.Instruction != nil {
-				assert.Equal(t, mode, op.Addressing,
-					"instruction %s opcode 0x10 0x%02X: addressing mismatch", name, info.Opcode)
-			}
-		}
-	}
-}
-
-// TestBidirectionalPage3OpcodeMapping verifies page 3 opcode mappings.
-func TestBidirectionalPage3OpcodeMapping(t *testing.T) {
-	for name, inst := range Instructions {
-		for mode, info := range inst.Addressing {
-			if info.Prefix != 0x11 {
-				continue
-			}
-			op := OpcodesPage3[info.Opcode]
-			assert.NotNil(t, op.Instruction,
-				"instruction %s opcode 0x11 0x%02X not in page 3 table", name, info.Opcode)
-			if op.Instruction != nil {
-				assert.Equal(t, mode, op.Addressing,
-					"instruction %s opcode 0x11 0x%02X: addressing mismatch", name, info.Opcode)
-			}
+			assert.NotEqual(t, byte(0), op.Timing, "%s opcode 0x%02X has zero timing", page.name, i)
 		}
 	}
 }
@@ -129,21 +104,25 @@ func TestOpcodeIDMappingComplete(t *testing.T) {
 		assert.True(t, ok, "instruction %s missing from NameToOpcodeID", name)
 		assert.Equal(t, name, OpcodeIDToName[id])
 	}
+	for id := OpcodeID(1); id <= OpcodeIDMax; id++ {
+		name := OpcodeIDToName[id]
+		assert.NotEqual(t, "", name, "opcode ID %d has no name", id)
+		assert.Equal(t, id, NameToOpcodeID[name], "opcode ID %d round trip", id)
+	}
+}
+
+// TestOpcodeIDsAlphabetical verifies that opcode IDs follow the alphabetical mnemonic order.
+func TestOpcodeIDsAlphabetical(t *testing.T) {
+	for id := OpcodeID(2); id <= OpcodeIDMax; id++ {
+		assert.True(t, OpcodeIDToName[id-1] < OpcodeIDToName[id],
+			"opcode ID order: %s must precede %s", OpcodeIDToName[id-1], OpcodeIDToName[id])
+	}
 }
 
 func TestOpcodeInstructionMetadata(t *testing.T) {
-	tables := []struct {
-		name    string
-		opcodes [256]Opcode
-	}{
-		{name: "base", opcodes: Opcodes},
-		{name: "page 2", opcodes: OpcodesPage2},
-		{name: "page 3", opcodes: OpcodesPage3},
-	}
-
 	seen := set.Set[*Instruction]{}
-	for _, table := range tables {
-		for i, op := range table.opcodes {
+	for _, page := range opcodeTables {
+		for i, op := range page.table {
 			if op.Instruction == nil {
 				continue
 			}
@@ -151,9 +130,9 @@ func TestOpcodeInstructionMetadata(t *testing.T) {
 			ins := op.Instruction
 			seen[ins] = struct{}{}
 			assert.NotEqual(t, InvalidOpcodeID, ins.ID,
-				"%s opcode 0x%02X has no instruction ID", table.name, i)
+				"%s opcode 0x%02X has no instruction ID", page.name, i)
 			assert.Equal(t, ins.Name, OpcodeIDToName[ins.ID],
-				"%s opcode 0x%02X has mismatched instruction metadata", table.name, i)
+				"%s opcode 0x%02X has mismatched instruction metadata", page.name, i)
 		}
 	}
 
@@ -162,6 +141,31 @@ func TestOpcodeInstructionMetadata(t *testing.T) {
 		hasParamHandler := ins.paramFunc != nil
 		assert.True(t, hasNoParamHandler != hasParamHandler,
 			"instruction %s must have exactly one handler", ins.Name)
+	}
+}
+
+// TestInherentAccumulatorFormsAreDistinct verifies that the inherent accumulator
+// forms carry their own mnemonic and do not count as memory operations.
+func TestInherentAccumulatorFormsAreDistinct(t *testing.T) {
+	tests := []struct {
+		opcode byte
+		name   string
+	}{
+		{opcode: 0x40, name: NegaName},
+		{opcode: 0x4F, name: ClraName},
+		{opcode: 0x53, name: CombName},
+		{opcode: 0x5C, name: IncbName},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op, ok := GetOpcodeInfo(tt.opcode)
+			assert.True(t, ok)
+			assert.Equal(t, tt.name, op.Instruction.Name)
+			assert.False(t, MemoryReadWriteInstructions.Contains(tt.name))
+			assert.False(t, op.ReadsMemory(MemoryReadInstructions))
+			assert.False(t, op.WritesMemory(MemoryWriteInstructions))
+		})
 	}
 }
 

@@ -170,5 +170,9 @@ func (bus *testBus) WritePort(address uint16, value uint8) {
 		Value:   value,
 	})
 }
-func (bus *testBus) IRQData() uint8 { bus.irqCalls++; return bus.irqData }
-func (bus *testBus) OnRETI()        { bus.retiCalls++ }
+func (bus *testBus) IRQData() uint8 {
+	bus.irqCalls++
+	return bus.irqData
+}
+
+func (bus *testBus) OnRETI() { bus.retiCalls++ }

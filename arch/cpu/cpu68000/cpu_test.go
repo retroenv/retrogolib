@@ -101,3 +101,14 @@ func newTestCPU(t *testing.T) *CPU {
 	assert.NoError(t, err)
 	return cpu
 }
+
+// writeLong stores a big-endian long word through two word writes.
+func writeLong(mem Memory, address, value uint32) {
+	mem.WriteWord(address, uint16(value>>16))
+	mem.WriteWord(address+2, uint16(value))
+}
+
+// readLong loads a big-endian long word through two word reads.
+func readLong(mem Memory, address uint32) uint32 {
+	return uint32(mem.ReadWord(address))<<16 | uint32(mem.ReadWord(address+2))
+}

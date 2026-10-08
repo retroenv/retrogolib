@@ -10,6 +10,10 @@ const (
 	initialCycles = 7
 	initialFlags  = 0b0010_0100 // I and U flags are set after reset.
 
+	// decimalCorrectionCycles is the extra cycle the 65C02 takes to correct a
+	// decimal mode ADC or SBC result.
+	decimalCorrectionCycles = 1
+
 	// InitialStack is the stack pointer value after reset.
 	InitialStack = 0xFD
 )
@@ -108,7 +112,10 @@ func (c *CPU) Cycles() uint64 {
 }
 
 // StallCycles adds cycles during which Step does not execute an instruction.
+// It is safe to call from a different goroutine than the one that calls Step.
 func (c *CPU) StallCycles(cycles uint16) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.stallCycles += cycles
 }
 
@@ -286,6 +293,8 @@ func (c *CPU) push16(value uint16) {
 	c.push(low)
 }
 
+// consumeStallCycle takes one pending stall cycle. It reports false when no
+// stall is pending. The caller accounts for the cycle.
 func (c *CPU) consumeStallCycle() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -295,6 +304,5 @@ func (c *CPU) consumeStallCycle() bool {
 	}
 
 	c.stallCycles--
-	c.cycles++
 	return true
 }

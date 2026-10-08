@@ -3,21 +3,17 @@ package cpu68000
 // Memory defines the interface for 68000 memory access.
 // The 68000 is big-endian: ReadWord reads [addr] as high byte, [addr+1] as low byte.
 // The CPU checks alignment and raises address errors before calling Memory.
+// The 16-bit data bus transfers a long word as two word accesses, so the
+// interface has no long word methods.
 type Memory interface {
 	// Read reads a byte from memory at the given address.
 	Read(address uint32) uint8
-
-	// ReadLong reads a 32-bit long word from memory at the given address (big-endian).
-	ReadLong(address uint32) uint32
 
 	// ReadWord reads a 16-bit word from memory at the given address (big-endian).
 	ReadWord(address uint32) uint16
 
 	// Write writes a byte to memory at the given address.
 	Write(address uint32, value uint8)
-
-	// WriteLong writes a 32-bit long word to memory at the given address (big-endian).
-	WriteLong(address uint32, value uint32)
 
 	// WriteWord writes a 16-bit word to memory at the given address (big-endian).
 	WriteWord(address uint32, value uint16)
@@ -29,7 +25,7 @@ type Bus interface {
 	Memory
 
 	// IRQAcknowledge is called when the CPU acknowledges an interrupt at the given level.
-	// Returns the vector number for the interrupt.
+	// Returns the vector number for the interrupt. The CPU uses the low eight bits.
 	IRQAcknowledge(level uint8) uint32
 
 	// IRQLevel returns the current interrupt priority level (0-7).
@@ -75,6 +71,7 @@ func (mem *BasicMemory) ReadWord(address uint32) uint16 {
 }
 
 // ReadLong reads a 32-bit long word from memory at the given address (big-endian).
+// The CPU does not use it; it is a host convenience.
 func (mem *BasicMemory) ReadLong(address uint32) uint32 {
 	addr := address & addressMask
 	return uint32(mem.data[addr])<<24 |
@@ -96,6 +93,7 @@ func (mem *BasicMemory) WriteWord(address uint32, value uint16) {
 }
 
 // WriteLong writes a 32-bit long word to memory at the given address (big-endian).
+// The CPU does not use it; it is a host convenience.
 func (mem *BasicMemory) WriteLong(address, value uint32) {
 	addr := address & addressMask
 	mem.data[addr] = uint8(value >> 24)

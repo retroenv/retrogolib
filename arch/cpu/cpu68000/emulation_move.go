@@ -291,11 +291,13 @@ func execEXG(c *CPU, d DecodedOpcode) error {
 	switch d.Extra {
 	case 0: // EXG Dn,Dn
 		c.D[d.SrcReg], c.D[d.DstReg] = c.D[d.DstReg], c.D[d.SrcReg]
+
 	case 1: // EXG An,An
 		srcA := c.getRegA(d.SrcReg)
 		dstA := c.getRegA(d.DstReg)
 		c.setRegA(d.SrcReg, dstA)
 		c.setRegA(d.DstReg, srcA)
+
 	case 2: // EXG Dn,An
 		dn := c.D[d.SrcReg]
 		an := c.getRegA(d.DstReg)

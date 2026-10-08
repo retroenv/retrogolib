@@ -11,8 +11,6 @@ type TraceStep struct {
 	PC             uint16 // program counter
 	OpcodeOperands []byte // instruction opcode and operand bytes
 	Opcode         Opcode
-
-	CustomData string // custom data field that can be used in the pre execution hook
 }
 
 // Step services a pending interrupt, idles while halted, or executes one instruction.
@@ -24,8 +22,8 @@ func (c *CPU) Step() error {
 		return nil
 	}
 
-	if c.halted {
-		// CPU is halted, just advance cycles
+	if c.halted || c.stopped {
+		// The CPU idles, so only the cycle counter advances.
 		c.cycles++
 		return nil
 	}
@@ -51,7 +49,7 @@ func (c *CPU) Step() error {
 		return err
 	}
 
-	// Enable IME after instruction if EI was the previous instruction
+	// Enable IME after the instruction if EI was the previous instruction.
 	if pendingIME && opcode.Instruction != DiInst {
 		c.ime = true
 	}
@@ -144,17 +142,15 @@ func (c *CPU) decodeCBInstruction(fetchPC uint16) (Opcode, uint8, error) {
 func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 	// Check if this is a jump instruction that always changes PC
 	if ins != nil && isJumpInstruction(ins) {
-		// Jump instructions handle PC themselves, don't modify it
+		// Jump instructions set PC themselves.
 		return
 	}
 
-	// Update PC only if the instruction execution did not change it
+	// Advance PC by the instruction size only if the instruction did not change it,
+	// for example by a taken conditional jump.
 	if oldPC == c.PC {
-		// PC unchanged, advance by instruction size
 		c.PC += uint16(amount)
 	}
-
-	// PC was changed by the instruction (e.g., conditional jump taken), don't modify it further
 }
 
 // jumpInstructions is a lookup set of instructions that always modify PC.

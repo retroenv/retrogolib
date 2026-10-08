@@ -48,6 +48,7 @@ var MemoryReadInstructions = set.NewFromSlice([]string{
 	LdxName,
 	LdyName,
 	OraName,
+	PeiName,
 	SbcName,
 	TrbName,
 	TsbName,

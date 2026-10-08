@@ -35,17 +35,19 @@ type CPU struct {
 
 	Flags Flags // CCR flags
 
-	cycles      uint64
-	halted      bool
-	stopped     bool  // STOP instruction state
-	pendingIRQ  uint8 // Highest queued interrupt request, retained while masked.
-	faultHalted bool  // Double fault; only external reset can resume execution.
+	cycles          uint64
+	halted          bool
+	stopped         bool  // STOP instruction state
+	pendingIRQ      uint8 // Highest queued interrupt request, retained while masked.
+	sampledIRQLevel uint8 // Bus level at the last interrupt check; detects level 7 edges.
+	sampledIRQMask  uint8 // Interrupt mask at the last interrupt check.
+	faultHalted     bool  // Double fault; only external reset can resume execution.
 
 	instructionPC   uint32
 	instructionWord uint16
 	stepCycles      uint64
 	exceptionAccess bool
-	exceptionRaised bool
+	traceSuppressed bool // The instruction did not execute, so no trace follows it.
 	operandPCOffset int32
 	accessCycles    uint64
 
@@ -142,9 +144,10 @@ func (cpu *CPU) Reset() error {
 	cpu.sr = MaskSupervisor | MaskIPM
 	cpu.Flags = Flags{}
 	cpu.pendingIRQ = 0
+	cpu.sampledIRQLevel, cpu.sampledIRQMask = 0, 7
 	cpu.halted, cpu.stopped, cpu.faultHalted = false, false, false
 	cpu.exceptionAccess = true
-	cpu.exceptionRaised = false
+	cpu.traceSuppressed = false
 	cpu.instructionWord = 0
 	cpu.accessCycles = 0
 	cpu.cycles = 40
@@ -226,6 +229,7 @@ func (cpu *CPU) readImmediate(size OperandSize) uint32 {
 	case SizeByte:
 		w := cpu.readWord()
 		return uint32(w & 0xFF)
+
 	case SizeWord:
 		return uint32(cpu.readWord())
 	case SizeLong:

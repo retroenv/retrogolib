@@ -16,6 +16,7 @@ func adc(c *CPU, params ...any) error {
 	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
 		if c.opts.variant >= Variant65C02 {
 			adcDecimal65C02(c, a, value)
+			c.cycles += decimalCorrectionCycles
 		} else {
 			adcDecimalNMOS(c, a, value)
 		}
@@ -543,6 +544,7 @@ func sbc(c *CPU, params ...any) error {
 	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
 		if c.opts.variant >= Variant65C02 {
 			sbcDecimal65C02(c, a, value)
+			c.cycles += decimalCorrectionCycles
 		} else {
 			sbcDecimalNMOS(c, a, value)
 		}

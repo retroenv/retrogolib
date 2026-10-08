@@ -16,9 +16,9 @@ const (
 // All addresses are 16-bit. Byte order is big-endian (6809 native byte order).
 type BasicMemory interface {
 	Read(address uint16) uint8
-	Write(address uint16, value uint8)
 	// ReadWord reads two bytes in big-endian order.
 	ReadWord(address uint16) uint16
+	Write(address uint16, value uint8)
 	// WriteWord writes two bytes in big-endian order.
 	WriteWord(address uint16, value uint16)
 }

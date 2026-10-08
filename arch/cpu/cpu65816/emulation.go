@@ -7,6 +7,7 @@ func (c *CPU) readOperand8(param any) (uint8, error) {
 	switch p := param.(type) {
 	case Immediate8:
 		return uint8(p), nil
+
 	default:
 		addr, err := c.resolveEA(param)
 		if err != nil {
@@ -17,27 +18,19 @@ func (c *CPU) readOperand8(param any) (uint8, error) {
 }
 
 // readOperand16 reads a 16-bit value from a param (immediate or memory).
-// Direct Page params (DirectPage, DirectPageX, DirectPageY) are always in bank 0;
-// the 16-bit read wraps within bank 0 using readMem16.
-// All other addressing modes use readData16, which allows the hi byte to cross a bank
-// boundary (e.g. abs,X where the index addition can carry into the bank byte).
+// Direct page and stack relative operands stay in bank 0. All other operands
+// let the high byte cross a bank boundary, for example abs,X where the index
+// addition can carry into the bank byte.
 func (c *CPU) readOperand16(param any) (uint16, error) {
-	switch p := param.(type) {
-	case Immediate16:
+	if p, ok := param.(Immediate16); ok {
 		return uint16(p), nil
-	case DirectPage, DirectPageX, DirectPageY:
-		addr, err := c.resolveEA(param)
-		if err != nil {
-			return 0, err
-		}
-		return c.readMem16(addr), nil
-	default:
-		addr, err := c.resolveEA(param)
-		if err != nil {
-			return 0, err
-		}
-		return c.readData16(addr), nil
 	}
+
+	addr, err := c.resolveEA(param)
+	if err != nil {
+		return 0, err
+	}
+	return c.readOperandWord(param, addr), nil
 }
 
 // readOperandAcc reads a value using the current accumulator width (8 or 16 bit).
@@ -56,6 +49,29 @@ func (c *CPU) readOperandIdx(param any) (uint16, error) {
 		return uint16(v), err
 	}
 	return c.readOperand16(param)
+}
+
+// moveBlockByte moves one byte of a block move and steps X and Y by delta.
+// C holds the remaining byte count minus one. The instruction executes again
+// from the same PC until C wraps to $FFFF, so an interrupt can occur between
+// bytes as on hardware.
+func (c *CPU) moveBlockByte(bm BlockMove, delta uint16) {
+	c.DB = bm.Dst
+	idxMask := uint16(0xFFFF)
+	if c.IdxWidth() == 1 {
+		idxMask = 0x00FF
+	}
+
+	src := bank24(bm.Src, c.X)
+	dst := bank24(bm.Dst, c.Y)
+	c.writeMem8(dst, c.readMem8(src))
+	c.X = (c.X + delta) & idxMask
+	c.Y = (c.Y + delta) & idxMask
+	c.C--
+
+	if c.C != 0xFFFF {
+		c.pcChanged = true // PC stays on the opcode for the next byte.
+	}
 }
 
 // -- Core ALU instructions --
@@ -136,10 +152,10 @@ func asl(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr)
+		v := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.C, v&0x8000 != 0)
 		v <<= 1
-		c.writeMem16(addr, v)
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -150,7 +166,7 @@ func bit(c *CPU, params ...any) error {
 	if err != nil {
 		return err
 	}
-	// BIT immediate only sets Z; non-immediate also sets N and V from memory
+	// BIT immediate only sets Z; the memory forms also set N and V from the operand.
 	_, isImm8 := params[0].(Immediate8)
 	_, isImm16 := params[0].(Immediate16)
 	isImm := isImm8 || isImm16
@@ -233,8 +249,8 @@ func dec(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr) - 1
-		c.writeMem16(addr, v)
+		v := c.readOperandWord(params[0], addr) - 1
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -302,8 +318,8 @@ func inc(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr) + 1
-		c.writeMem16(addr, v)
+		v := c.readOperandWord(params[0], addr) + 1
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -360,10 +376,10 @@ func lsr(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr)
+		v := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.C, v&0x0001 != 0)
 		v >>= 1
-		c.writeMem16(addr, v)
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -415,10 +431,10 @@ func rol(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr)
+		v := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.C, v&0x8000 != 0)
 		v = (v << 1) | uint16(carry)
-		c.writeMem16(addr, v)
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -452,10 +468,10 @@ func ror(c *CPU, params ...any) error {
 		c.writeMem8(addr, v)
 		c.setZN8(v)
 	} else {
-		v := c.readData16(addr)
+		v := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.C, v&0x0001 != 0)
 		v = (v >> 1) | (uint16(carry) << 15)
-		c.writeMem16(addr, v)
+		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
 	return nil
@@ -495,7 +511,6 @@ func sbc(c *CPU, params ...any) error {
 	return nil
 }
 
-// TSB/TRB
 func tsb(c *CPU, params ...any) error {
 	addr, err := c.resolveEA(params[0])
 	if err != nil {
@@ -506,9 +521,9 @@ func tsb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, uint8(c.C)&mem == 0)
 		c.writeMem8(addr, mem|uint8(c.C))
 	} else {
-		mem := c.readData16(addr)
+		mem := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.Z, c.C&mem == 0)
-		c.writeMem16(addr, mem|c.C)
+		c.writeOperandWord(params[0], addr, mem|c.C)
 	}
 	return nil
 }
@@ -523,9 +538,9 @@ func trb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, uint8(c.C)&mem == 0)
 		c.writeMem8(addr, mem&^uint8(c.C))
 	} else {
-		mem := c.readData16(addr)
+		mem := c.readOperandWord(params[0], addr)
 		setFlag(&c.Flags.Z, c.C&mem == 0)
-		c.writeMem16(addr, mem&^c.C)
+		c.writeOperandWord(params[0], addr, mem&^c.C)
 	}
 	return nil
 }
@@ -551,7 +566,7 @@ func adcBCD8(c *CPU, val uint8) {
 	}
 	result := uint8(hi<<4 | lo)
 	setFlag(&c.Flags.C, hiCarry != 0)
-	// V: 4-bit signed overflow of hi nibble addition using BCD carry from lo nibble
+	// V is the 4-bit signed overflow of the high nibble sum with the BCD carry from the low nibble.
 	setFlag(&c.Flags.V, ^(hiA^hiVal)&(hiA^hiRaw)&0x8 != 0)
 	c.C = uint16(c.B())<<8 | uint16(result)
 	c.setZN8(result)
@@ -579,7 +594,7 @@ func adcBCD16(c *CPU, val uint16) {
 		result |= uint16(d) << shift
 	}
 	setFlag(&c.Flags.C, carry != 0)
-	// V: 4-bit signed overflow of hi nibble (nibble 3) using BCD carry from nibble 2
+	// V is the 4-bit signed overflow of nibble 3 with the BCD carry from nibble 2.
 	hiA, hiVal16 := int(a>>12)&0xF, int(val>>12)&0xF
 	hiRaw := hiA + hiVal16 + vCarry
 	setFlag(&c.Flags.V, ^(hiA^hiVal16)&(hiA^hiRaw)&0x8 != 0)
@@ -636,76 +651,25 @@ func sbcBCD16(c *CPU, val uint16) {
 	c.setZN16(result)
 }
 
-// mvBlockMaxIter is the maximum number of byte transfers MVP/MVN performs per
-// Step() call. The SingleStepTests/65816 suite generates exactly 100 bus cycles
-// per test case; each MVP/MVN iteration uses 7 cycles, so 14 complete iterations
-// fit (14×7=98). When C+1 ≤ 14 the block finishes naturally; otherwise exactly
-// 14 bytes are transferred and PC still advances (matching the test's state at
-// cycle 100, after 14 complete iterations plus 2 partial fetch cycles of the
-// 15th re-execution).
-const mvBlockMaxIter = 14
-
 // mvn - Move Block Next (increment addresses).
-// C holds count-1 (copies C+1 bytes total). The loop is do-while: it always
-// executes at least one transfer per call, then checks C for $FFFF.
+// Each execution moves one byte in 7 cycles; see moveBlockByte.
 func mvn(c *CPU, params ...any) error {
-	bm := params[0].(BlockMove)
-	c.DB = bm.Dst
-	idxMask := uint16(0xFFFF)
-	if c.IdxWidth() == 1 {
-		idxMask = 0x00FF
+	bm, err := operand[BlockMove](params)
+	if err != nil {
+		return err
 	}
-	for range mvBlockMaxIter {
-		src := bank24(bm.Src, c.X)
-		dst := bank24(bm.Dst, c.Y)
-		c.writeMem8(dst, c.readMem8(src))
-		c.X = (c.X + 1) & idxMask
-		c.Y = (c.Y + 1) & idxMask
-		c.C--
-		c.cycles += 7
-		if c.C == 0xFFFF {
-			break
-		}
-	}
-	// When the block hasn't finished, the test data captures state mid-instruction
-	// (after 2 of the 3 opcode bytes were fetched in the next re-execution), so
-	// PC advances by 2 instead of the full instruction size of 3.
-	if c.C != 0xFFFF {
-		c.PC += 2
-		c.pcChanged = true
-	}
+	c.moveBlockByte(bm, 1)
 	return nil
 }
 
 // mvp - Move Block Previous (decrement addresses).
-// C holds count-1 (copies C+1 bytes total). The loop is do-while: it always
-// executes at least one transfer per call, then checks C for $FFFF.
+// Each execution moves one byte in 7 cycles; see moveBlockByte.
 func mvp(c *CPU, params ...any) error {
-	bm := params[0].(BlockMove)
-	c.DB = bm.Dst
-	idxMask := uint16(0xFFFF)
-	if c.IdxWidth() == 1 {
-		idxMask = 0x00FF
+	bm, err := operand[BlockMove](params)
+	if err != nil {
+		return err
 	}
-	for range mvBlockMaxIter {
-		src := bank24(bm.Src, c.X)
-		dst := bank24(bm.Dst, c.Y)
-		c.writeMem8(dst, c.readMem8(src))
-		c.X = (c.X - 1) & idxMask
-		c.Y = (c.Y - 1) & idxMask
-		c.C--
-		c.cycles += 7
-		if c.C == 0xFFFF {
-			break
-		}
-	}
-	// When the block hasn't finished, the test data captures state mid-instruction
-	// (after 2 of the 3 opcode bytes were fetched in the next re-execution), so
-	// PC advances by 2 instead of the full instruction size of 3.
-	if c.C != 0xFFFF {
-		c.PC += 2
-		c.pcChanged = true
-	}
+	c.moveBlockByte(bm, 0xFFFF)
 	return nil
 }
 

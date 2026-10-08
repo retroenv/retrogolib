@@ -12,15 +12,15 @@ type OpcodeInfo struct {
 // Instructions support multiple addressing modes and register variants through three
 // opcode mapping fields that enable bidirectional opcode/instruction lookup.
 type Instruction struct {
-	Name       string // Instruction mnemonic (lowercase)
-	Unofficial bool   // True for undocumented opcodes
+	Name string // Instruction mnemonic (lowercase)
 
-	// Opcode lookup maps for bidirectional instruction/opcode mapping
-	Addressing          map[AddressingMode]OpcodeInfo   // Maps addressing mode to opcode
-	RegisterOpcodes     map[RegisterParam]OpcodeInfo    // Maps single register parameter to opcode
-	RegisterPairOpcodes map[[2]RegisterParam]OpcodeInfo // Maps register pairs to opcode (e.g., LD r,r')
+	// Opcode lookup maps for bidirectional instruction/opcode mapping.
+	Addressing          map[AddressingMode]OpcodeInfo        // Maps addressing mode to opcode
+	RegisterOpcodes     map[RegisterParam]OpcodeInfo         // Maps single register parameter to opcode
+	RegisterPairOpcodes map[[2]RegisterParam]OpcodeInfo      // Maps register pairs to opcode (e.g., LD r,r')
+	BitOpcodes          map[Bit]map[RegisterParam]OpcodeInfo // Maps bit number and register to opcode (BIT/RES/SET)
 
-	// Execution handlers - exactly one must be set
+	// Execution handlers - exactly one must be set.
 	NoParamFunc func(c *CPU) error                // Handler for implied addressing
 	ParamFunc   func(c *CPU, params ...any) error // Handler for parameterized instructions
 }
@@ -47,6 +47,18 @@ func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, 
 	}
 
 	info, exists := ins.RegisterOpcodes[register]
+	return info, exists
+}
+
+// GetOpcodeByBit returns opcode info for a bit number and register parameter.
+// Used for the BIT, RES and SET instructions.
+func (ins Instruction) GetOpcodeByBit(bit Bit, register RegisterParam) (OpcodeInfo, bool) {
+	registers, exists := ins.BitOpcodes[bit]
+	if !exists {
+		return OpcodeInfo{}, false
+	}
+
+	info, exists := registers[register]
 	return info, exists
 }
 
@@ -83,11 +95,13 @@ var HaltInst = &Instruction{
 	NoParamFunc: halt,
 }
 
-// StopInst - Stop CPU and LCD until button press (SM83-unique).
+// StopInst - Stop CPU and LCD until a joypad interrupt is pending (SM83-unique).
+// The opcode is one byte. Assemblers conventionally emit a $00 pad byte after it,
+// which the CPU executes as a NOP after the stop ends.
 var StopInst = &Instruction{
 	Name: StopName,
 	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0x10, Size: 2, Cycles: 1},
+		ImpliedAddressing: {Opcode: 0x10, Size: 1, Cycles: 1},
 	},
 	NoParamFunc: stop,
 }
@@ -416,40 +430,22 @@ var LdAAddr = &Instruction{
 // LDH instructions (SM83-unique high memory access)
 // ---------------------------------------------------------------------------
 
-// LdhNA - LDH (n),A — Store A to high memory address $FF00+n.
-var LdhNA = &Instruction{
+// LdhInst - LDH — Load or store A through the $FF00 page.
+// The variant is selected by the opcode: $E0 LDH (n),A, $F0 LDH A,(n),
+// $E2 LDH (C),A and $F2 LDH A,(C).
+var LdhInst = &Instruction{
 	Name: LdhName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		ImmediateAddressing: {Opcode: 0xE0, Size: 2, Cycles: 3},
+		ImpliedAddressing:   {Opcode: 0xE2, Size: 1, Cycles: 2},
 	},
-	ParamFunc: ldhNA,
-}
-
-// LdhAN - LDH A,(n) — Load from high memory address $FF00+n into A.
-var LdhAN = &Instruction{
-	Name: LdhName,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImmediateAddressing: {Opcode: 0xF0, Size: 2, Cycles: 3},
+	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
+		RegHighMem:       {Opcode: 0xE0, Size: 2, Cycles: 3}, // LDH (n),A
+		RegLoadHighMem:   {Opcode: 0xF0, Size: 2, Cycles: 3}, // LDH A,(n)
+		RegCIndirect:     {Opcode: 0xE2, Size: 1, Cycles: 2}, // LDH (C),A
+		RegLoadCIndirect: {Opcode: 0xF2, Size: 1, Cycles: 2}, // LDH A,(C)
 	},
-	ParamFunc: ldhAN,
-}
-
-// LdhCA - LDH (C),A — Store A to $FF00+C.
-var LdhCA = &Instruction{
-	Name: LdhName,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xE2, Size: 1, Cycles: 2},
-	},
-	NoParamFunc: ldCA,
-}
-
-// LdhAC - LDH A,(C) — Load from $FF00+C into A.
-var LdhAC = &Instruction{
-	Name: LdhName,
-	Addressing: map[AddressingMode]OpcodeInfo{
-		ImpliedAddressing: {Opcode: 0xF2, Size: 1, Cycles: 2},
-	},
-	NoParamFunc: ldAC,
+	ParamFunc: ldh,
 }
 
 // ---------------------------------------------------------------------------
@@ -1085,6 +1081,88 @@ var CBBit = &Instruction{
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RegisterAddressing: {Prefix: 0xCB, Opcode: 0x40, Size: 2, Cycles: 2},
 	},
+	BitOpcodes: map[Bit]map[RegisterParam]OpcodeInfo{
+		0: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x40, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x41, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x42, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x43, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x44, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x45, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x46, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x47, Size: 2, Cycles: 2},
+		},
+		1: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x48, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x49, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x4A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x4B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x4C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x4D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x4E, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x4F, Size: 2, Cycles: 2},
+		},
+		2: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x50, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x51, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x52, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x53, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x54, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x55, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x56, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x57, Size: 2, Cycles: 2},
+		},
+		3: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x58, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x59, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x5A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x5B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x5C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x5D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x5E, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x5F, Size: 2, Cycles: 2},
+		},
+		4: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x60, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x61, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x62, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x63, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x64, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x65, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x66, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x67, Size: 2, Cycles: 2},
+		},
+		5: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x68, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x69, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x6A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x6B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x6C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x6D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x6E, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x6F, Size: 2, Cycles: 2},
+		},
+		6: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x70, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x71, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x72, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x73, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x74, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x75, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x76, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x77, Size: 2, Cycles: 2},
+		},
+		7: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x78, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x79, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x7A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x7B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x7C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x7D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x7E, Size: 2, Cycles: 3},
+			RegA:          {Prefix: 0xCB, Opcode: 0x7F, Size: 2, Cycles: 2},
+		},
+	},
 	ParamFunc: cbBit,
 }
 
@@ -1094,6 +1172,88 @@ var CBRes = &Instruction{
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RegisterAddressing: {Prefix: 0xCB, Opcode: 0x80, Size: 2, Cycles: 2},
 	},
+	BitOpcodes: map[Bit]map[RegisterParam]OpcodeInfo{
+		0: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x80, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x81, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x82, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x83, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x84, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x85, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x86, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0x87, Size: 2, Cycles: 2},
+		},
+		1: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x88, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x89, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x8A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x8B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x8C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x8D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x8E, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0x8F, Size: 2, Cycles: 2},
+		},
+		2: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x90, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x91, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x92, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x93, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x94, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x95, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x96, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0x97, Size: 2, Cycles: 2},
+		},
+		3: {
+			RegB:          {Prefix: 0xCB, Opcode: 0x98, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0x99, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0x9A, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0x9B, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0x9C, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0x9D, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0x9E, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0x9F, Size: 2, Cycles: 2},
+		},
+		4: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xA0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xA1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xA2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xA3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xA4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xA5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xA6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xA7, Size: 2, Cycles: 2},
+		},
+		5: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xA8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xA9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xAA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xAB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xAC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xAD, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xAE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xAF, Size: 2, Cycles: 2},
+		},
+		6: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xB0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xB1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xB2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xB3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xB4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xB5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xB6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xB7, Size: 2, Cycles: 2},
+		},
+		7: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xB8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xB9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xBA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xBB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xBC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xBD, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xBE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xBF, Size: 2, Cycles: 2},
+		},
+	},
 	ParamFunc: cbRes,
 }
 
@@ -1102,6 +1262,88 @@ var CBSet = &Instruction{
 	Name: SetName,
 	Addressing: map[AddressingMode]OpcodeInfo{
 		RegisterAddressing: {Prefix: 0xCB, Opcode: 0xC0, Size: 2, Cycles: 2},
+	},
+	BitOpcodes: map[Bit]map[RegisterParam]OpcodeInfo{
+		0: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xC0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xC1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xC2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xC3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xC4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xC5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xC6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xC7, Size: 2, Cycles: 2},
+		},
+		1: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xC8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xC9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xCA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xCB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xCC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xCD, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xCE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xCF, Size: 2, Cycles: 2},
+		},
+		2: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xD0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xD1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xD2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xD3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xD4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xD5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xD6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xD7, Size: 2, Cycles: 2},
+		},
+		3: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xD8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xD9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xDA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xDB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xDC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xDD, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xDE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xDF, Size: 2, Cycles: 2},
+		},
+		4: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xE0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xE1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xE2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xE3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xE4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xE5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xE6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xE7, Size: 2, Cycles: 2},
+		},
+		5: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xE8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xE9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xEA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xEB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xEC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xED, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xEE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xEF, Size: 2, Cycles: 2},
+		},
+		6: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xF0, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xF1, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xF2, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xF3, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xF4, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xF5, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xF6, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xF7, Size: 2, Cycles: 2},
+		},
+		7: {
+			RegB:          {Prefix: 0xCB, Opcode: 0xF8, Size: 2, Cycles: 2},
+			RegC:          {Prefix: 0xCB, Opcode: 0xF9, Size: 2, Cycles: 2},
+			RegD:          {Prefix: 0xCB, Opcode: 0xFA, Size: 2, Cycles: 2},
+			RegE:          {Prefix: 0xCB, Opcode: 0xFB, Size: 2, Cycles: 2},
+			RegH:          {Prefix: 0xCB, Opcode: 0xFC, Size: 2, Cycles: 2},
+			RegL:          {Prefix: 0xCB, Opcode: 0xFD, Size: 2, Cycles: 2},
+			RegHLIndirect: {Prefix: 0xCB, Opcode: 0xFE, Size: 2, Cycles: 4},
+			RegA:          {Prefix: 0xCB, Opcode: 0xFF, Size: 2, Cycles: 2},
+		},
 	},
 	ParamFunc: cbSet,
 }

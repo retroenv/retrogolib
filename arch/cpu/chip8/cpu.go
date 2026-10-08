@@ -11,10 +11,16 @@ const (
 	initialProgramCounter = 0x200
 )
 
-type keyWait struct {
-	register uint16
-	key      int8
-	active   bool
+// KeyWait is the state of an FX0A instruction that waits for a key.
+type KeyWait struct {
+	// Active reports that an FX0A instruction waits for a key press and release.
+	Active bool
+	// Pressed reports that a key press is latched and its release is awaited.
+	Pressed bool
+	// Key is the latched key.
+	Key uint8
+	// Register is the destination register for the key.
+	Register uint8
 }
 
 // State represents complete Chip-8 VM state for save/load and debugging.
@@ -31,8 +37,8 @@ type State struct {
 	SoundTimer   byte                               // Sound timer value
 	RedrawScreen bool                               // Screen redraw flag
 
-	keyWait       keyWait
-	drewThisFrame bool
+	KeyWait       KeyWait // Pending FX0A key wait
+	DrewThisFrame bool    // A sprite was drawn since the last 60 Hz tick
 }
 
 // CPU represents a CHIP-8 virtual machine with serialized execution and snapshots.
@@ -59,7 +65,7 @@ type CPU struct {
 	RedrawScreen bool                               // Set when screen needs redraw
 
 	quirks        Quirks
-	keyWait       keyWait
+	keyWait       KeyWait
 	drewThisFrame bool
 	mu            sync.RWMutex // Thread-safe access protection
 }
@@ -68,9 +74,8 @@ type CPU struct {
 func New(optionList ...Option) *CPU {
 	opts := newOptions(optionList...)
 	c := &CPU{
-		PC:      initialProgramCounter,
-		quirks:  opts.quirks,
-		keyWait: newKeyWait(),
+		PC:     initialProgramCounter,
+		quirks: opts.quirks,
 	}
 
 	copy(c.Memory[:], fontSet[:])
@@ -125,7 +130,7 @@ func (c *CPU) Reset() {
 	c.DelayTimer = 0
 	c.SoundTimer = 0
 	c.RedrawScreen = false
-	c.keyWait = newKeyWait()
+	c.keyWait = KeyWait{}
 	c.drewThisFrame = false
 
 	c.Memory = [len(c.Memory)]byte{}
@@ -154,8 +159,8 @@ func (c *CPU) State() State {
 	state.DelayTimer = c.DelayTimer
 	state.SoundTimer = c.SoundTimer
 	state.RedrawScreen = c.RedrawScreen
-	state.keyWait = c.keyWait
-	state.drewThisFrame = c.drewThisFrame
+	state.KeyWait = c.keyWait
+	state.DrewThisFrame = c.drewThisFrame
 
 	return state
 }
@@ -177,8 +182,8 @@ func (c *CPU) SetState(state State) {
 	c.DelayTimer = state.DelayTimer
 	c.SoundTimer = state.SoundTimer
 	c.RedrawScreen = state.RedrawScreen
-	c.keyWait = state.keyWait
-	c.drewThisFrame = state.drewThisFrame
+	c.keyWait = state.KeyWait
+	c.drewThisFrame = state.DrewThisFrame
 }
 
 // updatePC increments the program counter to the next instruction and optionally skips the following instruction.
@@ -188,8 +193,4 @@ func (c *CPU) updatePC(skipInstruction bool) {
 	} else {
 		c.PC += 2
 	}
-}
-
-func newKeyWait() keyWait {
-	return keyWait{key: -1}
 }

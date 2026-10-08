@@ -19,7 +19,8 @@ type Memory interface {
 
 // Bus extends Memory with 16-bit port addresses and interrupt acknowledgment.
 // NewWithBus uses this interface directly. New adapts Memory and WithIOHandler.
-// Callbacks run under the CPU lock and must not call locking CPU methods.
+// Callbacks run under the CPU lock and must not call locking CPU methods, such
+// as State, the register pair getters, or the interrupt configuration methods.
 type Bus interface {
 	Memory
 
@@ -105,6 +106,14 @@ type legacyBusAdapter struct {
 	ioHandler IOHandler
 }
 
+// IRQData returns FF, which selects RST 38h in IM 0 and vector byte FF in IM 2.
+func (bus *legacyBusAdapter) IRQData() uint8 { return 0xFF }
+
+// OnRETI ignores the notification because the legacy adapter has no daisy chain.
+func (bus *legacyBusAdapter) OnRETI() {}
+
+// ReadPort passes the low eight bits of the address to the IOHandler.
+// Without a handler it returns FF.
 func (bus *legacyBusAdapter) ReadPort(address uint16) uint8 {
 	if bus.ioHandler != nil {
 		return bus.ioHandler.ReadPort(uint8(address))
@@ -112,11 +121,10 @@ func (bus *legacyBusAdapter) ReadPort(address uint16) uint8 {
 	return 0xFF
 }
 
+// WritePort passes the low eight bits of the address to the IOHandler.
+// Without a handler it ignores the write.
 func (bus *legacyBusAdapter) WritePort(address uint16, value uint8) {
 	if bus.ioHandler != nil {
 		bus.ioHandler.WritePort(uint8(address), value)
 	}
 }
-
-func (bus *legacyBusAdapter) IRQData() uint8 { return 0xFF }
-func (bus *legacyBusAdapter) OnRETI()        {}

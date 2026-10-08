@@ -35,19 +35,21 @@ const (
 	// DOS represents MS-DOS and compatible systems.
 	DOS System = "dos"
 
-	// GameBoy represents the Nintendo Game Boy handheld system.
-	// Includes original Game Boy, Game Boy Pocket, and Game Boy Color compatibility.
+	// GameBoy represents the original Nintendo Game Boy and Game Boy Pocket handheld systems.
+	// Use GameBoyColor for software that requires Game Boy Color hardware.
 	GameBoy System = "gameboy"
 
 	// GameBoyColor represents the Nintendo Game Boy Color system.
+	// The short identifier "gbc" is the established profile name in dependent tools.
 	GameBoyColor System = "gbc"
-
-	// Genesis represents the Sega Genesis and Mega Drive systems.
-	Genesis System = "genesis"
 
 	// Generic represents a generic system without specific hardware quirks.
 	// Can be used for any CPU architecture when no system-specific behavior is needed.
 	Generic System = "generic"
+
+	// Genesis represents the Sega Genesis and Mega Drive systems.
+	// Uses the Motorola 68000 processor with a Z80 sound coprocessor.
+	Genesis System = "genesis"
 
 	// NES represents the Nintendo Entertainment System (Famicom).
 	NES System = "nes"
@@ -75,8 +77,8 @@ var allSupportedSystems = []System{
 	DOS,
 	GameBoy,
 	GameBoyColor,
-	Genesis,
 	Generic,
+	Genesis,
 	NES,
 	SNES,
 	Vectrex,

@@ -25,6 +25,9 @@ func TestMemoryMapRanges(t *testing.T) {
 	// VIA
 	assert.Equal(t, uint16(0xD000), uint16(VIAStart))
 	assert.Equal(t, uint16(0xD00F), uint16(VIAEnd))
+	assert.Equal(t, uint16(0xD7FF), uint16(VIARegionEnd))
+	assert.Equal(t, uint16(0xD800), uint16(DualSelectStart))
+	assert.Equal(t, uint16(0xDFFF), uint16(DualSelectEnd))
 
 	// System ROM
 	assert.Equal(t, uint16(0xE000), uint16(ROMStart))
@@ -33,12 +36,23 @@ func TestMemoryMapRanges(t *testing.T) {
 }
 
 func TestVectorAddresses(t *testing.T) {
-	// All vectors must be within system ROM
-	assert.True(t, ResetVector >= ROMStart)
-	assert.True(t, NMIVector >= ROMStart)
-	assert.True(t, SWIVector >= ROMStart)
-	assert.True(t, IRQVector >= ROMStart)
-	assert.True(t, FIRQVector >= ROMStart)
+	// The 6809 vector table occupies the last 16 bytes of the system ROM.
+	assert.Equal(t, uint16(0xFFFE), uint16(ResetVector))
+	assert.Equal(t, uint16(0xFFFC), uint16(NMIVector))
+	assert.Equal(t, uint16(0xFFFA), uint16(SWIVector))
+	assert.Equal(t, uint16(0xFFF8), uint16(IRQVector))
+	assert.Equal(t, uint16(0xFFF6), uint16(FIRQVector))
+	assert.Equal(t, uint16(0xFFF4), uint16(SWI2Vector))
+	assert.Equal(t, uint16(0xFFF2), uint16(SWI3Vector))
+	assert.True(t, SWI3Vector >= ROMStart)
+}
+
+func TestVIAMirrorMask(t *testing.T) {
+	// Every address in the VIA region selects one of the 16 registers.
+	for addr := uint16(VIAStart); addr <= VIARegionEnd; addr++ {
+		offset := addr & VIAMirrorMask
+		assert.True(t, uint16(VIAStart)+offset <= VIAEnd)
+	}
 }
 
 func TestCartridgeSizes(t *testing.T) {
@@ -69,7 +83,8 @@ func TestMemoryRegionNoOverlap(t *testing.T) {
 		{"Cartridge", CartridgeStart, CartridgeEnd},
 		{"RAM", RAMStart, RAMEnd},
 		{"RAM mirror", RAMMirrorStart, RAMMirrorEnd},
-		{"VIA", VIAStart, VIAEnd},
+		{"VIA", VIAStart, VIARegionEnd},
+		{"Dual select", DualSelectStart, DualSelectEnd},
 		{"ROM", ROMStart, ROMEnd},
 	}
 

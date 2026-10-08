@@ -54,9 +54,10 @@ type singleStepState struct {
 
 // singleStepTest represents a single test case from SingleStepTests.
 type singleStepTest struct {
-	Name    string          `json:"name"`
-	Initial singleStepState `json:"initial"`
-	Final   singleStepState `json:"final"`
+	Name    string            `json:"name"`
+	Initial singleStepState   `json:"initial"`
+	Final   singleStepState   `json:"final"`
+	Cycles  []json.RawMessage `json:"cycles"`
 }
 
 // getSingleStepDir returns the path to the sm83 SingleStepTests data directory,
@@ -109,10 +110,21 @@ func runSingleStepCase(tc *singleStepTest) error {
 
 	// Set initial CPU state.
 	setSingleStepState(cpu, &tc.Initial)
+	opcode := mem.Read(tc.Initial.PC)
 
 	// Execute one instruction.
 	if err := cpu.Step(); err != nil {
 		return fmt.Errorf("Step: %w", err)
+	}
+
+	// Compare the cycle count. The corpus lists three M-cycles for HALT ($76)
+	// and STOP ($10): the opcode fetch plus two idle cycles before the next
+	// fetch. The emulator charges one cycle for the instruction itself and
+	// accounts for idle time in each later Step, so these two are not compared.
+	if opcode != 0x10 && opcode != 0x76 {
+		if got, want := cpu.Cycles(), uint64(len(tc.Cycles)); got != want {
+			return fmt.Errorf("cycles: got %d, want %d", got, want)
+		}
 	}
 
 	// Compare final state.

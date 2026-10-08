@@ -133,29 +133,21 @@ func ldHLSPOffset(c *CPU, params ...any) error {
 	return nil
 }
 
-// ldhNA stores A at $FF00+n. LDH (n),A.
-func ldhNA(c *CPU, params ...any) error {
-	addr := 0xFF00 + uint16(params[0].(Immediate8))
-	c.memory.Write(addr, c.A)
-	return nil
-}
+// ldh loads or stores A through the $FF00 page.
+// $E0: LDH (n),A  $F0: LDH A,(n)  $E2: LDH (C),A  $F2: LDH A,(C).
+func ldh(c *CPU, params ...any) error {
+	addr := uint16(0xFF00)
+	if len(params) > 0 {
+		addr += uint16(params[0].(Immediate8))
+	} else {
+		addr += uint16(c.C)
+	}
 
-// ldhAN loads A from $FF00+n. LDH A,(n).
-func ldhAN(c *CPU, params ...any) error {
-	addr := 0xFF00 + uint16(params[0].(Immediate8))
-	c.A = c.memory.Read(addr)
-	return nil
-}
-
-// ldCA stores A at $FF00+C. LD (C),A.
-func ldCA(c *CPU) error {
-	c.memory.Write(0xFF00+uint16(c.C), c.A)
-	return nil
-}
-
-// ldAC loads A from $FF00+C. LD A,(C).
-func ldAC(c *CPU) error {
-	c.A = c.memory.Read(0xFF00 + uint16(c.C))
+	if c.currentOpcode&0x10 != 0 {
+		c.A = c.memory.Read(addr)
+	} else {
+		c.memory.Write(addr, c.A)
+	}
 	return nil
 }
 

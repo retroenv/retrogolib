@@ -51,6 +51,14 @@ func (c *CPU) handleInterrupts() bool {
 		return false
 	}
 
+	// Only a pending joypad interrupt ends STOP. Other interrupts stay pending.
+	if c.stopped {
+		if pending&IntJoypad == 0 {
+			return false
+		}
+		c.stopped = false
+	}
+
 	// Any pending interrupt wakes the CPU from HALT, even if IME is disabled.
 	c.halted = false
 

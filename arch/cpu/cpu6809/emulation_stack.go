@@ -143,7 +143,7 @@ func puluFn(c *CPU, param any) error {
 		c.Y = c.popU16()
 	}
 	if mask&0x40 != 0 {
-		c.S = c.popU16() // PULU pulls S, not U
+		c.loadS(c.popU16()) // PULU pulls S, not U
 	}
 	if mask&0x80 != 0 {
 		c.PC = c.popU16()

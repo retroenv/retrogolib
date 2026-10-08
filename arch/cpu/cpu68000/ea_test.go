@@ -148,7 +148,7 @@ func TestDecodeEA_AbsShort(t *testing.T) {
 
 func TestDecodeEA_AbsLong(t *testing.T) {
 	cpu := newTestCPU(t)
-	cpu.bus.WriteLong(cpu.PC, 0x00123456) // Absolute long address
+	writeLong(cpu.bus, cpu.PC, 0x00123456) // Absolute long address
 	cpu.bus.WriteWord(0x123456, 0x2222)
 
 	ea, err := cpu.decodeEA(7, 1, SizeWord)
@@ -195,7 +195,7 @@ func TestDecodeEA_Immediate_Word(t *testing.T) {
 
 func TestDecodeEA_Immediate_Long(t *testing.T) {
 	cpu := newTestCPU(t)
-	cpu.bus.WriteLong(cpu.PC, 0x12345678)
+	writeLong(cpu.bus, cpu.PC, 0x12345678)
 
 	ea, err := cpu.decodeEA(7, 4, SizeLong)
 	assert.NoError(t, err)

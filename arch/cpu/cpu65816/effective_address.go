@@ -9,6 +9,8 @@ func (addr DPIndirectLong) resolvedAddress() uint32 { return uint32(addr) }
 func (addr DPIndLongY) resolvedAddress() uint32     { return uint32(addr) }
 func (addr AbsoluteX16) resolvedAddress() uint32    { return uint32(addr) }
 func (addr AbsoluteY16) resolvedAddress() uint32    { return uint32(addr) }
+func (addr AbsIndirect) resolvedAddress() uint32    { return uint32(addr) }
+func (addr AbsIndirectX) resolvedAddress() uint32   { return uint32(addr) }
 func (addr AbsLong) resolvedAddress() uint32        { return uint32(addr) }
 func (addr AbsLongX) resolvedAddress() uint32       { return uint32(addr) }
 func (addr SRIndY) resolvedAddress() uint32         { return uint32(addr) }
@@ -56,6 +58,8 @@ func (c *CPU) resolveEA(param any) (uint32, error) {
 	}
 }
 
+// resolvedAddress is implemented by operand types that carry a complete 24-bit address.
+// The retrogolint function-order rule places this unexported interface after the methods.
 type resolvedAddress interface {
 	resolvedAddress() uint32
 }

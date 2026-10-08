@@ -2,6 +2,22 @@ package cpu65816
 
 // System, processor status, and miscellaneous instructions.
 
+// enterInterrupt sets the interrupt flags and loads the vector into PB:PC.
+func (c *CPU) enterInterrupt(vector uint32) {
+	c.Flags.I = 1
+	c.Flags.D = 0 // 65C02 behavior: clear D on interrupt
+	c.PB = 0
+	c.PC = c.memory.ReadWord(vector)
+	c.pcChanged = true
+}
+
+// markIRQRunning records that a software interrupt handler is active until RTI.
+func (c *CPU) markIRQRunning() {
+	c.mu.Lock()
+	c.irqRunning = true
+	c.mu.Unlock()
+}
+
 // clc - Clear Carry.
 func clc(c *CPU) error { c.Flags.C = 0; return nil }
 
@@ -25,21 +41,27 @@ func sei(c *CPU) error { c.Flags.I = 1; return nil }
 
 // rep - Reset Processor Status Bits (clear bits specified by immediate mask).
 func rep(c *CPU, params ...any) error {
-	mask := uint8(params[0].(Immediate8))
-	p := c.GetP() &^ mask
-	c.SetP(p)
+	mask, err := operand[Immediate8](params)
+	if err != nil {
+		return err
+	}
+	c.SetP(c.GetP() &^ uint8(mask))
 	return nil
 }
 
 // sep - Set Processor Status Bits (set bits specified by immediate mask).
 func sep(c *CPU, params ...any) error {
-	mask := uint8(params[0].(Immediate8))
-	p := c.GetP() | mask
-	c.SetP(p)
+	mask, err := operand[Immediate8](params)
+	if err != nil {
+		return err
+	}
+	c.SetP(c.GetP() | uint8(mask))
 	return nil
 }
 
 // xce - Exchange Carry and Emulation flags.
+// Entry into emulation mode forces M=1 and X=1, clears the high bytes of X
+// and Y, and moves SP to page 1. Entry into native mode keeps M and X.
 func xce(c *CPU) error {
 	oldE := c.E
 	oldC := c.Flags.C
@@ -52,14 +74,12 @@ func xce(c *CPU) error {
 
 	c.E = oldC != 0
 	if c.E {
-		// Entering emulation mode: force M=1, X=1, zero high bytes of X/Y, wrap SP to page 1
 		c.Flags.M = 1
 		c.Flags.X = 1
 		c.X &= 0x00FF
 		c.Y &= 0x00FF
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
-	// In native mode: M and X flags are NOT changed by XCE
 	return nil
 }
 
@@ -68,7 +88,7 @@ func xba(c *CPU) error {
 	lo := uint8(c.C)
 	hi := uint8(c.C >> 8)
 	c.C = uint16(lo)<<8 | uint16(hi)
-	// N and Z are set based on the new low byte (new A)
+	// N and Z follow the new low byte (the new A).
 	c.setZN8(hi)
 	return nil
 }
@@ -86,33 +106,21 @@ func wai(c *CPU) error {
 }
 
 // brk - Software Interrupt.
+// BRK is 2 bytes; the pushed return address is PC+2 (after the signature byte).
 func brk(c *CPU) error {
-	// BRK is 2 bytes; push PC+2 (address after signature byte)
 	retAddr := c.PC + 2
 	if c.E {
 		c.push16(retAddr)
 		p := c.GetP() | MaskBreak // B flag set when pushed in emulation mode
 		c.push8(p)
-		c.Flags.I = 1
-		c.Flags.D = 0 // 65C02 behavior: clear D on interrupt
-		vec := c.memory.ReadVector(VectorEmuIRQ)
-		c.PB = 0
-		c.PC = vec
+		c.enterInterrupt(VectorEmuIRQ)
 	} else {
 		c.push8(c.PB)
 		c.push16(retAddr)
 		c.push8(c.GetP())
-		c.Flags.I = 1
-		c.Flags.D = 0
-		vec := c.memory.ReadVector(VectorNativeBRK)
-		c.PB = 0
-		c.PC = vec
+		c.enterInterrupt(VectorNativeBRK)
 	}
-
-	c.pcChanged = true
-	c.mu.Lock()
-	c.irqRunning = true
-	c.mu.Unlock()
+	c.markIRQRunning()
 	return nil
 }
 
@@ -122,22 +130,14 @@ func cop(c *CPU) error {
 	if c.E {
 		c.push16(retAddr)
 		c.push8(c.GetP())
-		c.Flags.I = 1
-		c.Flags.D = 0
-		vec := c.memory.ReadVector(VectorEmuCOP)
-		c.PB = 0
-		c.PC = vec
+		c.enterInterrupt(VectorEmuCOP)
 	} else {
 		c.push8(c.PB)
 		c.push16(retAddr)
 		c.push8(c.GetP())
-		c.Flags.I = 1
-		c.Flags.D = 0
-		vec := c.memory.ReadVector(VectorNativeCOP)
-		c.PB = 0
-		c.PC = vec
+		c.enterInterrupt(VectorNativeCOP)
 	}
-	c.pcChanged = true
+	c.markIRQRunning()
 	return nil
 }
 
@@ -147,7 +147,7 @@ func rti(c *CPU) error {
 	c.SetP(p)
 	c.PC = c.pop16()
 	if !c.E {
-		// Native mode: also pull PB
+		// Native mode also pulls PB.
 		c.PB = c.pop8()
 	}
 	c.pcChanged = true

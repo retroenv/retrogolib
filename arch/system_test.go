@@ -140,7 +140,7 @@ func TestSupportedSystems(t *testing.T) {
 	got := SupportedSystems()
 	expected := []System{
 		AppleIIGS, Atari2600, CHIP8System, CoCo, CPM, DOS, GameBoy, GameBoyColor,
-		Genesis, Generic, NES, SNES, Vectrex, ZXSpectrum,
+		Generic, Genesis, NES, SNES, Vectrex, ZXSpectrum,
 	}
 
 	assert.Len(t, expected, len(got))

@@ -28,8 +28,8 @@ const (
 	SwitchReset  = 0x01 // Reset button (active low)
 	SwitchSelect = 0x02 // Select button (active low)
 	SwitchBW     = 0x08 // B/W-Color switch (0=B/W, 1=Color)
-	SwitchP0Diff = 0x40 // Player 0 difficulty (0=B/expert, 1=A/novice)
-	SwitchP1Diff = 0x80 // Player 1 difficulty (0=B/expert, 1=A/novice)
+	SwitchP0Diff = 0x40 // Player 0 difficulty (0=B/amateur, 1=A/pro)
+	SwitchP1Diff = 0x80 // Player 1 difficulty (0=B/amateur, 1=A/pro)
 )
 
 // Joystick direction bits in SWCHA.

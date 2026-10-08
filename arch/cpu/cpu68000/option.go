@@ -1,12 +1,9 @@
 package cpu68000
 
-import "github.com/retroenv/retrogolib/arch"
-
 type options struct {
-	tracing    bool
-	systemType arch.System
-	initialPC  uint32
-	initialSP  uint32
+	tracing   bool
+	initialPC uint32
+	initialSP uint32
 }
 
 // Option defines a CPU parameter.
@@ -16,13 +13,6 @@ type Option func(*options)
 func WithTracing() Option {
 	return func(options *options) {
 		options.tracing = true
-	}
-}
-
-// WithSystemType sets the target system type for emulation.
-func WithSystemType(systemType arch.System) Option {
-	return func(options *options) {
-		options.systemType = systemType
 	}
 }
 

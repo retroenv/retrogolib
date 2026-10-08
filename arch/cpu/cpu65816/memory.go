@@ -1,7 +1,5 @@
 package cpu65816
 
-import "errors"
-
 // Interrupt vector addresses (all in bank $00).
 const (
 	// Native mode vectors
@@ -24,9 +22,9 @@ const (
 // Byte order is little-endian (65816 native byte order).
 type BasicMemory interface {
 	Read(address uint32) uint8
-	Write(address uint32, value uint8)
 	// ReadWord reads two bytes in little-endian order.
 	ReadWord(address uint32) uint16
+	Write(address uint32, value uint8)
 	// WriteWord writes two bytes in little-endian order.
 	WriteWord(address uint32, value uint16)
 }
@@ -39,7 +37,7 @@ type Memory struct {
 // NewMemory creates a new Memory wrapper.
 func NewMemory(mem BasicMemory) (*Memory, error) {
 	if mem == nil {
-		return nil, errors.New("BasicMemory cannot be nil")
+		return nil, ErrNilMemory
 	}
 	return &Memory{BasicMemory: mem}, nil
 }
@@ -57,11 +55,6 @@ func (m *Memory) WriteLong(address, value uint32) {
 	m.Write(address, uint8(value))
 	m.Write(address+1, uint8(value>>8))
 	m.Write(address+2, uint8(value>>16))
-}
-
-// ReadVector reads a 16-bit interrupt vector from the given address.
-func (m *Memory) ReadVector(address uint32) uint16 {
-	return m.ReadWord(address)
 }
 
 // bank24 forms a 24-bit address from an 8-bit bank and a 16-bit offset.

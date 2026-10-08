@@ -5,10 +5,10 @@ package sm83
 // Bit No.   7   6   5   4   3   2   1   0
 // Flag      Z   N   H   C   0   0   0   0
 //
-// Z (Zero): Set if result is zero
-// N (Subtract): Set for subtract operations (used for BCD)
-// H (Half Carry): Set if carry from bit 3 to bit 4
-// C (Carry): Set if carry out of bit 7
+// Z (Zero): set if the result is zero.
+// N (Subtract): set for subtract operations (used for BCD).
+// H (Half Carry): set if there is a carry from bit 3 to bit 4.
+// C (Carry): set if there is a carry out of bit 7.
 type Flags struct {
 	C uint8 // carry flag (bit 4)
 	H uint8 // half carry flag (bit 5)

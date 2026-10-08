@@ -8,7 +8,7 @@
 // Memory map (13-bit, 8 KB address space with mirrors):
 //
 //	$0000-$002C  TIA write registers (player, missile, ball, playfield, audio)
-//	$0030-$003D  TIA read registers (collisions, inputs, timing)
+//	$0000-$000D  TIA read registers (collisions, inputs; mirrored every 16 bytes)
 //	$0080-$00FF  RIOT RAM (128 bytes)
 //	$0280-$0297  RIOT I/O and timer registers
 //	$1000-$1FFF  Cartridge ROM (4 KB window, bank-switched for larger ROMs)

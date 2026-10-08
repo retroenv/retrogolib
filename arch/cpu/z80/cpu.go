@@ -47,8 +47,10 @@ type State struct {
 }
 
 // CPU emulates a Z80 microprocessor.
-// Step, CheckInterrupts, and interrupt triggers are synchronized. Callers must
-// serialize direct register access and interrupt configuration with execution.
+// Step, CheckInterrupts, interrupt triggers, and the interrupt configuration
+// methods are synchronized. Callers must serialize direct register field access
+// with execution. Bus callbacks and execution hooks run under the CPU lock and
+// must not call locking CPU methods.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -102,9 +104,11 @@ type CPU struct {
 
 	// Q register: tracks previous flag state so SCF/CCF can set the
 	// undocumented X/Y flag bits (bits 3 and 5) correctly.
-	// After each instruction, Q captures the flags byte. SCF/CCF then
-	// compute X/Y as: (A | (F & ~Q)) & 0x28.
-	q uint8
+	// After an instruction that writes F, Q holds the flags byte. After any
+	// other instruction, Q is zero. SCF/CCF then compute X/Y as:
+	// (A | (F & ~Q)) & 0x28.
+	q            uint8
+	flagsWritten bool // The current instruction wrote F; Step uses it to update Q.
 
 	// lastWasLdAIR tracks if the previous instruction was LD A,I or LD A,R.
 	// Used to emulate the Zilog NMOS bug where P/V is reset if an IRQ fires
@@ -119,7 +123,7 @@ type CPU struct {
 type Interrupts struct {
 	IFF1         bool
 	IFF2         bool
-	IM           uint8
+	IM           InterruptMode
 	NMITriggered bool
 	IrqTriggered bool
 }
@@ -144,7 +148,8 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 // The Bus interface provides memory, I/O ports, and interrupt acknowledgment,
 // enabling accurate emulation of systems with interrupt daisy chains and
 // full 16-bit I/O port addressing. WithIOHandler applies only to New.
-// Bus callbacks execute under the CPU lock and must not call locking CPU methods.
+// Bus callbacks execute under the CPU lock and must not call locking CPU
+// methods, including the interrupt configuration methods and State.
 func NewWithBus(bus Bus, options ...Option) (*CPU, error) {
 	if bus == nil {
 		return nil, ErrNilMemory
@@ -215,7 +220,7 @@ func (cpu *CPU) State() State {
 		Interrupts: Interrupts{
 			IFF1:         cpu.iff1,
 			IFF2:         cpu.iff2,
-			IM:           uint8(cpu.im),
+			IM:           cpu.im,
 			NMITriggered: cpu.triggerNmi,
 			IrqTriggered: cpu.triggerIrq,
 		},

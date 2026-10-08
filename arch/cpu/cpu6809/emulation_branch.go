@@ -2,8 +2,12 @@ package cpu6809
 
 // Branch and jump instructions.
 
-// getRegisterValue returns the value of a register by its TFR/EXG encoding.
-// 0=D, 1=X, 2=Y, 3=U, 4=S, 5=PC, 8=A, 9=B, 10=CC, 11=DP
+// getRegisterValue returns the 16-bit source value of a register by its TFR/EXG encoding.
+// Codes: 0=D, 1=X, 2=Y, 3=U, 4=S, 5=PC, 8=A, 9=B, 10=CC, 11=DP.
+// The datasheet leaves mixed-size transfers undefined. Observed silicon behavior,
+// as implemented by MAME and documented in the 6809 undocumented-behavior notes,
+// is: A and B read as $FF in the high byte, CC and DP read as the same byte twice,
+// and invalid codes read as $FFFF.
 func (c *CPU) getRegisterValue(reg uint8) uint16 {
 	switch reg {
 	case 0x00:
@@ -19,19 +23,25 @@ func (c *CPU) getRegisterValue(reg uint8) uint16 {
 	case 0x05:
 		return c.PC
 	case 0x08:
-		return uint16(c.A)
+		return 0xFF00 | uint16(c.A)
 	case 0x09:
-		return uint16(c.B)
+		return 0xFF00 | uint16(c.B)
+
 	case 0x0A:
-		return uint16(c.GetCC())
+		cc := uint16(c.GetCC())
+		return cc<<8 | cc
+
 	case 0x0B:
-		return uint16(c.DP)
+		dp := uint16(c.DP)
+		return dp<<8 | dp
+
 	default:
-		return 0
+		return 0xFFFF
 	}
 }
 
 // setRegisterValue sets a register by its TFR/EXG encoding.
+// An 8-bit destination receives the low byte. Invalid codes are ignored.
 func (c *CPU) setRegisterValue(reg uint8, value uint16) {
 	switch reg {
 	case 0x00:
@@ -43,10 +53,12 @@ func (c *CPU) setRegisterValue(reg uint8, value uint16) {
 	case 0x03:
 		c.U = value
 	case 0x04:
-		c.S = value
+		c.loadS(value)
+
 	case 0x05:
 		c.PC = value
 		c.pcChanged = true
+
 	case 0x08:
 		c.A = uint8(value)
 	case 0x09:

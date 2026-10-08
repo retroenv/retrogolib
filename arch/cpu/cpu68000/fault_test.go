@@ -45,7 +45,7 @@ func TestAddressErrorFrame(t *testing.T) {
 			cpu := newTestCPU(t)
 			cpu.A[0], cpu.D[0] = 0x3001, 0x1234
 			cpu.bus.WriteWord(cpu.PC, tt.opcode)
-			cpu.bus.WriteLong(VectorAddressErr*4, 0x2000)
+			writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 			cpu.USP = 0x8000
 			if tt.user {
 				cpu.SetSR(0)
@@ -54,10 +54,10 @@ func TestAddressErrorFrame(t *testing.T) {
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, uint32(0x2000), cpu.PC)
 			assert.Equal(t, uint32(0xFFF2), cpu.A7())
-			assert.Equal(t, uint32(0x3001), cpu.bus.ReadLong(cpu.A7()+2))
+			assert.Equal(t, uint32(0x3001), readLong(cpu.bus, cpu.A7()+2))
 			assert.Equal(t, tt.opcode, cpu.bus.ReadWord(cpu.A7()+6))
 			assert.Equal(t, sr, cpu.bus.ReadWord(cpu.A7()+8))
-			assert.Equal(t, uint32(0x1000), cpu.bus.ReadLong(cpu.A7()+10))
+			assert.Equal(t, uint32(0x1000), readLong(cpu.bus, cpu.A7()+10))
 			status := uint16(5)
 			if tt.user {
 				status = 1
@@ -76,10 +76,10 @@ func TestAddressErrorInstructionFetch(t *testing.T) {
 	// Instruction fetches must use the same alignment checks as operands.
 	cpu := newTestCPU(t)
 	cpu.PC = 0x1001
-	cpu.bus.WriteLong(VectorAddressErr*4, 0x2000)
+	writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x2000), cpu.PC)
-	assert.Equal(t, uint32(0x1001), cpu.bus.ReadLong(cpu.A7()+2))
+	assert.Equal(t, uint32(0x1001), readLong(cpu.bus, cpu.A7()+2))
 	assert.Equal(t, uint16(0x16), cpu.bus.ReadWord(cpu.A7())&0x1F)
 }
 
@@ -122,11 +122,11 @@ func TestBusErrorAbortsTransfer(t *testing.T) {
 			cpu.bus = bus
 			cpu.A[0], cpu.D[0] = 0x3000, 0x12345678
 			bus.WriteWord(cpu.PC, tt.opcode)
-			bus.WriteLong(VectorBusError*4, 0x2000)
+			writeLong(bus, VectorBusError*4, 0x2000)
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, uint32(0x2000), cpu.PC)
 			assert.False(t, cpu.Halted())
-			assert.Equal(t, tt.address, bus.ReadLong(cpu.A7()+2))
+			assert.Equal(t, tt.address, readLong(bus, cpu.A7()+2))
 			assert.Equal(t, uint16(0), bus.ReadWord(0x3002))
 			if tt.address == 0x3002 {
 				assert.Equal(t, uint16(0x1234), bus.ReadWord(0x3000))
@@ -158,8 +158,8 @@ func TestDoubleFaultRequiresReset(t *testing.T) {
 	assert.NoError(t, cpu.Step())
 	assert.Len(t, bus.accesses, accesses)
 	bus.reject = false
-	bus.WriteLong(0, 0x8000)
-	bus.WriteLong(4, 0x2000)
+	writeLong(bus, 0, 0x8000)
+	writeLong(bus, 4, 0x2000)
 	assert.NoError(t, cpu.Reset())
 	assert.False(t, cpu.Halted())
 	assert.Equal(t, uint32(0x8000), cpu.A7())
@@ -191,10 +191,10 @@ func TestAddressErrorAfterExtension(t *testing.T) {
 	cpu.A[0] = 0x3000
 	cpu.bus.WriteWord(cpu.PC, 0x3028) // MOVE.W 1(A0),D0.
 	cpu.bus.WriteWord(cpu.PC+2, 1)
-	cpu.bus.WriteLong(VectorAddressErr*4, 0x2000)
+	writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint64(54), cpu.Cycles())
-	assert.Equal(t, uint32(0x1002), cpu.bus.ReadLong(cpu.A7()+10))
+	assert.Equal(t, uint32(0x1002), readLong(cpu.bus, cpu.A7()+10))
 }
 
 func TestAddressErrorJSRBeforeStackWrite(t *testing.T) {
@@ -202,17 +202,17 @@ func TestAddressErrorJSRBeforeStackWrite(t *testing.T) {
 	cpu := newTestCPU(t)
 	cpu.A[0] = 0x3001
 	cpu.bus.WriteWord(cpu.PC, 0x4E90)
-	cpu.bus.WriteLong(VectorAddressErr*4, 0x2000)
+	writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0xFFF2), cpu.A7())
-	assert.Equal(t, uint32(0x3001), cpu.bus.ReadLong(cpu.A7()+2))
+	assert.Equal(t, uint32(0x3001), readLong(cpu.bus, cpu.A7()+2))
 }
 
 func TestMOVEWriteFaultPreservesPostincrement(t *testing.T) {
 	cpu := newTestCPU(t)
 	cpu.A[0] = 0x3001
 	cpu.bus.WriteWord(cpu.PC, 0x30C0) // MOVE.W D0,(A0)+.
-	cpu.bus.WriteLong(VectorAddressErr*4, 0x2000)
+	writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x3001), cpu.A[0])
 }
@@ -231,11 +231,11 @@ func TestStatusPrivilegeBeforeExtensionFetch(t *testing.T) {
 		cpu.USP = 0x8000
 		cpu.SetSR(0)
 		bus.WriteWord(cpu.PC, opcode)
-		bus.WriteLong(VectorPrivilege*4, 0x2000)
+		writeLong(bus, VectorPrivilege*4, 0x2000)
 		assert.NoError(t, cpu.Step())
 		assert.Equal(t, uint32(0x2000), cpu.PC)
 		assert.Equal(t, uint32(0xFFFA), cpu.A7())
-		assert.Equal(t, uint32(0x1000), bus.ReadLong(cpu.A7()+2))
+		assert.Equal(t, uint32(0x1000), readLong(bus, cpu.A7()+2))
 	}
 }
 
@@ -259,18 +259,18 @@ func TestFaultWhileFetchingExceptionVector(t *testing.T) {
 	}
 	cpu.bus = bus
 	bus.WriteWord(cpu.PC, 0x4E40) // TRAP #0.
-	bus.WriteLong(VectorBusError*4, 0x2000)
+	writeLong(bus, VectorBusError*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x2000), cpu.PC)
 	assert.Equal(t, uint32(0xFFEC), cpu.A7()) // Ordinary frame plus bus-error frame.
-	assert.Equal(t, uint32(VectorTrap0*4), bus.ReadLong(cpu.A7()+10))
+	assert.Equal(t, uint32(VectorTrap0*4), readLong(bus, cpu.A7()+10))
 }
 
 func TestDoubleFaultAtHandlerAddress(t *testing.T) {
 	cpu := newTestCPU(t)
 	cpu.A[0] = 0x3001
 	cpu.bus.WriteWord(cpu.PC, 0x3010)
-	cpu.bus.WriteLong(VectorAddressErr*4, 0x2001)
+	writeLong(cpu.bus, VectorAddressErr*4, 0x2001)
 	assert.NoError(t, cpu.Step())
 	assert.True(t, cpu.Halted())
 }
@@ -286,11 +286,103 @@ func TestLineExceptionsSaveInstructionAddress(t *testing.T) {
 	} {
 		cpu := newTestCPU(t)
 		cpu.bus.WriteWord(cpu.PC, tt.opcode)
-		cpu.bus.WriteLong(uint32(tt.vector)*4, 0x2000)
+		writeLong(cpu.bus, uint32(tt.vector)*4, 0x2000)
 		assert.NoError(t, cpu.Step())
 		assert.Equal(t, uint32(0x2000), cpu.PC)
-		assert.Equal(t, uint32(0x1000), cpu.bus.ReadLong(cpu.A7()+2))
+		assert.Equal(t, uint32(0x1000), readLong(cpu.bus, cpu.A7()+2))
 	}
+}
+
+func TestUnassignedOpcodeRaisesIllegalInstruction(t *testing.T) {
+	// Undecoded words returned a host error instead of taking vector 4.
+	for _, opcode := range []uint16{0x4E7A, 0x42C0, 0x4E88} {
+		cpu := newTestCPU(t)
+		cpu.bus.WriteWord(cpu.PC, opcode)
+		writeLong(cpu.bus, VectorIllegal*4, 0x2000)
+		assert.NoError(t, cpu.Step())
+		assert.Equal(t, uint32(0x2000), cpu.PC)
+		assert.Equal(t, uint32(0x1000), readLong(cpu.bus, cpu.A7()+2))
+		assert.Equal(t, uint64(34), cpu.Cycles())
+	}
+}
+
+func TestTraceFollowsTrappingInstruction(t *testing.T) {
+	// TRAP, TRAPV, CHK, and zero divide execute, so the trace exception
+	// follows their own exception with the handler address as saved PC.
+	tests := []struct {
+		name   string
+		words  []uint16
+		vector int
+		flags  Flags
+	}{
+		{name: "TRAP", words: []uint16{0x4E40}, vector: VectorTrap0},
+		{name: "TRAPV", words: []uint16{0x4E76}, vector: VectorTRAPV, flags: Flags{V: 1}},
+		{name: "CHK", words: []uint16{0x4582}, vector: VectorCHK},      // CHK D2,D2.
+		{name: "DIVU", words: []uint16{0x82C0}, vector: VectorDivZero}, // DIVU D0,D1.
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu := newTestCPU(t)
+			cpu.sr |= MaskTrace
+			cpu.Flags = tt.flags
+			cpu.D[2] = 0xFFFF // Negative CHK operand; D0 stays a zero divisor.
+			for i, word := range tt.words {
+				cpu.bus.WriteWord(cpu.PC+uint32(i)*2, word)
+			}
+			writeLong(cpu.bus, uint32(tt.vector)*4, 0x2000)
+			writeLong(cpu.bus, VectorTrace*4, 0x3000)
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, uint32(0x3000), cpu.PC)
+			assert.Equal(t, uint32(0x2000), readLong(cpu.bus, cpu.A7()+2))
+			assert.Equal(t, uint16(0), cpu.bus.ReadWord(cpu.A7())&MaskTrace)
+			assert.Equal(t, uint32(0x1002), readLong(cpu.bus, cpu.A7()+8))
+		})
+	}
+}
+
+func TestTraceDroppedForUnexecutedInstruction(t *testing.T) {
+	// Illegal, privileged, and line A/F words do not execute, so no trace follows.
+	tests := []struct {
+		name   string
+		opcode uint16
+		vector int
+		user   bool
+	}{
+		{name: "illegal", opcode: 0x4AFC, vector: VectorIllegal},
+		{name: "privilege", opcode: 0x4E70, vector: VectorPrivilege, user: true},
+		{name: "line A", opcode: 0xA000, vector: VectorLineA},
+		{name: "line F", opcode: 0xF000, vector: VectorLineF},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu := newTestCPU(t)
+			cpu.USP = 0x8000
+			if tt.user {
+				cpu.SetSR(0)
+			}
+			cpu.sr |= MaskTrace
+			cpu.bus.WriteWord(cpu.PC, tt.opcode)
+			writeLong(cpu.bus, uint32(tt.vector)*4, 0x2000)
+			writeLong(cpu.bus, VectorTrace*4, 0x3000)
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, uint32(0x2000), cpu.PC)
+			assert.Equal(t, uint32(0x1000), readLong(cpu.bus, cpu.A7()+2))
+		})
+	}
+}
+
+func TestSccReadsDestinationBeforeWrite(t *testing.T) {
+	// The 68000 performs a read cycle at the Scc destination before the write.
+	cpu := newTestCPU(t)
+	bus := &rejectingBus{BasicBus: cpu.bus.(*BasicBus)}
+	cpu.bus = bus
+	cpu.A[0] = 0x3000
+	bus.WriteWord(cpu.PC, 0x50D0) // ST (A0).
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, []uint32{0x1000, 0x3000, 0x3000}, bus.accesses)
+	assert.Equal(t, uint8(0xFF), bus.Read(0x3000))
 }
 
 func TestTraceStartsAfterStatusWrite(t *testing.T) {
@@ -299,12 +391,12 @@ func TestTraceStartsAfterStatusWrite(t *testing.T) {
 	cpu.bus.WriteWord(cpu.PC, 0x007C) // ORI #T,SR.
 	cpu.bus.WriteWord(cpu.PC+2, MaskTrace)
 	cpu.bus.WriteWord(cpu.PC+4, 0x4E71) // NOP.
-	cpu.bus.WriteLong(VectorTrace*4, 0x2000)
+	writeLong(cpu.bus, VectorTrace*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x1004), cpu.PC)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x2000), cpu.PC)
-	assert.Equal(t, uint32(0x1006), cpu.bus.ReadLong(cpu.A7()+2))
+	assert.Equal(t, uint32(0x1006), readLong(cpu.bus, cpu.A7()+2))
 	assert.Equal(t, uint64(58), cpu.Cycles())
 }
 

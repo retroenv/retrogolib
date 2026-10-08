@@ -20,7 +20,24 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
-const ssMaxFailures = 10
+const (
+	ssMaxFailures = 10
+
+	// ssBlockMoveCycles is the number of bus cycles that the corpus records
+	// for every MVN and MVP vector. A block that ends within that budget
+	// holds its final state. A longer block holds the state after 14 moved
+	// bytes plus the two operand fetches of the next re-execution, so its PC
+	// is two bytes past the opcode and its cycle count is not comparable.
+	ssBlockMoveCycles = 100
+	ssBlockMoveBytes  = ssBlockMoveCycles / 7
+
+	// WAI and STP record one more bus cycle than the datasheet timing, so the
+	// corpus cycle count is not compared for them.
+	ssOpcodeMVP = 0x44
+	ssOpcodeMVN = 0x54
+	ssOpcodeWAI = 0xCB
+	ssOpcodeSTP = 0xDB
+)
 
 // TestSingleStep discovers and runs all SingleStepTests/65816 JSON test files.
 func TestSingleStep(t *testing.T) {
@@ -144,8 +161,15 @@ func runSS65816File(t *testing.T, path string) {
 	t.Logf("%s: %d passed, %d failed of %d", filepath.Base(path), pass, fail, len(cases))
 }
 
-// runSS65816Case sets up the CPU from the test's initial state, executes one
-// Step, and compares the result against the expected final state.
+// ssExpectation holds the parts of the expected final state that depend on
+// how the vector was recorded.
+type ssExpectation struct {
+	pc     uint16
+	cycles int // expected cycle delta, or 0 when the vector cycles are not comparable
+}
+
+// runSS65816Case sets up the CPU from the test's initial state, executes the
+// instruction, and compares the result against the expected final state.
 func runSS65816Case(t *testing.T, tc *ss65816TestCase) bool {
 	t.Helper()
 
@@ -177,21 +201,61 @@ func runSS65816Case(t *testing.T, tc *ss65816TestCase) bool {
 	cpu.DP = tc.Initial.D
 	cpu.PB = tc.Initial.PBR
 
-	err = cpu.Step()
-	assert.NoError(t, err)
+	want := ssExpectation{
+		pc:     tc.Final.PC,
+		cycles: len(tc.Cycles),
+	}
+	cycles := cpu.Cycles()
 
-	return verifySS65816Case(t, tc, cpu, mem)
+	switch opcode := mem.Read(cpu.FullPC()); opcode {
+	case ssOpcodeMVN, ssOpcodeMVP:
+		want = runSS65816BlockMove(t, tc, cpu)
+
+	case ssOpcodeWAI, ssOpcodeSTP:
+		want.cycles = 0
+		assert.NoError(t, cpu.Step())
+
+	default:
+		assert.NoError(t, cpu.Step())
+	}
+
+	return verifySS65816Case(t, tc, cpu, mem, want, int(cpu.Cycles()-cycles))
 }
 
-// verifySS65816Case compares all CPU registers and RAM writes against the
-// expected final state, returning true if everything matches.
-func verifySS65816Case(t *testing.T, tc *ss65816TestCase, cpu *CPU, mem *ss65816Memory) bool {
+// runSS65816BlockMove executes a block move until it ends or until the
+// recorded cycle budget is used, and returns the expectation that matches
+// the recorded final state (see ssBlockMoveCycles).
+func runSS65816BlockMove(t *testing.T, tc *ss65816TestCase, cpu *CPU) ssExpectation {
+	t.Helper()
+
+	moved := 0
+	for cpu.PC == tc.Initial.PC && moved < ssBlockMoveBytes {
+		assert.NoError(t, cpu.Step())
+		moved++
+	}
+
+	if cpu.PC == tc.Initial.PC {
+		return ssExpectation{pc: tc.Final.PC - 2}
+	}
+	return ssExpectation{
+		pc:     tc.Final.PC,
+		cycles: len(tc.Cycles),
+	}
+}
+
+// verifySS65816Case compares all CPU registers, the cycle count, and RAM
+// writes against the expected final state, returning true if everything matches.
+func verifySS65816Case(t *testing.T, tc *ss65816TestCase, cpu *CPU, mem *ss65816Memory, want ssExpectation,
+	cycles int) bool {
 	t.Helper()
 
 	var diffs []string
 
-	if cpu.PC != tc.Final.PC {
-		diffs = append(diffs, fmt.Sprintf("PC: got %04X, want %04X", cpu.PC, tc.Final.PC))
+	if cpu.PC != want.pc {
+		diffs = append(diffs, fmt.Sprintf("PC: got %04X, want %04X", cpu.PC, want.pc))
+	}
+	if want.cycles != 0 && cycles != want.cycles {
+		diffs = append(diffs, fmt.Sprintf("cycles: got %d, want %d", cycles, want.cycles))
 	}
 	if cpu.SP != tc.Final.S {
 		diffs = append(diffs, fmt.Sprintf("S: got %04X, want %04X", cpu.SP, tc.Final.S))

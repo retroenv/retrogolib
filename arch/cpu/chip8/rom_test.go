@@ -113,7 +113,7 @@ func runROMToTerminal(t *testing.T, c *CPU) {
 		}
 
 		assert.NoError(t, c.Step(), "cycle %d at PC 0x%03X", cycle, c.PC)
-		if c.keyWait.active {
+		if c.keyWait.Active {
 			return
 		}
 	}
@@ -125,17 +125,17 @@ func runKeypadROM(t *testing.T, c *CPU) {
 	t.Helper()
 
 	runROMToTerminal(t, c)
-	assert.True(t, c.keyWait.active, "keypad ROM did not wait for input")
+	assert.True(t, c.keyWait.Active, "keypad ROM did not wait for input")
 	for range 3 {
 		c.UpdateTimers()
 	}
 
 	c.Key[5] = true
 	assert.NoError(t, c.Step())
-	assert.True(t, c.keyWait.active, "FX0A resumed before key release")
+	assert.True(t, c.keyWait.Active, "FX0A resumed before key release")
 	c.Key[5] = false
 	assert.NoError(t, c.Step())
-	assert.False(t, c.keyWait.active)
+	assert.False(t, c.keyWait.Active)
 
 	runROMToTerminal(t, c)
 }

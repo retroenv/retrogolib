@@ -20,7 +20,7 @@ func (cpu *CPU) Step() error {
 
 	cpu.stepCycles = cpu.cycles
 	cpu.instructionPC = cpu.PC
-	cpu.exceptionAccess, cpu.exceptionRaised = false, false
+	cpu.exceptionAccess, cpu.traceSuppressed = false, false
 	cpu.operandPCOffset = -2
 	cpu.accessCycles = 0
 	err := catchAccessFault(cpu.executeStep)
@@ -55,20 +55,13 @@ func (cpu *CPU) executeStep() error {
 
 	pcBefore := cpu.PC
 
-	// Fetch and decode the opcode word.
+	// Fetch and decode the opcode word. Unassigned words decode to ILLEGAL.
 	opcodeWord := cpu.readWord()
 	cpu.instructionWord = opcodeWord
 	cpu.accessCycles = 0
 	trace := cpu.sr&MaskTrace != 0
 
-	decoded, err := decodeOpcode(opcodeWord)
-	if err != nil {
-		return fmt.Errorf("decoding opcode at PC=%06X: %w", pcBefore, err)
-	}
-
-	if decoded.Instruction == nil {
-		return fmt.Errorf("%w: 0x%04X at PC=%06X", ErrUnsupportedOpcode, opcodeWord, pcBefore)
-	}
+	decoded := decodeOpcode(opcodeWord)
 
 	if cpu.opts.tracing {
 		cpu.TraceStep = TraceStep{
@@ -89,8 +82,9 @@ func (cpu *CPU) executeStep() error {
 	}
 	cpu.checkInstructionAddress()
 
-	// Check for trace exception.
-	if trace && !cpu.exceptionRaised {
+	// A trace exception follows an executed instruction, including one that
+	// trapped. An instruction that did not execute drops the trace.
+	if trace && !cpu.traceSuppressed {
 		if err := cpu.processException(VectorTrace); err != nil {
 			return fmt.Errorf("processing trace exception: %w", err)
 		}

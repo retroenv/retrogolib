@@ -11,12 +11,16 @@ const (
 
 // EnableInterrupts enables maskable interrupts (sets IFF1 and IFF2).
 func (cpu *CPU) EnableInterrupts() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
 	cpu.iff1 = true
 	cpu.iff2 = true
 }
 
 // DisableInterrupts disables maskable interrupts (clears IFF1 and IFF2).
 func (cpu *CPU) DisableInterrupts() {
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
 	cpu.iff1 = false
 	cpu.iff2 = false
 }
@@ -26,17 +30,23 @@ func (cpu *CPU) SetInterruptMode(mode InterruptMode) error {
 	if mode > InterruptMode2 {
 		return ErrInvalidInterruptMode
 	}
+	cpu.mu.Lock()
+	defer cpu.mu.Unlock()
 	cpu.im = mode
 	return nil
 }
 
 // GetInterruptMode returns the current interrupt mode.
 func (cpu *CPU) GetInterruptMode() InterruptMode {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
 	return cpu.im
 }
 
 // InterruptsEnabled returns whether maskable interrupts are enabled.
 func (cpu *CPU) InterruptsEnabled() bool {
+	cpu.mu.RLock()
+	defer cpu.mu.RUnlock()
 	return cpu.iff1
 }
 
@@ -59,6 +69,7 @@ func (cpu *CPU) handleInterrupts() bool {
 		cpu.push16(cpu.PC)
 		cpu.PC, cpu.MEMPTR = 0x66, 0x66
 		cpu.cycles += 11
+		cpu.traceInterrupt(11)
 		return true
 	}
 	if !cpu.triggerIrq || !cpu.iff1 || cpu.eiPending {
@@ -83,15 +94,29 @@ func (cpu *CPU) handleInterrupts() bool {
 			vector = uint16(data & 0x38)
 		}
 		// Non-RST IM0 opcodes retain the legacy RST 38h fallback.
+
 	case InterruptMode2:
 		vector = uint16(cpu.I)<<8 | uint16(cpu.bus.IRQData())
 	}
 	cpu.push16(cpu.PC)
-	cpu.cycles += 13
+	var timing byte = 13
 	if cpu.im == InterruptMode2 {
 		vector = cpu.read16(vector)
-		cpu.cycles += 6
+		timing += 6
 	}
+	cpu.cycles += uint64(timing)
 	cpu.PC, cpu.MEMPTR = vector, vector
+	cpu.traceInterrupt(timing)
 	return true
+}
+
+// traceInterrupt records an accepted interrupt in TraceStep when tracing is enabled.
+func (cpu *CPU) traceInterrupt(timing byte) {
+	if !cpu.opts.tracing {
+		return
+	}
+	cpu.TraceStep = TraceStep{
+		PC:     cpu.PC,
+		Opcode: Opcode{Timing: timing},
+	}
 }

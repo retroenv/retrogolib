@@ -290,6 +290,9 @@ func compareSingleStepState(cpu *CPU, mem *BasicMemory, expected *singleStepStat
 	if err := compareSingleStepInterrupts(cpu, expected); err != nil {
 		return err
 	}
+	if err := compareReg8("Q", cpu.q, expected.Q); err != nil {
+		return err
+	}
 	return compareSingleStepRAM(mem, expected)
 }
 

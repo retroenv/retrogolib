@@ -76,8 +76,6 @@ var MemoryReadInstructions = set.NewFromSlice([]string{
 	NopInst.Name,
 	OraInst.Name,
 	SbcInst.Name,
-	TrbInst.Name,
-	TsbInst.Name,
 })
 
 // MemoryWriteInstructions contains instructions that can write a memory operand.

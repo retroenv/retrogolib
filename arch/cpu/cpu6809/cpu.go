@@ -22,7 +22,7 @@ type State struct {
 type CPU struct {
 	interruptMu sync.Mutex
 
-	// Registers
+	// Registers.
 	A  uint8  // Accumulator A (high byte of D)
 	B  uint8  // Accumulator B (low byte of D)
 	X  uint16 // Index register X
@@ -39,10 +39,11 @@ type CPU struct {
 	pcChanged bool   // set by instructions that explicitly set PC (branches, jumps)
 	nextPC    uint16 // address following the current instruction
 
-	// Interrupt control
+	// Interrupt control.
 	triggerNMI  bool
 	triggerIRQ  bool
 	triggerFIRQ bool
+	nmiArmed    bool // set by the first program load of S after reset; NMI is inhibited before that
 
 	memory *Memory
 	opts   options
@@ -136,6 +137,7 @@ func (c *CPU) Reset() {
 	c.triggerNMI = false
 	c.triggerIRQ = false
 	c.triggerFIRQ = false
+	c.nmiArmed = false
 	c.interruptMu.Unlock()
 
 	if c.memory != nil && c.memory.BasicMemory != nil {
@@ -221,12 +223,19 @@ func (c *CPU) popU16() uint16 {
 	return hi<<8 | lo
 }
 
+// loadS sets the system stack pointer from program control and arms NMI.
+// The 6809 inhibits NMI after reset until the first program load of S.
+func (c *CPU) loadS(value uint16) {
+	c.S = value
+	c.nmiArmed = true
+}
+
 // dpAddr forms a 16-bit address using the direct page register.
 func (c *CPU) dpAddr(offset uint8) uint16 {
 	return uint16(c.DP)<<8 | uint16(offset)
 }
 
-// fetchByte reads the next byte from PC without advancing PC.
+// fetchByte reads the byte at PC plus offset without advancing PC.
 func (c *CPU) fetchByte(offset uint16) uint8 {
 	return c.memory.Read(c.PC + offset)
 }

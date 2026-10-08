@@ -52,9 +52,15 @@ func (cpu *CPU) processException(vector int) error {
 	default:
 		cpu.cycles = cpu.stepCycles + 34
 	}
-	cpu.exceptionRaised = true
-	cpu.exceptionAccess = vector == VectorIllegal || vector == VectorPrivilege || vector == VectorTrace ||
+
+	// An instruction that does not execute saves its own address, uses
+	// "not instruction" stack accesses, and drops a pending trace. TRAP,
+	// TRAPV, CHK, and zero divide execute, so the trace stays pending
+	// (WinUAE exception_trace).
+	notExecuted := vector == VectorIllegal || vector == VectorPrivilege ||
 		vector == VectorLineA || vector == VectorLineF
+	cpu.exceptionAccess = notExecuted || vector == VectorTrace
+	cpu.traceSuppressed = cpu.traceSuppressed || notExecuted
 
 	// Enter supervisor mode and clear trace.
 	cpu.sr |= MaskSupervisor
@@ -68,7 +74,7 @@ func (cpu *CPU) processException(vector int) error {
 
 	// Push PC and SR onto the supervisor stack.
 	pc := cpu.PC
-	if vector == VectorIllegal || vector == VectorPrivilege || vector == VectorLineA || vector == VectorLineF {
+	if notExecuted {
 		pc = cpu.instructionPC
 	}
 	cpu.push32(pc)
@@ -89,7 +95,7 @@ func (cpu *CPU) processException(vector int) error {
 func (cpu *CPU) processInterruptException(level uint8) {
 	// Save current SR.
 	oldSR := cpu.GetSR()
-	cpu.exceptionAccess, cpu.exceptionRaised = true, true
+	cpu.exceptionAccess = true
 
 	// Enter supervisor mode, clear trace, set interrupt mask.
 	cpu.sr |= MaskSupervisor
@@ -106,8 +112,8 @@ func (cpu *CPU) processInterruptException(level uint8) {
 	cpu.push32(cpu.PC)
 	cpu.push16(oldSR)
 
-	// Get vector from bus.
-	vector := cpu.bus.IRQAcknowledge(level)
+	// The bus supplies an eight-bit vector number during the acknowledge cycle.
+	vector := cpu.bus.IRQAcknowledge(level) & 0xFF
 
 	// Load new PC from vector table.
 	vectorAddr := vector * 4
@@ -118,18 +124,24 @@ func (cpu *CPU) processInterruptException(level uint8) {
 	cpu.cycles += 44
 }
 
-// checkInterrupts checks for pending interrupts and processes them.
+// checkInterrupts samples the bus and the queued request and processes the
+// highest level that the mask permits. Level 7 is edge-sensitive: the CPU
+// accepts it when the bus level rises to 7, when TriggerIRQ queues it, or
+// when the mask drops below 7 while the bus still holds level 7.
 // Returns true if an interrupt was processed.
 func (cpu *CPU) checkInterrupts() bool {
-	level := max(cpu.bus.IRQLevel(), cpu.pendingIRQ)
-	if level == 0 {
-		return false
-	}
-
+	busLevel := cpu.bus.IRQLevel()
 	mask := cpu.InterruptMask()
+	if busLevel == 7 && (cpu.sampledIRQLevel < 7 || cpu.sampledIRQMask == 7 && mask < 7) {
+		cpu.pendingIRQ = 7
+	}
+	cpu.sampledIRQLevel, cpu.sampledIRQMask = busLevel, mask
 
-	// Level 7 is non-maskable. Other levels must be higher than mask.
-	if level < 7 && level <= mask {
+	level := cpu.pendingIRQ
+	if busLevel < 7 {
+		level = max(level, busLevel)
+	}
+	if level == 0 || level < 7 && level <= mask {
 		return false
 	}
 
@@ -143,7 +155,7 @@ func (cpu *CPU) checkInterrupts() bool {
 func (cpu *CPU) acceptAccessFault(fault *accessError) error {
 	err := catchAccessFault(func() error {
 		cpu.SetSR((cpu.GetSR() | MaskSupervisor) &^ MaskTrace)
-		cpu.exceptionAccess, cpu.exceptionRaised = true, true
+		cpu.exceptionAccess = true
 		cpu.stopped = false
 		cpu.cycles = cpu.stepCycles + fault.cycles + 50
 		// The original 68000 has no format word. Its seven-word fault frame

@@ -16,4 +16,11 @@
 //   - 11 illegal opcodes: $D3, $DB, $DD, $E3, $E4, $EB, $EC, $ED, $F4, $FC, $FD
 //   - 5 fixed interrupt vectors ($0040, $0048, $0050, $0058, $0060)
 //   - HALT bug: if HALT executed with IME=0 and pending interrupt, PC fails to increment
+//
+// # Low-power states
+//
+// HALT idles until any enabled interrupt is pending; the interrupt is serviced only
+// when IME is set. STOP idles until a joypad interrupt is pending; other pending
+// interrupts do not end STOP. Each idle Step adds one machine cycle. The CGB speed
+// switch is not emulated.
 package sm83

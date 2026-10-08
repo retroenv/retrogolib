@@ -105,7 +105,9 @@ func shBaseAddr(c *CPU, params []any) (uint16, uint8) {
 	return baseAddr, c.Y
 }
 
-// shWrite emulates the SH-family page-crossing bus conflict.
+// shWrite emulates the SH-family page-crossing bus conflict. The bus-cycle
+// path dispatches these stores directly to the handler, so the store must
+// emit its own write cycle.
 func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
 	andValue := value & (byte(baseAddr>>8) + 1)
 	effectiveAddr := baseAddr + uint16(indexReg)
@@ -116,6 +118,10 @@ func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
 		writeAddr = (uint16(andValue) << 8) | (effectiveAddr & 0xFF)
 	} else {
 		writeAddr = effectiveAddr
+	}
+	if c.cycleActive {
+		c.writeCycle(writeAddr, andValue)
+		return
 	}
 	c.memory.Write(writeAddr, andValue)
 }

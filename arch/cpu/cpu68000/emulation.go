@@ -725,6 +725,8 @@ func execDIVU(c *CPU, d DecodedOpcode) error {
 	}
 
 	if src == 0 {
+		// The 68000 clears V and C and sets N and Z from the high word of the
+		// dividend before the trap (WinUAE divbyzero_special).
 		c.setLogicFlags(c.D[d.DstReg]>>16, SizeWord)
 		return c.processException(VectorDivZero)
 	}
@@ -759,6 +761,9 @@ func execDIVS(c *CPU, d DecodedOpcode) error {
 	}
 
 	if src == 0 {
+		// The 68000 clears N, V, and C and sets Z before a signed divide by
+		// zero trap (WinUAE divbyzero_special).
+		c.Flags.N, c.Flags.Z, c.Flags.V, c.Flags.C = 0, 1, 0, 0
 		return c.processException(VectorDivZero)
 	}
 

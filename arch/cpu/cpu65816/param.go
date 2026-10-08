@@ -14,6 +14,19 @@ func (c *CPU) fetchWord(offset uint16) uint16 {
 
 type paramReaderFunc func(c *CPU) ([]any, []byte, bool)
 
+// operand returns the first decoded parameter as type T.
+func operand[T any](params []any) (T, error) { //nolint:ireturn // T is the caller's concrete operand type.
+	var zero T
+	if len(params) == 0 {
+		return zero, ErrMissingParameter
+	}
+	value, ok := params[0].(T)
+	if !ok {
+		return zero, fmt.Errorf("%w: got %T, want %T", ErrInvalidParameterType, params[0], zero)
+	}
+	return value, nil
+}
+
 var paramReader = map[AddressingMode]paramReaderFunc{
 	ImpliedAddressing:                        paramReaderImplied,
 	AccumulatorAddressing:                    paramReaderAccumulator,
@@ -48,7 +61,7 @@ func readOpParams(c *CPU, mode AddressingMode, op Opcode) ([]any, []byte, bool, 
 	if !ok {
 		return nil, nil, false, fmt.Errorf("%w: mode 0x%x", ErrUnsupportedAddressingMode, mode)
 	}
-	// For immediate mode, pass the width flag via a size-aware reader
+	// Immediate operands take their width from the M or X flag of the opcode.
 	if mode == ImmediateAddressing {
 		return paramReaderImmediateWidth(c, op)
 	}
@@ -72,6 +85,7 @@ func paramReaderImmediateWidth(c *CPU, op Opcode) ([]any, []byte, bool, error) {
 			w := c.fetchWord(1)
 			return []any{Immediate16(w)}, []byte{uint8(w), uint8(w >> 8)}, false, nil
 		}
+
 	case WidthX:
 		if c.IdxWidth() == 2 {
 			w := c.fetchWord(1)
@@ -213,9 +227,9 @@ func paramReaderAbsoluteIndirect(c *CPU) ([]any, []byte, bool) {
 	b2 := c.fetchByte(2)
 	ptr := uint32(uint16(b2)<<8 | uint16(b1))
 	addr := uint32(c.readMem16(ptr))
-	// JMP (abs) stays in current bank
+	// JMP (abs) reads the pointer in bank 0 and stays in the program bank.
 	eff := bank24(c.PB, uint16(addr))
-	return []any{DPIndirect(eff)}, []byte{b1, b2}, false
+	return []any{AbsIndirect(eff)}, []byte{b1, b2}, false
 }
 
 func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
@@ -225,7 +239,7 @@ func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
 	ptr := bank24(c.PB, base+c.X)
 	addr := uint32(c.readMem16(ptr))
 	eff := bank24(c.PB, uint16(addr))
-	return []any{DPIndirectX(eff)}, []byte{b1, b2}, false
+	return []any{AbsIndirectX(eff)}, []byte{b1, b2}, false
 }
 
 func paramReaderAbsoluteLong(c *CPU) ([]any, []byte, bool) {
@@ -278,15 +292,16 @@ func paramReaderSRIndirectY(c *CPU) ([]any, []byte, bool) {
 	return []any{SRIndY(eff)}, []byte{sr}, false
 }
 
+// paramReaderRelative resolves the branch target from the next instruction
+// address (PC+2) and the signed 8-bit offset. The page-cross flag reports if
+// the target is in a different page than the next instruction; the branch
+// handler applies the related cycle penalty only when the branch is taken.
 func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
 	offset := int8(c.fetchByte(1))
-	// Branch target: PC+2 (after the 2-byte instruction) + signed offset
 	nextPC := c.PC + 2
 	target := uint16(int32(nextPC) + int32(offset))
-	// Page crossing: target lands in a different 256-byte page than the next instruction.
-	// On the 65816, this penalty applies only in emulation mode (handled in step.go).
 	pageCrossed := (target & 0xFF00) != (nextPC & 0xFF00)
-	return []any{target}, []byte{uint8(offset)}, pageCrossed
+	return []any{BranchTarget(target)}, []byte{uint8(offset)}, pageCrossed
 }
 
 func paramReaderRelativeLong(c *CPU) ([]any, []byte, bool) {
@@ -294,7 +309,7 @@ func paramReaderRelativeLong(c *CPU) ([]any, []byte, bool) {
 	b2 := c.fetchByte(2)
 	offset := int16(uint16(b2)<<8 | uint16(b1))
 	target := uint16(int32(c.PC) + 3 + int32(offset))
-	return []any{target}, []byte{b1, b2}, false
+	return []any{BranchTarget(target)}, []byte{b1, b2}, false
 }
 
 func paramReaderBlockMove(c *CPU) ([]any, []byte, bool) {

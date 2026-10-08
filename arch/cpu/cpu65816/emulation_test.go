@@ -300,6 +300,32 @@ func TestBranch_Cycles(t *testing.T) {
 	assert.Equal(t, uint64(4), cpu.cycles-before)
 }
 
+// An untaken branch never pays the page-cross penalty. The penalty used to be
+// added before the branch handler ran, so an untaken emulation-mode branch
+// across a page cost 3 cycles.
+func TestBranch_NotTakenPageCross(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.E = true
+	cpu.Flags.C = 1
+	cpu.PC = 0x82FE
+	writeOp(mem, 0x82FE, 0x90, 0x80) // BCC -128, not taken
+	before := cpu.cycles
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint64(2), cpu.cycles-before)
+	assert.Equal(t, uint16(0x8300), cpu.PC)
+}
+
+func TestBranch_RejectsWrongOperand(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	assert.ErrorIs(t, bcc(cpu, Immediate8(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, bcc(cpu), ErrMissingParameter)
+	assert.ErrorIs(t, jmp(cpu, DirectPage(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, jml(cpu, Absolute16(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, jsr(cpu, AbsLong(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, jsl(cpu, Absolute16(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, rep(cpu, Immediate16(1)), ErrInvalidParameterType)
+}
+
 // BRA (always taken): 3 cycles same page, 4 cycles cross page in emulation mode.
 func TestBRA_Cycles(t *testing.T) {
 	// Same page: 3 cycles (native)
@@ -699,6 +725,9 @@ func TestMVN_SingleByte(t *testing.T) {
 	assert.Equal(t, uint16(0x2001), cpu.Y)
 }
 
+// A block move moves one byte per Step and keeps PC on the opcode until C
+// wraps. The old implementation moved up to 14 bytes per Step, counted the
+// first byte twice, and advanced PC by 2 into the operand bytes.
 func TestMVN_ThreeBytes(t *testing.T) {
 	cpu, mem := setupCPU(t)
 	cpu.Flags.X = 0 // 16-bit index registers
@@ -708,17 +737,64 @@ func TestMVN_ThreeBytes(t *testing.T) {
 	mem.data[0x1000] = 0xAA
 	mem.data[0x1001] = 0xBB
 	mem.data[0x1002] = 0xCC
-	err := mvn(cpu, BlockMove{
-		Src: 0x00,
-		Dst: 0x00,
-	})
-	assert.NoError(t, err)
-	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
-		t.Errorf("MVN 3-byte: dst=%02X%02X%02X, want AABBCC",
-			mem.data[0x2000], mem.data[0x2001], mem.data[0x2002])
+	writeOp(mem, 0x8000, 0x54, 0x00, 0x00) // MVN $00,$00
+	writeOp(mem, 0x8003, 0xEA)             // NOP
+
+	for i := range 3 {
+		before := cpu.cycles
+		assert.NoError(t, cpu.Step())
+		assert.Equal(t, uint64(7), cpu.cycles-before, "byte %d", i)
+		assert.Equal(t, uint16(0x1001+i), cpu.X)
+		assert.Equal(t, uint16(0x2001+i), cpu.Y)
 	}
+	assert.Equal(t, uint8(0xAA), mem.data[0x2000])
+	assert.Equal(t, uint8(0xBB), mem.data[0x2001])
+	assert.Equal(t, uint8(0xCC), mem.data[0x2002])
 	assert.Equal(t, uint16(0xFFFF), cpu.C)
-	assert.Equal(t, uint16(0x1003), cpu.X)
+	assert.Equal(t, uint16(0x8003), cpu.PC)
+
+	assert.NoError(t, cpu.Step()) // NOP
+	assert.Equal(t, uint16(0x8004), cpu.PC)
+}
+
+func TestMVN_LongBlockStaysOnOpcode(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.X = 0
+	cpu.C = 0x001F // 32 bytes
+	cpu.X = 0x1000
+	cpu.Y = 0x2000
+	writeOp(mem, 0x8000, 0x54, 0x01, 0x02) // MVN $02,$01
+
+	for range 31 {
+		assert.NoError(t, cpu.Step())
+		assert.Equal(t, uint16(0x8000), cpu.PC)
+	}
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0xFFFF), cpu.C)
+	assert.Equal(t, uint16(0x8003), cpu.PC)
+	assert.Equal(t, uint16(0x1020), cpu.X)
+	assert.Equal(t, uint8(0x01), cpu.DB)
+}
+
+func TestMVN_8BitIndexWraps(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.X = 1
+	cpu.C = 0x0000
+	cpu.X = 0x00FF
+	cpu.Y = 0x00FF
+	mem.data[0x00FF] = 0x5A
+	writeOp(mem, 0x8000, 0x54, 0x00, 0x00)
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0x5A), mem.data[0x00FF])
+	assert.Equal(t, uint16(0x0000), cpu.X)
+	assert.Equal(t, uint16(0x0000), cpu.Y)
+}
+
+func TestMVN_RejectsWrongOperand(t *testing.T) {
+	cpu, _ := setupCPU(t)
+	assert.ErrorIs(t, mvn(cpu, Immediate8(1)), ErrInvalidParameterType)
+	assert.ErrorIs(t, mvn(cpu), ErrMissingParameter)
 }
 
 // -- BRK (native mode) --
@@ -869,17 +945,17 @@ func TestMVP_ThreeBytes(t *testing.T) {
 	mem.data[0x1000] = 0xAA
 	mem.data[0x1001] = 0xBB
 	mem.data[0x1002] = 0xCC
-	err := mvp(cpu, BlockMove{
-		Src: 0x00,
-		Dst: 0x00,
-	})
-	assert.NoError(t, err)
-	if mem.data[0x2000] != 0xAA || mem.data[0x2001] != 0xBB || mem.data[0x2002] != 0xCC {
-		t.Errorf("MVP 3-byte: dst=%02X%02X%02X, want AABBCC",
-			mem.data[0x2000], mem.data[0x2001], mem.data[0x2002])
+	writeOp(mem, 0x8000, 0x44, 0x00, 0x00) // MVP $00,$00
+
+	for range 3 {
+		assert.NoError(t, cpu.Step())
 	}
+	assert.Equal(t, uint8(0xAA), mem.data[0x2000])
+	assert.Equal(t, uint8(0xBB), mem.data[0x2001])
+	assert.Equal(t, uint8(0xCC), mem.data[0x2002])
 	assert.Equal(t, uint16(0xFFFF), cpu.C)
 	assert.Equal(t, uint16(0x0FFF), cpu.X)
+	assert.Equal(t, uint16(0x8003), cpu.PC)
 }
 
 // -- RTI --
@@ -998,6 +1074,92 @@ func TestCOP_EmulationMode(t *testing.T) {
 	assert.Equal(t, uint8(0x02), mem.data[0x01FE])
 	assert.Equal(t, uint8(1), cpu.Flags.I)
 	assert.Equal(t, uint8(0), cpu.Flags.D)
+}
+
+// Direct page and stack relative word accesses stay in bank 0. The read path
+// already wrapped, but 16-bit stores and read-modify-write instructions wrote
+// the high byte to $01:0000.
+func TestDirectPageWordWrapsInBank0(t *testing.T) {
+	tests := []struct {
+		name   string
+		opcode uint8
+		want   [2]uint8 // bytes at $00:FFFF and $00:0000
+	}{
+		{name: "STA dp", opcode: 0x85, want: [2]uint8{0x34, 0x12}},
+		{name: "STZ dp", opcode: 0x64, want: [2]uint8{0x00, 0x00}},
+		{name: "ASL dp", opcode: 0x06, want: [2]uint8{0x02, 0x80}},
+		{name: "INC dp", opcode: 0xE6, want: [2]uint8{0x02, 0x40}},
+		{name: "TSB dp", opcode: 0x04, want: [2]uint8{0x35, 0x52}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu, mem := setupCPU(t)
+			cpu.Flags.M = 0
+			cpu.C = 0x1234
+			cpu.DP = 0xFF80
+			mem.data[0x00FFFF] = 0x01
+			mem.data[0x000000] = 0x40
+			mem.data[0x010000] = 0xEE
+			writeOp(mem, 0x8000, tt.opcode, 0x7F)
+
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, tt.want[0], mem.data[0x00FFFF])
+			assert.Equal(t, tt.want[1], mem.data[0x000000])
+			assert.Equal(t, uint8(0xEE), mem.data[0x010000])
+		})
+	}
+}
+
+func TestStackRelativeWordWrapsInBank0(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 0
+	cpu.SP = 0xFFFE
+	mem.data[0x00FFFF] = 0x34
+	mem.data[0x000000] = 0x12
+	mem.data[0x010000] = 0xEE
+	writeOp(mem, 0x8000, 0xA3, 0x01) // LDA $01,S
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x1234), cpu.C)
+
+	cpu.PC = 0x8000
+	cpu.C = 0xABCD
+	writeOp(mem, 0x8000, 0x83, 0x01) // STA $01,S
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0xCD), mem.data[0x00FFFF])
+	assert.Equal(t, uint8(0xAB), mem.data[0x000000])
+	assert.Equal(t, uint8(0xEE), mem.data[0x010000])
+}
+
+func TestAbsoluteWordCrossesBank(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	cpu.Flags.M = 0
+	cpu.C = 0xABCD
+	cpu.DB = 0x00
+	writeOp(mem, 0x8000, 0x8D, 0xFF, 0xFF) // STA $FFFF
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0xCD), mem.data[0x00FFFF])
+	assert.Equal(t, uint8(0xAB), mem.data[0x010000])
+	assert.Equal(t, uint8(0x00), mem.data[0x000000])
+}
+
+func TestIdleStepsConsumeOneCycle(t *testing.T) {
+	cpu, mem := setupCPU(t)
+	writeOp(mem, 0x8000, 0xCB) // WAI
+	assert.NoError(t, cpu.Step())
+	before := cpu.cycles
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, before+1, cpu.cycles)
+
+	cpu.PC = 0x8000
+	writeOp(mem, 0x8000, 0xDB) // STP
+	cpu.waiting = false
+	assert.NoError(t, cpu.Step())
+	before = cpu.cycles
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, before+1, cpu.cycles)
 }
 
 // -- Mode switch sequence --

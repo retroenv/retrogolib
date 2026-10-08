@@ -22,6 +22,7 @@ var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
 // MemoryReadInstructions contains instructions that can read from memory.
 var MemoryReadInstructions = set.NewFromSlice([]string{
 	LdImm8.Name,
+	LdhInst.Name,
 	AddA.Name,
 	AdcA.Name,
 	SubA.Name,
@@ -48,6 +49,7 @@ var MemoryReadInstructions = set.NewFromSlice([]string{
 // MemoryWriteInstructions contains instructions that can write to memory.
 var MemoryWriteInstructions = set.NewFromSlice([]string{
 	LdImm8.Name,
+	LdhInst.Name,
 	PushReg16.Name,
 	IncReg8.Name,
 	DecReg8.Name,

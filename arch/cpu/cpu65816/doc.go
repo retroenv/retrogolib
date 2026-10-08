@@ -31,9 +31,15 @@
 //	    m.data[(addr+1)&0xFFFFFF] = uint8(v >> 8)
 //	}
 //
-//	mem := &myMem{}
-//	cpu := cpu65816.New(mem)
+//	mem, err := cpu65816.NewMemory(&myMem{})
+//	if err != nil { ... }
+//	cpu, err := cpu65816.New(mem)
+//	if err != nil { ... }
 //	for { if err := cpu.Step(); err != nil { break } }
+//
+// Step executes one instruction or services one pending interrupt. A block
+// move (MVN, MVP) moves one byte per Step. While the CPU waits in WAI or is
+// stopped by STP, each Step consumes one idle cycle; STP ends only with Reset.
 //
 // # Memory Layout
 //

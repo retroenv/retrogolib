@@ -64,17 +64,18 @@ type (
 	DPIndirectLong uint32 // resolved address from [dp]
 	DPIndLongY     uint32 // resolved address from [dp],Y
 
-	Absolute16  uint16 // 16-bit absolute (DB:addr)
-	AbsoluteX16 uint32 // resolved abs,X
-	AbsoluteY16 uint32 // resolved abs,Y
-	AbsLong     uint32 // 24-bit absolute long
-	AbsLongX    uint32 // 24-bit absolute long + X
+	Absolute16   uint16 // 16-bit absolute (DB:addr)
+	AbsoluteX16  uint32 // resolved abs,X
+	AbsoluteY16  uint32 // resolved abs,Y
+	AbsIndirect  uint32 // resolved (abs) jump target in the program bank
+	AbsIndirectX uint32 // resolved (abs,X) jump target in the program bank
+	AbsLong      uint32 // 24-bit absolute long
+	AbsLongX     uint32 // 24-bit absolute long + X
 
 	StackRel uint8  // stack-relative offset
 	SRIndY   uint32 // resolved (sr,S),Y address
 
-	RelOffset  int8  // 8-bit branch offset (already resolved to absolute)
-	LongOffset int16 // 16-bit branch offset (already resolved to absolute)
+	BranchTarget uint16 // branch destination in the program bank (offset already applied)
 
 	BlockMove struct{ Src, Dst uint8 } // source and destination banks for MVN/MVP
 )

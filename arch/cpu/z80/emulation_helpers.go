@@ -64,24 +64,31 @@ func performShiftRotateOperation(value, opcode, oldCarry uint8) (uint8, bool) {
 	case opcode <= 0x07: // RLC
 		carry := (value & 0x80) != 0
 		return (value << 1) | boolToUint8(carry), carry
+
 	case opcode <= 0x0F: // RRC
 		carry := (value & 0x01) != 0
 		return (value >> 1) | (boolToUint8(carry) << 7), carry
+
 	case opcode <= 0x17: // RL
 		carry := (value & 0x80) != 0
 		return (value << 1) | oldCarry, carry
+
 	case opcode <= 0x1F: // RR
 		carry := (value & 0x01) != 0
 		return (value >> 1) | (oldCarry << 7), carry
+
 	case opcode <= 0x27: // SLA
 		carry := (value & 0x80) != 0
 		return value << 1, carry
+
 	case opcode <= 0x2F: // SRA
 		carry := (value & 0x01) != 0
 		return (value >> 1) | (value & 0x80), carry
+
 	case opcode <= 0x37: // SLL
 		carry := (value & 0x80) != 0
 		return (value << 1) | 0x01, carry
+
 	default: // SRL
 		carry := (value & 0x01) != 0
 		return value >> 1, carry

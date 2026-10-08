@@ -148,6 +148,11 @@ func execScc(c *CPU, d DecodedOpcode) error {
 		return err
 	}
 
+	// The original 68000 reads the destination before it writes the result.
+	if _, err := c.readEA(dstEA); err != nil {
+		return err
+	}
+
 	var result uint32
 	if c.evaluateCondition(d.Extra) {
 		result = 0xFF

@@ -260,9 +260,9 @@ var Opcodes = [256]Opcode{
 	{Instruction: SbcA, Addressing: ImmediateAddressing, Timing: 2, Size: 2},  // 0xDE SBC A,n
 	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1}, // 0xDF RST 18H
 
-	{Instruction: LdhNA, Addressing: ImmediateAddressing, Timing: 3, Size: 2},   // 0xE0 LDH (n),A
+	{Instruction: LdhInst, Addressing: ImmediateAddressing, Timing: 3, Size: 2}, // 0xE0 LDH (n),A
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 3, Size: 1}, // 0xE1 POP HL
-	{Instruction: LdhCA, Addressing: ImpliedAddressing, Timing: 2, Size: 1},     // 0xE2 LDH (C),A
+	{Instruction: LdhInst, Addressing: ImpliedAddressing, Timing: 2, Size: 1},   // 0xE2 LDH (C),A
 	{}, // 0xE3 - ILLEGAL
 	{}, // 0xE4 - ILLEGAL
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 4, Size: 1},    // 0xE5 PUSH HL
@@ -277,9 +277,9 @@ var Opcodes = [256]Opcode{
 	{Instruction: XorA, Addressing: ImmediateAddressing, Timing: 2, Size: 2},  // 0xEE XOR n
 	{Instruction: RstInst, Addressing: ImpliedAddressing, Timing: 4, Size: 1}, // 0xEF RST 28H
 
-	{Instruction: LdhAN, Addressing: ImmediateAddressing, Timing: 3, Size: 2},   // 0xF0 LDH A,(n)
+	{Instruction: LdhInst, Addressing: ImmediateAddressing, Timing: 3, Size: 2}, // 0xF0 LDH A,(n)
 	{Instruction: PopReg16, Addressing: RegisterAddressing, Timing: 3, Size: 1}, // 0xF1 POP AF
-	{Instruction: LdhAC, Addressing: ImpliedAddressing, Timing: 2, Size: 1},     // 0xF2 LDH A,(C)
+	{Instruction: LdhInst, Addressing: ImpliedAddressing, Timing: 2, Size: 1},   // 0xF2 LDH A,(C)
 	{Instruction: DiInst, Addressing: ImpliedAddressing, Timing: 1, Size: 1},    // 0xF3 DI
 	{}, // 0xF4 - ILLEGAL
 	{Instruction: PushReg16, Addressing: RegisterAddressing, Timing: 4, Size: 1},     // 0xF5 PUSH AF

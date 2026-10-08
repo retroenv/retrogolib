@@ -31,6 +31,8 @@ func (c *CPU) SetIRQ(active bool) {
 	if c.opts.variant == Variant6507 {
 		return
 	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.irqLine = active
 }
 
@@ -48,13 +50,7 @@ func (c *CPU) TriggerNMI() {
 // CheckInterrupts services a pending interrupt at an instruction boundary.
 // It returns true if it serviced an interrupt.
 func (c *CPU) CheckInterrupts() bool {
-	if c.stallCycles != 0 || c.jammed {
-		return false
-	}
-	nmi, irq := c.triggerNmi, (c.triggerIrq || c.irqLine) && c.Flags.I == 0
-	if c.opts.cycleHook != nil {
-		nmi, irq = c.nmiPolled, c.irqPolled
-	}
+	nmi, irq := c.pendingInterrupts()
 	if nmi {
 		c.nmi()
 		return true
@@ -64,6 +60,21 @@ func (c *CPU) CheckInterrupts() bool {
 		return true
 	}
 	return false
+}
+
+// pendingInterrupts reads the interrupt inputs under the lock, because other
+// goroutines can change them.
+func (c *CPU) pendingInterrupts() (nmi, irq bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.stallCycles != 0 || c.jammed {
+		return false, false
+	}
+	if c.opts.cycleHook != nil {
+		return c.nmiPolled, c.irqPolled
+	}
+	return c.triggerNmi, (c.triggerIrq || c.irqLine) && c.Flags.I == 0
 }
 
 func (c *CPU) nmi() {

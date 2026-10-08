@@ -1,14 +1,17 @@
 // Package register contains constants for Vectrex hardware register addresses.
 package register
 
-// VIA (MC6522 Versatile Interface Adapter) registers ($D000-$D00F).
+// VIA (6522 Versatile Interface Adapter) registers ($D000-$D00F).
 // The VIA handles all I/O for the Vectrex including:
-// - DAC output for vector display (X/Y position, beam intensity)
-// - Sound chip (AY-3-8912) interface via port A
-// - Controller/button input via port B
+// - DAC output for vector display (X/Y position, beam intensity) through port A
+// - Sound chip (AY-3-8912) data through port A and control lines on port B
+// - Analog joystick comparison and multiplexer selection through port B
 // - Timer for display refresh and game timing
+//
+// The joystick buttons are not VIA inputs. The PSG I/O port supplies them;
+// see PSGIOPortA.
 const (
-	VIAORB  = 0xD000 // Output Register B (controller buttons, mux select)
+	VIAORB  = 0xD000 // Output Register B (multiplexer select, PSG control, ramp)
 	VIAORA  = 0xD001 // Output Register A (DAC data, sound chip data)
 	VIADDRB = 0xD002 // Data Direction Register B
 	VIADDRA = 0xD003 // Data Direction Register A
@@ -49,12 +52,32 @@ var VIANames = map[uint16]string{
 	VIAORAF: "VIAORAF",
 }
 
-// Port B button bits (active low).
+// VIA port B signal bits (VIAORB and VIADDRB).
 const (
-	ButtonRight = 0x01 // Joystick button 1 (right)
-	ButtonLeft  = 0x02 // Joystick button 2 (left)
-	ButtonDown  = 0x04 // Joystick button 3 (down)
-	ButtonUp    = 0x08 // Joystick button 4 (up)
+	PortBSwitch  = 0x01 // PB0: analog multiplexer sample/hold switch (output, active low)
+	PortBSel0    = 0x02 // PB1: multiplexer select bit 0 (output)
+	PortBSel1    = 0x04 // PB2: multiplexer select bit 1 (output)
+	PortBBC1     = 0x08 // PB3: PSG BC1 control (output)
+	PortBBDIR    = 0x10 // PB4: PSG BDIR control (output)
+	PortBCompare = 0x20 // PB5: comparator result for joystick position (input)
+	PortBCart    = 0x40 // PB6: cartridge detect line (input)
+	PortBRamp    = 0x80 // PB7: integrator ramp control (output, active low)
+)
+
+// PSGIOPortA is the AY-3-8912 register that reads the joystick buttons.
+// The BIOS reads it through the VIA port A with BDIR/BC1 on port B.
+const PSGIOPortA = 0x0E
+
+// Joystick button bits in PSGIOPortA (active low).
+const (
+	Player1Button1 = 0x01
+	Player1Button2 = 0x02
+	Player1Button3 = 0x04
+	Player1Button4 = 0x08
+	Player2Button1 = 0x10
+	Player2Button2 = 0x20
+	Player2Button3 = 0x40
+	Player2Button4 = 0x80
 )
 
 // VIA Interrupt Flag/Enable Register bits.

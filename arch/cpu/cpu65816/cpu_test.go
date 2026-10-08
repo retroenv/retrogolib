@@ -16,7 +16,10 @@ func TestNew(t *testing.T) {
 
 func TestNilMemory(t *testing.T) {
 	_, err := NewMemory(nil)
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrNilMemory)
+
+	_, err = New(nil)
+	assert.ErrorIs(t, err, ErrNilMemory)
 }
 
 func TestAccWidth(t *testing.T) {
@@ -71,6 +74,28 @@ func TestState(t *testing.T) {
 	s := cpu.State()
 	assert.Equal(t, uint16(0x42), s.C)
 	assert.Equal(t, uint16(0x10), s.X)
+	assert.Equal(t, Interrupts{}, s.Interrupts)
+}
+
+func TestStateInterrupts(t *testing.T) {
+	// irqRunning and nmiRunning were tracked but never exposed; COP did not set it.
+	cpu, mem := newTestCPU(t)
+	mem.WriteWord(VectorEmuCOP, 0x9000)
+	mem.Write(0x9000, 0x40)          // RTI
+	writeOp(mem, 0x8000, 0x02, 0x00) // COP
+
+	cpu.TriggerIRQ()
+	assert.True(t, cpu.State().Interrupts.IrqTriggered)
+	assert.NoError(t, cpu.Step()) // I is set after reset, so COP executes.
+	assert.True(t, cpu.State().Interrupts.IrqRunning)
+	assert.NoError(t, cpu.Step()) // RTI
+	assert.False(t, cpu.State().Interrupts.IrqRunning)
+
+	cpu.TriggerNMI()
+	assert.True(t, cpu.State().Interrupts.NMITriggered)
+	assert.NoError(t, cpu.Step())
+	assert.False(t, cpu.State().Interrupts.NMITriggered)
+	assert.True(t, cpu.State().Interrupts.NMIRunning)
 }
 
 func TestPushPop(t *testing.T) {

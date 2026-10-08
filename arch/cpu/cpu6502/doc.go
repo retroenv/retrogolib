@@ -64,8 +64,9 @@
 //
 // # Thread Safety
 //
-// Drive instruction execution from one goroutine. TriggerIRQ, TriggerNMI, and
-// StallCycles may be called concurrently to request asynchronous events.
+// Drive instruction execution from one goroutine. TriggerIrq, TriggerNMI,
+// SetIRQ, and StallCycles may be called concurrently to request asynchronous
+// events.
 //
 // # Accuracy
 //

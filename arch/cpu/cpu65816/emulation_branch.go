@@ -1,80 +1,92 @@
 package cpu65816
 
+import "fmt"
+
 // Branch and jump instructions.
 
 // branch performs a relative branch to the precomputed target when taken.
-func (c *CPU) branch(taken bool, addr uint16) {
-	if !taken {
-		return
+// A taken branch adds one cycle. In emulation mode it adds one more cycle
+// when the target is in a different page than the next instruction.
+func (c *CPU) branch(taken bool, params []any) error {
+	target, err := operand[BranchTarget](params)
+	if err != nil {
+		return err
 	}
-	c.PC = addr
-	c.pcChanged = true
+	if !taken {
+		return nil
+	}
+
+	nextPC := c.PC + 2
 	c.cycles++
+	if c.E && uint16(target)&0xFF00 != nextPC&0xFF00 {
+		c.cycles++
+	}
+	c.PC = uint16(target)
+	c.pcChanged = true
+	return nil
 }
 
 func bcc(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.C == 0, params)
 }
 
 func bcs(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.C != 0, params)
 }
 
 func beq(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.Z != 0, params)
 }
 
 func bmi(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.N != 0, params)
 }
 
 func bne(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.Z == 0, params)
 }
 
 func bpl(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.N == 0, params)
 }
 
 func bra(c *CPU, params ...any) error {
-	c.branch(true, params[0].(uint16))
-	return nil
+	return c.branch(true, params)
 }
 
+// brl - Branch Long: always taken, 16-bit offset already resolved to the target.
 func brl(c *CPU, params ...any) error {
-	// Branch Long: always taken, 16-bit offset, already resolved to absolute
-	c.PC = params[0].(uint16)
+	target, err := operand[BranchTarget](params)
+	if err != nil {
+		return err
+	}
+	c.PC = uint16(target)
 	c.pcChanged = true
 	return nil
 }
 
 func bvc(c *CPU, params ...any) error {
-	c.branch(c.Flags.V == 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.V == 0, params)
 }
 
 func bvs(c *CPU, params ...any) error {
-	c.branch(c.Flags.V != 0, params[0].(uint16))
-	return nil
+	return c.branch(c.Flags.V != 0, params)
 }
 
 // jmp - Jump (same bank).
 func jmp(c *CPU, params ...any) error {
+	if len(params) == 0 {
+		return ErrMissingParameter
+	}
 	switch p := params[0].(type) {
 	case Absolute16:
 		c.PC = uint16(p)
-	case DPIndirect:
+	case AbsIndirect:
 		c.PC = uint16(p)
-	case DPIndirectX:
+	case AbsIndirectX:
 		c.PC = uint16(p)
 	default:
-		return nil
+		return fmt.Errorf("%w: jump target type %T", ErrInvalidParameterType, params[0])
 	}
 	c.pcChanged = true
 	return nil
@@ -82,43 +94,52 @@ func jmp(c *CPU, params ...any) error {
 
 // jml - Jump Long (sets PB).
 func jml(c *CPU, params ...any) error {
-	if p, ok := params[0].(AbsLong); ok {
-		c.PB = uint8(uint32(p) >> 16)
-		c.PC = uint16(p)
-		c.pcChanged = true
+	target, err := operand[AbsLong](params)
+	if err != nil {
+		return err
 	}
+	c.PB = uint8(uint32(target) >> 16)
+	c.PC = uint16(target)
+	c.pcChanged = true
 	return nil
 }
 
-// jsr - Jump to Subroutine (saves PC-1 onto stack).
+// jsr - Jump to Subroutine.
+// The return address is the last byte of the 3-byte instruction (PC+2).
 func jsr(c *CPU, params ...any) error {
-	// JSR pushes PC+2 (address of last byte of JSR instruction, i.e. PC-1 from next instruction).
-	// Instruction size = 3 bytes; return address = PC+2 (pointing to last byte).
-	retAddr := c.PC + 2
-	c.push16(retAddr)
+	if len(params) == 0 {
+		return ErrMissingParameter
+	}
+	var target uint16
 	switch p := params[0].(type) {
 	case Absolute16:
-		c.PC = uint16(p)
-		c.pcChanged = true
-	case DPIndirectX:
-		c.PC = uint16(p)
-		c.pcChanged = true
+		target = uint16(p)
+	case AbsIndirectX:
+		target = uint16(p)
+	default:
+		return fmt.Errorf("%w: subroutine target type %T", ErrInvalidParameterType, params[0])
 	}
+
+	c.push16(c.PC + 2)
+	c.PC = target
+	c.pcChanged = true
 	return nil
 }
 
 // jsl - Jump to Subroutine Long.
+// The return address is the last byte of the 4-byte instruction (PC+3).
 // 65816-native: uses full 16-bit SP (no page-1 wrap between bytes).
 func jsl(c *CPU, params ...any) error {
-	// Pushes PB, then PC+3 (last byte of JSL instruction).
-	c.push8raw(c.PB)
-	retAddr := c.PC + 3
-	c.push16raw(retAddr)
-	c.fixEmuSP()
-	if p, ok := params[0].(AbsLong); ok {
-		c.PB = uint8(uint32(p) >> 16)
-		c.PC = uint16(p)
-		c.pcChanged = true
+	target, err := operand[AbsLong](params)
+	if err != nil {
+		return err
 	}
+
+	c.push8raw(c.PB)
+	c.push16raw(c.PC + 3)
+	c.fixEmuSP()
+	c.PB = uint8(uint32(target) >> 16)
+	c.PC = uint16(target)
+	c.pcChanged = true
 	return nil
 }

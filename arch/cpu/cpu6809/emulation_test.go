@@ -416,3 +416,96 @@ func TestLongConditionalBranchTakenCycle(t *testing.T) {
 		})
 	}
 }
+
+func TestTFRMixedSizes(t *testing.T) {
+	// Mixed-size transfers follow observed silicon behavior.
+	regX := func(cpu *CPU) uint16 { return cpu.X }
+	tests := []struct {
+		name     string
+		postbyte uint8
+		setup    func(cpu *CPU)
+		got      func(cpu *CPU) uint16
+		want     uint16
+	}{
+		{
+			name:     "A to X fills the high byte with FF",
+			postbyte: 0x81,
+			setup:    func(cpu *CPU) { cpu.A = 0x12 },
+			got:      regX,
+			want:     0xFF12,
+		},
+		{
+			name:     "B to Y fills the high byte with FF",
+			postbyte: 0x92,
+			setup:    func(cpu *CPU) { cpu.B = 0x34 },
+			got:      func(cpu *CPU) uint16 { return cpu.Y },
+			want:     0xFF34,
+		},
+		{
+			name:     "CC to U duplicates the byte",
+			postbyte: 0xA3,
+			setup:    func(cpu *CPU) { cpu.SetCC(0x55) },
+			got:      func(cpu *CPU) uint16 { return cpu.U },
+			want:     0x5555,
+		},
+		{
+			name:     "DP to X duplicates the byte",
+			postbyte: 0xB1,
+			setup:    func(cpu *CPU) { cpu.DP = 0xC3 },
+			got:      regX,
+			want:     0xC3C3,
+		},
+		{
+			name:     "X to A takes the low byte",
+			postbyte: 0x18,
+			setup:    func(cpu *CPU) { cpu.X = 0x1234 },
+			got:      func(cpu *CPU) uint16 { return uint16(cpu.A) },
+			want:     0x34,
+		},
+		{
+			name:     "invalid source reads FFFF",
+			postbyte: 0x61,
+			setup:    func(cpu *CPU) { cpu.X = 0x1234 },
+			got:      regX,
+			want:     0xFFFF,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.got(runTFR(t, tt.postbyte, tt.setup)))
+		})
+	}
+}
+
+// runTFR executes TFR with the given postbyte on a fresh CPU and returns it.
+func runTFR(t *testing.T, postbyte uint8, setup func(cpu *CPU)) *CPU {
+	t.Helper()
+	cpu, mem := newTestCPU(t)
+	setup(cpu)
+	mem.data[0x8000] = 0x1F // TFR
+	mem.data[0x8001] = postbyte
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x8002), cpu.PC)
+	return cpu
+}
+
+func TestEXGMixedSizesAndInvalidCode(t *testing.T) {
+	cpu, mem := newTestCPU(t)
+	cpu.A = 0x12
+	cpu.X = 0x3456
+	mem.data[0x8000] = 0x1E // EXG A,X
+	mem.data[0x8001] = 0x81
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0xFF12), cpu.X)
+	assert.Equal(t, uint8(0x56), cpu.A)
+
+	mem.data[0x8002] = 0x1E // EXG A,invalid
+	mem.data[0x8003] = 0x87
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint8(0xFF), cpu.A, "an invalid code reads as FFFF")
+	assert.Equal(t, uint16(0xFF12), cpu.X)
+}

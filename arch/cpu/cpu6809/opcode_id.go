@@ -19,15 +19,19 @@ const (
 	Andb
 	Andcc
 	Asl
+	Asla
+	Aslb
 	Asr
-	Bita
-	Bitb
+	Asra
+	Asrb
 	Bcc
 	Bcs
 	Beq
 	Bge
 	Bgt
 	Bhi
+	Bita
+	Bitb
 	Ble
 	Bls
 	Blt
@@ -40,6 +44,8 @@ const (
 	Bvc
 	Bvs
 	Clr
+	Clra
+	Clrb
 	Cmpa
 	Cmpb
 	Cmpd
@@ -48,13 +54,19 @@ const (
 	Cmpx
 	Cmpy
 	Com
+	Coma
+	Comb
 	Cwai
 	Daa
 	Dec
+	Deca
+	Decb
 	Eora
 	Eorb
 	Exg
 	Inc
+	Inca
+	Incb
 	Jmp
 	Jsr
 	Lbcc
@@ -81,13 +93,17 @@ const (
 	Ldu
 	Ldx
 	Ldy
-	Leax
-	Leay
 	Leas
 	Leau
+	Leax
+	Leay
 	Lsr
+	Lsra
+	Lsrb
 	Mul
 	Neg
+	Nega
+	Negb
 	Nop
 	Ora
 	Orb
@@ -97,7 +113,11 @@ const (
 	Puls
 	Pulu
 	Rol
+	Rola
+	Rolb
 	Ror
+	Rora
+	Rorb
 	Rti
 	Rts
 	Sbca
@@ -119,8 +139,10 @@ const (
 	Sync
 	Tfr
 	Tst
+	Tsta
+	Tstb
 
-	OpcodeIDMax = Tst
+	OpcodeIDMax = Tstb
 )
 
 // NameToOpcodeID maps a lowercase 6809 mnemonic to its OpcodeID for O(1) lookup.
@@ -135,15 +157,19 @@ var NameToOpcodeID = map[string]OpcodeID{
 	AndbName:  Andb,
 	AndccName: Andcc,
 	AslName:   Asl,
+	AslaName:  Asla,
+	AslbName:  Aslb,
 	AsrName:   Asr,
-	BitaName:  Bita,
-	BitbName:  Bitb,
+	AsraName:  Asra,
+	AsrbName:  Asrb,
 	BccName:   Bcc,
 	BcsName:   Bcs,
 	BeqName:   Beq,
 	BgeName:   Bge,
 	BgtName:   Bgt,
 	BhiName:   Bhi,
+	BitaName:  Bita,
+	BitbName:  Bitb,
 	BleName:   Ble,
 	BlsName:   Bls,
 	BltName:   Blt,
@@ -156,6 +182,8 @@ var NameToOpcodeID = map[string]OpcodeID{
 	BvcName:   Bvc,
 	BvsName:   Bvs,
 	ClrName:   Clr,
+	ClraName:  Clra,
+	ClrbName:  Clrb,
 	CmpaName:  Cmpa,
 	CmpbName:  Cmpb,
 	CmpdName:  Cmpd,
@@ -164,13 +192,19 @@ var NameToOpcodeID = map[string]OpcodeID{
 	CmpxName:  Cmpx,
 	CmpyName:  Cmpy,
 	ComName:   Com,
+	ComaName:  Coma,
+	CombName:  Comb,
 	CwaiName:  Cwai,
 	DaaName:   Daa,
 	DecName:   Dec,
+	DecaName:  Deca,
+	DecbName:  Decb,
 	EoraName:  Eora,
 	EorbName:  Eorb,
 	ExgName:   Exg,
 	IncName:   Inc,
+	IncaName:  Inca,
+	IncbName:  Incb,
 	JmpName:   Jmp,
 	JsrName:   Jsr,
 	LbccName:  Lbcc,
@@ -197,13 +231,17 @@ var NameToOpcodeID = map[string]OpcodeID{
 	LduName:   Ldu,
 	LdxName:   Ldx,
 	LdyName:   Ldy,
-	LeaxName:  Leax,
-	LeayName:  Leay,
 	LeasName:  Leas,
 	LeauName:  Leau,
+	LeaxName:  Leax,
+	LeayName:  Leay,
 	LsrName:   Lsr,
+	LsraName:  Lsra,
+	LsrbName:  Lsrb,
 	MulName:   Mul,
 	NegName:   Neg,
+	NegaName:  Nega,
+	NegbName:  Negb,
 	NopName:   Nop,
 	OraName:   Ora,
 	OrbName:   Orb,
@@ -213,7 +251,11 @@ var NameToOpcodeID = map[string]OpcodeID{
 	PulsName:  Puls,
 	PuluName:  Pulu,
 	RolName:   Rol,
+	RolaName:  Rola,
+	RolbName:  Rolb,
 	RorName:   Ror,
+	RoraName:  Rora,
+	RorbName:  Rorb,
 	RtiName:   Rti,
 	RtsName:   Rts,
 	SbcaName:  Sbca,
@@ -235,9 +277,11 @@ var NameToOpcodeID = map[string]OpcodeID{
 	SyncName:  Sync,
 	TfrName:   Tfr,
 	TstName:   Tst,
+	TstaName:  Tsta,
+	TstbName:  Tstb,
 }
 
-// OpcodeIDToName maps an OpcodeID back to its lowercase mnemonic for display/debugging.
+// OpcodeIDToName maps an OpcodeID back to its lowercase mnemonic for display and debugging.
 var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Abx:   AbxName,
 	Adca:  AdcaName,
@@ -249,15 +293,19 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Andb:  AndbName,
 	Andcc: AndccName,
 	Asl:   AslName,
+	Asla:  AslaName,
+	Aslb:  AslbName,
 	Asr:   AsrName,
-	Bita:  BitaName,
-	Bitb:  BitbName,
+	Asra:  AsraName,
+	Asrb:  AsrbName,
 	Bcc:   BccName,
 	Bcs:   BcsName,
 	Beq:   BeqName,
 	Bge:   BgeName,
 	Bgt:   BgtName,
 	Bhi:   BhiName,
+	Bita:  BitaName,
+	Bitb:  BitbName,
 	Ble:   BleName,
 	Bls:   BlsName,
 	Blt:   BltName,
@@ -270,6 +318,8 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Bvc:   BvcName,
 	Bvs:   BvsName,
 	Clr:   ClrName,
+	Clra:  ClraName,
+	Clrb:  ClrbName,
 	Cmpa:  CmpaName,
 	Cmpb:  CmpbName,
 	Cmpd:  CmpdName,
@@ -278,13 +328,19 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Cmpx:  CmpxName,
 	Cmpy:  CmpyName,
 	Com:   ComName,
+	Coma:  ComaName,
+	Comb:  CombName,
 	Cwai:  CwaiName,
 	Daa:   DaaName,
 	Dec:   DecName,
+	Deca:  DecaName,
+	Decb:  DecbName,
 	Eora:  EoraName,
 	Eorb:  EorbName,
 	Exg:   ExgName,
 	Inc:   IncName,
+	Inca:  IncaName,
+	Incb:  IncbName,
 	Jmp:   JmpName,
 	Jsr:   JsrName,
 	Lbcc:  LbccName,
@@ -311,13 +367,17 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Ldu:   LduName,
 	Ldx:   LdxName,
 	Ldy:   LdyName,
-	Leax:  LeaxName,
-	Leay:  LeayName,
 	Leas:  LeasName,
 	Leau:  LeauName,
+	Leax:  LeaxName,
+	Leay:  LeayName,
 	Lsr:   LsrName,
+	Lsra:  LsraName,
+	Lsrb:  LsrbName,
 	Mul:   MulName,
 	Neg:   NegName,
+	Nega:  NegaName,
+	Negb:  NegbName,
 	Nop:   NopName,
 	Ora:   OraName,
 	Orb:   OrbName,
@@ -327,7 +387,11 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Puls:  PulsName,
 	Pulu:  PuluName,
 	Rol:   RolName,
+	Rola:  RolaName,
+	Rolb:  RolbName,
 	Ror:   RorName,
+	Rora:  RoraName,
+	Rorb:  RorbName,
 	Rti:   RtiName,
 	Rts:   RtsName,
 	Sbca:  SbcaName,
@@ -349,4 +413,6 @@ var OpcodeIDToName = [OpcodeIDMax + 1]string{
 	Sync:  SyncName,
 	Tfr:   TfrName,
 	Tst:   TstName,
+	Tsta:  TstaName,
+	Tstb:  TstbName,
 }

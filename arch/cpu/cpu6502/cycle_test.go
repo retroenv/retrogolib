@@ -54,6 +54,88 @@ func TestBusCycleAccesses(t *testing.T) {
 	}
 }
 
+// shFamilyCycleCases lists SH-family stores with registers A=0x33, X=0x15, Y=0x01.
+// The stored value is register & (high+1).
+var shFamilyCycleCases = []struct {
+	name    string
+	program []byte
+	want    []BusCycle
+}{
+	{"SHX abs,Y", []byte{0x9e, 0x11, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4012},
+		{Address: 0x4012, Value: 0x01, Write: true},
+	}},
+	{"SHX abs,Y page cross", []byte{0x9e, 0xff, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4000},
+		{Address: 0x0100, Value: 0x01, Write: true},
+	}},
+	{"SHY abs,X", []byte{0x9c, 0x11, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4026},
+		{Address: 0x4026, Value: 0x01, Write: true},
+	}},
+	{"SHY abs,X page cross", []byte{0x9c, 0xff, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4014},
+		{Address: 0x0114, Value: 0x01, Write: true},
+	}},
+	{"SHA abs,Y", []byte{0x9f, 0x11, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4012},
+		{Address: 0x4012, Value: 0x01, Write: true},
+	}},
+	{"SHA abs,Y page cross", []byte{0x9f, 0xff, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4000},
+		{Address: 0x0100, Value: 0x01, Write: true},
+	}},
+	{"TAS abs,Y", []byte{0x9b, 0x11, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4012},
+		{Address: 0x4012, Value: 0x01, Write: true},
+	}},
+	{"TAS abs,Y page cross", []byte{0x9b, 0xff, 0x40}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x8002}, {Address: 0x4000},
+		{Address: 0x0100, Value: 0x01, Write: true},
+	}},
+	{"SHA (ind),Y", []byte{0x93, 0x24}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x0024}, {Address: 0x0025}, {Address: 0x4012},
+		{Address: 0x4012, Value: 0x01, Write: true},
+	}},
+	{"SHA (ind),Y page cross", []byte{0x93, 0x26}, []BusCycle{
+		{Address: 0x8000}, {Address: 0x8001}, {Address: 0x0026}, {Address: 0x0027}, {Address: 0x4000},
+		{Address: 0x0100, Value: 0x01, Write: true},
+	}},
+}
+
+func TestBusCycleSHFamilyWrites(t *testing.T) {
+	t.Parallel()
+
+	// The bus-cycle path dispatches the SH-family stores directly to their
+	// handlers, so each store must emit exactly one write cycle itself.
+	// Registers: A=0x33, X=0x15, Y=0x01. The stored value is register & (high+1).
+	for _, test := range shFamilyCycleCases {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			mem := &ssSparseMemory{data: map[uint16]byte{0x24: 0x11, 0x25: 0x40, 0x26: 0xff, 0x27: 0x40}}
+			for index, value := range test.program {
+				mem.Write(0x8000+uint16(index), value)
+			}
+			memory, err := NewMemory(mem)
+			assert.NoError(t, err)
+			var accesses []BusCycle
+			cpu := New(memory, WithCycleHook(func(cycle BusCycle) bool {
+				accesses = append(accesses, cycle)
+				return false
+			}))
+			cpu.PC, cpu.A, cpu.X, cpu.Y = 0x8000, 0x33, 0x15, 0x01
+
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, test.want, accesses)
+			assert.Equal(t, uint64(initialCycles+len(test.want)), cpu.Cycles())
+			write := test.want[len(test.want)-1]
+			assert.Equal(t, write.Value, mem.Read(write.Address))
+			assert.Equal(t, uint16(0x8000+len(test.program)), cpu.PC)
+		})
+	}
+}
+
 func TestBusCycleHookCanHoldReads(t *testing.T) {
 	mem := &ssSparseMemory{data: map[uint16]byte{0x8000: 0x8d, 0x8001: 0x11, 0x8002: 0x40}}
 	memory, err := NewMemory(mem)

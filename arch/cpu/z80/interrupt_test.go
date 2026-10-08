@@ -216,3 +216,119 @@ func TestLdAIRParitySurvivesLaterInterrupt(t *testing.T) {
 	assert.True(t, cpu.CheckInterrupts())
 	assert.Equal(t, uint8(1), cpu.Flags.P)
 }
+
+func TestHaltIdleEndsEIDelay(t *testing.T) {
+	// Halt() directly after EI left eiPending set, so the IRQ was never accepted.
+	cpu, err := New(NewBasicMemory(), WithInitialPC(0x1000))
+	assert.NoError(t, err)
+	cpu.bus.Write(0x1000, 0xFB) // EI
+	assert.NoError(t, cpu.Step())
+	cpu.Halt()
+	cpu.TriggerIRQ()
+	assert.NoError(t, cpu.Step()) // Idle cycle ends the EI delay.
+	assert.True(t, cpu.Halted())
+	assert.NoError(t, cpu.Step())
+	assert.False(t, cpu.Halted())
+	assert.Equal(t, uint16(0x38), cpu.PC)
+	assert.Equal(t, uint16(0x1001), cpu.bus.ReadWord(cpu.SP))
+}
+
+func TestHaltIdleEndsLdAIRWindow(t *testing.T) {
+	// Idle HALT cycles are instruction boundaries that end the P/V quirk window.
+	cpu, err := New(NewBasicMemory(), WithInitialPC(0x1000))
+	assert.NoError(t, err)
+	cpu.bus.Write(0x1000, PrefixED)
+	cpu.bus.Write(0x1001, 0x57) // LD A,I
+	cpu.EnableInterrupts()
+	assert.NoError(t, cpu.Step())
+	cpu.Halt()
+	assert.NoError(t, cpu.Step())
+	cpu.TriggerIRQ()
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x38), cpu.PC)
+	assert.Equal(t, uint8(1), cpu.Flags.P)
+}
+
+func TestEIRetiAcceptsOnFollowingStep(t *testing.T) {
+	// EI followed by RETI is the common handler tail; the IRQ is accepted after RETI.
+	bus := &testBus{Memory: NewBasicMemory()}
+	cpu, err := NewWithBus(bus, WithInitialPC(0x1000), WithInitialSP(0x8000))
+	assert.NoError(t, err)
+	bus.Write(0x1000, 0xFB) // EI
+	bus.Write(0x1001, PrefixED)
+	bus.Write(0x1002, 0x4D) // RETI
+	bus.WriteWord(0x7FFE, 0x2000)
+	cpu.SP = 0x7FFE
+	cpu.TriggerIRQ()
+	assert.NoError(t, cpu.Step())
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x2000), cpu.PC)
+	assert.Equal(t, 1, bus.retiCalls)
+	assert.True(t, cpu.triggerIrq)
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, uint16(0x38), cpu.PC)
+	assert.Equal(t, uint16(0x2000), bus.ReadWord(cpu.SP))
+}
+
+func TestTraceStepRecordsAcceptedInterrupt(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		nmi    bool
+		mode   InterruptMode
+		pc     uint16
+		timing byte
+	}{
+		{name: "NMI", nmi: true, pc: 0x66, timing: 11},
+		{name: "IM1", mode: InterruptMode1, pc: 0x38, timing: 13},
+		{name: "IM2", mode: InterruptMode2, pc: 0x4567, timing: 19},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			bus := &testBus{
+				Memory:  NewBasicMemory(),
+				irqData: 0xA5,
+			}
+			cpu, err := NewWithBus(bus, WithInitialPC(0x1000), WithInitialSP(0x8000), WithTracing())
+			assert.NoError(t, err)
+			cpu.I = 0xAB
+			bus.WriteWord(0xABA5, 0x4567)
+			assert.NoError(t, cpu.SetInterruptMode(tt.mode))
+			assert.NoError(t, cpu.Step()) // NOP fills TraceStep with instruction data.
+			assert.Equal(t, uint16(0x1000), cpu.TraceStep.PC)
+			cpu.EnableInterrupts()
+			if tt.nmi {
+				cpu.TriggerNMI()
+			} else {
+				cpu.TriggerIRQ()
+			}
+			assert.NoError(t, cpu.Step())
+			expected := TraceStep{
+				PC:     tt.pc,
+				Opcode: Opcode{Timing: tt.timing},
+			}
+			assert.Equal(t, expected, cpu.TraceStep)
+		})
+	}
+}
+
+func TestInterruptConfigurationIsSynchronized(t *testing.T) {
+	// The configuration methods take the CPU lock like the trigger methods.
+	cpu, err := New(NewBasicMemory())
+	assert.NoError(t, err)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range 200 {
+			cpu.EnableInterrupts()
+			_ = cpu.InterruptsEnabled()
+			_ = cpu.SetInterruptMode(InterruptMode2)
+			_ = cpu.GetInterruptMode()
+			cpu.DisableInterrupts()
+		}
+	}()
+	for range 200 {
+		assert.NoError(t, cpu.Step()) // NOP at address 0 and onwards.
+	}
+	<-done
+	assert.Equal(t, InterruptMode2, cpu.State().Interrupts.IM)
+	assert.Error(t, cpu.SetInterruptMode(3))
+}

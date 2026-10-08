@@ -103,15 +103,6 @@ func (m *testMemory) ReadWord(address uint32) uint16 {
 	return uint16(m.data[addr])<<8 | uint16(m.data[addr+1])
 }
 
-// ReadLong reads a 32-bit long word from memory at the given address (big-endian).
-func (m *testMemory) ReadLong(address uint32) uint32 {
-	addr := address & addressMask
-	return uint32(m.data[addr])<<24 |
-		uint32(m.data[addr+1])<<16 |
-		uint32(m.data[addr+2])<<8 |
-		uint32(m.data[addr+3])
-}
-
 // Write writes a byte to memory at the given address.
 func (m *testMemory) Write(address uint32, value uint8) {
 	m.data[address&addressMask] = value
@@ -122,15 +113,6 @@ func (m *testMemory) WriteWord(address uint32, value uint16) {
 	addr := address & addressMask
 	m.data[addr] = uint8(value >> 8)
 	m.data[addr+1] = uint8(value)
-}
-
-// WriteLong writes a 32-bit long word to memory at the given address (big-endian).
-func (m *testMemory) WriteLong(address, value uint32) {
-	addr := address & addressMask
-	m.data[addr] = uint8(value >> 24)
-	m.data[addr+1] = uint8(value >> 16)
-	m.data[addr+2] = uint8(value >> 8)
-	m.data[addr+3] = uint8(value)
 }
 
 // IRQAcknowledge acknowledges an interrupt and returns the autovector number.

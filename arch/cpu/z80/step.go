@@ -7,6 +7,9 @@ import (
 )
 
 // TraceStep contains all info needed to print a trace step.
+// When Step or CheckInterrupts accepts an interrupt with tracing enabled, PC holds
+// the handler address, Opcode.Timing holds the acceptance T-states, and the
+// instruction and operand fields are empty.
 type TraceStep struct {
 	PC             uint16 // program counter
 	OpcodeOperands []byte // instruction opcode and operand bytes
@@ -24,14 +27,17 @@ func (cpu *CPU) Step() error {
 		return nil
 	}
 
+	// An idle HALT cycle is an instruction boundary: it ends the EI delay and
+	// the LD A,I/R quirk window, and it resets Q like a NOP.
+	cpu.eiPending = false
+	cpu.lastWasLdAIR = false
+	cpu.flagsWritten = false
 	if cpu.halted {
 		cpu.incrementRefresh(false)
 		cpu.cycles += 4
+		cpu.q = 0
 		return nil
 	}
-
-	cpu.eiPending = false
-	cpu.lastWasLdAIR = false
 
 	pcBeforeDecode := cpu.PC
 	opcode, opcodeByte, err := cpu.decodeNextInstruction()
@@ -56,8 +62,17 @@ func (cpu *CPU) Step() error {
 	if err := cpu.executeInstruction(opcode, opcodeByte, oldPC); err != nil {
 		return err
 	}
-	cpu.q = cpu.GetFlags()
+	cpu.updateQ()
 	return nil
+}
+
+// updateQ sets Q to F after an instruction that wrote F and to zero otherwise.
+func (cpu *CPU) updateQ() {
+	if cpu.flagsWritten {
+		cpu.q = cpu.GetFlags()
+		return
+	}
+	cpu.q = 0
 }
 
 // executeInstruction runs the decoded instruction and updates the program counter.
@@ -218,7 +233,9 @@ func (cpu *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 		if unprefixed.Instruction == nil {
 			return Opcode{}, PrefixDD, fmt.Errorf("%w: opcode DD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
-		cpu.q = 0 // An ignored prefix does not modify flags.
+		// The ignored prefix runs as a NOP before the opcode and resets Q,
+		// which SCF/CCF read while they execute.
+		cpu.q = 0
 		unprefixed.Timing += 4
 		return unprefixed, opcodeByte, nil
 	}
@@ -290,7 +307,9 @@ func (cpu *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 		if unprefixed.Instruction == nil {
 			return Opcode{}, PrefixFD, fmt.Errorf("%w: opcode FD %02X", ErrUnsupportedOpcode, opcodeByte)
 		}
-		cpu.q = 0 // An ignored prefix does not modify flags.
+		// The ignored prefix runs as a NOP before the opcode and resets Q,
+		// which SCF/CCF read while they execute.
+		cpu.q = 0
 		unprefixed.Timing += 4
 		return unprefixed, opcodeByte, nil
 	}

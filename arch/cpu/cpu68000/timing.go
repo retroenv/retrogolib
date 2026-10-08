@@ -17,11 +17,13 @@ func (cpu *CPU) instructionCycles(op DecodedOpcode) uint64 {
 		return immediateCycles(op)
 	case insADDQ, insSUBQ, insCLR, insNEG, insNEGX, insNOT, insTST, insNBCD, insTAS:
 		return unaryCycles(op)
+
 	case insASL, insASR, insLSL, insLSR, insROL, insROR, insROXL, insROXR:
 		if op.Extra&0x40 != 0 {
 			return 8 + eaCycles(op.DstMode, op.DstReg, SizeWord)
 		}
 		return sizeCycles(op.Size, 6, 8) + 2*uint64(cpu.shiftCount(op))
+
 	case insMULU, insMULS, insDIVU, insDIVS:
 		return src
 	case insCHK:
@@ -53,6 +55,7 @@ func (cpu *CPU) conditionalCycles(op DecodedOpcode) uint64 {
 			return 12
 		}
 		return 8
+
 	case insDBcc:
 		if condition {
 			return 12
@@ -61,6 +64,7 @@ func (cpu *CPU) conditionalCycles(op DecodedOpcode) uint64 {
 			return 14
 		}
 		return 10
+
 	default:
 		if op.DstMode != 0 {
 			return 8 + eaCycles(op.DstMode, op.DstReg, SizeByte)
@@ -83,18 +87,22 @@ func unaryCycles(op DecodedOpcode) uint64 {
 			return sizeCycles(op.Size, 4, 8)
 		}
 		return sizeCycles(op.Size, 8, 12) + dst
+
 	case insTST:
 		return 4 + dst
+
 	case insNBCD:
 		if op.DstMode == 0 {
 			return 6
 		}
 		return 8 + dst
+
 	case insTAS:
 		if op.DstMode == 0 {
 			return 4
 		}
 		return 14 + dst
+
 	default:
 		if op.DstMode == 0 {
 			return sizeCycles(op.Size, 4, 6)
@@ -110,8 +118,10 @@ func multiprecisionCycles(op DecodedOpcode) uint64 {
 			return 18
 		}
 		return 6
+
 	case insCMPM:
 		return sizeCycles(op.Size, 12, 20)
+
 	default:
 		if op.Extra != 0 {
 			return sizeCycles(op.Size, 18, 30)
@@ -132,6 +142,7 @@ func eaCycles(mode, reg uint8, size OperandSize) uint64 {
 		return cycles + 4
 	case 6:
 		return cycles + 6
+
 	case 7:
 		switch reg {
 		case 0, 2:
@@ -156,11 +167,13 @@ func moveCycles(op DecodedOpcode) uint64 {
 	switch op.Extra {
 	case 1, 2:
 		return 4
+
 	case 3:
 		if op.DstMode == 0 {
 			return 6
 		}
 		return 8 + eaCycles(op.DstMode, op.DstReg, SizeWord)
+
 	case 4, 5:
 		return 12 + eaCycles(op.SrcMode, op.SrcReg, SizeWord)
 	}
@@ -226,10 +239,12 @@ func controlCycles(op DecodedOpcode) uint64 {
 		return sizeCycles(op.Size, 16, 24)
 	case insMOVEM:
 		return uint64(op.Timing) + extra
+
 	case insLEA, insPEA:
 		if mode == 6 || mode == 7 && reg == 3 {
 			extra += 2
 		}
+
 	default:
 		switch extra {
 		case 4:

@@ -1,7 +1,6 @@
 package cpu65816
 
 import (
-	"errors"
 	"sync"
 )
 
@@ -18,7 +17,16 @@ type State struct {
 	P  uint8  // Processor status (from Flags.Get())
 	E  bool   // Emulation flag
 
-	Cycles uint64
+	Cycles     uint64
+	Interrupts Interrupts // Pending and running interrupt state
+}
+
+// Interrupts contains the pending and running interrupt state of the CPU.
+type Interrupts struct {
+	NMITriggered bool // NMI is pending and will be serviced on the next Step
+	NMIRunning   bool // NMI handler is active until RTI
+	IrqTriggered bool // IRQ is pending and will be serviced when the I flag permits
+	IrqRunning   bool // IRQ, BRK, or COP handler is active until RTI
 }
 
 // CPU represents a WDC 65C816 microprocessor.
@@ -47,8 +55,8 @@ type CPU struct {
 	// Interrupt control
 	triggerNMI bool
 	triggerIRQ bool
-	nmiRunning bool
-	irqRunning bool
+	nmiRunning bool // NMI handler active until RTI
+	irqRunning bool // IRQ, BRK, or COP handler active until RTI
 
 	memory *Memory
 	opts   options
@@ -74,7 +82,7 @@ const (
 // New creates a new 65816 CPU, reads the reset vector, and initializes registers.
 func New(memory *Memory, opts ...Option) (*CPU, error) {
 	if memory == nil {
-		return nil, errors.New("memory cannot be nil")
+		return nil, ErrNilMemory
 	}
 
 	c := &CPU{
@@ -85,14 +93,12 @@ func New(memory *Memory, opts ...Option) (*CPU, error) {
 		E:      true, // Start in emulation mode
 	}
 
-	// Force M=1, X=1 in emulation mode
+	// Emulation mode forces M=1 and X=1.
 	c.Flags.M = 1
 	c.Flags.X = 1
 	c.Flags.I = 1
 
-	// Read reset vector (emulation mode vector at $FFFC)
-	resetVec := memory.ReadVector(VectorEmuRESET)
-	c.PC = resetVec
+	c.PC = memory.ReadWord(VectorEmuRESET)
 
 	return c, nil
 }
@@ -143,6 +149,12 @@ func (c *CPU) State() State {
 		P:      c.Flags.Get(),
 		E:      c.E,
 		Cycles: c.cycles,
+		Interrupts: Interrupts{
+			NMITriggered: c.triggerNMI,
+			NMIRunning:   c.nmiRunning,
+			IrqTriggered: c.triggerIRQ,
+			IrqRunning:   c.irqRunning,
+		},
 	}
 }
 
@@ -151,7 +163,7 @@ func (c *CPU) ValidateState() error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if c.memory == nil {
-		return errors.New("CPU memory is nil")
+		return ErrNilMemory
 	}
 	return nil
 }
@@ -183,7 +195,7 @@ func (c *CPU) Reset() {
 	c.irqRunning = false
 
 	if c.memory != nil {
-		c.PC = c.memory.ReadVector(VectorEmuRESET)
+		c.PC = c.memory.ReadWord(VectorEmuRESET)
 	}
 }
 
@@ -199,11 +211,11 @@ func (c *CPU) GetP() uint8 {
 func (c *CPU) SetP(p uint8) {
 	c.Flags.Set(p)
 	if c.E {
-		// Emulation mode forces M=1, X=1
+		// Emulation mode forces M=1 and X=1.
 		c.Flags.M = 1
 		c.Flags.X = 1
 	} else if c.Flags.X != 0 {
-		// X flag transition to 8-bit: zero high bytes of X and Y
+		// An 8-bit index width clears the high bytes of X and Y.
 		c.X &= 0x00FF
 		c.Y &= 0x00FF
 	}

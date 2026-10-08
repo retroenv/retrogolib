@@ -27,9 +27,9 @@ func halt(c *CPU) error {
 	return nil
 }
 
-// stop enters low-power standby mode.
+// stop enters low-power standby mode until a joypad interrupt is pending.
 func stop(c *CPU) error {
-	c.halted = true
+	c.stopped = true
 	return nil
 }
 

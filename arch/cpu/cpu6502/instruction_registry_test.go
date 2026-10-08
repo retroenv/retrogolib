@@ -28,6 +28,20 @@ func TestInstructionsForVariant(t *testing.T) {
 	assert.Nil(t, InstructionsForVariant(CPUVariant(255)))
 }
 
+func TestInstructionsForVariantReturnsIndependentMaps(t *testing.T) {
+	t.Parallel()
+
+	first := InstructionsForVariant(VariantNMOS6502)
+	second := InstructionsForVariant(VariantNMOS6502)
+	delete(first, LdaName)
+	first[NopName] = nil
+
+	assert.Equal(t, LdaInst, second[LdaName])
+	assert.Equal(t, NopInst, second[NopName])
+	assert.Equal(t, LdaInst, Instructions[LdaName])
+	assert.Equal(t, NopInst, Instructions[NopName])
+}
+
 func TestInstructionIdentityRegistryIsComplete(t *testing.T) {
 	t.Parallel()
 

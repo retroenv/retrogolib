@@ -136,8 +136,8 @@ func TestMOVEMPredecrementRegisterOrder(t *testing.T) {
 	cpu.bus.WriteWord(cpu.PC+2, 0xC000) // D1 then D0.
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x2FF8), cpu.A[0])
-	assert.Equal(t, cpu.D[0], cpu.bus.ReadLong(0x2FF8))
-	assert.Equal(t, cpu.D[1], cpu.bus.ReadLong(0x2FFC))
+	assert.Equal(t, cpu.D[0], readLong(cpu.bus, 0x2FF8))
+	assert.Equal(t, cpu.D[1], readLong(cpu.bus, 0x2FFC))
 }
 
 func TestCMPMByteStackIncrement(t *testing.T) {
@@ -156,7 +156,7 @@ func TestLINKStackPointerOperand(t *testing.T) {
 	cpu.bus.WriteWord(cpu.PC, 0x4E57)
 	cpu.bus.WriteWord(cpu.PC+2, 0xFFF0)
 	assert.NoError(t, cpu.Step())
-	assert.Equal(t, uint32(0xFFFC), cpu.bus.ReadLong(0xFFFC))
+	assert.Equal(t, uint32(0xFFFC), readLong(cpu.bus, 0xFFFC))
 	assert.Equal(t, uint32(0xFFEC), cpu.A7())
 }
 
@@ -197,10 +197,10 @@ func TestDivideByZeroSavesFollowingInstruction(t *testing.T) {
 	cpu.A[0] = 0x3000
 	cpu.bus.WriteWord(cpu.PC, 0x80E8) // DIVU 0(A0),D0.
 	cpu.bus.WriteWord(cpu.PC+2, 0)
-	cpu.bus.WriteLong(VectorDivZero*4, 0x2000)
+	writeLong(cpu.bus, VectorDivZero*4, 0x2000)
 	assert.NoError(t, cpu.Step())
 	assert.Equal(t, uint32(0x2000), cpu.PC)
-	assert.Equal(t, uint32(0x1004), cpu.bus.ReadLong(cpu.A7()+2))
+	assert.Equal(t, uint32(0x1004), readLong(cpu.bus, cpu.A7()+2))
 }
 
 // --- ALU Tests ---
@@ -486,11 +486,37 @@ func TestDIVU_ByZero(t *testing.T) {
 	cpu.D[0] = 0x0000
 	cpu.D[1] = 0x000A
 	// Set up divide-by-zero vector.
-	cpu.bus.WriteLong(VectorDivZero*4, 0x00002000)
+	writeLong(cpu.bus, VectorDivZero*4, 0x00002000)
 
 	err := cpu.Step()
 	assert.NoError(t, err)
 	assert.Equal(t, uint32(0x00002000), cpu.PC)
+}
+
+func TestDivideByZeroFlags(t *testing.T) {
+	// DIVS left the flags unchanged while DIVU derived N and Z from the
+	// dividend. WinUAE divbyzero_special: DIVU uses the high word, DIVS sets Z.
+	tests := []struct {
+		name   string
+		opcode uint16
+		want   uint8
+	}{
+		{name: "DIVU negative high word", opcode: 0x82C0, want: 0x18},
+		{name: "DIVS", opcode: 0x83C0, want: 0x14},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu := newTestCPUWithProgram(t, tt.opcode) // DIVx D0,D1.
+			cpu.D[0] = 0
+			cpu.D[1] = 0xA18E4CFA
+			cpu.SetCCR(0x1D)
+			writeLong(cpu.bus, VectorDivZero*4, 0x2000)
+			assert.NoError(t, cpu.Step())
+			assert.Equal(t, uint32(0x2000), cpu.PC)
+			assert.Equal(t, tt.want, cpu.GetCCR())
+		})
+	}
 }
 
 // --- MOVE Tests ---
@@ -620,7 +646,7 @@ func TestBSR(t *testing.T) {
 	assert.Equal(t, uint32(0x1006), cpu.PC)
 	assert.Equal(t, oldSP-4, cpu.sp)
 	// Return address should be 0x1002 (after opcode word).
-	assert.Equal(t, uint32(0x1002), cpu.bus.ReadLong(cpu.sp))
+	assert.Equal(t, uint32(0x1002), readLong(cpu.bus, cpu.sp))
 }
 
 func TestJMP(t *testing.T) {
@@ -808,7 +834,7 @@ func TestBCHG_DataReg(t *testing.T) {
 func TestTRAP(t *testing.T) {
 	// TRAP #0 = 0x4E40
 	cpu := newTestCPUWithProgram(t, 0x4E40)
-	cpu.bus.WriteLong(uint32(VectorTrap0)*4, 0x00002000)
+	writeLong(cpu.bus, uint32(VectorTrap0)*4, 0x00002000)
 
 	err := cpu.Step()
 	assert.NoError(t, err)
@@ -829,7 +855,7 @@ func TestTRAPV_NoOverflow(t *testing.T) {
 func TestTRAPV_Overflow(t *testing.T) {
 	cpu := newTestCPUWithProgram(t, 0x4E76)
 	cpu.Flags.V = 1
-	cpu.bus.WriteLong(uint32(VectorTRAPV)*4, 0x00003000)
+	writeLong(cpu.bus, uint32(VectorTRAPV)*4, 0x00003000)
 
 	err := cpu.Step()
 	assert.NoError(t, err)
@@ -848,7 +874,7 @@ func TestRESET_Supervisor(t *testing.T) {
 func TestRESET_UserMode(t *testing.T) {
 	cpu := newTestCPUWithProgram(t, 0x4E70)
 	cpu.SetSR(cpu.GetSR() & ^uint16(MaskSupervisor)) // Switch to user mode.
-	cpu.bus.WriteLong(uint32(VectorPrivilege)*4, 0x00004000)
+	writeLong(cpu.bus, uint32(VectorPrivilege)*4, 0x00004000)
 
 	err := cpu.Step()
 	assert.NoError(t, err)
@@ -879,7 +905,7 @@ func TestTAS(t *testing.T) {
 func TestILLEGAL(t *testing.T) {
 	// ILLEGAL = 0x4AFC
 	cpu := newTestCPUWithProgram(t, 0x4AFC)
-	cpu.bus.WriteLong(uint32(VectorIllegal)*4, 0x00005000)
+	writeLong(cpu.bus, uint32(VectorIllegal)*4, 0x00005000)
 
 	err := cpu.Step()
 	assert.NoError(t, err)
@@ -905,7 +931,7 @@ func TestConditions(t *testing.T) {
 func TestProcessException(t *testing.T) {
 	cpu := newTestCPU(t)
 	cpu.PC = 0x1000
-	cpu.bus.WriteLong(uint32(VectorIllegal)*4, 0x2000)
+	writeLong(cpu.bus, uint32(VectorIllegal)*4, 0x2000)
 	oldSP := cpu.sp
 
 	err := cpu.processException(VectorIllegal)

@@ -50,14 +50,17 @@ func (c *CPU) takePendingInterrupt() (interruptKind, bool) {
 		c.waitMode = waitNone
 	}
 
+	// NMI stays pending until the first program load of S arms it.
 	kind := interruptNone
 	switch {
-	case c.triggerNMI:
+	case c.triggerNMI && c.nmiArmed:
 		c.triggerNMI = false
 		kind = interruptNMI
+
 	case c.triggerFIRQ && c.Flags.F == 0:
 		c.triggerFIRQ = false
 		kind = interruptFIRQ
+
 	case c.triggerIRQ && c.Flags.I == 0:
 		c.triggerIRQ = false
 		kind = interruptIRQ

@@ -1,6 +1,7 @@
 # Motorola 68000 Gap Closure Plan
 
 Implementation record: 2026-09-07. Validation instructions reviewed: 2026-10-02.
+Review corrections applied: 2026-10-07 (see "Review Corrections").
 Phases 1–4 are implemented. The Phase 6 runner now executes the
 entire corpus, with the remaining reference discrepancies recorded below. Phase 5
 remains deferred until a concrete use case requires instruction prefetch emulation.
@@ -40,8 +41,11 @@ address. A guest handler must account for the extra eight bytes before using RTE
 this is not a 68010 restartable frame. Frame layout and exception behavior follow
 [MC68000 User's Manual, sections 6.3.5 and 6.3.9–6.3.10](https://www.nxp.com/docs/en/reference-manual/MC68000UM.pdf).
 
-Existing `Memory` and `Bus` interfaces are unchanged. A host bus can additionally
-implement the optional capability in `arch/cpu/cpu68000/memory_access.go`:
+The 2026-09-07 implementation left the `Memory` and `Bus` interfaces unchanged.
+Since 2026-10-07 `Memory` has only byte and word methods, because the CPU never
+issued a long transfer; `BasicMemory` keeps `ReadLong` and `WriteLong` as host
+conveniences. A host bus can additionally implement the optional capability in
+`arch/cpu/cpu68000/memory_access.go`:
 
 ```go
 type BusErrorHandler interface {
@@ -130,15 +134,61 @@ All 3,736 ASR flag mismatches share the condition above. Motorola specifies sign
 extension and the last shifted-out bit in C/X; see ASL/ASR in the
 [M68000 Programmer's Reference Manual, pages 4-21–4-22](https://www.nxp.com/docs/en/reference-manual/M68000PRM.pdf).
 For example, `ea23 [ASR.b D5, D3] 8` shifts negative byte `F3` by 12 and expects C/X
-clear; the implementation leaves both set.
+clear; the implementation leaves both set. WinUAE and Musashi also set C/X to the
+sign bit for a count that is not less than the operand width.
 
 The two `e502 [ASL.b Q, D2]` cases, 1583 and 1761, change D2 from `CDFB7FBE` to
 `2E5E4304` and from `417C7E7D` to `6461D390`, respectively. A byte operation must
-preserve the upper 24 bits. The `80ef [DIVU (d16, A7), D0] 5745` case expects saved
-PC `C00`, whereas the four-byte instruction ends at `C04`; the user manual's section
-6.3.5 specifies the following instruction for this trap. Unit tests preserve the
-documented behavior. These discrepancies need independent reference confirmation or
-upstream corrections before full corpus conformance can be claimed.
+preserve the upper 24 bits. The expected status words (`2713`, `271B`) also do not
+match the result of the shift, so the two vectors are corrupt. The
+`80ef [DIVU (d16, A7), D0] 5745` case expects saved PC `C00`, whereas the four-byte
+instruction ends at `C04`; the user manual's section 6.3.5 specifies the following
+instruction for this trap. It is the only zero-divisor vector in `DIVU.json.gz`, and
+`DIVS.json.gz` has none, while the same generator saves the following instruction for
+all 3,989 CHK traps and 4,095 TRAPV traps. The vector also expects N clear, whereas
+[WinUAE's `divbyzero_special`](https://github.com/tonioni/WinUAE/blob/master/newcpu_common.cpp)
+clears C, V, N, and Z and then sets N or Z from the high word of the dividend
+(`A18E` here, so N is set) on the 68000. That routine is the independent reference
+confirmation for the implementation; unit tests preserve the documented behavior.
+Corrections to the corpus remain upstream work before full conformance can be claimed.
+
+## Review Corrections (2026-10-07)
+
+A review that compared the decoder with the official opcode map
+(`testdata/cpu68000/680x0/map/68000.official.json`) and probed exception paths led
+to these behavior changes. Each has a regression test.
+
+- The decoder validates the addressing-mode class (data, memory, control, alterable)
+  and size bits of every instruction. 7,935 of the 19,721 unassigned words, for
+  example `JSR Dn`, `MOVE.B An,Dn`, `LEA Dn,An`, `ADDQ.B #n,An`, `AND.W An,Dn`, and
+  memory shifts with bit 11 set, previously executed as instructions. They now decode
+  to ILLEGAL. `TestDecoderMatchesOfficialOpcodeMap` checks all 65,536 words against
+  the map: every `None` entry decodes to ILLEGAL and every other entry decodes to the
+  mapped mnemonic family.
+- Unassigned words raise the illegal instruction exception (vector 4) with the
+  instruction address as saved PC instead of returning a host error.
+  `ErrUnsupportedOpcode` and other unused error values are removed.
+- Level 7 interrupts are edge-sensitive. The CPU accepts level 7 when the bus level
+  rises to 7, when `TriggerIRQ` queues it, or when the mask drops below 7 while the
+  bus still holds level 7. A bus that held level 7 previously re-entered the handler
+  on every step. The acknowledged vector number is masked to eight bits.
+- DIVS by zero clears N, V, and C and sets Z, as WinUAE's `divbyzero_special` does
+  for the 68000. DIVU by zero keeps its high-word N/Z derivation.
+- A trace exception follows TRAP, TRAPV, CHK, and zero divide, with the handler
+  address as saved PC (WinUAE `exception_trace`). Illegal, privilege, and line A/F
+  exceptions and interrupts drop the trace, as before.
+- Scc reads its memory destination before the write, like CLR and MOVE from SR.
+- The memory read, write, and read-modify-write instruction sets include the
+  immediate, decimal, shift, stack, and read-before-write instructions that the
+  handlers transfer through memory.
+- `doc.go` documents that the hierarchical decoder has no encoder, so the package
+  offers no instruction-to-opcode reverse mapping; the official-map test provides
+  forward completeness.
+
+The full corpus run after these changes (2026-10-07) reproduced 996,321 passed and
+3,739 failed out of 1,000,060 with the same five discrepancy classes, so the decoder
+validation introduced no new failures. The corpus does not exercise the trace bit,
+level 7 interrupts, DIVS by zero, or unassigned opcode words.
 
 ## Validation Commands
 
@@ -167,7 +217,9 @@ the verbose output and vector totals before reporting a result.
 
 `make -C testdata cpu68000` downloads or updates the default corpus. It does
 not pin the revision above. Its default runner path is
-`testdata/cpu68000/680x0/68000/v1`.
+`testdata/cpu68000/680x0/68000/v1`, and the official opcode map used by
+`TestDecoderMatchesOfficialOpcodeMap` is `testdata/cpu68000/680x0/map/68000.official.json`.
+Both tests skip when their files are absent.
 
 `make test` runs short tests with the race detector. The tagged integration command
 currently fails with the reference discrepancies above. Full prefetch and bus-sequence

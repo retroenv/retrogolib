@@ -32,10 +32,12 @@ func (c *CPU) CheckInterrupts() bool {
 		c.triggerNMI = false
 		c.nmiRunning = true
 		nativeVec, emuVec = VectorNativeNMI, VectorEmuNMI
+
 	case c.triggerIRQ && c.Flags.I == 0:
 		c.triggerIRQ = false
 		c.irqRunning = true
 		nativeVec, emuVec = VectorNativeIRQ, VectorEmuIRQ
+
 	default:
 		c.mu.Unlock()
 		return false
@@ -49,7 +51,7 @@ func (c *CPU) CheckInterrupts() bool {
 // executeInterrupt pushes the CPU context and loads the interrupt vector.
 func (c *CPU) executeInterrupt(nativeVec, emuVec uint32) {
 	if c.E {
-		// Emulation mode: 6502-style interrupt sequence
+		// Emulation mode: 6502-style interrupt sequence.
 		c.push16(c.PC)
 		p := c.GetP() &^ MaskBreak // B=0 for hardware interrupts
 		c.push8(p)
@@ -57,16 +59,17 @@ func (c *CPU) executeInterrupt(nativeVec, emuVec uint32) {
 		c.Flags.D = 0
 		c.cycles += 7
 		c.PB = 0
-		c.PC = c.memory.ReadVector(emuVec)
-	} else {
-		// Native mode: push PB, PC, P
-		c.push8(c.PB)
-		c.push16(c.PC)
-		c.push8(c.GetP())
-		c.Flags.I = 1
-		c.Flags.D = 0
-		c.cycles += 8
-		c.PB = 0
-		c.PC = c.memory.ReadVector(nativeVec)
+		c.PC = c.memory.ReadWord(emuVec)
+		return
 	}
+
+	// Native mode: push PB, PC, and P.
+	c.push8(c.PB)
+	c.push16(c.PC)
+	c.push8(c.GetP())
+	c.Flags.I = 1
+	c.Flags.D = 0
+	c.cycles += 8
+	c.PB = 0
+	c.PC = c.memory.ReadWord(nativeVec)
 }

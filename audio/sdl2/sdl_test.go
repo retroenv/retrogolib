@@ -130,6 +130,7 @@ func TestQueueFailure(t *testing.T) {
 			case err := <-playback.Errors:
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "queue failed")
+
 			case <-time.After(time.Second):
 				t.Fatal("playback did not report its failure")
 			}
@@ -231,6 +232,7 @@ func (s *mockSDL) awaitEvent(t *testing.T, event string) {
 			if got == event {
 				return
 			}
+
 		case <-timer.C:
 			t.Fatalf("timed out waiting for %s", event)
 		}

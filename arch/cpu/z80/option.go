@@ -40,6 +40,8 @@ func WithPreExecutionHook(hook PreExecutionHook) Option {
 }
 
 // WithIOHandler sets an I/O handler for port operations.
+// It applies only to New, which passes the low eight bits of each port address.
+// NewWithBus ignores this option and uses the port methods of its Bus.
 func WithIOHandler(handler IOHandler) Option {
 	return func(options *options) {
 		options.ioHandler = handler
@@ -55,9 +57,11 @@ func WithSystemType(systemType arch.System) Option {
 		case arch.GameBoy:
 			options.initialPC = 0x0100
 			options.initialSP = 0xFFFE
+
 		case arch.ZXSpectrum:
 			options.initialPC = 0x0000
 			options.initialSP = 0xFFFF
+
 		default: // Generic or other systems
 			options.initialPC = 0x0000
 			options.initialSP = 0xFFFF

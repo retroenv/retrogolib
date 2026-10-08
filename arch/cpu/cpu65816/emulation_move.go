@@ -56,7 +56,7 @@ func sta(c *CPU, params ...any) error {
 	if c.AccWidth() == 1 {
 		c.writeMem8(addr, uint8(c.C))
 	} else {
-		c.writeMem16(addr, c.C)
+		c.writeOperandWord(params[0], addr, c.C)
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func stx(c *CPU, params ...any) error {
 	if c.IdxWidth() == 1 {
 		c.writeMem8(addr, uint8(c.X))
 	} else {
-		c.writeMem16(addr, c.X)
+		c.writeOperandWord(params[0], addr, c.X)
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func sty(c *CPU, params ...any) error {
 	if c.IdxWidth() == 1 {
 		c.writeMem8(addr, uint8(c.Y))
 	} else {
-		c.writeMem16(addr, c.Y)
+		c.writeOperandWord(params[0], addr, c.Y)
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func stz(c *CPU, params ...any) error {
 	if c.AccWidth() == 1 {
 		c.writeMem8(addr, 0)
 	} else {
-		c.writeMem16(addr, 0)
+		c.writeOperandWord(params[0], addr, 0)
 	}
 	return nil
 }
@@ -132,7 +132,7 @@ func tcd(c *CPU) error {
 
 func tcs(c *CPU) error {
 	if c.E {
-		// Emulation: only low byte transferred, SP high byte stays $01
+		// Emulation mode transfers only the low byte; the SP high byte stays $01.
 		c.SP = 0x0100 | uint16(uint8(c.C))
 	} else {
 		c.SP = c.C
