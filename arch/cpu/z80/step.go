@@ -392,10 +392,12 @@ func (c *CPU) handleInterrupts() {
 				c.MEMPTR = 0x0038
 			}
 			c.cycles += 13
+
 		case 1:
 			c.PC = 0x0038
 			c.MEMPTR = 0x0038
 			c.cycles += 13
+
 		case 2:
 			// IM 2: read vector low byte from data bus, combine with I register.
 			vectorLow := c.bus.IRQData()

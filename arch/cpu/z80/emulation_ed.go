@@ -69,10 +69,12 @@ func (c *CPU) adjustIORepeatFlags(value uint8, k uint16) {
 		c.Flags.P ^= parityByte((c.B - 1) & 0x07)
 		c.Flags.P ^= 1
 		setFlag(&c.Flags.H, (c.B&0x0F) == 0x00)
+
 	case carry:
 		c.Flags.P ^= parityByte((c.B + 1) & 0x07)
 		c.Flags.P ^= 1
 		setFlag(&c.Flags.H, (c.B&0x0F) == 0x0F)
+
 	default:
 		c.Flags.P ^= parityByte(c.B & 0x07)
 		c.Flags.P ^= 1

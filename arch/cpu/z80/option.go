@@ -63,9 +63,11 @@ func WithSystemType(systemType arch.System) func(*Options) {
 		case arch.GameBoy:
 			options.initialPC = 0x0100
 			options.initialSP = 0xFFFE
+
 		case arch.ZXSpectrum:
 			options.initialPC = 0x0000
 			options.initialSP = 0xFFFF
+
 		default: // Generic or other systems
 			options.initialPC = 0x0000
 			options.initialSP = 0xFFFF

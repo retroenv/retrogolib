@@ -68,6 +68,7 @@ func (c *CPU) executeCycles(opcode Opcode) error {
 	case ImpliedAddressing, AccumulatorAddressing:
 		c.readCycle(c.PC + 1)
 		return c.impliedCycles(opcode)
+
 	case ImmediateAddressing:
 		value := c.readOperand(1)
 		c.observeCycles(ins, int(value))
@@ -76,6 +77,7 @@ func (c *CPU) executeCycles(opcode Opcode) error {
 		}
 		c.PC += 2
 		return nil
+
 	case RelativeAddressing:
 		return c.branchCycles(ins)
 	default:
@@ -184,6 +186,7 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 	case ZeroPageAddressing:
 		base = uint16(low)
 		return base, base, nil
+
 	case ZeroPageXAddressing, ZeroPageYAddressing:
 		c.readCycle(uint16(low))
 		index := c.X
@@ -191,13 +194,16 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 			index = c.Y
 		}
 		return uint16(low), uint16(low + index), nil
+
 	case IndirectXAddressing:
 		c.readCycle(uint16(low))
 		base = c.readWordCycles(uint16(low+c.X), true)
 		return base, base, nil
+
 	case IndirectYAddressing:
 		base = c.readWordCycles(uint16(low), true)
 		return base, c.indexedAddressCycles(base, c.Y, access), nil
+
 	case AbsoluteAddressing, IndirectAddressing, AbsoluteXAddressing, AbsoluteYAddressing:
 		base = uint16(low) | uint16(c.readOperand(2))<<8
 		if mode == AbsoluteXAddressing {
@@ -207,6 +213,7 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 			return base, c.indexedAddressCycles(base, c.Y, access), nil
 		}
 		return base, base, nil
+
 	default:
 		return 0, 0, fmt.Errorf("%w: bus-cycle mode 0x%02x", ErrUnsupportedAddressingMode, mode)
 	}

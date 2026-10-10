@@ -8,7 +8,10 @@ import (
 
 func TestFormatValidation(t *testing.T) {
 	valid := Format{
-		SampleRate: 48000, Channels: 2, Samples: 256, Format: FormatS16,
+		SampleRate: 48000,
+		Channels:   2,
+		Samples:    256,
+		Format:     FormatS16,
 	}
 	assert.NoError(t, valid.Validate())
 	assert.Equal(t, 1024, valid.BufferSize())

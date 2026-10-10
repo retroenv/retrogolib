@@ -60,6 +60,7 @@ func jmp65c02(c *CPU, params ...any) error {
 	case Indirect:
 		// 65C02 fixes the page boundary bug
 		c.PC = c.memory.ReadWord(uint16(address))
+
 	case AbsoluteXIndirect:
 		// The resolved address is in the second parameter
 		addr, ok := params[1].(Absolute)
@@ -67,6 +68,7 @@ func jmp65c02(c *CPU, params ...any) error {
 			return fmt.Errorf("%w: jmp (abs,X) resolved type %T", ErrInvalidParameterType, params[1])
 		}
 		c.PC = uint16(addr)
+
 	default:
 		return fmt.Errorf("%w: jmp mode type %T", ErrUnsupportedAddressingMode, param)
 	}
