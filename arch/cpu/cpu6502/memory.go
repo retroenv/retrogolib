@@ -142,8 +142,10 @@ func (m *Memory) ReadAddressModes(immediate bool, params ...any) (byte, error) {
 		return m.ReadMemoryZeroPage(address, register)
 	case Indirect, IndirectResolved:
 		return m.readMemoryIndirect(address, register)
+
 	case ZeroPageIndirect:
 		return m.readZeroPageIndirect(register)
+
 	default:
 		return 0, fmt.Errorf("%w: read mode type %T", ErrUnsupportedAddressingMode, param)
 	}
@@ -219,6 +221,7 @@ func (m *Memory) readAbsoluteOffset(address any, offset uint16) (byte, error) {
 		return m.Read(uint16(addr) + offset), nil
 	case Absolute:
 		return m.Read(uint16(addr) + offset), nil
+
 	case AbsoluteX:
 		return m.Read(uint16(addr) + offset), nil
 	case AbsoluteY:

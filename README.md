@@ -71,6 +71,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     ├─ gui                         CGO-free GUI rendering abstractions
     │  ├─ internal/framebuffer     frame-buffer helpers for GUI backends
     │  └─ sdl2                     SDL2 GUI backend
+    ├─ host                        frame presentation, audio playback, and headless operation
     ├─ input                       keyboard and controller input helpers
     ├─ internal                    shared dynamic-library and SDL2 subsystem helpers
     ├─ log                         nil-safe structured logging built on log/slog
