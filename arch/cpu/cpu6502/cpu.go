@@ -56,7 +56,7 @@ type CPU struct {
 	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
 	nmiRunning bool // NMI handler active until RTI; not the source of the current stack operation
 
-	opts      Options
+	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
 	branchTaken bool // set by branch() to distinguish taken vs not-taken
@@ -77,7 +77,7 @@ const (
 
 // New creates a new CPU.
 func New(memory *Memory, options ...Option) *CPU {
-	opts := NewOptions(options...)
+	opts := newOptions(options...)
 	c := &CPU{
 		SP:     InitialStack,
 		cycles: initialCycles,
