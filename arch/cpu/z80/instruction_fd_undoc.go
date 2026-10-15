@@ -5,6 +5,14 @@ package z80
 var FdIncIYH = &Instruction{
 	Name:       IncName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x24,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -18,6 +26,14 @@ var FdIncIYH = &Instruction{
 var FdDecIYH = &Instruction{
 	Name:       DecName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x25,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -31,6 +47,14 @@ var FdDecIYH = &Instruction{
 var FdIncIYL = &Instruction{
 	Name:       IncName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x2C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -44,6 +68,14 @@ var FdIncIYL = &Instruction{
 var FdDecIYL = &Instruction{
 	Name:       DecName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x2D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -101,6 +133,14 @@ var FdLdIYLn = &Instruction{
 var FdLdBIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x44,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegB, RegIYH}: {
 			Prefix: PrefixFD,
@@ -114,6 +154,14 @@ var FdLdBIYH = &Instruction{
 var FdLdBIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x45,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegB, RegIYL}: {
 			Prefix: PrefixFD,
@@ -127,6 +175,14 @@ var FdLdBIYL = &Instruction{
 var FdLdCIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x4C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegC, RegIYH}: {
 			Prefix: PrefixFD,
@@ -140,6 +196,14 @@ var FdLdCIYH = &Instruction{
 var FdLdCIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x4D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegC, RegIYL}: {
 			Prefix: PrefixFD,
@@ -153,6 +217,14 @@ var FdLdCIYL = &Instruction{
 var FdLdDIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x54,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegD, RegIYH}: {
 			Prefix: PrefixFD,
@@ -166,6 +238,14 @@ var FdLdDIYH = &Instruction{
 var FdLdDIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x55,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegD, RegIYL}: {
 			Prefix: PrefixFD,
@@ -179,6 +259,14 @@ var FdLdDIYL = &Instruction{
 var FdLdEIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x5C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegE, RegIYH}: {
 			Prefix: PrefixFD,
@@ -192,6 +280,14 @@ var FdLdEIYH = &Instruction{
 var FdLdEIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x5D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegE, RegIYL}: {
 			Prefix: PrefixFD,
@@ -205,6 +301,14 @@ var FdLdEIYL = &Instruction{
 var FdLdAIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x7C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegA, RegIYH}: {
 			Prefix: PrefixFD,
@@ -218,6 +322,14 @@ var FdLdAIYH = &Instruction{
 var FdLdAIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x7D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegA, RegIYL}: {
 			Prefix: PrefixFD,
@@ -232,6 +344,14 @@ var FdLdAIYL = &Instruction{
 var FdLdIYHB = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x60,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegB}: {
 			Prefix: PrefixFD,
@@ -245,6 +365,14 @@ var FdLdIYHB = &Instruction{
 var FdLdIYHC = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x61,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegC}: {
 			Prefix: PrefixFD,
@@ -258,6 +386,14 @@ var FdLdIYHC = &Instruction{
 var FdLdIYHD = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x62,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegD}: {
 			Prefix: PrefixFD,
@@ -271,6 +407,14 @@ var FdLdIYHD = &Instruction{
 var FdLdIYHE = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x63,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegE}: {
 			Prefix: PrefixFD,
@@ -284,6 +428,14 @@ var FdLdIYHE = &Instruction{
 var FdLdIYHIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x64,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegIYH}: {
 			Prefix: PrefixFD,
@@ -297,6 +449,14 @@ var FdLdIYHIYH = &Instruction{
 var FdLdIYHIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x65,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegIYL}: {
 			Prefix: PrefixFD,
@@ -310,6 +470,14 @@ var FdLdIYHIYL = &Instruction{
 var FdLdIYHA = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x67,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYH, RegA}: {
 			Prefix: PrefixFD,
@@ -324,6 +492,14 @@ var FdLdIYHA = &Instruction{
 var FdLdIYLB = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x68,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegB}: {
 			Prefix: PrefixFD,
@@ -337,6 +513,14 @@ var FdLdIYLB = &Instruction{
 var FdLdIYLC = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x69,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegC}: {
 			Prefix: PrefixFD,
@@ -350,6 +534,14 @@ var FdLdIYLC = &Instruction{
 var FdLdIYLD = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x6A,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegD}: {
 			Prefix: PrefixFD,
@@ -363,6 +555,14 @@ var FdLdIYLD = &Instruction{
 var FdLdIYLE = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x6B,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegE}: {
 			Prefix: PrefixFD,
@@ -376,6 +576,14 @@ var FdLdIYLE = &Instruction{
 var FdLdIYLIYH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x6C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegIYH}: {
 			Prefix: PrefixFD,
@@ -389,6 +597,14 @@ var FdLdIYLIYH = &Instruction{
 var FdLdIYLIYL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x6D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegIYL}: {
 			Prefix: PrefixFD,
@@ -402,6 +618,14 @@ var FdLdIYLIYL = &Instruction{
 var FdLdIYLA = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x6F,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIYL, RegA}: {
 			Prefix: PrefixFD,
@@ -416,6 +640,14 @@ var FdLdIYLA = &Instruction{
 var FdAddAIYH = &Instruction{
 	Name:       AddName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x84,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -429,6 +661,14 @@ var FdAddAIYH = &Instruction{
 var FdAddAIYL = &Instruction{
 	Name:       AddName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x85,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -442,6 +682,14 @@ var FdAddAIYL = &Instruction{
 var FdAdcAIYH = &Instruction{
 	Name:       AdcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x8C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -455,6 +703,14 @@ var FdAdcAIYH = &Instruction{
 var FdAdcAIYL = &Instruction{
 	Name:       AdcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x8D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -468,6 +724,14 @@ var FdAdcAIYL = &Instruction{
 var FdSubIYH = &Instruction{
 	Name:       SubName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x94,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -481,6 +745,14 @@ var FdSubIYH = &Instruction{
 var FdSubIYL = &Instruction{
 	Name:       SubName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x95,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -494,6 +766,14 @@ var FdSubIYL = &Instruction{
 var FdSbcAIYH = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x9C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -507,6 +787,14 @@ var FdSbcAIYH = &Instruction{
 var FdSbcAIYL = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0x9D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -520,6 +808,14 @@ var FdSbcAIYL = &Instruction{
 var FdAndIYH = &Instruction{
 	Name:       AndName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xA4,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -533,6 +829,14 @@ var FdAndIYH = &Instruction{
 var FdAndIYL = &Instruction{
 	Name:       AndName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xA5,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -546,6 +850,14 @@ var FdAndIYL = &Instruction{
 var FdXorIYH = &Instruction{
 	Name:       XorName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xAC,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -559,6 +871,14 @@ var FdXorIYH = &Instruction{
 var FdXorIYL = &Instruction{
 	Name:       XorName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xAD,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -572,6 +892,14 @@ var FdXorIYL = &Instruction{
 var FdOrIYH = &Instruction{
 	Name:       OrName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xB4,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -585,6 +913,14 @@ var FdOrIYH = &Instruction{
 var FdOrIYL = &Instruction{
 	Name:       OrName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xB5,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
@@ -598,6 +934,14 @@ var FdOrIYL = &Instruction{
 var FdCpIYH = &Instruction{
 	Name:       CpName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xBC,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYH: {
 			Prefix: PrefixFD,
@@ -611,6 +955,14 @@ var FdCpIYH = &Instruction{
 var FdCpIYL = &Instruction{
 	Name:       CpName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixFD,
+			Opcode: 0xBD,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIYL: {
 			Prefix: PrefixFD,
