@@ -135,6 +135,12 @@ const (
 	RegIM0 // Mode 0: 8080-compatible
 	RegIM1 // Mode 1: RST 38H
 	RegIM2 // Mode 2: Vectored interrupts
+
+	// Byte halves of index registers.
+	RegIXH
+	RegIXL
+	RegIYH
+	RegIYL
 )
 
 // registerNames provides register parameter string representations.
@@ -154,6 +160,10 @@ var registerNames = [...]string{
 	RegAF:         "af",
 	RegIX:         "ix",
 	RegIY:         "iy",
+	RegIXH:        "ixh",
+	RegIXL:        "ixl",
+	RegIYH:        "iyh",
+	RegIYL:        "iyl",
 	RegHLIndirect: "(hl)",
 	RegBCIndirect: "(bc)",
 	RegDEIndirect: "(de)",
