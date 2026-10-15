@@ -19,7 +19,11 @@
 //
 //	// Set the reset vector before constructing the CPU.
 //	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
-//	cpu := cpu6502.New(memory)
+//
+//	cpu, err := cpu6502.New(memory)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 //
 //	// Load program
 //	memory.Write(0x8000, 0xA9) // LDA #$42
@@ -100,9 +104,12 @@
 // IRQ/NMI entry, without adding memory accesses. For an initialized memory:
 //
 //	var events []cpu6502.StackEvent
-//	cpu := cpu6502.New(memory, cpu6502.WithStackEventHook(func(event cpu6502.StackEvent) {
+//	cpu, err := cpu6502.New(memory, cpu6502.WithStackEventHook(func(event cpu6502.StackEvent) {
 //		events = append(events, event)
 //	}))
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 //
 // Events run synchronously after SP changes, after a push writes memory and
 // before a pull reads it. Hooks must not reenter execution or mutate CPU state

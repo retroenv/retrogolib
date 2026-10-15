@@ -1447,7 +1447,7 @@ func cpuTestSetup(t *testing.T) *CPU {
 	assert.NoError(t, err)
 	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
 	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory)
+	cpu := newTestCPU(t, memory)
 	return cpu
 }
 

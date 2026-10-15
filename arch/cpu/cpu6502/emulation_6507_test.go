@@ -225,7 +225,7 @@ func TestVariant6507InterruptVsNMOS(t *testing.T) {
 	assert.NoError(t, err)
 	nmosMem.WriteWord(ResetAddress, 0x8000)
 	nmosMem.WriteWord(IrqAddress, testIrqAddress)
-	nmos := New(nmosMem)
+	nmos := newTestCPU(t, nmosMem)
 
 	nmos.TriggerIrq()
 	assert.Equal(t, true, nmos.triggerIrq)
@@ -248,6 +248,6 @@ func cpuTestSetup6507(t *testing.T) *CPU {
 	memory, err := NewMemory(&testMemory{})
 	assert.NoError(t, err)
 	memory.WriteWord(ResetAddress, 0x1000) // Atari 2600 ROM starts at $1000
-	cpu := New(memory, WithVariant(Variant6507))
+	cpu := newTestCPU(t, memory, WithVariant(Variant6507))
 	return cpu
 }

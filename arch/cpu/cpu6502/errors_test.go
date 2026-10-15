@@ -38,7 +38,7 @@ func TestUnsupportedAddressingModeError(t *testing.T) {
 	basicMem := &errorTestMemory{}
 	memory, err := NewMemory(basicMem)
 	assert.NoError(t, err)
-	cpu := New(memory)
+	cpu := newTestCPU(t, memory)
 
 	// Test unsupported addressing mode error message format
 	invalidMode := AddressingMode(99) // Use an invalid addressing mode

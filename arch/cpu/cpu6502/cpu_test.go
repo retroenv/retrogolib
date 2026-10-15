@@ -10,7 +10,9 @@ import (
 func TestNewRejectsNilMemory(t *testing.T) {
 	t.Parallel()
 
-	assert.Panics(t, func() { New(nil) })
+	cpu, err := New(nil)
+	assert.ErrorIs(t, err, ErrNilMemory)
+	assert.Nil(t, cpu)
 }
 
 func TestStateIncludesUnusedFlag(t *testing.T) {
@@ -63,7 +65,7 @@ func TestConcurrentInterruptRequestsAndStalls(t *testing.T) {
 			for address := uint16(0x8000); address < 0x8100; address++ {
 				memory.Write(address, 0xea)
 			}
-			cpu := New(memory, append(tt.opts, WithVariant(VariantNMOS6502))...)
+			cpu := newTestCPU(t, memory, append(tt.opts, WithVariant(VariantNMOS6502))...)
 
 			const iterations = 2000
 			var wg sync.WaitGroup
@@ -96,4 +98,12 @@ func TestBranchValidatesTarget(t *testing.T) {
 
 	assert.ErrorIs(t, bcc(cpu), ErrMissingParameter)
 	assert.ErrorIs(t, bcc(cpu, "invalid"), ErrInvalidParameterType)
+}
+
+func newTestCPU(t *testing.T, memory *Memory, options ...Option) *CPU {
+	t.Helper()
+
+	cpu, err := New(memory, options...)
+	assert.NoError(t, err)
+	return cpu
 }

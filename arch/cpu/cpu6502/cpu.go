@@ -84,10 +84,10 @@ type CPU struct {
 	memory *Memory
 }
 
-// New creates a new CPU. It panics with ErrNilMemory when memory is nil.
-func New(memory *Memory, options ...Option) *CPU {
+// New creates a new CPU. It returns ErrNilMemory when memory is nil.
+func New(memory *Memory, options ...Option) (*CPU, error) {
 	if memory == nil {
-		panic(ErrNilMemory)
+		return nil, ErrNilMemory
 	}
 
 	opts := newOptions(options...)
@@ -101,7 +101,7 @@ func New(memory *Memory, options ...Option) *CPU {
 	c.PC = memory.ReadWordBug(ResetAddress)
 
 	c.setFlags(initialFlags)
-	return c
+	return c, nil
 }
 
 // Cycles returns the live total CPU cycles executed since system start.

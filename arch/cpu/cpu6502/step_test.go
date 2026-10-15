@@ -210,5 +210,5 @@ func newProgramCPU(t *testing.T, variant CPUVariant, pc uint16, program ...byte)
 	for i, value := range program {
 		memory.Write(pc+uint16(i), value)
 	}
-	return New(memory, WithVariant(variant))
+	return newTestCPU(t, memory, WithVariant(variant))
 }

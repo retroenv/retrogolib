@@ -41,7 +41,7 @@ func TestBusCycleAccesses(t *testing.T) {
 			memory, err := NewMemory(mem)
 			assert.NoError(t, err)
 			var accesses []BusCycle
-			cpu := New(memory, WithCycleHook(func(cycle BusCycle) bool {
+			cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
 				accesses = append(accesses, cycle)
 				return false
 			}))
@@ -120,7 +120,7 @@ func TestBusCycleSHFamilyWrites(t *testing.T) {
 			memory, err := NewMemory(mem)
 			assert.NoError(t, err)
 			var accesses []BusCycle
-			cpu := New(memory, WithCycleHook(func(cycle BusCycle) bool {
+			cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
 				accesses = append(accesses, cycle)
 				return false
 			}))
@@ -141,7 +141,7 @@ func TestBusCycleHookCanHoldReads(t *testing.T) {
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	var attempts []BusCycle
-	cpu := New(memory, WithCycleHook(func(cycle BusCycle) bool {
+	cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
 		attempts = append(attempts, cycle)
 		return len(attempts) <= 2 || cycle.Write
 	}))
@@ -160,7 +160,7 @@ func TestBusCycleResetPreservesRegisters(t *testing.T) {
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	var accesses []BusCycle
-	cpu := New(memory, WithCycleHook(func(cycle BusCycle) bool {
+	cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
 		accesses = append(accesses, cycle)
 		return false
 	}))
@@ -212,7 +212,7 @@ func TestBusCycleInterruptPolling(t *testing.T) {
 			assert.NoError(t, err)
 			var cpu *CPU
 			cycles := 0
-			cpu = New(memory, WithCycleHook(func(BusCycle) bool {
+			cpu = newTestCPU(t, memory, WithCycleHook(func(BusCycle) bool {
 				cycles++
 				if cycles == test.at {
 					cpu.SetIRQ(true)
@@ -230,7 +230,7 @@ func TestBusCycleKILRequiresReset(t *testing.T) {
 	mem := &ssSparseMemory{data: map[uint16]byte{0x8000: 0x02, ResetAddress + 1: 0x90}}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
-	cpu := New(memory, WithCycleHook(func(BusCycle) bool { return false }))
+	cpu := newTestCPU(t, memory, WithCycleHook(func(BusCycle) bool { return false }))
 	cpu.PC = 0x8000
 	assert.NoError(t, cpu.Step())
 	cpu.TriggerNMI()
@@ -249,7 +249,7 @@ func TestBusCycleNMIReplacesBRKVector(t *testing.T) {
 		assert.NoError(t, err)
 		var cpu *CPU
 		cycles := 0
-		cpu = New(memory, WithCycleHook(func(BusCycle) bool {
+		cpu = newTestCPU(t, memory, WithCycleHook(func(BusCycle) bool {
 			cycles++
 			if cycles == at {
 				cpu.TriggerNMI()

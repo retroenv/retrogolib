@@ -537,14 +537,14 @@ func Test65C02VariantSelection(t *testing.T) {
 	assert.NoError(t, err)
 	nmosMemory.WriteWord(ResetAddress, 0x8000)
 	nmosMemory.WriteWord(IrqAddress, testIrqAddress)
-	nmosCPU := New(nmosMemory)
+	nmosCPU := newTestCPU(t, nmosMemory)
 
 	// 65C02 CPU
 	cmosMemory, err := NewMemory(&testMemory{})
 	assert.NoError(t, err)
 	cmosMemory.WriteWord(ResetAddress, 0x8000)
 	cmosMemory.WriteWord(IrqAddress, testIrqAddress)
-	cmosCPU := New(cmosMemory, WithVariant(Variant65C02))
+	cmosCPU := newTestCPU(t, cmosMemory, WithVariant(Variant65C02))
 
 	// Write opcode 0x1A (NOP on NMOS, INC A on 65C02) at PC
 	nmosMemory.Write(0x8000, 0x1A)
@@ -640,6 +640,6 @@ func cpuTestSetup65C02(t *testing.T) *CPU {
 	assert.NoError(t, err)
 	memory.WriteWord(ResetAddress, 0x8000)
 	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory, WithVariant(Variant65C02))
+	cpu := newTestCPU(t, memory, WithVariant(Variant65C02))
 	return cpu
 }

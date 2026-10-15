@@ -161,7 +161,7 @@ func runReleaseVector(t *testing.T, vector ss6502TestCase) {
 	}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
-	cpu := New(memory, WithVariant(VariantNMOS6502))
+	cpu := newTestCPU(t, memory, WithVariant(VariantNMOS6502))
 	cpu.PC, cpu.SP = vector.Initial.PC, vector.Initial.S
 	cpu.A, cpu.X, cpu.Y = vector.Initial.A, vector.Initial.X, vector.Initial.Y
 	cpu.setFlags(vector.Initial.P)

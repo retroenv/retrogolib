@@ -198,7 +198,7 @@ func runSingleStepCase(t *testing.T, tc ss6502TestCase, variant CPUVariant) bool
 	if variant < Variant65C02 {
 		options = append(options, WithCycleHook(cycles.clock))
 	}
-	cpu := New(memory, options...)
+	cpu := newTestCPU(t, memory, options...)
 
 	// Load initial CPU state.
 	cpu.PC = tc.Initial.PC
