@@ -19,7 +19,7 @@ architectures. Paths below are relative to the RetroGoLib repository root.
 | Target commit | `9b578e97f6b30c6d3bfeb1bf75a9867927d0ea75` |
 | Merge base | `9f81a91c9f86d10f539a9932428e2985a5ea4027` |
 | Local `main` | `9f81a91c9f86d10f539a9932428e2985a5ea4027`; behind the target |
-| Main merged into source | 2026-10-15: `main` at `c6d1fdd` merged into `work2` as `9261cda`; adds P01 and P02 |
+| Main merged into source | 2026-10-15: `main` at `c6d1fdd` merged into `work2` as `9261cda`; adds P01 and P02. `main` at `a155e73` merged into `work2` as `3c29a43`; adds P03 |
 | Original branch range | `origin/main...HEAD`, equivalent to merge base through fixed source |
 | Original branch delta | 223 files: 161 added, 62 modified; 31,841 insertions, 2,496 deletions |
 | Target-to-source endpoint delta | 221 files: 161 added, 60 modified; 31,839 insertions, 2,494 deletions |
@@ -51,6 +51,16 @@ through merge `9261cda`:
 and P02 as already on the target. Do not extract them again. The merge kept the
 source additions that `main` does not have: the `test-6502-release` target
 (P07) and the nil-memory check in `cpu6502.New` (P03).
+
+On 2026-10-15, `main` also gained `a155e73`, which delivers P03 and is merged
+into the source branch as `3c29a43`. Treat P03 as already on the target. The
+commit corrects `memory.go`, `errors.go`, `memory_test.go`, the flag snapshot
+and reset state in `cpu.go`, the `TestValidateState` assertion, and the package
+examples. It returns `ErrNilMemory` as an error from `New` instead of panicking;
+the source branch adopted that constructor contract in the merge. Thus the
+source branch still supplies P04–P07 only: the branch and stall contract, the
+timing and metadata corrections, the moved unofficial handlers, and the release
+gate.
 
 The common base also contains:
 
@@ -226,19 +236,22 @@ stack hooks still work. No variant values are renumbered.
 
 ### P03 — Correct 6502 memory and state boundaries
 
+**Status:** Already on `main` as `a155e73`, merged into the source branch as `3c29a43`. No extraction.
+
 | File | Hunks |
 | --- | --- |
 | `arch/cpu/cpu6502/errors.go` | Add `ErrNilMemory`. |
 | `arch/cpu/cpu6502/memory.go` | Typed-nil validation, required address parameters, bounded immediate integers, indexed address calculation, and related helper/error changes. |
 | `arch/cpu/cpu6502/memory_test.go` | Complete source delta: missing arguments, indexed reads, nil and typed-nil memory. |
-| `arch/cpu/cpu6502/cpu.go` | Nil-memory constructor panic, shared validation error, complete flag snapshot, reset of `branchTaken` and `TraceStep`, initial constant placement, and stack-wrap comment. Leave branch/lock changes for P04. |
+| `arch/cpu/cpu6502/cpu.go` | Nil-memory constructor error, shared validation error, complete flag snapshot, reset of `branchTaken` and `TraceStep`, initial constant placement, and stack-wrap comment. Leave branch/lock changes for P04. |
 | `arch/cpu/cpu6502/cpu_test.go` | `TestNewRejectsNilMemory`, `TestStateIncludesUnusedFlag`, and `TestResetClearsTransientExecutionState`. Defer `TestBranchValidatesTarget`. |
 | `arch/cpu/cpu6502/emulation_test.go` | `TestValidateState` error-identity assertion only. |
 | `arch/cpu/cpu6502/doc.go` | Correct the `NewMemory(bus)` example, reset-vector setup order, and memory ranges. Threading/accuracy text belongs to P04/P07. |
 
-Keep constructor behavior explicit: `NewMemory` returns an error; `New(nil)`
-panics. `AbsoluteX` and `AbsoluteY` must offset the address before the read.
-Do not retain the target's addition of the offset to the returned data byte.
+`NewMemory` and `New` report nil input as errors. `New` returns
+`(*CPU, error)`; the source branch adopted that signature in merge `3c29a43`.
+`AbsoluteX` and `AbsoluteY` offset the address before the read, and the addition
+of the offset to the returned data byte is gone.
 
 **Focused check:** `./arch/cpu/cpu6502`.
 **Exit:** Nil inputs, missing operands, flags, reset state, and indexed reads
@@ -1059,13 +1072,16 @@ contract changes; record them in the candidate PRs.
 
 ## Progress record
 
-P00–P25 are planned. P01 and P02 are already on `main` (`d0e9464` and
-`c6d1fdd`) and are merged into the source branch as `9261cda`. No other
-candidate was extracted or merged. The two NES paths are already on the
-verified target. The 2026-10-02 planning task checked local
+P00–P25 are planned. P01, P02, and P03 are already on `main` (`d0e9464`,
+`c6d1fdd`, and `a155e73`) and are merged into the source branch as `9261cda`
+and `3c29a43`. No other candidate was extracted or merged. The two NES paths
+are already on the verified target. The 2026-10-02 planning task checked local
 refs, source diffs, target interfaces, test/helper ownership, and documentation
 inventory without running Go checks. The 2026-10-07 review ran the checks in
-the table above and left its corrections uncommitted on the source branch.
+the table above and left its corrections uncommitted on the source branch. The
+P03 merge `3c29a43` passed `gofmt`, `go build ./...`, `go vet ./...`,
+`go test -short -race -count=1 -timeout 60s ./arch/cpu/cpu6502`, and the
+`arch/system/nes/parameter` and `arch/system/nes/register` tests.
 
 For each future part, record:
 
