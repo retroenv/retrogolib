@@ -5,6 +5,14 @@ package z80
 var DdIncIXH = &Instruction{
 	Name:       IncName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x24,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -18,6 +26,14 @@ var DdIncIXH = &Instruction{
 var DdDecIXH = &Instruction{
 	Name:       DecName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x25,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -31,6 +47,14 @@ var DdDecIXH = &Instruction{
 var DdIncIXL = &Instruction{
 	Name:       IncName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x2C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -44,6 +68,14 @@ var DdIncIXL = &Instruction{
 var DdDecIXL = &Instruction{
 	Name:       DecName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x2D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -101,6 +133,14 @@ var DdLdIXLn = &Instruction{
 var DdLdBIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x44,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegB, RegIXH}: {
 			Prefix: PrefixDD,
@@ -114,6 +154,14 @@ var DdLdBIXH = &Instruction{
 var DdLdBIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x45,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegB, RegIXL}: {
 			Prefix: PrefixDD,
@@ -127,6 +175,14 @@ var DdLdBIXL = &Instruction{
 var DdLdCIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x4C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegC, RegIXH}: {
 			Prefix: PrefixDD,
@@ -140,6 +196,14 @@ var DdLdCIXH = &Instruction{
 var DdLdCIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x4D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegC, RegIXL}: {
 			Prefix: PrefixDD,
@@ -153,6 +217,14 @@ var DdLdCIXL = &Instruction{
 var DdLdDIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x54,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegD, RegIXH}: {
 			Prefix: PrefixDD,
@@ -166,6 +238,14 @@ var DdLdDIXH = &Instruction{
 var DdLdDIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x55,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegD, RegIXL}: {
 			Prefix: PrefixDD,
@@ -179,6 +259,14 @@ var DdLdDIXL = &Instruction{
 var DdLdEIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x5C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegE, RegIXH}: {
 			Prefix: PrefixDD,
@@ -192,6 +280,14 @@ var DdLdEIXH = &Instruction{
 var DdLdEIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x5D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegE, RegIXL}: {
 			Prefix: PrefixDD,
@@ -205,6 +301,14 @@ var DdLdEIXL = &Instruction{
 var DdLdAIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x7C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegA, RegIXH}: {
 			Prefix: PrefixDD,
@@ -218,6 +322,14 @@ var DdLdAIXH = &Instruction{
 var DdLdAIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x7D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegA, RegIXL}: {
 			Prefix: PrefixDD,
@@ -232,6 +344,14 @@ var DdLdAIXL = &Instruction{
 var DdLdIXHB = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x60,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegB}: {
 			Prefix: PrefixDD,
@@ -245,6 +365,14 @@ var DdLdIXHB = &Instruction{
 var DdLdIXHC = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x61,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegC}: {
 			Prefix: PrefixDD,
@@ -258,6 +386,14 @@ var DdLdIXHC = &Instruction{
 var DdLdIXHD = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x62,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegD}: {
 			Prefix: PrefixDD,
@@ -271,6 +407,14 @@ var DdLdIXHD = &Instruction{
 var DdLdIXHE = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x63,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegE}: {
 			Prefix: PrefixDD,
@@ -284,6 +428,14 @@ var DdLdIXHE = &Instruction{
 var DdLdIXHIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x64,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegIXH}: {
 			Prefix: PrefixDD,
@@ -297,6 +449,14 @@ var DdLdIXHIXH = &Instruction{
 var DdLdIXHIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x65,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegIXL}: {
 			Prefix: PrefixDD,
@@ -310,6 +470,14 @@ var DdLdIXHIXL = &Instruction{
 var DdLdIXHA = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x67,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXH, RegA}: {
 			Prefix: PrefixDD,
@@ -324,6 +492,14 @@ var DdLdIXHA = &Instruction{
 var DdLdIXLB = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x68,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegB}: {
 			Prefix: PrefixDD,
@@ -337,6 +513,14 @@ var DdLdIXLB = &Instruction{
 var DdLdIXLC = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x69,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegC}: {
 			Prefix: PrefixDD,
@@ -350,6 +534,14 @@ var DdLdIXLC = &Instruction{
 var DdLdIXLD = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x6A,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegD}: {
 			Prefix: PrefixDD,
@@ -363,6 +555,14 @@ var DdLdIXLD = &Instruction{
 var DdLdIXLE = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x6B,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegE}: {
 			Prefix: PrefixDD,
@@ -376,6 +576,14 @@ var DdLdIXLE = &Instruction{
 var DdLdIXLIXH = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x6C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegIXH}: {
 			Prefix: PrefixDD,
@@ -389,6 +597,14 @@ var DdLdIXLIXH = &Instruction{
 var DdLdIXLIXL = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x6D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegIXL}: {
 			Prefix: PrefixDD,
@@ -402,6 +618,14 @@ var DdLdIXLIXL = &Instruction{
 var DdLdIXLA = &Instruction{
 	Name:       LdName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x6F,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterPairOpcodes: map[[2]RegisterParam]OpcodeInfo{
 		{RegIXL, RegA}: {
 			Prefix: PrefixDD,
@@ -416,6 +640,14 @@ var DdLdIXLA = &Instruction{
 var DdAddAIXH = &Instruction{
 	Name:       AddName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x84,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -429,6 +661,14 @@ var DdAddAIXH = &Instruction{
 var DdAddAIXL = &Instruction{
 	Name:       AddName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x85,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -442,6 +682,14 @@ var DdAddAIXL = &Instruction{
 var DdAdcAIXH = &Instruction{
 	Name:       AdcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x8C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -455,6 +703,14 @@ var DdAdcAIXH = &Instruction{
 var DdAdcAIXL = &Instruction{
 	Name:       AdcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x8D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -468,6 +724,14 @@ var DdAdcAIXL = &Instruction{
 var DdSubIXH = &Instruction{
 	Name:       SubName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x94,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -481,6 +745,14 @@ var DdSubIXH = &Instruction{
 var DdSubIXL = &Instruction{
 	Name:       SubName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x95,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -494,6 +766,14 @@ var DdSubIXL = &Instruction{
 var DdSbcAIXH = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x9C,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -507,6 +787,14 @@ var DdSbcAIXH = &Instruction{
 var DdSbcAIXL = &Instruction{
 	Name:       SbcName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0x9D,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -520,6 +808,14 @@ var DdSbcAIXL = &Instruction{
 var DdAndIXH = &Instruction{
 	Name:       AndName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xA4,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -533,6 +829,14 @@ var DdAndIXH = &Instruction{
 var DdAndIXL = &Instruction{
 	Name:       AndName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xA5,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -546,6 +850,14 @@ var DdAndIXL = &Instruction{
 var DdXorIXH = &Instruction{
 	Name:       XorName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xAC,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -559,6 +871,14 @@ var DdXorIXH = &Instruction{
 var DdXorIXL = &Instruction{
 	Name:       XorName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xAD,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -572,6 +892,14 @@ var DdXorIXL = &Instruction{
 var DdOrIXH = &Instruction{
 	Name:       OrName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xB4,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -585,6 +913,14 @@ var DdOrIXH = &Instruction{
 var DdOrIXL = &Instruction{
 	Name:       OrName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xB5,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,
@@ -598,6 +934,14 @@ var DdOrIXL = &Instruction{
 var DdCpIXH = &Instruction{
 	Name:       CpName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xBC,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXH: {
 			Prefix: PrefixDD,
@@ -611,6 +955,14 @@ var DdCpIXH = &Instruction{
 var DdCpIXL = &Instruction{
 	Name:       CpName,
 	Unofficial: true,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		RegisterAddressing: {
+			Prefix: PrefixDD,
+			Opcode: 0xBD,
+			Size:   2,
+			Cycles: 8,
+		},
+	},
 	RegisterOpcodes: map[RegisterParam]OpcodeInfo{
 		RegIXL: {
 			Prefix: PrefixDD,

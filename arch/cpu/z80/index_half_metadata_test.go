@@ -62,6 +62,11 @@ func testIndexHalfMetadata(t *testing.T, prefix, opcode byte, forward Opcode, ds
 	t.Helper()
 	assert.NotNil(t, forward.Instruction)
 	assert.True(t, forward.Instruction.Unofficial)
+	addressing := RegisterAddressing
+	if forward.Size == 3 {
+		addressing = ImmediateAddressing
+	}
+	assert.True(t, forward.Instruction.HasAddressing(addressing))
 	info, ok := forward.Instruction.RegisterOpcodes[dst]
 	if src != RegNone {
 		info, ok = forward.Instruction.RegisterPairOpcodes[[2]RegisterParam{dst, src}]
