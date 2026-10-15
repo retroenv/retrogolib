@@ -1386,7 +1386,7 @@ func TestValidateState(t *testing.T) {
 	// Test nil memory
 	cpu = cpuTestSetup(t)
 	cpu.memory = nil
-	assert.ErrorContains(t, cpu.ValidateState(), "CPU memory is nil")
+	assert.ErrorIs(t, cpu.ValidateState(), ErrNilMemory)
 }
 
 func TestCPUReset(t *testing.T) {
@@ -1439,7 +1439,7 @@ func cpuTestSetup(t *testing.T) *CPU {
 	assert.NoError(t, err)
 	memory.WriteWord(ResetAddress, nes.CodeBaseAddress)
 	memory.WriteWord(IrqAddress, testIrqAddress)
-	cpu := New(memory)
+	cpu := newTestCPU(t, memory)
 	return cpu
 }
 

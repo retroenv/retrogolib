@@ -5,6 +5,14 @@ import (
 	"sync"
 )
 
+const (
+	initialCycles = 7
+	initialFlags  = 0b0010_0100 // I and U flags are set after reset.
+
+	// InitialStack is the stack pointer value after reset.
+	InitialStack = 0xFD
+)
+
 // State represents complete 6502 CPU state for save/load and debugging.
 type State struct {
 	// Primary registers
@@ -69,14 +77,12 @@ type CPU struct {
 	memory *Memory
 }
 
-const (
-	initialCycles = 7
-	initialFlags  = 0b0010_0100 // I and U flags are 1, the rest 0
-	InitialStack  = 0xFD
-)
+// New creates a new CPU. It returns ErrNilMemory when memory is nil.
+func New(memory *Memory, options ...Option) (*CPU, error) {
+	if memory == nil {
+		return nil, ErrNilMemory
+	}
 
-// New creates a new CPU.
-func New(memory *Memory, options ...Option) *CPU {
 	opts := newOptions(options...)
 	c := &CPU{
 		SP:     InitialStack,
@@ -88,7 +94,7 @@ func New(memory *Memory, options ...Option) *CPU {
 	c.PC = memory.ReadWordBug(ResetAddress)
 
 	c.setFlags(initialFlags)
-	return c
+	return c, nil
 }
 
 // Cycles returns the live total CPU cycles executed since system start.
@@ -108,22 +114,14 @@ func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	state := State{
+	return State{
 		A:      c.A,
 		X:      c.X,
 		Y:      c.Y,
 		PC:     c.PC,
 		SP:     c.SP,
 		Cycles: c.cycles,
-		Flags: Flags{
-			C: c.Flags.C,
-			Z: c.Flags.Z,
-			I: c.Flags.I,
-			D: c.Flags.D,
-			B: c.Flags.B,
-			V: c.Flags.V,
-			N: c.Flags.N,
-		},
+		Flags:  c.Flags,
 		Interrupts: Interrupts{
 			NMITriggered: c.triggerNmi,
 			NMIRunning:   c.nmiRunning,
@@ -131,7 +129,6 @@ func (c *CPU) State() State {
 			IrqRunning:   c.irqRunning,
 		},
 	}
-	return state
 }
 
 // Memory returns the CPU memory.
@@ -154,7 +151,7 @@ func (c *CPU) ValidateState() error {
 
 	// Validate memory is not nil
 	if c.memory == nil {
-		return errors.New("CPU memory is nil")
+		return ErrNilMemory
 	}
 
 	return nil
@@ -188,6 +185,8 @@ func (c *CPU) Reset() {
 	// Reset cycles
 	c.cycles = initialCycles
 	c.stallCycles = 0
+	c.branchTaken = false
+	c.TraceStep = TraceStep{}
 	c.executionPC = 0
 	c.executionCycle = 0
 	c.opcode = 0
@@ -227,6 +226,7 @@ func (c *CPU) branch(branchTo bool, param any) {
 
 // pop pops a byte from the stack and update the stack pointer.
 func (c *CPU) pop() byte {
+	// The 8-bit stack pointer wraps within page one, matching the hardware.
 	before := c.SP
 	c.SP++
 	c.emitStackEvent(StackPull, before)

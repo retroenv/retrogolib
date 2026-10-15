@@ -98,7 +98,7 @@ func runDormannTest(t *testing.T, dataDir string, tc dormannTest) {
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 
-	cpu := New(memory, WithVariant(tc.variant))
+	cpu := newTestCPU(t, memory, WithVariant(tc.variant))
 	// Override PC directly after construction (reset vector already set correctly).
 	cpu.PC = tc.startPC
 

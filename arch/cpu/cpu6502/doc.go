@@ -12,15 +12,22 @@
 //
 // # Basic Usage
 //
-//	memory := cpu6502.NewMemory()
-//	cpu := cpu6502.New(memory)
+//	memory, err := cpu6502.NewMemory(bus)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Set the reset vector before constructing the CPU.
+//	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
+//
+//	cpu, err := cpu6502.New(memory)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 //
 //	// Load program
 //	memory.Write(0x8000, 0xA9) // LDA #$42
 //	memory.Write(0x8001, 0x42)
-//
-//	// Set reset vector
-//	memory.WriteWord(cpu6502.ResetAddress, 0x8000)
 //
 //	// Execute instructions
 //	for {
@@ -33,7 +40,7 @@
 //
 //   - 0x0000-0x00FF: Zero page (fast access)
 //   - 0x0100-0x01FF: Stack
-//   - 0x0200-0xFFEF: General memory
+//   - 0x0200-0xFFF9: Backend-defined memory and I/O
 //   - 0xFFFA-0xFFFB: NMI vector
 //   - 0xFFFC-0xFFFD: Reset vector
 //   - 0xFFFE-0xFFFF: IRQ/BRK vector
@@ -96,9 +103,12 @@
 // IRQ/NMI entry, without adding memory accesses. For an initialized memory:
 //
 //	var events []cpu6502.StackEvent
-//	cpu := cpu6502.New(memory, cpu6502.WithStackEventHook(func(event cpu6502.StackEvent) {
+//	cpu, err := cpu6502.New(memory, cpu6502.WithStackEventHook(func(event cpu6502.StackEvent) {
 //		events = append(events, event)
 //	}))
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 //
 // Events run synchronously after SP changes, after a push writes memory and
 // before a pull reads it. Hooks must not reenter execution or mutate CPU state

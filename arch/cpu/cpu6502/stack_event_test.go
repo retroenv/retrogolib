@@ -54,7 +54,7 @@ func TestStackEventPreservesInterruptBusAccesses(t *testing.T) {
 			if i == 1 {
 				hook = func(StackEvent) {}
 			}
-			cpu := New(memory, WithStackEventHook(hook))
+			cpu := newTestCPU(t, memory, WithStackEventHook(hook))
 			bus.accesses = nil
 			if source == InterruptNMI {
 				triggerNMI(cpu)
@@ -233,5 +233,5 @@ func newEventTestCPU(t *testing.T, program []byte, hook StackEventHook) *CPU {
 	memory, err := NewMemory(bus)
 	assert.NoError(t, err)
 
-	return New(memory, WithVariant(VariantNES6502), WithStackEventHook(hook))
+	return newTestCPU(t, memory, WithVariant(VariantNES6502), WithStackEventHook(hook))
 }
