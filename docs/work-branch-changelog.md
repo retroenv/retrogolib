@@ -19,6 +19,7 @@ architectures. Paths below are relative to the RetroGoLib repository root.
 | Target commit | `9b578e97f6b30c6d3bfeb1bf75a9867927d0ea75` |
 | Merge base | `9f81a91c9f86d10f539a9932428e2985a5ea4027` |
 | Local `main` | `9f81a91c9f86d10f539a9932428e2985a5ea4027`; behind the target |
+| Main merged into source | 2026-10-15: `main` at `c6d1fdd` merged into `work2` as `9261cda`; adds P01 and P02 |
 | Original branch range | `origin/main...HEAD`, equivalent to merge base through fixed source |
 | Original branch delta | 223 files: 161 added, 62 modified; 31,841 insertions, 2,496 deletions |
 | Target-to-source endpoint delta | 221 files: 161 added, 60 modified; 31,839 insertions, 2,494 deletions |
@@ -38,6 +39,18 @@ NES RAM correction through different commits: target `9b578e9` and source
 `8ca69e4`. Thus `arch/system/nes/nes.go` and `arch/system/nes/nes_test.go` occur
 in the three-dot branch inventory but have no endpoint difference. P00 marks
 both files as already present. Do not extract them again.
+
+On 2026-10-15, `main` gained two commits that the source branch now contains
+through merge `9261cda`:
+
+- `d0e9464` makes the short-test deadline configurable (P01).
+- `c6d1fdd` encapsulates the 6502 CPU options (P02).
+
+`Makefile`, `arch/cpu/cpu6502/option.go`, and
+`arch/cpu/cpu6502/option_test.go` now match `main` for these hunks. Treat P01
+and P02 as already on the target. Do not extract them again. The merge kept the
+source additions that `main` does not have: the `test-6502-release` target
+(P07) and the nil-memory check in `cpu6502.New` (P03).
 
 The common base also contains:
 
@@ -179,6 +192,8 @@ paths marked already present. No synchronization merge is required.
 
 ### P01 — Make short-test deadlines configurable
 
+**Status:** Already on `main` as `d0e9464`. No extraction.
+
 | File | Hunks |
 | --- | --- |
 | `Makefile` | Add `TEST_TIMEOUT ?= 60s`; use it in `test` and `test-coverage`. Leave release and integration additions for their CPU parts. |
@@ -191,6 +206,8 @@ and all existing targets. The source does not add a separate `test-race` target.
 **Exit:** Default and overridden deadlines reach the correct Go commands.
 
 ### P02 — Encapsulate 6502 options
+
+**Status:** Already on `main` as `c6d1fdd`. No extraction.
 
 | File | Hunks |
 | --- | --- |
@@ -1042,8 +1059,10 @@ contract changes; record them in the candidate PRs.
 
 ## Progress record
 
-P00–P25 are planned. No candidate was extracted or merged. The two NES paths
-are already on the verified target. The 2026-10-02 planning task checked local
+P00–P25 are planned. P01 and P02 are already on `main` (`d0e9464` and
+`c6d1fdd`) and are merged into the source branch as `9261cda`. No other
+candidate was extracted or merged. The two NES paths are already on the
+verified target. The 2026-10-02 planning task checked local
 refs, source diffs, target interfaces, test/helper ownership, and documentation
 inventory without running Go checks. The 2026-10-07 review ran the checks in
 the table above and left its corrections uncommitted on the source branch.
