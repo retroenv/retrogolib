@@ -259,6 +259,9 @@ pass their tests without importing timing or metadata changes.
 
 ### P04 — Correct 6502 stepping, interrupt requests, and timing
 
+**Status:** On `main` as `2980dc0` (2026-10-16); the 6502 review corrections
+travel with this part.
+
 | File | Hunks |
 | --- | --- |
 | `arch/cpu/cpu6502/cpu.go` | Error-returning `branch`, its argument checks, `consumeStallCycle`, and execution/threading comments. Preserve existing cycle and stack event fields. |
@@ -898,9 +901,9 @@ Total: 161 added and 62 modified files. No row is a rename. Excluding the two
 identical NES files leaves 221 endpoint-different files. One of those is this
 source-only tracking document. Thus 220 original product paths remain for
 extraction, including the conditional P22 Makefile hunk and the reviewed C64
-plan. A path count does not measure completion of mixed-file hunks. The
-uncommitted review corrections add `README.md` and six new test files to this
-inventory when they are committed.
+plan. A path count does not measure completion of mixed-file hunks. The review
+corrections (`2ef3c62`) add `README.md` and six new test files to this
+inventory.
 
 Candidate-only work is separate from the 223-path inventory: P22's
 evidence-driven corrections. The review corrections below supply the P04
@@ -932,10 +935,10 @@ regression is an explicit target adaptation in P06.
 
 A code review of the complete branch on 2026-10-07 found defects that the
 external corpora could not detect, and added the tests that the plan listed
-as candidate-only work. The corrections are uncommitted working-tree changes
-on the source branch. Each correction belongs to the part that owns its file
-and must travel with that part. The behavior changes below are also public
-contract changes; record them in the candidate PRs.
+as candidate-only work. The corrections are committed on the source branch as
+`2ef3c62`. Each correction belongs to the part that owns its file and travels
+with that part. The behavior changes below are also public contract changes;
+record them in the candidate PRs.
 
 ### Z80 (P12–P14)
 
@@ -1074,14 +1077,36 @@ contract changes; record them in the candidate PRs.
 
 P00–P25 are planned. P01, P02, and P03 are already on `main` (`d0e9464`,
 `c6d1fdd`, and `a155e73`) and are merged into the source branch as `9261cda`
-and `3c29a43`. No other candidate was extracted or merged. The two NES paths
-are already on the verified target. The 2026-10-02 planning task checked local
-refs, source diffs, target interfaces, test/helper ownership, and documentation
-inventory without running Go checks. The 2026-10-07 review ran the checks in
-the table above and left its corrections uncommitted on the source branch. The
-P03 merge `3c29a43` passed `gofmt`, `go build ./...`, `go vet ./...`,
+and `3c29a43`. P04 is on `main` as `2980dc0` (2026-10-16); `main` is not merged
+back into the source branch. No other candidate was extracted or merged. The
+two NES paths are already on the verified target. The 2026-10-02 planning task
+checked local refs, source diffs, target interfaces, test/helper ownership, and
+documentation inventory without running Go checks. The 2026-10-07 review ran the
+checks in the table above and committed its corrections as `2ef3c62`. The P03
+merge `3c29a43` passed `gofmt`, `go build ./...`, `go vet ./...`,
 `go test -short -race -count=1 -timeout 60s ./arch/cpu/cpu6502`, and the
 `arch/system/nes/parameter` and `arch/system/nes/register` tests.
+
+### P04 record (2026-10-16)
+
+```text
+Part: P04 — 6502 stepping, interrupt requests, and timing
+Target base: a155e73
+Fixed source SHA and any separately committed documentation input: work2 773f24c; the hunk set includes the 2ef3c62 review corrections
+Candidate commit: 2980dc0
+PR: none; landed on `main` directly as in P01–P03
+Included files and hunks: cpu.go branch/stall contract; interrupt.go request locks and pendingInterrupts; step.go stall helper, trace-independent page-cross timing, branch target handling; cycle.go stall consumption and interrupt locking; emulation.go branch callers, RTI lock, decimal correction cycles; emulation_65c02.go BRA/BBR/BBS callers; opcode.go NMOS LSR/INC abs-X and LAX abs-Y timing; opcode_65c02.go abs-X read-modify-write timings and BRA base timing; cpu_test.go, step_test.go, emulation_test.go, doc.go
+Excluded or deferred mixed hunks: opcode.go memory-effect methods (P05); emulation.go unofficial-handler move (P06); all other P05–P07 paths
+Target-only behavior preserved: the unofficial handlers stay in emulation.go; cycle.go and stack_event.go keep their polling and hook behavior
+Public API or behavior migration: StallCycles, TriggerIrq, TriggerNMI, and SetIRQ are safe from another goroutine; CheckInterrupts and the bus-cycle interrupt sample take the lock. NMOS LSR/INC abs-X drop the page-cross cycle; LAX abs-Y adds it; 65C02 ASL/LSR/ROL/ROR abs-X are 6+1 and INC/DEC abs-X stay 7; BRA is 2 base cycles; 65C02 ADC/SBC add one decimal-mode cycle; taken branches compare the target with the following instruction, including self-loops and wraparound
+Candidate-only tests or repairs: TestConcurrentInterruptRequestsAndStalls steps twice as often as it queues stall cycles, because the source assertion depended on the goroutine schedule and failed when every step consumed a stall cycle
+Dependency and workspace configuration: no dependency change; no go.work; module unchanged
+Focused checks and results: gofmt clean; `go test -short -race -count=1 -timeout 60s ./arch/cpu/cpu6502` passed; the concurrency test passed with -count=20
+External data revisions, patches, executed cases, skips, and results: 65x02 at 2f6980a (clean, no patches); 1278 files and about 12.78 million cases passed; the 2 empty wdc65c02 files cb and db skipped
+Common gates and results: `make build`, `make lint` (0 issues), `make test`, and `git diff --check` passed
+Target merge commit and CI result: 2980dc0 on `main`; no CI run
+Remaining source hunks and acceptance conditions: P05–P25
+```
 
 For each future part, record:
 
