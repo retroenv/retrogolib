@@ -16,6 +16,7 @@ func adc(c *CPU, params ...any) error {
 	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
 		if c.opts.variant >= Variant65C02 {
 			adcDecimal65C02(c, a, value)
+			c.cycles += decimalCorrectionCycles
 		} else {
 			adcDecimalNMOS(c, a, value)
 		}
@@ -143,20 +144,17 @@ func asl(c *CPU, params ...any) error {
 
 // bcc - Branch if Carry Clear.
 func bcc(c *CPU, params ...any) error {
-	c.branch(c.Flags.C == 0, params[0])
-	return nil
+	return c.branch(c.Flags.C == 0, params...)
 }
 
 // bcs - Branch if Carry Set.
 func bcs(c *CPU, params ...any) error {
-	c.branch(c.Flags.C != 0, params[0])
-	return nil
+	return c.branch(c.Flags.C != 0, params...)
 }
 
 // beq - Branch if Equal.
 func beq(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z != 0, params[0])
-	return nil
+	return c.branch(c.Flags.Z != 0, params...)
 }
 
 // bit - BitInst Test.
@@ -173,20 +171,17 @@ func bit(c *CPU, params ...any) error {
 
 // bmi - Branch if Minus.
 func bmi(c *CPU, params ...any) error {
-	c.branch(c.Flags.N != 0, params[0])
-	return nil
+	return c.branch(c.Flags.N != 0, params...)
 }
 
 // bne - Branch if Not Equal.
 func bne(c *CPU, params ...any) error {
-	c.branch(c.Flags.Z == 0, params[0])
-	return nil
+	return c.branch(c.Flags.Z == 0, params...)
 }
 
 // bpl - Branch if Positive.
 func bpl(c *CPU, params ...any) error {
-	c.branch(c.Flags.N == 0, params[0])
-	return nil
+	return c.branch(c.Flags.N == 0, params...)
 }
 
 // brk - Force Interrupt.
@@ -213,14 +208,12 @@ func brk(c *CPU) error {
 
 // bvc - Branch if Overflow Clear.
 func bvc(c *CPU, params ...any) error {
-	c.branch(c.Flags.V == 0, params[0])
-	return nil
+	return c.branch(c.Flags.V == 0, params...)
 }
 
 // bvs - Branch if Overflow Set.
 func bvs(c *CPU, params ...any) error {
-	c.branch(c.Flags.V != 0, params[0])
-	return nil
+	return c.branch(c.Flags.V != 0, params...)
 }
 
 // clc - Clear Carry Flag.
@@ -527,9 +520,10 @@ func rti(c *CPU) error {
 	c.setFlags(b)
 	c.PC = c.pop16()
 
-	// lock is already taken
+	c.mu.Lock()
 	c.irqRunning = false
 	c.nmiRunning = false
+	c.mu.Unlock()
 	return nil
 }
 
@@ -550,6 +544,7 @@ func sbc(c *CPU, params ...any) error {
 	if c.Flags.D != 0 && c.opts.variant != VariantNES6502 {
 		if c.opts.variant >= Variant65C02 {
 			sbcDecimal65C02(c, a, value)
+			c.cycles += decimalCorrectionCycles
 		} else {
 			sbcDecimalNMOS(c, a, value)
 		}

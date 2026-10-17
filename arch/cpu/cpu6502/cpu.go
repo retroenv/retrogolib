@@ -2,12 +2,17 @@ package cpu6502
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
 const (
 	initialCycles = 7
 	initialFlags  = 0b0010_0100 // I and U flags are set after reset.
+
+	// decimalCorrectionCycles is the extra cycle the 65C02 takes to correct a
+	// decimal mode ADC or SBC result.
+	decimalCorrectionCycles = 1
 
 	// InitialStack is the stack pointer value after reset.
 	InitialStack = 0xFD
@@ -27,7 +32,9 @@ type State struct {
 	Interrupts Interrupts // Pending and running interrupt state, not the source of a stack event
 }
 
-// CPU represents a thread-safe 6502 microprocessor with full instruction set emulation.
+// CPU represents a 6502 microprocessor with full instruction set emulation.
+// Instruction execution must be driven by one goroutine; interrupt requests may
+// be triggered concurrently.
 type CPU struct {
 	mu sync.RWMutex
 
@@ -67,7 +74,7 @@ type CPU struct {
 	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
-	branchTaken bool // set by branch() to distinguish taken vs not-taken
+	branchTaken bool // Set by branch to distinguish a self-loop from a fallthrough.
 
 	executionCycle uint64          // cycle count at the current execution boundary
 	executionPC    uint16          // instruction address or interrupted program counter
@@ -105,7 +112,10 @@ func (c *CPU) Cycles() uint64 {
 }
 
 // StallCycles adds cycles during which Step does not execute an instruction.
+// It is safe to call from a different goroutine than the one that calls Step.
 func (c *CPU) StallCycles(cycles uint16) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.stallCycles += cycles
 }
 
@@ -206,15 +216,17 @@ func (c *CPU) GetInstructionCount() uint64 {
 }
 
 // execute branch jump if the branching op result is true.
-func (c *CPU) branch(branchTo bool, param any) {
-	if !branchTo {
-		return
+func (c *CPU) branch(branchTo bool, params ...any) error {
+	if len(params) == 0 {
+		return ErrMissingParameter
 	}
 
-	addr, ok := param.(Absolute)
+	addr, ok := params[0].(Absolute)
 	if !ok {
-		// This should never happen in normal operation, but provides safety
-		return
+		return fmt.Errorf("%w: branch target type %T", ErrInvalidParameterType, params[0])
+	}
+	if !branchTo {
+		return nil
 	}
 
 	c.PC = uint16(addr)
@@ -222,6 +234,7 @@ func (c *CPU) branch(branchTo bool, param any) {
 	if !c.cycleActive {
 		c.cycles++
 	}
+	return nil
 }
 
 // pop pops a byte from the stack and update the stack pointer.
@@ -278,4 +291,18 @@ func (c *CPU) push16(value uint16) {
 	low := byte(value)
 	c.push(high)
 	c.push(low)
+}
+
+// consumeStallCycle takes one pending stall cycle. It reports false when no
+// stall is pending. The caller accounts for the cycle.
+func (c *CPU) consumeStallCycle() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.stallCycles == 0 {
+		return false
+	}
+
+	c.stallCycles--
+	return true
 }

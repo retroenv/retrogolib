@@ -9,8 +9,8 @@ const MaxOpcodeSize = 3
 type Opcode struct {
 	Instruction    *Instruction
 	Addressing     AddressingMode // Addressing mode
-	Timing         byte           // Timing in cycles
-	PageCrossCycle bool           // Crossing page boundary takes an additional cycle
+	Timing         byte           // Base timing before taken-branch and page-cross penalties
+	PageCrossCycle bool           // Indexed page crossing takes an additional cycle
 }
 
 // OpcodeInfo contains the opcode and timing info for an instruction addressing mode.
@@ -21,6 +21,9 @@ type OpcodeInfo struct {
 
 // Opcodes maps the first opcode byte to CPU instruction information.
 // Reference https://www.masswerk.at/6502/6502_instruction_set.html
+//
+// Timing is checked against the SingleStepTests 65x02 corpus cycle counts:
+// https://github.com/SingleStepTests/65x02
 var Opcodes = [256]Opcode{
 	{Instruction: BrkInst, Addressing: ImpliedAddressing, Timing: 7},                                   // 0x00
 	{Instruction: OraInst, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x01
@@ -116,7 +119,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: SreInst, Addressing: AbsoluteYAddressing, Timing: 7},                                 // 0x5b
 	{Instruction: NopUnofficialInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0x5c
 	{Instruction: EorInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0x5d
-	{Instruction: LsrInst, Addressing: AbsoluteXAddressing, Timing: 7, PageCrossCycle: true},           // 0x5e
+	{Instruction: LsrInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0x5e
 	{Instruction: SreInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0x5f
 	{Instruction: RtsInst, Addressing: ImpliedAddressing, Timing: 6},                                   // 0x60
 	{Instruction: AdcInst, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x61
@@ -213,7 +216,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: LdyInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xbc
 	{Instruction: LdaInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xbd
 	{Instruction: LdxInst, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xbe
-	{Instruction: LaxInst, Addressing: AbsoluteYAddressing, Timing: 4},                                 // 0xbf
+	{Instruction: LaxInst, Addressing: AbsoluteYAddressing, Timing: 4, PageCrossCycle: true},           // 0xbf
 	{Instruction: CpyInst, Addressing: ImmediateAddressing, Timing: 2},                                 // 0xc0
 	{Instruction: CmpInst, Addressing: IndirectXAddressing, Timing: 6},                                 // 0xc1
 	{Instruction: NopUnofficialInst, Addressing: ImmediateAddressing, Timing: 2},                       // 0xc2
@@ -276,7 +279,7 @@ var Opcodes = [256]Opcode{
 	{Instruction: IscInst, Addressing: AbsoluteYAddressing, Timing: 7},                                 // 0xfb
 	{Instruction: NopUnofficialInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true}, // 0xfc
 	{Instruction: SbcInst, Addressing: AbsoluteXAddressing, Timing: 4, PageCrossCycle: true},           // 0xfd
-	{Instruction: IncInst, Addressing: AbsoluteXAddressing, Timing: 7, PageCrossCycle: true},           // 0xfe
+	{Instruction: IncInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xfe
 	{Instruction: IscInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xff
 }
 

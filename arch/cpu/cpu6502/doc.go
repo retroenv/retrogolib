@@ -2,12 +2,12 @@
 //
 // The 6502 is an 8-bit microprocessor that was widely used in home computers,
 // video game consoles, and other systems in the 1970s and 1980s. This package
-// implements a cycle-accurate emulation including:
+// implements instruction-level emulation including:
 //
 //   - Full instruction set with all addressing modes
 //   - Accurate flag handling (N, V, Z, C, I, D, B)
 //   - Stack operations and interrupt handling
-//   - Memory management with configurable backends
+//   - Memory access through a configurable backend
 //   - Debugging and tracing capabilities
 //
 // # Basic Usage
@@ -68,8 +68,9 @@
 //
 // # Thread Safety
 //
-// CPU operations are protected by a read-write mutex, allowing concurrent
-// read access to CPU state while ensuring exclusive access for modifications.
+// Drive instruction execution from one goroutine. TriggerIrq, TriggerNMI,
+// SetIRQ, and StallCycles may be called concurrently to request asynchronous
+// events.
 //
 // # Accuracy
 //

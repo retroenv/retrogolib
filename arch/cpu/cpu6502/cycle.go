@@ -32,8 +32,7 @@ func (c *CPU) stepCycles() error {
 		c.readCycle(address)
 		return nil
 	}
-	if c.stallCycles != 0 {
-		c.stallCycles--
+	if c.consumeStallCycle() {
 		c.readCycle(c.PC)
 		return nil
 	}
@@ -283,6 +282,8 @@ func (c *CPU) interruptCycles(vector uint16, source InterruptSource) {
 // An NMI detected before the status push can replace the IRQ or BRK vector.
 // The stacked PC and status still come from the original interrupt sequence.
 func (c *CPU) selectInterruptVector(vector uint16) uint16 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.triggerNmi {
 		c.triggerNmi = false
 		c.nmiRunning = true
@@ -292,6 +293,7 @@ func (c *CPU) selectInterruptVector(vector uint16) uint16 {
 }
 
 func (c *CPU) resetCycles() {
+	c.mu.Lock()
 	c.jammed = false
 	c.jamCycle = 0
 	c.triggerIrq = false
@@ -300,6 +302,8 @@ func (c *CPU) resetCycles() {
 	c.nmiRunning = false
 	c.stallCycles = 0
 	c.Flags.I = 1
+	c.mu.Unlock()
+
 	c.readCycle(c.PC)
 	c.readCycle(c.PC)
 	for range 3 {
@@ -349,6 +353,8 @@ func (c *CPU) writeCycle(address uint16, value byte) {
 // after this sample; RTI changes I before it.
 // https://www.nesdev.org/wiki/CPU_interrupts
 func (c *CPU) sampleInterrupts() {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	c.irqSample = (c.triggerIrq || c.irqLine) && c.Flags.I == 0
 	c.nmiSample = c.triggerNmi
 }
