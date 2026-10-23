@@ -283,30 +283,46 @@ var Opcodes = [256]Opcode{
 	{Instruction: IscInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xff
 }
 
-// ReadsMemory returns whether the instruction accesses memory reading.
+// ReadsMemory reports whether the opcode reads a memory operand.
 func (opcode Opcode) ReadsMemory(memoryReadInstructions set.Set[string]) bool {
+	if opcode.Instruction == nil {
+		return false
+	}
+
 	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+	case AccumulatorAddressing, ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+		return false
+	}
+
+	if opcode.Instruction.Name == JmpName && opcode.Addressing == AbsoluteAddressing {
 		return false
 	}
 
 	return memoryReadInstructions.Contains(opcode.Instruction.Name)
 }
 
-// WritesMemory returns whether the instruction accesses memory writing.
+// WritesMemory reports whether the opcode writes a memory operand.
 func (opcode Opcode) WritesMemory(memoryWriteInstructions set.Set[string]) bool {
+	if opcode.Instruction == nil {
+		return false
+	}
+
 	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+	case AccumulatorAddressing, ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
 	}
 
 	return memoryWriteInstructions.Contains(opcode.Instruction.Name)
 }
 
-// ReadWritesMemory returns whether the instruction accesses memory reading and writing.
+// ReadWritesMemory reports whether the opcode reads and writes a memory operand.
 func (opcode Opcode) ReadWritesMemory(memoryReadWriteInstructions set.Set[string]) bool {
+	if opcode.Instruction == nil {
+		return false
+	}
+
 	switch opcode.Addressing {
-	case ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
+	case AccumulatorAddressing, ImmediateAddressing, ImpliedAddressing, RelativeAddressing:
 		return false
 	}
 

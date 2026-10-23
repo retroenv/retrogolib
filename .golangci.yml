@@ -56,6 +56,13 @@ linters:
     - wrapcheck # Checks that errors returned from external packages are wrapped
 
   settings:
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - generic
     cyclop:
       max-complexity: 15
     godot:
