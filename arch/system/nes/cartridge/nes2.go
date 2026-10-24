@@ -73,6 +73,7 @@ func (c *Cartridge) nes2Header(hdr header) (header, error) {
 			metadata.RAMSizes.PRGVolatile = int(c.RAM) * 8192
 		}
 	}
+
 	if metadata.Submapper > 15 || metadata.ConsoleType > 3 || c.VideoFormat > 3 ||
 		metadata.MiscROMCount > 3 || metadata.ExpansionDevice > 63 ||
 		(metadata.MiscROMCount == 0) != (len(metadata.MiscROM) == 0) || len(metadata.MiscROM) > maxROMSize {
@@ -95,12 +96,14 @@ func (c *Cartridge) nes2Header(hdr header) (header, error) {
 		return header{}, err
 	}
 
-	hdr.NumPRG, hdr.NumCHR = prgLow, chrLow
+	hdr.NumPRG = prgLow
+	hdr.NumCHR = chrLow
 	hdr.Control2 = (hdr.Control2 & 0xF0) | 8 | metadata.ConsoleType
 	hdr.NumRAM = metadata.Submapper<<4 | byte(c.Mapper>>8)
 	hdr.VideoFormat = chrHigh<<4 | prgHigh
 	hdr.Reserved = [6]byte{ram[0], ram[1], c.VideoFormat, metadata.ConsoleData,
 		metadata.MiscROMCount, metadata.ExpansionDevice}
+
 	return hdr, nil
 }
 
@@ -184,6 +187,7 @@ func readNES2Data(reader io.Reader, cart *Cartridge, trainer bool, prgSize, chrS
 		}
 		cart.NES2.MiscROM = data
 	}
+
 	return nil
 }
 
@@ -192,12 +196,14 @@ func decodeROMSize(low, high byte, unit int) (int, error) {
 	if high == 15 {
 		// NES 2.0 uses 2^E * (2*M+1) bytes when the high nibble is 15.
 		// Check the exponent before multiplication to prevent uint64 overflow.
-		exponent, multiplier := low>>2, uint64(low&3)*2+1
+		exponent := low >> 2
+		multiplier := uint64(low&3)*2 + 1
 		if exponent > 26 {
 			return 0, errROMSize
 		}
 		size = (uint64(1) << exponent) * multiplier
 	}
+
 	if size > maxROMSize {
 		return 0, errROMSize
 	}
@@ -240,5 +246,6 @@ func encodeRAMSizes(sizes RAMSizes) ([2]byte, error) {
 		}
 		result[i/2] |= byte(bits.TrailingZeros(uint(size))-6) << (4 * (i % 2))
 	}
+
 	return result, nil
 }

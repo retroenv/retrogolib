@@ -23,6 +23,7 @@ func ControlBytes(battery, mirror byte, mapper uint16, hasTrainer bool) (byte, b
 	if hasTrainer {
 		control1 |= trainerFlag
 	}
+
 	return control1, control2
 }
 

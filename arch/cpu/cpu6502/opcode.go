@@ -21,6 +21,9 @@ type OpcodeInfo struct {
 
 // Opcodes maps the first opcode byte to CPU instruction information.
 // Reference https://www.masswerk.at/6502/6502_instruction_set.html
+//
+// Timing is checked against the SingleStepTests 65x02 corpus cycle counts:
+// https://github.com/SingleStepTests/65x02
 var Opcodes = [256]Opcode{
 	{Instruction: BrkInst, Addressing: ImpliedAddressing, Timing: 7},                                   // 0x00
 	{Instruction: OraInst, Addressing: IndirectXAddressing, Timing: 6},                                 // 0x01

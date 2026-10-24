@@ -25,6 +25,7 @@ func NewBitSetFromSlice(values []int) BitSet {
 	for _, v := range values {
 		b.Add(v)
 	}
+
 	return b
 }
 
@@ -78,6 +79,7 @@ func (b *BitSet) ToSlice() []int {
 			result = append(result, i)
 		}
 	}
+
 	return result
 }
 
@@ -152,6 +154,7 @@ func (b *BitSet) PopFirst() int {
 	}
 	n := bits.TrailingZeros64(uint64(*b))
 	*b &^= 1 << n
+
 	return n
 }
 
@@ -171,11 +174,13 @@ func (b *BitSet) String() string {
 			if !first {
 				sb.WriteString(", ")
 			}
+
 			sb.WriteString(strconv.Itoa(i))
 			first = false
 		}
 	}
 
 	sb.WriteByte('}')
+
 	return sb.String()
 }

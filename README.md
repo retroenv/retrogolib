@@ -17,6 +17,7 @@ debuggers, disassemblers, and system-specific utilities.
 * **System helpers** - NES cartridge, mapper, register, and parameter support; Atari 2600, CoCo, Intellivision, and Vectrex memory-map and register definitions
 * **CGO-free GUI support** - Cross-platform rendering through SDL2 on Linux, Windows, macOS, and FreeBSD
 * **CGO-free audio support** - Backend-neutral PCM playback with SDL2 output, concurrency-safe controls, and asynchronous error reporting
+* **MCP server toolkit** - Model Context Protocol server that exposes tools, resources, and prompts through stdio or streamable HTTP
 * **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
 * **Small dependency footprint** - Go 1.25+ with only `ebitengine/purego` as an external dependency
 
@@ -75,6 +76,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     ├─ input                       keyboard and controller input helpers
     ├─ internal                    shared dynamic-library and SDL2 subsystem helpers
     ├─ log                         nil-safe structured logging built on log/slog
+    ├─ mcp                         Model Context Protocol server for tools, resources, and prompts
     └─ set                         generic set data structures and operations
 
 For package-level APIs and examples, see the [Go package documentation](https://pkg.go.dev/github.com/retroenv/retrogolib).

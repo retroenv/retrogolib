@@ -14,10 +14,13 @@ func Version(version, commit, date string) string {
 	if commit != "" {
 		buf.WriteString(" commit: " + commit)
 	}
+
 	if date != "" {
 		buf.WriteString(" built at: " + date)
 	}
+
 	goVersion := runtime.Version()
 	buf.WriteString(" built with: " + goVersion)
+
 	return buf.String()
 }

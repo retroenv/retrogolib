@@ -49,6 +49,7 @@ func NewConsoleHandler(w io.Writer, opts *ConsoleHandlerOptions) *ConsoleHandler
 		if opts.SlogOptions != nil {
 			slogOpts = *opts.SlogOptions
 		}
+
 		if opts.TimeFormat != "" {
 			timeFormat = opts.TimeFormat
 		}
@@ -144,6 +145,7 @@ func (h *ConsoleHandler) Handle(ctx context.Context, r slog.Record) error {
 			return fmt.Errorf("handling record: %w", err)
 		}
 	}
+
 	return nil
 }
 

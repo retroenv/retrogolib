@@ -34,14 +34,34 @@ func New() *Cartridge {
 	}
 }
 
+// HeaderBytes returns the canonical 16-byte iNES or NES 2.0 header.
+func (c *Cartridge) HeaderBytes() ([16]byte, error) {
+	header, err := c.fileHeader()
+	if err != nil {
+		return [16]byte{}, err
+	}
+
+	var data [16]byte
+	copy(data[:4], header.Magic[:])
+	data[4] = header.NumPRG
+	data[5] = header.NumCHR
+	data[6] = header.Control1
+	data[7] = header.Control2
+	data[8] = header.NumRAM
+	data[9] = header.VideoFormat
+	copy(data[10:], header.Reserved[:])
+
+	return data, nil
+}
+
 // Save writes iNES, or NES 2.0 when the cartridge requires its fields or size encodings.
 func (c *Cartridge) Save(writer io.Writer) error {
-	header, err := c.fileHeader()
+	header, err := c.HeaderBytes()
 	if err != nil {
 		return err
 	}
 
-	if err := binary.Write(writer, binary.LittleEndian, header); err != nil {
+	if err := binary.Write(writer, binary.LittleEndian, header[:]); err != nil {
 		return fmt.Errorf("writing header: %w", err)
 	}
 

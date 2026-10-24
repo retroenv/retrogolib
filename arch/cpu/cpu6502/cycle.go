@@ -28,8 +28,10 @@ func (c *CPU) stepCycles() error {
 		if c.jamCycle == 1 || c.jamCycle == 2 {
 			address = 0xfffe
 		}
+
 		c.jamCycle = min(c.jamCycle+1, 3)
 		c.readCycle(address)
+
 		return nil
 	}
 	if c.consumeStallCycle() {
@@ -55,6 +57,7 @@ func (c *CPU) stepCycles() error {
 			OpcodeOperands: []byte{c.opcode},
 		}
 	}
+
 	return c.executeCycles(opcode)
 }
 
@@ -75,6 +78,7 @@ func (c *CPU) executeCycles(opcode Opcode) error {
 			return err
 		}
 		c.PC += 2
+
 		return nil
 
 	case RelativeAddressing:
@@ -90,9 +94,11 @@ func (c *CPU) impliedCycles(opcode Opcode) error {
 		c.jammed = true
 		c.jamCycle = 0
 	}
+
 	if ins == PlaInst || ins == PlpInst {
 		c.readCycle(StackBase + uint16(c.SP))
 	}
+
 	c.observeCycles(ins)
 	var err error
 	switch {
@@ -103,13 +109,16 @@ func (c *CPU) impliedCycles(opcode Opcode) error {
 	default:
 		err = ins.ParamFunc(c)
 	}
+
 	c.PC++
+
 	return err
 }
 
 func (c *CPU) branchCycles(ins *Instruction) error {
 	offset := int8(c.readOperand(1))
-	irq, nmi := c.irqPolled, c.nmiPolled
+	irq := c.irqPolled
+	nmi := c.nmiPolled
 	next := c.PC + 2
 	target := uint16(int32(next) + int32(offset))
 	c.observeCycles(ins, Absolute(target))
@@ -126,9 +135,12 @@ func (c *CPU) branchCycles(ins *Instruction) error {
 		irq = irq || c.irqPolled
 		nmi = nmi || c.nmiPolled
 	}
+
 	// A taken branch polls after its opcode fetch and before a page fixup.
 	// The extra cycle within the same page does not add a polling point.
-	c.irqPolled, c.nmiPolled = irq, nmi
+	c.irqPolled = irq
+	c.nmiPolled = nmi
+
 	return nil
 }
 
@@ -144,6 +156,7 @@ func (c *CPU) memoryCycles(opcode Opcode) error {
 		if opcode.Addressing == IndirectAddressing {
 			address = c.readWordCycles(address, true)
 		}
+
 		c.PC = address
 		return nil
 	}
@@ -152,11 +165,14 @@ func (c *CPU) memoryCycles(opcode Opcode) error {
 		if opcode.Addressing == AbsoluteXAddressing {
 			register = &c.X
 		}
+
 		err = ins.ParamFunc(c, Absolute(base), register)
 	} else {
 		err = c.dataCycles(ins, access, address)
 	}
+
 	c.PC += uint16(addressingModeSize(opcode.Addressing))
+
 	return err
 }
 
@@ -167,15 +183,18 @@ func (c *CPU) dataCycles(ins *Instruction, access memoryAccess, address uint16) 
 	if access != writeAccess {
 		value = c.readCycle(address)
 	}
+
 	if access == modifyAccess {
 		c.writeCycle(address, value)
 	}
+
 	if err := ins.ParamFunc(c, &value); err != nil {
 		return err
 	}
 	if access != readAccess {
 		c.writeCycle(address, value)
 	}
+
 	return nil
 }
 
@@ -192,6 +211,7 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 		if mode == ZeroPageYAddressing {
 			index = c.Y
 		}
+
 		return uint16(low), uint16(low + index), nil
 
 	case IndirectXAddressing:
@@ -224,9 +244,11 @@ func (c *CPU) indexedAddressCycles(base uint16, index byte, access memoryAccess)
 	if c.opts.tracing {
 		c.TraceStep.PageCrossed = crossed
 	}
+
 	if crossed || access != readAccess {
 		c.readCycle(base&0xff00 | address&0xff)
 	}
+
 	return address
 }
 
@@ -238,6 +260,7 @@ func (c *CPU) controlCycles(ins *Instruction) error {
 		c.push16(c.PC + 2)
 		high := c.readOperand(2)
 		c.PC = uint16(low) | uint16(high)<<8
+
 		return nil
 	}
 	c.readCycle(c.PC + 1)
@@ -249,7 +272,9 @@ func (c *CPU) controlCycles(ins *Instruction) error {
 		c.push(c.GetFlags() | 0x30)
 		c.Flags.I = 1
 		c.PC = c.readWordCycles(vector, false)
-		c.irqPolled, c.nmiPolled = false, false
+		c.irqPolled = false
+		c.nmiPolled = false
+
 		return nil
 	}
 	c.readCycle(StackBase + uint16(c.SP))
@@ -259,6 +284,7 @@ func (c *CPU) controlCycles(ins *Instruction) error {
 	if ins == RtsInst {
 		c.readCycle(c.PC - 1)
 	}
+
 	return nil
 }
 
@@ -276,7 +302,8 @@ func (c *CPU) interruptCycles(vector uint16, source InterruptSource) {
 	c.push(c.GetFlags()&^0x10 | 0x20)
 	c.Flags.I = 1
 	c.PC = c.readWordCycles(vector, false)
-	c.irqPolled, c.nmiPolled = false, false
+	c.irqPolled = false
+	c.nmiPolled = false
 }
 
 // An NMI detected before the status push can replace the IRQ or BRK vector.
@@ -293,6 +320,7 @@ func (c *CPU) selectInterruptVector(vector uint16) uint16 {
 }
 
 func (c *CPU) resetCycles() {
+	c.mu.Lock()
 	c.jammed = false
 	c.jamCycle = 0
 	c.triggerIrq = false
@@ -301,14 +329,18 @@ func (c *CPU) resetCycles() {
 	c.nmiRunning = false
 	c.stallCycles = 0
 	c.Flags.I = 1
+	c.mu.Unlock()
+
 	c.readCycle(c.PC)
 	c.readCycle(c.PC)
 	for range 3 {
 		c.readCycle(StackBase + uint16(c.SP))
 		c.SP--
 	}
+
 	c.PC = c.readWordCycles(ResetAddress, false)
-	c.irqPolled, c.nmiPolled = false, false
+	c.irqPolled = false
+	c.nmiPolled = false
 }
 
 func (c *CPU) readOperand(offset uint16) byte {
@@ -316,12 +348,14 @@ func (c *CPU) readOperand(offset uint16) byte {
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, value)
 	}
+
 	return value
 }
 
 func (c *CPU) readCycle(address uint16) byte {
 	for {
-		c.irqPolled, c.nmiPolled = c.irqSample, c.nmiSample
+		c.irqPolled = c.irqSample
+		c.nmiPolled = c.nmiSample
 		held := c.opts.cycleHook(BusCycle{Address: address})
 		c.cycles++
 		if !held {
@@ -334,7 +368,8 @@ func (c *CPU) readCycle(address uint16) byte {
 }
 
 func (c *CPU) writeCycle(address uint16, value byte) {
-	c.irqPolled, c.nmiPolled = c.irqSample, c.nmiSample
+	c.irqPolled = c.irqSample
+	c.nmiPolled = c.nmiSample
 	c.opts.cycleHook(BusCycle{
 		Address: address,
 		Value:   value,
@@ -362,6 +397,7 @@ func (c *CPU) readWordCycles(address uint16, wrap bool) uint16 {
 	if wrap {
 		next = address&0xff00 | uint16(byte(next))
 	}
+
 	return uint16(low) | uint16(c.readCycle(next))<<8
 }
 

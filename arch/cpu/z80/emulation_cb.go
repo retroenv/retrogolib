@@ -75,6 +75,7 @@ func cbRes(c *CPU, _ ...any) error {
 	c.applyCBOperation(func(value uint8) uint8 {
 		return c.res(bit, value)
 	})
+
 	return nil
 }
 
@@ -85,5 +86,6 @@ func cbSet(c *CPU, _ ...any) error {
 	c.applyCBOperation(func(value uint8) uint8 {
 		return c.setBit(bit, value)
 	})
+
 	return nil
 }

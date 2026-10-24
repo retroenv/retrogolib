@@ -8,6 +8,7 @@ func indexedLdRegNn(c *CPU, reg *uint16, _ ...any) error {
 	low := c.bus.Read(c.PC + 2)
 	high := c.bus.Read(c.PC + 3)
 	*reg = uint16(high)<<8 | uint16(low)
+
 	return nil
 }
 
@@ -16,6 +17,7 @@ func indexedAddRegPair(c *CPU, reg *uint16, value uint16, _ ...any) error {
 	c.MEMPTR = *reg + 1
 	*reg = c.add16(*reg, value)
 	c.setXY(uint8(*reg >> 8))
+
 	return nil
 }
 
@@ -25,6 +27,7 @@ func indexedLdNnReg(c *CPU, reg uint16, _ ...any) error {
 	c.bus.Write(addr, uint8(reg))
 	c.bus.Write(addr+1, uint8(reg>>8))
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -35,6 +38,7 @@ func indexedLdRegFromNn(c *CPU, reg *uint16, _ ...any) error {
 	high := c.bus.Read(addr + 1)
 	*reg = uint16(high)<<8 | uint16(low)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -57,6 +61,7 @@ func indexedLdMemN(c *CPU, reg uint16, _ ...any) error {
 	addr := c.calculateIndexedAddress(reg)
 	value := c.bus.Read(c.PC + 3)
 	c.bus.Write(addr, value)
+
 	return nil
 }
 
@@ -70,6 +75,7 @@ func indexedIncMem(c *CPU, reg uint16, params ...any) error {
 	c.setH((value & 0x0F) == 0x0F)
 	c.setPOverflow(value == 0x7F)
 	c.setN(false)
+
 	return nil
 }
 
@@ -83,6 +89,7 @@ func indexedDecMem(c *CPU, reg uint16, params ...any) error {
 	c.setH((value & 0x0F) == 0x00)
 	c.setPOverflow(value == 0x80)
 	c.setN(true)
+
 	return nil
 }
 
@@ -98,6 +105,7 @@ func indexedAddA(c *CPU, reg uint16, params ...any) error {
 	c.setN(false)
 	c.A = uint8(result)
 	c.setSZ(c.A)
+
 	return nil
 }
 
@@ -109,6 +117,7 @@ func indexedAdcA(c *CPU, reg uint16, params ...any) error {
 	if c.Flags.C != 0 {
 		carry = 1
 	}
+
 	result := uint16(c.A) + uint16(value) + carry
 
 	c.setC(result > 0xFF)
@@ -117,6 +126,7 @@ func indexedAdcA(c *CPU, reg uint16, params ...any) error {
 	c.setN(false)
 	c.A = uint8(result)
 	c.setSZ(c.A)
+
 	return nil
 }
 
@@ -132,6 +142,7 @@ func indexedSubA(c *CPU, reg uint16, params ...any) error {
 	c.setN(true)
 	c.A = result
 	c.setSZ(c.A)
+
 	return nil
 }
 
@@ -143,6 +154,7 @@ func indexedSbcA(c *CPU, reg uint16, params ...any) error {
 	if c.Flags.C != 0 {
 		carry = 1
 	}
+
 	result := c.A - value - carry
 
 	c.setC(uint16(c.A) < uint16(value)+uint16(carry))
@@ -151,6 +163,7 @@ func indexedSbcA(c *CPU, reg uint16, params ...any) error {
 	c.setN(true)
 	c.A = result
 	c.setSZ(c.A)
+
 	return nil
 }
 
@@ -160,6 +173,7 @@ func indexedAndA(c *CPU, reg uint16, params ...any) error {
 	value := c.bus.Read(addr)
 	c.A &= value
 	c.setLogicalFlags(c.A, true)
+
 	return nil
 }
 
@@ -169,6 +183,7 @@ func indexedXorA(c *CPU, reg uint16, params ...any) error {
 	value := c.bus.Read(addr)
 	c.A ^= value
 	c.setLogicalFlags(c.A, false)
+
 	return nil
 }
 
@@ -178,6 +193,7 @@ func indexedOrA(c *CPU, reg uint16, params ...any) error {
 	value := c.bus.Read(addr)
 	c.A |= value
 	c.setLogicalFlags(c.A, false)
+
 	return nil
 }
 
@@ -186,6 +202,7 @@ func indexedCpA(c *CPU, reg uint16, params ...any) error {
 	addr := c.calculateIndexedAddress(reg, params...)
 	value := c.bus.Read(addr)
 	c.cp(c.A, value)
+
 	return nil
 }
 
@@ -199,6 +216,7 @@ func indexedExSp(c *CPU, reg *uint16) error {
 
 	*reg = uint16(high)<<8 | uint16(low)
 	c.MEMPTR = *reg
+
 	return nil
 }
 
@@ -232,6 +250,7 @@ func indexedCBBit(c *CPU, reg uint16, _ ...any) error {
 
 	bitNum := (opcode >> 3) & 0x07
 	c.bitMemptr(bitNum, value, uint8(addr>>8))
+
 	return nil
 }
 

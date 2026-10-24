@@ -101,6 +101,7 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 	c.PC = memory.ReadWordBug(ResetAddress)
 
 	c.setFlags(initialFlags)
+
 	return c, nil
 }
 
@@ -234,6 +235,7 @@ func (c *CPU) branch(branchTo bool, params ...any) error {
 	if !c.cycleActive {
 		c.cycles++
 	}
+
 	return nil
 }
 
@@ -265,6 +267,7 @@ func (c *CPU) push(value byte) {
 	} else {
 		c.memory.Write(address, value)
 	}
+
 	c.SP--
 	c.emitStackEvent(StackPush, before)
 }
@@ -304,5 +307,6 @@ func (c *CPU) consumeStallCycle() bool {
 	}
 
 	c.stallCycles--
+
 	return true
 }

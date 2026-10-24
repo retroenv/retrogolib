@@ -49,6 +49,7 @@ func (c *CPU) ldFVx(reg uint16) error {
 	}
 	c.I = uint16(fontIndex) * 0x5
 	c.PC += 2
+
 	return nil
 }
 
@@ -62,7 +63,9 @@ func (c *CPU) ldBVx(reg uint16) error {
 		c.Memory[c.I+uint16(i)] = bcd % 10
 		bcd /= 10
 	}
+
 	c.PC += 2
+
 	return nil
 }
 
@@ -78,6 +81,7 @@ func (c *CPU) ldIVx(reg uint16) error {
 		c.I += reg + 1
 	}
 	c.PC += 2
+
 	return nil
 }
 
@@ -93,6 +97,7 @@ func (c *CPU) ldVxI(reg uint16) error {
 		c.I += reg + 1
 	}
 	c.PC += 2
+
 	return nil
 }
 
@@ -143,8 +148,10 @@ func cls(c *CPU, _ uint16) error {
 	for i := range c.Display {
 		c.Display[i] = 0
 	}
+
 	c.RedrawScreen = true
 	c.PC += 2
+
 	return nil
 }
 
@@ -155,6 +162,7 @@ func ret(c *CPU, _ uint16) error {
 	}
 	c.SP--
 	c.PC = c.Stack[c.SP] // PC already contains return address (next instruction)
+
 	return nil
 }
 
@@ -189,6 +197,7 @@ func call(c *CPU, param uint16) error {
 	c.Stack[c.SP] = c.PC + 2 // Save return address (next instruction)
 	c.SP++
 	c.PC = param & 0x0FFF
+
 	return nil
 }
 
@@ -215,6 +224,7 @@ func se(c *CPU, param uint16) error {
 	default:
 		return fmt.Errorf("invalid mode for se: %04X", mode)
 	}
+
 	return nil
 }
 
@@ -241,6 +251,7 @@ func sne(c *CPU, param uint16) error {
 	default:
 		return fmt.Errorf("invalid mode for sne: %04X", mode)
 	}
+
 	return nil
 }
 
@@ -256,6 +267,7 @@ func or(c *CPU, param uint16) error {
 		c.V[0xf] = 0
 	}
 	c.PC += 2
+
 	return nil
 }
 
@@ -271,6 +283,7 @@ func xor(c *CPU, param uint16) error {
 		c.V[0xf] = 0
 	}
 	c.PC += 2
+
 	return nil
 }
 
@@ -304,6 +317,7 @@ func add(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -315,7 +329,8 @@ func sub(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	left, right := c.V[reg1], c.V[reg2]
+	left := c.V[reg1]
+	right := c.V[reg2]
 	result := left - right
 	flag := byte(0)
 	if left >= right {
@@ -324,6 +339,7 @@ func sub(c *CPU, param uint16) error {
 	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -358,6 +374,7 @@ func ld(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -390,6 +407,7 @@ func ldF(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -405,6 +423,7 @@ func and(c *CPU, param uint16) error {
 		c.V[0xf] = 0
 	}
 	c.PC += 2
+
 	return nil
 }
 
@@ -434,6 +453,7 @@ func drw(c *CPU, param uint16) error {
 	c.RedrawScreen = true
 	c.drewThisFrame = true
 	c.PC += 2
+
 	return nil
 }
 
@@ -446,6 +466,7 @@ func rnd(c *CPU, param uint16) error {
 	value := byte(param & 0x00FF)
 	c.V[reg] = byte(rand.IntN(256)) & value
 	c.PC += 2
+
 	return nil
 }
 
@@ -462,6 +483,7 @@ func shl(c *CPU, param uint16) error {
 	value := c.V[reg2]
 	c.writeArithmeticResult(reg1, value<<1, value>>7)
 	c.PC += 2
+
 	return nil
 }
 
@@ -478,6 +500,7 @@ func shr(c *CPU, param uint16) error {
 	value := c.V[reg2]
 	c.writeArithmeticResult(reg1, value>>1, value&0x1)
 	c.PC += 2
+
 	return nil
 }
 
@@ -496,6 +519,7 @@ func skp(c *CPU, param uint16) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -514,6 +538,7 @@ func sknp(c *CPU, param uint16) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -525,7 +550,8 @@ func subn(c *CPU, param uint16) error {
 		return fmt.Errorf("%w: 0x%X, 0x%X", ErrRegisterOutOfBounds, reg1, reg2)
 	}
 
-	left, right := c.V[reg1], c.V[reg2]
+	left := c.V[reg1]
+	right := c.V[reg2]
 	result := right - left
 	flag := byte(0)
 	if right >= left {
@@ -534,5 +560,6 @@ func subn(c *CPU, param uint16) error {
 	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2
+
 	return nil
 }

@@ -27,6 +27,7 @@ func bit65c02(c *CPU, params ...any) error {
 	c.setV((value>>6)&1 == 1)
 	c.setZ(value & c.A)
 	c.setN(value)
+
 	return nil
 }
 
@@ -71,6 +72,7 @@ func jmp65c02(c *CPU, params ...any) error {
 	default:
 		return fmt.Errorf("%w: jmp mode type %T", ErrUnsupportedAddressingMode, param)
 	}
+
 	return nil
 }
 
@@ -114,6 +116,7 @@ func trb(c *CPU, params ...any) error {
 	}
 	c.setZ(value & c.A)
 	result := value & ^c.A
+
 	return c.memory.WriteAddressModes(result, params...)
 }
 
@@ -126,6 +129,7 @@ func tsb(c *CPU, params ...any) error {
 	}
 	c.setZ(value & c.A)
 	result := value | c.A
+
 	return c.memory.WriteAddressModes(result, params...)
 }
 
@@ -138,6 +142,7 @@ func rmbFunc(bit uint8) func(c *CPU, params ...any) error {
 		addr := uint16(params[0].(Absolute))
 		v := c.memory.Read(addr)
 		c.memory.Write(addr, v&mask)
+
 		return nil
 	}
 }
@@ -151,6 +156,7 @@ func smbFunc(bit uint8) func(c *CPU, params ...any) error {
 		addr := uint16(params[0].(Absolute))
 		v := c.memory.Read(addr)
 		c.memory.Write(addr, v|mask)
+
 		return nil
 	}
 }

@@ -50,23 +50,9 @@ func (c *CPU) stepInstruction() error {
 	if ins == BrkInst {
 		c.interrupt = InterruptBRK
 	}
+
 	if ins.NoParamFunc != nil {
-		if c.opts.tracing {
-			c.TraceStep.PageCrossed = false
-		}
-		if c.opts.preExecutionHook != nil {
-			c.opts.preExecutionHook(c, ins)
-		}
-
-		if err := ins.NoParamFunc(c); err != nil {
-			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
-		}
-
-		// Determine instruction size from the opcode table's addressing mode,
-		// not the instruction's own addressing map (which may differ for shared NOPs).
-		size := addressingModeSize(opcode.Addressing)
-		c.updatePC(ins, oldPC, size)
-		return nil
+		return c.stepNoParamInstruction(opcode, oldPC)
 	}
 
 	params, operands, pageCrossed, err := readOpParams(c, opcode.Addressing)
@@ -77,6 +63,7 @@ func (c *CPU) stepInstruction() error {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
 		c.TraceStep.PageCrossed = pageCrossed
 	}
+
 	if c.opts.preExecutionHook != nil {
 		c.opts.preExecutionHook(c, ins, params...)
 	}
@@ -91,6 +78,29 @@ func (c *CPU) stepInstruction() error {
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
 	c.updatePC(ins, oldPC, opcodeLen)
+
+	return nil
+}
+
+// stepNoParamInstruction executes an instruction that has no parameters.
+func (c *CPU) stepNoParamInstruction(opcode Opcode, oldPC uint16) error {
+	ins := opcode.Instruction
+	if c.opts.tracing {
+		c.TraceStep.PageCrossed = false
+	}
+
+	if c.opts.preExecutionHook != nil {
+		c.opts.preExecutionHook(c, ins)
+	}
+
+	if err := ins.NoParamFunc(c); err != nil {
+		return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
+	}
+	// Determine instruction size from the opcode table's addressing mode,
+	// not the instruction's own addressing map (which may differ for shared NOPs).
+	size := addressingModeSize(opcode.Addressing)
+	c.updatePC(ins, oldPC, size)
+
 	return nil
 }
 
@@ -111,6 +121,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 	default:
 		opcode = Opcodes[b]
 	}
+
 	if opcode.Instruction == nil {
 		return Opcode{}, fmt.Errorf("%w: 0x%02x at PC=0x%04x", ErrUnknownOpcode, b, c.PC)
 	}
@@ -122,6 +133,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, error) {
 			OpcodeOperands: []byte{b},
 		}
 	}
+
 	return opcode, nil
 }
 
@@ -134,6 +146,7 @@ func (c *CPU) updatePC(ins *Instruction, oldPC uint16, amount int) {
 		if c.PC&0xff00 != nextAddress&0xff00 {
 			c.cycles++
 		}
+
 		return
 	}
 

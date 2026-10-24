@@ -121,6 +121,7 @@ func edLdAI(c *CPU) error {
 	c.setN(false)
 	c.setPOverflow(c.iff2)
 	c.lastWasLdAIR = true
+
 	return nil
 }
 
@@ -131,6 +132,7 @@ func edLdAR(c *CPU) error {
 	c.setN(false)
 	c.setPOverflow(c.iff2)
 	c.lastWasLdAIR = true
+
 	return nil
 }
 
@@ -141,6 +143,7 @@ func edLdNnBc(c *CPU, _ ...any) error {
 	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.C, c.B)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -149,6 +152,7 @@ func edLdNnDe(c *CPU, _ ...any) error {
 	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.E, c.D)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -157,6 +161,7 @@ func edLdNnHl(c *CPU, _ ...any) error {
 	addr := c.read16(c.PC + 2)
 	c.writeRegisterPair(addr, c.L, c.H)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -166,6 +171,7 @@ func edLdNnSp(c *CPU, _ ...any) error {
 	c.bus.Write(addr, uint8(c.SP))
 	c.bus.Write(addr+1, uint8(c.SP>>8))
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -175,6 +181,7 @@ func edLdBcNn(c *CPU, _ ...any) error {
 	value := c.read16(addr)
 	c.setBC(value)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -184,6 +191,7 @@ func edLdDeNn(c *CPU, _ ...any) error {
 	value := c.read16(addr)
 	c.setDE(value)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -193,6 +201,7 @@ func edLdHlNn(c *CPU, _ ...any) error {
 	value := c.read16(addr)
 	c.setHL(value)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -201,6 +210,7 @@ func edLdSpNn(c *CPU, _ ...any) error {
 	addr := c.read16(c.PC + 2)
 	c.SP = c.read16(addr)
 	c.MEMPTR = addr + 1
+
 	return nil
 }
 
@@ -235,6 +245,7 @@ func edLdi(c *CPU) error {
 	n := transferred + c.A
 	c.Flags.X = (n >> 3) & 1 // bit 3
 	c.Flags.Y = (n >> 1) & 1 // bit 1 → Y (bit 5 position)
+
 	return nil
 }
 
@@ -257,6 +268,7 @@ func edLdd(c *CPU) error {
 	n := transferred + c.A
 	c.Flags.X = (n >> 3) & 1
 	c.Flags.Y = (n >> 1) & 1
+
 	return nil
 }
 
@@ -273,6 +285,7 @@ func edLdir(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -289,6 +302,7 @@ func edLddr(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -315,8 +329,10 @@ func edCpi(c *CPU) error {
 	if hf {
 		n--
 	}
+
 	c.Flags.X = (n >> 3) & 1
 	c.Flags.Y = (n >> 1) & 1
+
 	return nil
 }
 
@@ -342,8 +358,10 @@ func edCpd(c *CPU) error {
 	if hf {
 		n--
 	}
+
 	c.Flags.X = (n >> 3) & 1
 	c.Flags.Y = (n >> 1) & 1
+
 	return nil
 }
 
@@ -360,6 +378,7 @@ func edCpir(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -376,6 +395,7 @@ func edCpdr(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -401,6 +421,7 @@ func edIni(c *CPU) error {
 
 	k := uint16(value) + uint16((c.C+1)&0xFF)
 	c.setIOBlockFlags(value, k)
+
 	return nil
 }
 
@@ -416,6 +437,7 @@ func edInd(c *CPU) error {
 
 	k := uint16(value) + uint16((c.C-1)&0xFF)
 	c.setIOBlockFlags(value, k)
+
 	return nil
 }
 
@@ -436,6 +458,7 @@ func edInir(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -456,6 +479,7 @@ func edIndr(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -472,6 +496,7 @@ func edOuti(c *CPU) error {
 	lAfter := uint8(hl + 1) // L after increment
 	k := uint16(value) + uint16(lAfter)
 	c.setIOBlockFlags(value, k)
+
 	return nil
 }
 
@@ -488,6 +513,7 @@ func edOutd(c *CPU) error {
 	lAfter := uint8(hl - 1) // L after decrement
 	k := uint16(value) + uint16(lAfter)
 	c.setIOBlockFlags(value, k)
+
 	return nil
 }
 
@@ -509,6 +535,7 @@ func edOtir(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -530,6 +557,7 @@ func edOtdr(c *CPU) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -543,6 +571,7 @@ func edInFC(c *CPU, _ ...any) error {
 	c.setSZP(value)
 	c.setH(false)
 	c.setN(false)
+
 	return nil
 }
 
@@ -655,6 +684,7 @@ func edRetn(c *CPU) error {
 	c.iff1 = c.iff2
 	c.PC = c.pop16()
 	c.MEMPTR = c.PC
+
 	return nil
 }
 
@@ -663,6 +693,7 @@ func edReti(c *CPU) error {
 	c.PC = c.pop16()
 	c.MEMPTR = c.PC
 	c.bus.OnRETI()
+
 	return nil
 }
 
@@ -679,6 +710,7 @@ func edRrd(c *CPU) error {
 	c.setSZP(c.A)
 	c.setH(false)
 	c.setN(false)
+
 	return nil
 }
 
@@ -696,5 +728,6 @@ func edRld(c *CPU) error {
 	c.setSZP(c.A)
 	c.setH(false)
 	c.setN(false)
+
 	return nil
 }

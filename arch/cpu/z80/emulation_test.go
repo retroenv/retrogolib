@@ -512,19 +512,22 @@ func TestRegisterPairs(t *testing.T) {
 	cpu := cpuTestSetup(t)
 
 	// Test 16-bit increment
-	cpu.B, cpu.C = 0xFF, 0xFF
+	cpu.B = 0xFF
+	cpu.C = 0xFF
 	bc := cpu.bc()
 	result := bc + 1
 	assert.Equal(t, uint16(0x0000), result, "Increment of 0xFFFF should wrap to 0x0000")
 
 	// Test 16-bit decrement
-	cpu.H, cpu.L = 0x00, 0x00
+	cpu.H = 0x00
+	cpu.L = 0x00
 	hl := cpu.hl()
 	result = hl - 1
 	assert.Equal(t, uint16(0xFFFF), result, "Decrement of 0x0000 should wrap to 0xFFFF")
 
 	// Test 16-bit addition
-	cpu.H, cpu.L = 0x12, 0x34
+	cpu.H = 0x12
+	cpu.L = 0x34
 	hl = cpu.hl()
 	result = cpu.add16(hl, 0x5678)
 	assert.Equal(t, uint16(0x68AC), result, "0x1234 + 0x5678 should equal 0x68AC")
@@ -532,7 +535,8 @@ func TestRegisterPairs(t *testing.T) {
 	assert.Equal(t, uint8(0), cpu.Flags.N, "N flag should be clear for ADD HL")
 
 	// Test 16-bit addition with carry
-	cpu.H, cpu.L = 0xFF, 0xFF
+	cpu.H = 0xFF
+	cpu.L = 0xFF
 	hl = cpu.hl()
 	result = cpu.add16(hl, 0x0001)
 	assert.Equal(t, uint16(0x0000), result, "0xFFFF + 0x0001 should wrap to 0x0000")
@@ -545,7 +549,8 @@ func TestStackOperations(t *testing.T) {
 
 	// Test PUSH operation
 	cpu.SP = 0x1000
-	cpu.B, cpu.C = 0x12, 0x34
+	cpu.B = 0x12
+	cpu.C = 0x34
 	bc := cpu.bc()
 	cpu.push16(bc)
 	assert.Equal(t, uint16(0x0FFE), cpu.SP, "SP should decrement by 2 after PUSH")
@@ -566,8 +571,10 @@ func TestExchange(t *testing.T) {
 	cpu := cpuTestSetup(t)
 
 	// Test EX DE,HL
-	cpu.D, cpu.E = 0x12, 0x34
-	cpu.H, cpu.L = 0x56, 0x78
+	cpu.D = 0x12
+	cpu.E = 0x34
+	cpu.H = 0x56
+	cpu.L = 0x78
 	cpu.D, cpu.E, cpu.H, cpu.L = cpu.H, cpu.L, cpu.D, cpu.E
 	assert.Equal(t, uint8(0x56), cpu.D, "D should have H's value")
 	assert.Equal(t, uint8(0x78), cpu.E, "E should have L's value")
@@ -575,12 +582,18 @@ func TestExchange(t *testing.T) {
 	assert.Equal(t, uint8(0x34), cpu.L, "L should have E's value")
 
 	// Test EXX (exchange BC, DE, HL with shadow registers)
-	cpu.B, cpu.C = 0x11, 0x22
-	cpu.D, cpu.E = 0x33, 0x44
-	cpu.H, cpu.L = 0x55, 0x66
-	cpu.AltB, cpu.AltC = 0xAA, 0xBB
-	cpu.AltD, cpu.AltE = 0xCC, 0xDD
-	cpu.AltH, cpu.AltL = 0xEE, 0xFF
+	cpu.B = 0x11
+	cpu.C = 0x22
+	cpu.D = 0x33
+	cpu.E = 0x44
+	cpu.H = 0x55
+	cpu.L = 0x66
+	cpu.AltB = 0xAA
+	cpu.AltC = 0xBB
+	cpu.AltD = 0xCC
+	cpu.AltE = 0xDD
+	cpu.AltH = 0xEE
+	cpu.AltL = 0xFF
 
 	cpu.B, cpu.AltB = cpu.AltB, cpu.B
 	cpu.C, cpu.AltC = cpu.AltC, cpu.C
@@ -632,7 +645,8 @@ func TestLoadInstructionExecution(t *testing.T) {
 	assert.Equal(t, uint8(0x84), cpu.C, "C should have immediate value after LD C,n")
 
 	// Test LD r,(HL) (memory to register)
-	cpu.H, cpu.L = 0x20, 0x00
+	cpu.H = 0x20
+	cpu.L = 0x00
 	cpu.Memory().Write(0x2000, 0x99)
 	cpu.D = cpu.Memory().Read(cpu.hl())
 	assert.Equal(t, uint8(0x99), cpu.D, "D should have memory value after LD D,(HL)")
@@ -648,9 +662,12 @@ func TestMemoryOperations(t *testing.T) {
 	cpu := cpuTestSetup(t)
 
 	// Test LDI (Load and increment)
-	cpu.H, cpu.L = 0x11, 0x11
-	cpu.D, cpu.E = 0x22, 0x22
-	cpu.B, cpu.C = 0x00, 0x03
+	cpu.H = 0x11
+	cpu.L = 0x11
+	cpu.D = 0x22
+	cpu.E = 0x22
+	cpu.B = 0x00
+	cpu.C = 0x03
 	cpu.Memory().Write(0x1111, 0x88)
 
 	cpu.ldi()
@@ -662,9 +679,12 @@ func TestMemoryOperations(t *testing.T) {
 	assert.Equal(t, uint8(1), cpu.Flags.P, "P/V flag should indicate BC != 0")
 
 	// Test LDD (Load and decrement)
-	cpu.H, cpu.L = 0x11, 0x11
-	cpu.D, cpu.E = 0x22, 0x22
-	cpu.B, cpu.C = 0x00, 0x01
+	cpu.H = 0x11
+	cpu.L = 0x11
+	cpu.D = 0x22
+	cpu.E = 0x22
+	cpu.B = 0x00
+	cpu.C = 0x01
 	cpu.Memory().Write(0x1111, 0x66)
 
 	cpu.ldd()

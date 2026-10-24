@@ -87,6 +87,7 @@ func (c *Config) parseDottedPath(path string) (section, key string) {
 
 	// Fallback to original logic (should not happen since caller checked Contains)
 	pathParts := strings.SplitN(path, ".", 2)
+
 	return c.normalizeName(pathParts[0]), c.normalizeName(pathParts[1])
 }
 
@@ -126,6 +127,7 @@ func (c *Config) updateValue(sectionName, key string, value any) error {
 	}
 
 	c.sections[sectionName][key] = configValue
+
 	return nil
 }
 

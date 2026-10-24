@@ -57,6 +57,7 @@ func (c *Config) SaveBytes() ([]byte, error) {
 						buf.WriteByte(' ')
 						buf.WriteString(element.InlineComment)
 					}
+
 					buf.WriteByte('\n')
 				} else {
 					// Key was removed, skip this line
@@ -95,6 +96,7 @@ func (c *Config) formatKeyValue(key string, value Value) string {
 	case floatType:
 		return fmt.Sprintf("%s = %g", key, value.parsed.(float64))
 	}
+
 	return key + " = " + value.Raw
 }
 
@@ -116,6 +118,7 @@ func (c *Config) appendNewContent(buf *strings.Builder) {
 			if existingKeys[element.Section] == nil {
 				existingKeys[element.Section] = set.New[string]()
 			}
+
 			existingKeys[element.Section].Add(element.Key)
 		}
 	}
@@ -139,6 +142,7 @@ func (c *Config) appendNewContent(buf *strings.Builder) {
 						buf.WriteByte('\n')
 						hasNewKeys = true
 					}
+
 					buf.WriteString(c.formatKeyValue(key, section[key]))
 					buf.WriteByte('\n')
 				}

@@ -56,7 +56,8 @@ func TestStopBeforeStart(t *testing.T) {
 
 func TestStopWaitsForCallback(t *testing.T) {
 	b := newTestBackend()
-	entered, proceed := make(chan struct{}), make(chan struct{})
+	entered := make(chan struct{})
+	proceed := make(chan struct{})
 	var unblock sync.Once
 	b.callback = func([]byte) { close(entered); <-proceed }
 	playback, device, native := newTestPlayback(t, b)
@@ -266,11 +267,19 @@ func newTestPlayback(t *testing.T, b *testBackend) (*audio.Playback, *audioDevic
 
 func mockAudio(t *testing.T) *mockSDL {
 	t.Helper()
-	open, closeDevice, pause := OpenAudioDevice, CloseAudioDevice, PauseAudioDevice
-	queue, size, getError := QueueAudio, GetQueuedAudioSize, GetError
+	open := OpenAudioDevice
+	closeDevice := CloseAudioDevice
+	pause := PauseAudioDevice
+	queue := QueueAudio
+	size := GetQueuedAudioSize
+	getError := GetError
 	t.Cleanup(func() {
-		OpenAudioDevice, CloseAudioDevice, PauseAudioDevice = open, closeDevice, pause
-		QueueAudio, GetQueuedAudioSize, GetError = queue, size, getError
+		OpenAudioDevice = open
+		CloseAudioDevice = closeDevice
+		PauseAudioDevice = pause
+		QueueAudio = queue
+		GetQueuedAudioSize = size
+		GetError = getError
 	})
 	s := &mockSDL{notifications: make(chan string, 100)}
 	mockOpenAudio(t, s)

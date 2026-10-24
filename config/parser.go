@@ -43,6 +43,7 @@ func (p *parser) parse() error {
 		if i == 0 {
 			line = strings.TrimPrefix(line, "\uFEFF")
 		}
+
 		if err := p.parseLine(line); err != nil {
 			return &ParseError{
 				Line: p.line,
@@ -102,6 +103,7 @@ func (p *parser) parseLine(line string) error {
 	}
 
 	p.config.structure = append(p.config.structure, element)
+
 	return nil
 }
 
@@ -187,6 +189,7 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 		element.InlineComment = strings.TrimSpace(valueStr[len(clean):])
 		valueStr = clean
 	}
+
 	value, err := p.parseValue(valueStr)
 	if err != nil {
 		return fmt.Errorf("parsing value for key %s: %w", key, err)
@@ -197,6 +200,7 @@ func (p *parser) parseKeyValue(line string, element *StructureElement) error {
 	}
 
 	p.config.sections[sectionName][normalizedKey] = value
+
 	return nil
 }
 
@@ -250,7 +254,8 @@ func (p *parser) parseValue(valueStr string) (Value, error) {
 // stripInlineComment trims whitespace and removes comments outside double quotes.
 // Within quotes, a backslash escapes the next character, including another quote.
 func stripInlineComment(value, prefixes string) string {
-	quoted, escaped := false, false
+	quoted := false
+	escaped := false
 	for i, ch := range value {
 		if escaped {
 			escaped = false
@@ -263,9 +268,11 @@ func stripInlineComment(value, prefixes string) string {
 		if ch == '"' {
 			quoted = !quoted
 		}
+
 		if !quoted && strings.ContainsRune(prefixes, ch) {
 			return strings.TrimSpace(value[:i])
 		}
 	}
+
 	return strings.TrimSpace(value)
 }

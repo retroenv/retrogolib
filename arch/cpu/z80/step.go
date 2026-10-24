@@ -36,6 +36,7 @@ func (cpu *CPU) Step() error {
 		cpu.incrementRefresh(false)
 		cpu.cycles += 4
 		cpu.q = 0
+
 		return nil
 	}
 
@@ -63,6 +64,7 @@ func (cpu *CPU) Step() error {
 		return err
 	}
 	cpu.updateQ()
+
 	return nil
 }
 
@@ -82,10 +84,12 @@ func (cpu *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16)
 		if cpu.opts.preExecutionHook != nil {
 			cpu.opts.preExecutionHook(cpu, opcodeByte)
 		}
+
 		if err := ins.NoParamFunc(cpu); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
 		cpu.updatePC(ins, oldPC, int(opcode.Size))
+
 		return nil
 	}
 
@@ -96,6 +100,7 @@ func (cpu *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16)
 	if cpu.opts.tracing {
 		cpu.TraceStep.OpcodeOperands = append(cpu.TraceStep.OpcodeOperands, operands...)
 	}
+
 	if cpu.opts.preExecutionHook != nil {
 		cpu.opts.preExecutionHook(cpu, opcodeByte, params...)
 	}
@@ -104,6 +109,7 @@ func (cpu *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16)
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
 	cpu.updatePC(ins, oldPC, int(opcode.Size))
+
 	return nil
 }
 
@@ -114,6 +120,7 @@ func (cpu *CPU) incrementRefresh(prefixed bool) {
 	if prefixed {
 		inc = 2
 	}
+
 	cpu.R = (cpu.R & 0x80) | ((cpu.R + inc) & 0x7F)
 }
 
@@ -153,6 +160,7 @@ func (cpu *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 			OpcodeOperands: []byte{opcodeByte},
 		}
 	}
+
 	return opcode, opcodeByte, nil
 }
 
@@ -237,6 +245,7 @@ func (cpu *CPU) decodeDDInstruction() (Opcode, uint8, error) {
 		// which SCF/CCF read while they execute.
 		cpu.q = 0
 		unprefixed.Timing += 4
+
 		return unprefixed, opcodeByte, nil
 	}
 
@@ -311,6 +320,7 @@ func (cpu *CPU) decodeFDInstruction() (Opcode, uint8, error) {
 		// which SCF/CCF read while they execute.
 		cpu.q = 0
 		unprefixed.Timing += 4
+
 		return unprefixed, opcodeByte, nil
 	}
 

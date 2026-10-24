@@ -42,6 +42,7 @@ func (m *Memory) ReadWord(address uint16) uint16 {
 	low := uint16(m.Read(address))
 	high := uint16(m.Read(address + 1))
 	w := (high << 8) | low
+
 	return w
 }
 
@@ -53,6 +54,7 @@ func (m *Memory) ReadWordBug(address uint16) uint16 {
 	offset := (address & 0xFF00) | uint16(byte(address)+1)
 	high := uint16(m.Read(offset))
 	w := (high << 8) | low
+
 	return w
 }
 
@@ -102,11 +104,13 @@ func (m *Memory) WriteAddressModes(value byte, params ...any) error {
 			return fmt.Errorf("%w: zero page indirect write type %T", ErrInvalidParameterType, register)
 		}
 		m.Write(uint16(resolved), value)
+
 		return nil
 
 	default:
 		return fmt.Errorf("%w: write mode type %T", ErrUnsupportedAddressingMode, param)
 	}
+
 	return nil
 }
 
@@ -166,6 +170,7 @@ func (m *Memory) ReadAbsolute(address, register any) (byte, error) {
 	default:
 		return 0, fmt.Errorf("%w: absolute read register type %T", ErrInvalidParameterType, register)
 	}
+
 	return m.readAbsoluteOffset(address, offset)
 }
 
@@ -185,7 +190,9 @@ func (m *Memory) ReadMemoryZeroPage(address ZeroPage, register any) (byte, error
 	default:
 		return 0, fmt.Errorf("%w: zero page read register type %T", ErrInvalidParameterType, register)
 	}
+
 	addr := uint16(byte(address) + offset)
+
 	return m.readAbsoluteOffset(addr, 0)
 }
 
@@ -265,6 +272,7 @@ func (m *Memory) writeMemoryIndirect(address any, value byte, register any) erro
 		return err
 	}
 	m.Write(pointer, value)
+
 	return nil
 }
 
@@ -303,6 +311,7 @@ func (m *Memory) writeMemoryZeroPage(address ZeroPage, value byte, register any)
 	}
 
 	addr := uint16(byte(address) + offset)
+
 	return m.writeMemoryAbsoluteOffset(addr, value, 0)
 }
 
@@ -331,6 +340,7 @@ func (m *Memory) writeMemoryAbsoluteOffset(address any, value byte, offset uint1
 	default:
 		return fmt.Errorf("%w: absolute write address type %T", ErrUnsupportedAddressingMode, address)
 	}
+
 	return nil
 }
 

@@ -371,6 +371,7 @@ func scf(c *CPU) error {
 	c.setC(true)
 	c.setH(false)
 	c.setN(false)
+
 	return nil
 }
 
@@ -381,6 +382,7 @@ func ccf(c *CPU) error {
 	c.setC(c.Flags.C == 0)
 	c.setH(oldCarry) // H = old carry
 	c.setN(false)
+
 	return nil
 }
 
@@ -393,6 +395,7 @@ func daa(c *CPU) error {
 	if c.Flags.H != 0 || (c.A&0x0F) > 9 {
 		correction |= 0x06
 	}
+
 	if carry || c.A > 0x99 {
 		correction |= 0x60
 		carry = true
@@ -422,6 +425,7 @@ func cpl(c *CPU) error {
 	c.setH(true)
 	c.setN(true)
 	c.setXY(c.A)
+
 	return nil
 }
 
@@ -449,6 +453,7 @@ func addA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.add8(c.A, value)
+
 	return nil
 }
 
@@ -459,6 +464,7 @@ func subA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.sub8(c.A, value)
+
 	return nil
 }
 
@@ -469,6 +475,7 @@ func andA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.and8(c.A, value)
+
 	return nil
 }
 
@@ -479,6 +486,7 @@ func orA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.or8(c.A, value)
+
 	return nil
 }
 
@@ -489,6 +497,7 @@ func xorA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.xor8(c.A, value)
+
 	return nil
 }
 
@@ -499,6 +508,7 @@ func cpA(c *CPU, params ...any) error {
 		return err
 	}
 	c.cp(c.A, value)
+
 	return nil
 }
 
@@ -509,6 +519,7 @@ func adcA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.adc(c.A, value)
+
 	return nil
 }
 
@@ -519,6 +530,7 @@ func sbcA(c *CPU, params ...any) error {
 		return err
 	}
 	c.A = c.sbc(c.A, value)
+
 	return nil
 }
 
@@ -539,6 +551,7 @@ func incReg8(c *CPU, params ...any) error {
 	value := c.GetRegisterValue(uint8(dstReg))
 	result := c.inc8(value)
 	c.SetRegisterValue(uint8(dstReg), result)
+
 	return nil
 }
 
@@ -557,6 +570,7 @@ func decReg8(c *CPU, params ...any) error {
 	value := c.GetRegisterValue(uint8(dstReg))
 	result := c.dec8(value)
 	c.SetRegisterValue(uint8(dstReg), result)
+
 	return nil
 }
 
@@ -566,6 +580,7 @@ func incIndirect(c *CPU, _ ...any) error {
 	value := c.bus.Read(address)
 	result := c.inc8(value)
 	c.bus.Write(address, result)
+
 	return nil
 }
 
@@ -575,6 +590,7 @@ func decIndirect(c *CPU, _ ...any) error {
 	value := c.bus.Read(address)
 	result := c.dec8(value)
 	c.bus.Write(address, result)
+
 	return nil
 }
 
@@ -595,6 +611,7 @@ func incReg16(c *CPU, _ ...any) error {
 	default:
 		return fmt.Errorf("unsupported incReg16 opcode: 0x%02X", opcode)
 	}
+
 	return nil
 }
 
@@ -613,6 +630,7 @@ func decReg16(c *CPU, _ ...any) error {
 	default:
 		return fmt.Errorf("unsupported decReg16 opcode: 0x%02X", opcode)
 	}
+
 	return nil
 }
 
@@ -639,6 +657,7 @@ func addHl(c *CPU, _ ...any) error {
 	result := c.add16(hl, value)
 	c.setXY(uint8(result >> 8))
 	c.setHL(result)
+
 	return nil
 }
 
@@ -664,6 +683,7 @@ func rla(c *CPU) error {
 	c.setH(false)
 	c.setN(false)
 	c.setXY(c.A)
+
 	return nil
 }
 
@@ -675,6 +695,7 @@ func rra(c *CPU) error {
 	c.setH(false)
 	c.setN(false)
 	c.setXY(c.A)
+
 	return nil
 }
 
