@@ -33,6 +33,7 @@ func (cpu *CPU) SetInterruptMode(mode InterruptMode) error {
 	cpu.mu.Lock()
 	defer cpu.mu.Unlock()
 	cpu.im = mode
+
 	return nil
 }
 
@@ -67,9 +68,11 @@ func (cpu *CPU) handleInterrupts() bool {
 		cpu.lastWasLdAIR = false
 		cpu.incrementRefresh(false)
 		cpu.push16(cpu.PC)
-		cpu.PC, cpu.MEMPTR = 0x66, 0x66
+		cpu.PC = 0x66
+		cpu.MEMPTR = 0x66
 		cpu.cycles += 11
 		cpu.traceInterrupt(11)
+
 		return true
 	}
 	if !cpu.triggerIrq || !cpu.iff1 || cpu.eiPending {
@@ -81,8 +84,10 @@ func (cpu *CPU) handleInterrupts() bool {
 	if cpu.lastWasLdAIR {
 		cpu.Flags.P = 0
 	}
+
 	cpu.lastWasLdAIR = false
-	cpu.iff1, cpu.iff2 = false, false
+	cpu.iff1 = false
+	cpu.iff2 = false
 	cpu.incrementRefresh(false)
 
 	// Sample the vector before stack writes, which may overlap a mapped device.
@@ -98,15 +103,19 @@ func (cpu *CPU) handleInterrupts() bool {
 	case InterruptMode2:
 		vector = uint16(cpu.I)<<8 | uint16(cpu.bus.IRQData())
 	}
+
 	cpu.push16(cpu.PC)
 	var timing byte = 13
 	if cpu.im == InterruptMode2 {
 		vector = cpu.read16(vector)
 		timing += 6
 	}
+
 	cpu.cycles += uint64(timing)
-	cpu.PC, cpu.MEMPTR = vector, vector
+	cpu.PC = vector
+	cpu.MEMPTR = vector
 	cpu.traceInterrupt(timing)
+
 	return true
 }
 

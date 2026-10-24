@@ -31,6 +31,7 @@ func (c *CPU) resolveDPIndexed(dp uint8, index uint16) uint32 {
 	if c.IdxWidth() == 1 {
 		index &= 0xFF
 	}
+
 	return (uint32(c.DP) + uint32(dp) + uint32(index)) & 0xFFFF
 }
 

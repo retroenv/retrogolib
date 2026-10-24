@@ -86,6 +86,7 @@ func (c *CPU) handleInterrupts() bool {
 			c.PC = interruptVectors[i]
 
 			c.cycles += 5 // Interrupt dispatch takes 5 M-cycles
+
 			return true
 		}
 	}

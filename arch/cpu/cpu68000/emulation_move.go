@@ -35,6 +35,7 @@ func (cpu *CPU) writeMovePredecrement(reg uint8, value uint32, size OperandSize)
 	cpu.writeBusWord(cpu.getRegA(reg), uint16(value))
 	cpu.setRegA(reg, cpu.getRegA(reg)-2)
 	cpu.writeBusWord(cpu.getRegA(reg), uint16(value>>16))
+
 	return nil
 }
 
@@ -60,6 +61,7 @@ func execMOVE(c *CPU, d DecodedOpcode) error {
 	if dstMode == 3 {
 		dstMode = 2
 	}
+
 	dstEA, err := c.decodeEA(dstMode, d.DstReg, d.Size)
 	if err != nil {
 		return err
@@ -69,12 +71,14 @@ func execMOVE(c *CPU, d DecodedOpcode) error {
 	if d.DstMode == 7 && d.DstReg == 1 && d.SrcMode >= 2 && (d.SrcMode != 7 || d.SrcReg != 4) {
 		c.operandPCOffset = -4
 	}
+
 	if err := c.writeEA(dstEA, src); err != nil {
 		return err
 	}
 	if d.DstMode == 3 {
 		c.setRegA(d.DstReg, dstEA.Address+incrementSize(d.DstReg, d.Size))
 	}
+
 	return nil
 }
 
@@ -123,6 +127,7 @@ func execMOVESpecial(c *CPU, d DecodedOpcode) error {
 		} else {
 			c.SetSR(uint16(src))
 		}
+
 		return nil
 
 	default:
@@ -143,6 +148,7 @@ func execMOVEA(c *CPU, d DecodedOpcode) error {
 	// MOVEA sign-extends word to long. No flags affected.
 	src = signExtend(src, d.Size)
 	c.setRegA(d.DstReg, src)
+
 	return nil
 }
 
@@ -151,6 +157,7 @@ func execMOVEQ(c *CPU, d DecodedOpcode) error {
 	value := uint32(int32(int8(d.Extra)))
 	c.D[d.DstReg] = value
 	c.setLogicFlags(value, SizeLong)
+
 	return nil
 }
 
@@ -186,7 +193,9 @@ func execMOVEMToMem(c *CPU, d DecodedOpcode, mask uint16) error {
 				return err
 			}
 		}
+
 		c.setRegA(d.DstReg, addr)
+
 		return nil
 	}
 
@@ -266,6 +275,7 @@ func execMOVEP(c *CPU, d DecodedOpcode) error {
 			c.writeByte(addr, uint8(val>>8))
 			c.writeByte(addr+2, uint8(val))
 		}
+
 		return nil
 	}
 
@@ -284,6 +294,7 @@ func execMOVEP(c *CPU, d DecodedOpcode) error {
 		b1 := uint32(c.readByte(addr + 2))
 		c.D[d.DstReg] = (c.D[d.DstReg] & 0xFFFF0000) | (b0 << 8) | b1
 	}
+
 	return nil
 }
 
@@ -304,6 +315,7 @@ func execEXG(c *CPU, d DecodedOpcode) error {
 		c.D[d.SrcReg] = an
 		c.setRegA(d.DstReg, dn)
 	}
+
 	return nil
 }
 
@@ -313,6 +325,7 @@ func execLEA(c *CPU, d DecodedOpcode) error {
 		return err
 	}
 	c.setRegA(d.DstReg, ea.Address)
+
 	return nil
 }
 
@@ -322,6 +335,7 @@ func execPEA(c *CPU, d DecodedOpcode) error {
 		return err
 	}
 	c.push32(ea.Address)
+
 	return nil
 }
 
@@ -331,12 +345,14 @@ func execLINK(c *CPU, d DecodedOpcode) error {
 	if d.DstReg == 7 {
 		value -= 4
 	}
+
 	c.push32(value)
 	// An = SP.
 	c.setRegA(d.DstReg, c.sp)
 	// SP += displacement.
 	disp := int16(c.readWord())
 	c.sp = uint32(int32(c.sp) + int32(disp))
+
 	return nil
 }
 
@@ -355,5 +371,6 @@ func execSWAP(c *CPU, d DecodedOpcode) error {
 	c.setFlagZ(result, SizeLong)
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return nil
 }

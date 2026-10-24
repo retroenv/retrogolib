@@ -102,9 +102,11 @@ func (c *CPU) executeInstruction(op Opcode, baseOffset uint16) error {
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
 	}
+
 	if op.Addressing == IndexedAddressing {
 		c.cycles += indexedModeCycles(operands[0])
 	}
+
 	if c.opts.preExecutionHook != nil {
 		c.opts.preExecutionHook(c, ins, param)
 	}
@@ -117,6 +119,7 @@ func (c *CPU) executeInstruction(op Opcode, baseOffset uint16) error {
 	if op.BranchTakenCycle && c.pcChanged {
 		c.cycles++
 	}
+
 	if !c.pcChanged {
 		c.PC = c.nextPC
 	}

@@ -31,6 +31,7 @@ func (cpu *CPU) setAddXFlags(src, dst, result uint32, size OperandSize) {
 	if maskValue(result, size) != 0 {
 		cpu.Flags.Z = 0
 	}
+
 	setFlag(&cpu.Flags.V, (sm == dm) && (rm != sm))
 	carry := uint64(src)+uint64(dst)+uint64(cpu.Flags.X) > uint64(maskValue(0xFFFFFFFF, size))
 	setFlag(&cpu.Flags.C, carry)
@@ -62,6 +63,7 @@ func (cpu *CPU) setSubXFlags(src, dst, result uint32, size OperandSize) {
 	if maskValue(result, size) != 0 {
 		cpu.Flags.Z = 0
 	}
+
 	setFlag(&cpu.Flags.V, (sm != dm) && (rm != dm))
 	borrow := uint64(maskValue(src, size))+uint64(cpu.Flags.X) > uint64(maskValue(dst, size))
 	setFlag(&cpu.Flags.C, borrow)
@@ -96,10 +98,12 @@ func (cpu *CPU) addDecimal(src, dst uint8) uint8 {
 	if uint16(src&15)+uint16(dst&15)+extend > 9 {
 		result += 6
 	}
+
 	carry := result > 0x9F
 	if carry {
 		result += 0x60
 	}
+
 	cpu.setFlagN(uint32(result), SizeByte)
 	setFlag(&cpu.Flags.V, binary&0x80 == 0 && result&0x80 != 0)
 	setFlag(&cpu.Flags.C, carry)
@@ -107,6 +111,7 @@ func (cpu *CPU) addDecimal(src, dst uint8) uint8 {
 	if uint8(result) != 0 {
 		cpu.Flags.Z = 0
 	}
+
 	return uint8(result)
 }
 
@@ -117,10 +122,12 @@ func (cpu *CPU) subtractDecimal(src, dst uint8) uint8 {
 	if int16(dst&15)-int16(src&15)-extend < 0 {
 		result -= 6
 	}
+
 	borrow := result < 0
 	if binary < 0 {
 		result -= 0x60
 	}
+
 	cpu.setFlagN(uint32(result), SizeByte)
 	setFlag(&cpu.Flags.V, binary&0x80 != 0 && result&0x80 == 0)
 	setFlag(&cpu.Flags.C, borrow)
@@ -128,6 +135,7 @@ func (cpu *CPU) subtractDecimal(src, dst uint8) uint8 {
 	if uint8(result) != 0 {
 		cpu.Flags.Z = 0
 	}
+
 	return uint8(result)
 }
 
@@ -152,6 +160,7 @@ func execADD(c *CPU, d DecodedOpcode) error {
 
 	result := src + dst
 	c.setAddFlags(src, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -166,6 +175,7 @@ func execADDA(c *CPU, d DecodedOpcode) error {
 	}
 	src = signExtend(src, d.Size)
 	c.setRegA(d.DstReg, c.getRegA(d.DstReg)+src)
+
 	return nil
 }
 
@@ -183,6 +193,7 @@ func execADDI(c *CPU, d DecodedOpcode) error {
 
 	result := imm + dst
 	c.setAddFlags(imm, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -205,6 +216,7 @@ func execADDQ(c *CPU, d DecodedOpcode) error {
 
 	result := dst + imm
 	c.setAddFlags(imm, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -264,6 +276,7 @@ func execSUB(c *CPU, d DecodedOpcode) error {
 
 	result := dst - src
 	c.setSubFlags(src, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -278,6 +291,7 @@ func execSUBA(c *CPU, d DecodedOpcode) error {
 	}
 	src = signExtend(src, d.Size)
 	c.setRegA(d.DstReg, c.getRegA(d.DstReg)-src)
+
 	return nil
 }
 
@@ -295,6 +309,7 @@ func execSUBI(c *CPU, d DecodedOpcode) error {
 
 	result := dst - imm
 	c.setSubFlags(imm, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -316,6 +331,7 @@ func execSUBQ(c *CPU, d DecodedOpcode) error {
 
 	result := dst - imm
 	c.setSubFlags(imm, dst, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -364,6 +380,7 @@ func execNEG(c *CPU, d DecodedOpcode) error {
 
 	result := uint32(0) - dst
 	c.setSubFlags(dst, 0, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -380,6 +397,7 @@ func execNEGX(c *CPU, d DecodedOpcode) error {
 	x := uint32(c.Flags.X)
 	result := uint32(0) - dst - x
 	c.setSubXFlags(dst, 0, result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -397,6 +415,7 @@ func execCLR(c *CPU, d DecodedOpcode) error {
 	c.Flags.Z = 1
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return c.writeEA(dstEA, 0)
 }
 
@@ -413,6 +432,7 @@ func execCMP(c *CPU, d DecodedOpcode) error {
 
 	result := dst - src
 	c.setCmpFlags(src, dst, result, d.Size)
+
 	return nil
 }
 
@@ -430,6 +450,7 @@ func execCMPA(c *CPU, d DecodedOpcode) error {
 
 	result := dst - src
 	c.setCmpFlags(src, dst, result, SizeLong)
+
 	return nil
 }
 
@@ -447,6 +468,7 @@ func execCMPI(c *CPU, d DecodedOpcode) error {
 
 	result := dst - imm
 	c.setCmpFlags(imm, dst, result, d.Size)
+
 	return nil
 }
 
@@ -467,6 +489,7 @@ func execCMPM(c *CPU, d DecodedOpcode) error {
 
 	result := dst - src
 	c.setCmpFlags(src, dst, result, d.Size)
+
 	return nil
 }
 
@@ -491,6 +514,7 @@ func execAND(c *CPU, d DecodedOpcode) error {
 
 	result := src & dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -522,6 +546,7 @@ func execANDI(c *CPU, d DecodedOpcode) error {
 
 	result := imm & dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -546,6 +571,7 @@ func execOR(c *CPU, d DecodedOpcode) error {
 
 	result := src | dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -577,6 +603,7 @@ func execORI(c *CPU, d DecodedOpcode) error {
 
 	result := imm | dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -594,6 +621,7 @@ func execEOR(c *CPU, d DecodedOpcode) error {
 
 	result := src ^ dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -625,6 +653,7 @@ func execEORI(c *CPU, d DecodedOpcode) error {
 
 	result := imm ^ dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -640,6 +669,7 @@ func execNOT(c *CPU, d DecodedOpcode) error {
 
 	result := ^dst
 	c.setLogicFlags(result, d.Size)
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -652,7 +682,9 @@ func execEXT(c *CPU, d DecodedOpcode) error {
 		result = uint32(int32(int16(c.D[d.DstReg])))
 		c.setRegD(d.DstReg, result, SizeLong)
 	}
+
 	c.setLogicFlags(result, d.Size)
+
 	return nil
 }
 
@@ -666,6 +698,7 @@ func execTST(c *CPU, d DecodedOpcode) error {
 		return err
 	}
 	c.setLogicFlags(val, d.Size)
+
 	return nil
 }
 
@@ -688,6 +721,7 @@ func execMULU(c *CPU, d DecodedOpcode) error {
 	c.setFlagZ(result, SizeLong)
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return nil
 }
 
@@ -711,6 +745,7 @@ func execMULS(c *CPU, d DecodedOpcode) error {
 	c.setFlagZ(uint32(result), SizeLong)
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return nil
 }
 
@@ -747,6 +782,7 @@ func execDIVU(c *CPU, d DecodedOpcode) error {
 	c.setFlagZ(quotient, SizeWord)
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return nil
 }
 
@@ -763,7 +799,11 @@ func execDIVS(c *CPU, d DecodedOpcode) error {
 	if src == 0 {
 		// The 68000 clears N, V, and C and sets Z before a signed divide by
 		// zero trap (WinUAE divbyzero_special).
-		c.Flags.N, c.Flags.Z, c.Flags.V, c.Flags.C = 0, 1, 0, 0
+		c.Flags.N = 0
+		c.Flags.Z = 1
+		c.Flags.V = 0
+		c.Flags.C = 0
+
 		return c.processException(VectorDivZero)
 	}
 
@@ -784,6 +824,7 @@ func execDIVS(c *CPU, d DecodedOpcode) error {
 	c.setFlagZ(uint32(int16(quotient)), SizeWord)
 	c.Flags.V = 0
 	c.Flags.C = 0
+
 	return nil
 }
 
@@ -846,5 +887,6 @@ func execNBCD(c *CPU, d DecodedOpcode) error {
 	}
 
 	result := c.subtractDecimal(uint8(dst), 0)
+
 	return c.writeEA(dstEA, uint32(result))
 }

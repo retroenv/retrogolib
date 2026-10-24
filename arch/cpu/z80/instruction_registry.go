@@ -18,9 +18,11 @@ func buildInstructionRegistry(tables ...*[256]Opcode) map[string]*Instruction {
 	}
 	// DD/FD CB instructions are decoded as four-byte prefix sequences rather
 	// than entries in the ordinary prefix tables.
+
 	instructions[DdcbShiftName] = DdcbShift
 	instructions[FdcbShiftName] = FdcbShift
 	instructions[InfName] = INF
 	instructions[OutfName] = OUTF
+
 	return instructions
 }

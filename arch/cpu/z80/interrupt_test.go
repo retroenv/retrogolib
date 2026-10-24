@@ -40,7 +40,9 @@ func TestInterruptEntryPoints(t *testing.T) {
 				cpu, err := NewWithBus(bus, WithInitialPC(0x1234), WithInitialSP(0x8000))
 				assert.NoError(t, err)
 				assert.NoError(t, cpu.SetInterruptMode(tt.mode))
-				cpu.I, cpu.R, cpu.A = 0xAB, 0xFF, 0x42
+				cpu.I = 0xAB
+				cpu.R = 0xFF
+				cpu.A = 0x42
 				bus.WriteWord(0xABA5, tt.vector)
 				bus.Write(0xFFFF, 0x10)    // Must not supply IM2's vector byte.
 				bus.Write(tt.vector, 0x3C) // INC A must wait for the next Step.

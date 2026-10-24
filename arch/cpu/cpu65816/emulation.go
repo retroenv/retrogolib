@@ -87,6 +87,7 @@ func adc(c *CPU, params ...any) error {
 		} else {
 			adcBCD16(c, val)
 		}
+
 		return nil
 	}
 	if c.AccWidth() == 1 {
@@ -106,6 +107,7 @@ func adc(c *CPU, params ...any) error {
 		c.C = result
 		c.setZN16(result)
 	}
+
 	return nil
 }
 
@@ -122,6 +124,7 @@ func and(c *CPU, params ...any) error {
 		c.C &= val
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -139,6 +142,7 @@ func asl(c *CPU, params ...any) error {
 			c.C <<= 1
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -158,6 +162,7 @@ func asl(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -185,6 +190,7 @@ func bit(c *CPU, params ...any) error {
 			setFlag(&c.Flags.V, val&0x4000 != 0)
 		}
 	}
+
 	return nil
 }
 
@@ -198,6 +204,7 @@ func cmp(c *CPU, params ...any) error {
 	} else {
 		c.compare16(c.C, val)
 	}
+
 	return nil
 }
 
@@ -211,6 +218,7 @@ func cpx(c *CPU, params ...any) error {
 	} else {
 		c.compare16(c.X, val)
 	}
+
 	return nil
 }
 
@@ -224,6 +232,7 @@ func cpy(c *CPU, params ...any) error {
 	} else {
 		c.compare16(c.Y, val)
 	}
+
 	return nil
 }
 
@@ -238,6 +247,7 @@ func dec(c *CPU, params ...any) error {
 			c.C--
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -253,6 +263,7 @@ func dec(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -265,6 +276,7 @@ func dex(c *CPU) error {
 		c.X--
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -277,6 +289,7 @@ func dey(c *CPU) error {
 		c.Y--
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -293,6 +306,7 @@ func eor(c *CPU, params ...any) error {
 		c.C ^= val
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -307,6 +321,7 @@ func inc(c *CPU, params ...any) error {
 			c.C++
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -322,6 +337,7 @@ func inc(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -334,6 +350,7 @@ func inx(c *CPU) error {
 		c.X++
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -346,6 +363,7 @@ func iny(c *CPU) error {
 		c.Y++
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -363,6 +381,7 @@ func lsr(c *CPU, params ...any) error {
 			c.C >>= 1
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -382,6 +401,7 @@ func lsr(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -400,6 +420,7 @@ func ora(c *CPU, params ...any) error {
 		c.C |= val
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -418,6 +439,7 @@ func rol(c *CPU, params ...any) error {
 			c.C = (c.C << 1) | uint16(carry)
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -437,6 +459,7 @@ func rol(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -455,6 +478,7 @@ func ror(c *CPU, params ...any) error {
 			c.C = (c.C >> 1) | (uint16(carry) << 15)
 			c.setZN16(c.C)
 		}
+
 		return nil
 	}
 	addr, err := c.resolveEA(params[0])
@@ -474,6 +498,7 @@ func ror(c *CPU, params ...any) error {
 		c.writeOperandWord(params[0], addr, v)
 		c.setZN16(v)
 	}
+
 	return nil
 }
 
@@ -488,6 +513,7 @@ func sbc(c *CPU, params ...any) error {
 		} else {
 			sbcBCD16(c, val)
 		}
+
 		return nil
 	}
 	if c.AccWidth() == 1 {
@@ -508,6 +534,7 @@ func sbc(c *CPU, params ...any) error {
 		c.C = result
 		c.setZN16(result)
 	}
+
 	return nil
 }
 
@@ -525,6 +552,7 @@ func tsb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, c.C&mem == 0)
 		c.writeOperandWord(params[0], addr, mem|c.C)
 	}
+
 	return nil
 }
 
@@ -542,6 +570,7 @@ func trb(c *CPU, params ...any) error {
 		setFlag(&c.Flags.Z, c.C&mem == 0)
 		c.writeOperandWord(params[0], addr, mem&^c.C)
 	}
+
 	return nil
 }
 
@@ -556,7 +585,9 @@ func adcBCD8(c *CPU, val uint8) {
 		loCarry = 1
 		lo = (lo + 6) & 0x0F
 	}
-	hiA, hiVal := int(a>>4), int(val>>4)
+
+	hiA := int(a >> 4)
+	hiVal := int(val >> 4)
 	hi := hiA + hiVal + loCarry
 	hiRaw := hi // save before BCD correction for V flag
 	hiCarry := 0
@@ -564,6 +595,7 @@ func adcBCD8(c *CPU, val uint8) {
 		hiCarry = 1
 		hi = (hi + 6) & 0x0F
 	}
+
 	result := uint8(hi<<4 | lo)
 	setFlag(&c.Flags.C, hiCarry != 0)
 	// V is the 4-bit signed overflow of the high nibble sum with the BCD carry from the low nibble.
@@ -584,6 +616,7 @@ func adcBCD16(c *CPU, val uint16) {
 		if i == 3 {
 			vCarry = carry
 		}
+
 		shift := uint(i) * 4
 		d := int((a>>shift)&0xF) + int((val>>shift)&0xF) + carry
 		carry = 0
@@ -591,11 +624,14 @@ func adcBCD16(c *CPU, val uint16) {
 			carry = 1
 			d = (d + 6) & 0xF
 		}
+
 		result |= uint16(d) << shift
 	}
+
 	setFlag(&c.Flags.C, carry != 0)
 	// V is the 4-bit signed overflow of nibble 3 with the BCD carry from nibble 2.
-	hiA, hiVal16 := int(a>>12)&0xF, int(val>>12)&0xF
+	hiA := int(a>>12) & 0xF
+	hiVal16 := int(val>>12) & 0xF
 	hiRaw := hiA + hiVal16 + vCarry
 	setFlag(&c.Flags.V, ^(hiA^hiVal16)&(hiA^hiRaw)&0x8 != 0)
 	c.C = result
@@ -614,12 +650,14 @@ func sbcBCD8(c *CPU, val uint8) {
 		loBorrow = 1
 		lo = (lo - 6) & 0x0F
 	}
+
 	hi := int(a>>4) - int(val>>4) - loBorrow
 	hiBorrow := 0
 	if hi < 0 {
 		hiBorrow = 1
 		hi = (hi - 6) & 0x0F
 	}
+
 	result := uint8(hi<<4 | lo)
 	setFlag(&c.Flags.C, hiBorrow == 0)
 	setFlag(&c.Flags.V, (a^val)&0x80 != 0 && (a^binResult)&0x80 != 0)
@@ -643,8 +681,10 @@ func sbcBCD16(c *CPU, val uint16) {
 			b = 1
 			d = (d - 6) & 0xF
 		}
+
 		result |= uint16(d) << shift
 	}
+
 	setFlag(&c.Flags.C, b == 0)
 	setFlag(&c.Flags.V, (a^val)&0x8000 != 0 && (a^binResult)&0x8000 != 0)
 	c.C = result
@@ -659,6 +699,7 @@ func mvn(c *CPU, params ...any) error {
 		return err
 	}
 	c.moveBlockByte(bm, 1)
+
 	return nil
 }
 
@@ -670,6 +711,7 @@ func mvp(c *CPU, params ...any) error {
 		return err
 	}
 	c.moveBlockByte(bm, 0xFFFF)
+
 	return nil
 }
 

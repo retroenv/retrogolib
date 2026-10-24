@@ -20,6 +20,7 @@ func execBTST(c *CPU, d DecodedOpcode) error {
 		bitNum %= 32
 		val := c.D[d.DstReg]
 		setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
+
 		return nil
 	}
 
@@ -34,6 +35,7 @@ func execBTST(c *CPU, d DecodedOpcode) error {
 	}
 
 	setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
+
 	return nil
 }
 
@@ -45,6 +47,7 @@ func execBSET(c *CPU, d DecodedOpcode) error {
 		val := c.D[d.DstReg]
 		setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
 		c.D[d.DstReg] = val | (1 << bitNum)
+
 		return nil
 	}
 
@@ -59,6 +62,7 @@ func execBSET(c *CPU, d DecodedOpcode) error {
 	}
 
 	setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
+
 	return c.writeEA(dstEA, val|(1<<bitNum))
 }
 
@@ -70,6 +74,7 @@ func execBCLR(c *CPU, d DecodedOpcode) error {
 		val := c.D[d.DstReg]
 		setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
 		c.D[d.DstReg] = val &^ (1 << bitNum)
+
 		return nil
 	}
 
@@ -84,6 +89,7 @@ func execBCLR(c *CPU, d DecodedOpcode) error {
 	}
 
 	setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
+
 	return c.writeEA(dstEA, val&^(1<<bitNum))
 }
 
@@ -95,6 +101,7 @@ func execBCHG(c *CPU, d DecodedOpcode) error {
 		val := c.D[d.DstReg]
 		setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
 		c.D[d.DstReg] = val ^ (1 << bitNum)
+
 		return nil
 	}
 
@@ -109,5 +116,6 @@ func execBCHG(c *CPU, d DecodedOpcode) error {
 	}
 
 	setFlag(&c.Flags.Z, val&(1<<bitNum) == 0)
+
 	return c.writeEA(dstEA, val^(1<<bitNum))
 }

@@ -268,5 +268,6 @@ func InstructionsForVariant(variant CPUVariant) map[string]*Instruction {
 			instructions[opcode.Instruction.Name] = opcode.Instruction
 		}
 	}
+
 	return instructions
 }

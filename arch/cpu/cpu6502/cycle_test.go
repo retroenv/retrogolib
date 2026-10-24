@@ -126,7 +126,10 @@ func TestBusCycleSHFamilyWrites(t *testing.T) {
 				accesses = append(accesses, cycle)
 				return false
 			}))
-			cpu.PC, cpu.A, cpu.X, cpu.Y = 0x8000, 0x33, 0x15, 0x01
+			cpu.PC = 0x8000
+			cpu.A = 0x33
+			cpu.X = 0x15
+			cpu.Y = 0x01
 
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, test.want, accesses)

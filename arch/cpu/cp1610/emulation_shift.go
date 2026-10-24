@@ -13,6 +13,7 @@ func (c *CPU) executeShift(op Opcode) {
 		} else {
 			result = value&0xFF | value<<8
 		}
+
 		c.Flags.S = result&0x80 != 0
 
 	case SllName:
@@ -30,6 +31,7 @@ func (c *CPU) executeShift(op Opcode) {
 		} else {
 			result = value<<2 | boolWord(c.Flags.C)<<1 | boolWord(c.Flags.O)
 		}
+
 		c.setShiftLeftCarry(value, count)
 		c.Flags.S = result&0x8000 != 0
 
@@ -47,6 +49,7 @@ func (c *CPU) executeShift(op Opcode) {
 		} else {
 			result = value>>2 | boolWord(c.Flags.C)<<14 | boolWord(c.Flags.O)<<15
 		}
+
 		c.setShiftRightCarry(value, count)
 		c.Flags.S = result&0x80 != 0
 
@@ -55,6 +58,7 @@ func (c *CPU) executeShift(op Opcode) {
 		c.setShiftRightCarry(value, count)
 		c.Flags.S = result&0x80 != 0
 	}
+
 	c.Flags.Z = result == 0
 	c.R[register] = result
 }

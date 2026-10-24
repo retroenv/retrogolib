@@ -116,7 +116,8 @@ func TestInterruptEntryCycles(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu, mem := newTestCPU(t)
 			cpu.loadS(0x200)
-			cpu.Flags.I, cpu.Flags.F = 0, 0
+			cpu.Flags.I = 0
+			cpu.Flags.F = 0
 			mem.WriteWord(tt.vector, 0x9000)
 			tt.trigger(cpu)
 			assert.NoError(t, cpu.Step())

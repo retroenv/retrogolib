@@ -269,6 +269,7 @@ func readIndexedParam(c *CPU, baseOffset uint16) (any, []byte, error) {
 		if offset&0x10 != 0 {
 			offset |= -0x20
 		}
+
 		addr := uint16(int32(reg) + int32(offset))
 
 		return IndexedAddr(addr), operands, nil

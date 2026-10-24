@@ -39,6 +39,7 @@ func (c *CPU) Step() error {
 	default:
 		c.executeMemory(op, doubleByte)
 	}
+
 	return nil
 }
 
@@ -59,6 +60,7 @@ func (c *CPU) executeControl(word uint16) error {
 	case 7:
 		c.Flags.C = true
 	}
+
 	return nil
 }
 
@@ -74,10 +76,13 @@ func (c *CPU) executeJump() error {
 	if register != ProgramCounter {
 		c.R[register] = returnAddress
 	}
+
 	if mode != 0 {
 		c.Flags.I = mode == 1
 	}
+
 	c.R[ProgramCounter] = (second&0xFC)<<8 | third
+
 	return nil
 }
 
@@ -105,8 +110,10 @@ func (c *CPU) executeUnary(op Opcode) {
 		if c.Flags.C {
 			carry = 1
 		}
+
 		value = c.add(value, carry)
 	}
+
 	c.R[reg] = value
 }
 
@@ -146,6 +153,7 @@ func (c *CPU) executeRegisterPair(op Opcode) {
 		result = left ^ right
 		c.setSZ(result)
 	}
+
 	c.R[op.Destination] = result
 }
 
@@ -162,6 +170,7 @@ func (c *CPU) executeBranch(op Opcode) {
 	} else {
 		c.R[ProgramCounter] -= displacement + 1
 	}
+
 	c.cycles += 2
 }
 
@@ -188,6 +197,7 @@ func (c *CPU) branchCondition(condition uint8) bool {
 	case 7:
 		taken = c.Flags.S != c.Flags.C
 	}
+
 	if condition&8 != 0 {
 		return !taken
 	}
@@ -226,6 +236,7 @@ func (c *CPU) executeMemory(op Opcode, doubleByte bool) {
 		result = value ^ right
 		c.setSZ(result)
 	}
+
 	c.R[dest] = result
 }
 
@@ -239,19 +250,23 @@ func (c *CPU) readOperand(op Opcode, doubleByte bool) uint16 {
 	if addressRegister == StackPointer {
 		c.R[StackPointer]--
 	}
+
 	address := c.R[addressRegister]
 	value := c.memory.Read(address)
 	if addressRegister >= 4 && addressRegister != StackPointer {
 		c.R[addressRegister]++
 	}
+
 	if doubleByte {
 		second := c.memory.Read(c.R[addressRegister])
 		if addressRegister >= 4 && addressRegister != StackPointer {
 			c.R[addressRegister]++
 		}
+
 		value = value&0xFF | second<<8
 		c.cycles += 2
 	}
+
 	return value
 }
 
@@ -260,6 +275,7 @@ func (c *CPU) storeOperand(op Opcode) {
 		address := c.memory.Read(c.R[ProgramCounter])
 		c.R[ProgramCounter]++
 		c.memory.Write(address, c.R[op.Destination])
+
 		return
 	}
 	addressRegister := op.Source
@@ -267,6 +283,7 @@ func (c *CPU) storeOperand(op Opcode) {
 	if addressRegister == ProgramCounter {
 		c.R[ProgramCounter]++
 	}
+
 	value := c.R[op.Destination]
 	c.memory.Write(address, value)
 	if addressRegister >= 4 && addressRegister != ProgramCounter {

@@ -81,6 +81,7 @@ func (cpu *CPU) takeBranch(d DecodedOpcode) error {
 
 	cpu.accessCycles = 2
 	cpu.PC = uint32(int32(pcBase) + disp)
+
 	return nil
 }
 
@@ -91,6 +92,7 @@ func execBcc(c *CPU, d DecodedOpcode) error {
 		if d.DstReg == 0 {
 			c.readWord()
 		}
+
 		return nil
 	}
 
@@ -117,6 +119,7 @@ func execBSR(c *CPU, d DecodedOpcode) error {
 
 	// Branch to target. PC base is the address of the extension word.
 	c.PC = uint32(int32(pcBeforeBranch) + disp)
+
 	return nil
 }
 
@@ -139,6 +142,7 @@ func execDBcc(c *CPU, d DecodedOpcode) error {
 
 	// Branch. PC base is the extension word address (PC - 2 since we already read it).
 	c.PC = uint32(int32(c.PC-2) + int32(disp))
+
 	return nil
 }
 
@@ -157,6 +161,7 @@ func execScc(c *CPU, d DecodedOpcode) error {
 	if c.evaluateCondition(d.Extra) {
 		result = 0xFF
 	}
+
 	return c.writeEA(dstEA, result)
 }
 
@@ -167,6 +172,7 @@ func execJMP(c *CPU, d DecodedOpcode) error {
 	}
 	c.accessCycles = controlCycles(d) - 8
 	c.PC = ea.Address
+
 	return nil
 }
 
@@ -180,5 +186,6 @@ func execJSR(c *CPU, d DecodedOpcode) error {
 	c.PC = ea.Address
 	c.checkInstructionAddress()
 	c.push32(returnPC)
+
 	return nil
 }

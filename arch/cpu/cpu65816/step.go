@@ -56,6 +56,7 @@ func (c *CPU) executeNoParamInstruction(op Opcode) error {
 	if !c.pcChanged {
 		c.PC += uint16(c.instrSize(op))
 	}
+
 	return nil
 }
 
@@ -71,6 +72,7 @@ func (c *CPU) executeParamInstruction(op Opcode) error {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
 		c.TraceStep.PageCrossed = pageCrossed
 	}
+
 	c.cycles += uint64(op.Timing) + c.extraCycles(op, pageCrossed)
 
 	if c.opts.preExecutionHook != nil {
@@ -86,6 +88,7 @@ func (c *CPU) executeParamInstruction(op Opcode) error {
 	if !c.pcChanged {
 		c.PC += uint16(instrLen)
 	}
+
 	return nil
 }
 
@@ -99,21 +102,27 @@ func (c *CPU) extraCycles(op Opcode, pageCrossed bool) uint64 {
 	if rules&CycleM != 0 && c.AccWidth() == 2 {
 		extra++
 	}
+
 	if rules&CycleRMW != 0 && c.AccWidth() == 2 {
 		extra += 2
 	}
+
 	if rules&CycleX != 0 && c.IdxWidth() == 2 {
 		extra++
 	}
+
 	if rules&CycleDL != 0 && c.DP&0xFF != 0 {
 		extra++
 	}
+
 	if rules&CycleIndex != 0 && (pageCrossed || c.IdxWidth() == 2) {
 		extra++
 	}
+
 	if rules&CycleNative != 0 && !c.E {
 		extra++
 	}
+
 	return extra
 }
 
@@ -131,5 +140,6 @@ func (c *CPU) instrSize(op Opcode) int {
 			size++
 		}
 	}
+
 	return size
 }

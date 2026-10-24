@@ -6,6 +6,7 @@ func ldImm8(c *CPU, params ...any) error {
 	value := uint8(params[0].(Immediate8))
 	reg := (c.currentOpcode >> 3) & 0x07
 	c.SetRegisterValue(reg, value)
+
 	return nil
 }
 
@@ -15,6 +16,7 @@ func ldReg8(c *CPU, _ ...any) error {
 	dst := (c.currentOpcode >> 3) & 0x07
 	src := c.currentOpcode & 0x07
 	c.SetRegisterValue(dst, c.GetRegisterValue(src))
+
 	return nil
 }
 
@@ -32,6 +34,7 @@ func ldReg16(c *CPU, params ...any) error {
 	case 3:
 		c.SP = value
 	}
+
 	return nil
 }
 
@@ -48,6 +51,7 @@ func ldIndirect(c *CPU, _ ...any) error {
 	case 0x1A: // LD A,(DE)
 		c.A = c.memory.Read(c.de())
 	}
+
 	return nil
 }
 
@@ -56,6 +60,7 @@ func ldHLPlusA(c *CPU) error {
 	addr := c.hl()
 	c.memory.Write(addr, c.A)
 	c.setHL(addr + 1)
+
 	return nil
 }
 
@@ -64,6 +69,7 @@ func ldAHLPlus(c *CPU) error {
 	addr := c.hl()
 	c.A = c.memory.Read(addr)
 	c.setHL(addr + 1)
+
 	return nil
 }
 
@@ -72,6 +78,7 @@ func ldHLMinusA(c *CPU) error {
 	addr := c.hl()
 	c.memory.Write(addr, c.A)
 	c.setHL(addr - 1)
+
 	return nil
 }
 
@@ -80,6 +87,7 @@ func ldAHLMinus(c *CPU) error {
 	addr := c.hl()
 	c.A = c.memory.Read(addr)
 	c.setHL(addr - 1)
+
 	return nil
 }
 
@@ -88,6 +96,7 @@ func ldAddrSP(c *CPU, params ...any) error {
 	addr := uint16(params[0].(Extended))
 	c.memory.Write(addr, uint8(c.SP))
 	c.memory.Write(addr+1, uint8(c.SP>>8))
+
 	return nil
 }
 
@@ -130,6 +139,7 @@ func ldHLSPOffset(c *CPU, params ...any) error {
 
 	c.Flags.Z = 0
 	c.setN(false)
+
 	return nil
 }
 
@@ -148,6 +158,7 @@ func ldh(c *CPU, params ...any) error {
 	} else {
 		c.memory.Write(addr, c.A)
 	}
+
 	return nil
 }
 
@@ -164,6 +175,7 @@ func pushReg16(c *CPU, _ ...any) error {
 	case 3:
 		c.push16(c.af())
 	}
+
 	return nil
 }
 
@@ -182,5 +194,6 @@ func popReg16(c *CPU, _ ...any) error {
 	case 3:
 		c.setAF(value & 0xFFF0) // Lower 4 bits of F always 0
 	}
+
 	return nil
 }

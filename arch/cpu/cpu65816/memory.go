@@ -47,6 +47,7 @@ func (m *Memory) ReadLong(address uint32) uint32 {
 	lo := uint32(m.Read(address))
 	mid := uint32(m.Read(address + 1))
 	hi := uint32(m.Read(address + 2))
+
 	return hi<<16 | mid<<8 | lo
 }
 

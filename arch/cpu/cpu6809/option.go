@@ -29,5 +29,6 @@ func newOptions(opts ...Option) options {
 			opt(&o)
 		}
 	}
+
 	return o
 }

@@ -15,6 +15,7 @@ func lda(c *CPU, params ...any) error {
 		c.C = val
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -30,6 +31,7 @@ func ldx(c *CPU, params ...any) error {
 		c.X = val
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -45,6 +47,7 @@ func ldy(c *CPU, params ...any) error {
 		c.Y = val
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -58,6 +61,7 @@ func sta(c *CPU, params ...any) error {
 	} else {
 		c.writeOperandWord(params[0], addr, c.C)
 	}
+
 	return nil
 }
 
@@ -71,6 +75,7 @@ func stx(c *CPU, params ...any) error {
 	} else {
 		c.writeOperandWord(params[0], addr, c.X)
 	}
+
 	return nil
 }
 
@@ -84,6 +89,7 @@ func sty(c *CPU, params ...any) error {
 	} else {
 		c.writeOperandWord(params[0], addr, c.Y)
 	}
+
 	return nil
 }
 
@@ -97,6 +103,7 @@ func stz(c *CPU, params ...any) error {
 	} else {
 		c.writeOperandWord(params[0], addr, 0)
 	}
+
 	return nil
 }
 
@@ -110,6 +117,7 @@ func tax(c *CPU) error {
 		c.X = c.C
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -121,6 +129,7 @@ func tay(c *CPU) error {
 		c.Y = c.C
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -137,6 +146,7 @@ func tcs(c *CPU) error {
 	} else {
 		c.SP = c.C
 	}
+
 	return nil
 }
 
@@ -160,6 +170,7 @@ func tsx(c *CPU) error {
 		c.X = c.SP
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -172,6 +183,7 @@ func txa(c *CPU) error {
 		c.C = c.X
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -181,6 +193,7 @@ func txs(c *CPU) error {
 	} else {
 		c.SP = c.X
 	}
+
 	return nil
 }
 
@@ -192,6 +205,7 @@ func txy(c *CPU) error {
 		c.Y = c.X
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -204,6 +218,7 @@ func tya(c *CPU) error {
 		c.C = c.Y
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -215,5 +230,6 @@ func tyx(c *CPU) error {
 		c.X = c.Y
 		c.setZN16(c.X)
 	}
+
 	return nil
 }

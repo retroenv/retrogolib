@@ -21,6 +21,7 @@ func (c *CPU) add(a, b uint16) uint16 {
 	c.setSZ(result)
 	c.Flags.C = wide > 0xFFFF
 	c.Flags.O = (^(a ^ b) & (a ^ result) & 0x8000) != 0
+
 	return result
 }
 
@@ -29,6 +30,7 @@ func (c *CPU) subtract(a, b uint16) uint16 {
 	c.setSZ(result)
 	c.Flags.C = b >= a
 	c.Flags.O = ((b ^ a) & (b ^ result) & 0x8000) != 0
+
 	return result
 }
 
@@ -37,15 +39,19 @@ func (c *CPU) statusWord() uint16 {
 	if c.Flags.S {
 		word |= 0x80
 	}
+
 	if c.Flags.Z {
 		word |= 0x40
 	}
+
 	if c.Flags.O {
 		word |= 0x20
 	}
+
 	if c.Flags.C {
 		word |= 0x10
 	}
+
 	return word | word<<8
 }
 

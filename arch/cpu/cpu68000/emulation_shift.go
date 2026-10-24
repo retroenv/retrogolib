@@ -11,6 +11,7 @@ func (cpu *CPU) shiftCount(d DecodedOpcode) uint32 {
 	} else if count == 0 {
 		count = 8
 	}
+
 	return count
 }
 
@@ -28,6 +29,7 @@ func (cpu *CPU) shiftMemory(d DecodedOpcode, op func(uint32) uint32) error {
 	result := op(val)
 	cpu.setFlagN(result, SizeWord)
 	cpu.setFlagZ(result, SizeWord)
+
 	return cpu.writeEA(ea, result)
 }
 
@@ -40,6 +42,7 @@ func execASL(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, msb != 0)
 			c.Flags.X = c.Flags.C
 			setFlag(&c.Flags.V, (result&0x8000) != msb)
+
 			return result
 		})
 	}
@@ -82,6 +85,7 @@ func execASR(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, lsb != 0)
 			c.Flags.X = c.Flags.C
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -121,6 +125,7 @@ func execLSL(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, msb != 0)
 			c.Flags.X = c.Flags.C
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -157,6 +162,7 @@ func execLSR(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, lsb != 0)
 			c.Flags.X = c.Flags.C
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -193,6 +199,7 @@ func execROL(c *CPU, d DecodedOpcode) error {
 			result := ((val << 1) & 0xFFFF) | (msb >> 15)
 			setFlag(&c.Flags.C, msb != 0)
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -229,6 +236,7 @@ func execROR(c *CPU, d DecodedOpcode) error {
 			result := (val >> 1) | (lsb << 15)
 			setFlag(&c.Flags.C, lsb != 0)
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -265,6 +273,7 @@ func execROXL(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, msb != 0)
 			c.Flags.X = c.Flags.C
 			c.Flags.V = 0
+
 			return result
 		})
 	}
@@ -299,6 +308,7 @@ func execROXR(c *CPU, d DecodedOpcode) error {
 			setFlag(&c.Flags.C, lsb != 0)
 			c.Flags.X = c.Flags.C
 			c.Flags.V = 0
+
 			return result
 		})
 	}

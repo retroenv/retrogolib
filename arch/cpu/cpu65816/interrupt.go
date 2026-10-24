@@ -31,20 +31,24 @@ func (c *CPU) CheckInterrupts() bool {
 	case c.triggerNMI:
 		c.triggerNMI = false
 		c.nmiRunning = true
-		nativeVec, emuVec = VectorNativeNMI, VectorEmuNMI
+		nativeVec = VectorNativeNMI
+		emuVec = VectorEmuNMI
 
 	case c.triggerIRQ && c.Flags.I == 0:
 		c.triggerIRQ = false
 		c.irqRunning = true
-		nativeVec, emuVec = VectorNativeIRQ, VectorEmuIRQ
+		nativeVec = VectorNativeIRQ
+		emuVec = VectorEmuIRQ
 
 	default:
 		c.mu.Unlock()
 		return false
 	}
+
 	c.mu.Unlock()
 
 	c.executeInterrupt(nativeVec, emuVec)
+
 	return true
 }
 
@@ -60,6 +64,7 @@ func (c *CPU) executeInterrupt(nativeVec, emuVec uint32) {
 		c.cycles += 7
 		c.PB = 0
 		c.PC = c.memory.ReadWord(emuVec)
+
 		return
 	}
 

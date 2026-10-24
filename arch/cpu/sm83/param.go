@@ -16,6 +16,7 @@ func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, error) {
 		low := c.memory.Read(c.PC + 1)
 		high := c.memory.Read(c.PC + 2)
 		addr := uint16(high)<<8 | uint16(low)
+
 		return []any{Extended(addr)}, []byte{low, high}, nil
 
 	case RegisterIndirectAddressing:
@@ -42,10 +43,12 @@ func readImmediateParam(c *CPU) ([]any, []byte, error) {
 		low := c.memory.Read(c.PC + 1)
 		high := c.memory.Read(c.PC + 2)
 		value := uint16(high)<<8 | uint16(low)
+
 		return []any{Immediate16(value)}, []byte{low, high}, nil
 	}
 
 	// 8-bit immediate (2-byte instruction: opcode + value)
 	value := c.memory.Read(c.PC + 1)
+
 	return []any{Immediate8(value)}, []byte{value}, nil
 }

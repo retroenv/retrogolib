@@ -21,27 +21,35 @@ func pshsFn(c *CPU, param any) error {
 	if mask&0x80 != 0 {
 		c.pushS16(c.nextPC)
 	}
+
 	if mask&0x40 != 0 {
 		c.pushS16(c.U)
 	}
+
 	if mask&0x20 != 0 {
 		c.pushS16(c.Y)
 	}
+
 	if mask&0x10 != 0 {
 		c.pushS16(c.X)
 	}
+
 	if mask&0x08 != 0 {
 		c.pushS8(c.DP)
 	}
+
 	if mask&0x04 != 0 {
 		c.pushS8(c.B)
 	}
+
 	if mask&0x02 != 0 {
 		c.pushS8(c.A)
 	}
+
 	if mask&0x01 != 0 {
 		c.pushS8(c.GetCC())
 	}
+
 	c.cycles += stackByteCount(mask)
 
 	return nil
@@ -56,28 +64,36 @@ func pulsFn(c *CPU, param any) error {
 	if mask&0x01 != 0 {
 		c.SetCC(c.popS8())
 	}
+
 	if mask&0x02 != 0 {
 		c.A = c.popS8()
 	}
+
 	if mask&0x04 != 0 {
 		c.B = c.popS8()
 	}
+
 	if mask&0x08 != 0 {
 		c.DP = c.popS8()
 	}
+
 	if mask&0x10 != 0 {
 		c.X = c.popS16()
 	}
+
 	if mask&0x20 != 0 {
 		c.Y = c.popS16()
 	}
+
 	if mask&0x40 != 0 {
 		c.U = c.popS16()
 	}
+
 	if mask&0x80 != 0 {
 		c.PC = c.popS16()
 		c.pcChanged = true
 	}
+
 	c.cycles += stackByteCount(mask)
 
 	return nil
@@ -92,27 +108,35 @@ func pshuFn(c *CPU, param any) error {
 	if mask&0x80 != 0 {
 		c.pushU16(c.nextPC)
 	}
+
 	if mask&0x40 != 0 {
 		c.pushU16(c.S) // PSHU pushes S, not U
 	}
+
 	if mask&0x20 != 0 {
 		c.pushU16(c.Y)
 	}
+
 	if mask&0x10 != 0 {
 		c.pushU16(c.X)
 	}
+
 	if mask&0x08 != 0 {
 		c.pushU8(c.DP)
 	}
+
 	if mask&0x04 != 0 {
 		c.pushU8(c.B)
 	}
+
 	if mask&0x02 != 0 {
 		c.pushU8(c.A)
 	}
+
 	if mask&0x01 != 0 {
 		c.pushU8(c.GetCC())
 	}
+
 	c.cycles += stackByteCount(mask)
 
 	return nil
@@ -127,28 +151,36 @@ func puluFn(c *CPU, param any) error {
 	if mask&0x01 != 0 {
 		c.SetCC(c.popU8())
 	}
+
 	if mask&0x02 != 0 {
 		c.A = c.popU8()
 	}
+
 	if mask&0x04 != 0 {
 		c.B = c.popU8()
 	}
+
 	if mask&0x08 != 0 {
 		c.DP = c.popU8()
 	}
+
 	if mask&0x10 != 0 {
 		c.X = c.popU16()
 	}
+
 	if mask&0x20 != 0 {
 		c.Y = c.popU16()
 	}
+
 	if mask&0x40 != 0 {
 		c.loadS(c.popU16()) // PULU pulls S, not U
 	}
+
 	if mask&0x80 != 0 {
 		c.PC = c.popU16()
 		c.pcChanged = true
 	}
+
 	c.cycles += stackByteCount(mask)
 
 	return nil

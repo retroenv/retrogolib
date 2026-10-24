@@ -27,7 +27,8 @@ func execCHK(c *CPU, d DecodedOpcode) error {
 
 	dn := int16(c.D[d.DstReg])
 	upper := int16(src)
-	c.Flags.C, c.Flags.V = 0, 0
+	c.Flags.C = 0
+	c.Flags.V = 0
 	c.setFlagZ(uint32(uint16(dn)), SizeWord)
 
 	if dn < 0 {
@@ -52,6 +53,7 @@ func execRTE(c *CPU, _ DecodedOpcode) error {
 	pc := c.pop32()
 	c.SetSR(sr)
 	c.PC = pc
+
 	return nil
 }
 
@@ -64,6 +66,7 @@ func execRTR(c *CPU, _ DecodedOpcode) error {
 	ccr := c.pop16()
 	c.SetCCR(uint8(ccr))
 	c.PC = c.pop32()
+
 	return nil
 }
 
@@ -75,6 +78,7 @@ func execSTOP(c *CPU, _ DecodedOpcode) error {
 	sr := c.readWord()
 	c.SetSR(sr)
 	c.stopped = true
+
 	return nil
 }
 
@@ -99,6 +103,7 @@ func execILLEGAL(c *CPU, d DecodedOpcode) error {
 			return c.processException(VectorLineF)
 		}
 	}
+
 	return c.processException(VectorIllegal)
 }
 

@@ -117,7 +117,10 @@ func TestUndocumentedPortInstructionDefinitions(t *testing.T) {
 		memory := NewBasicMemory()
 		cpu, err := New(memory)
 		assert.NoError(t, err)
-		cpu.B, cpu.C, cpu.H, cpu.L = 2, 3, 4, 5
+		cpu.B = 2
+		cpu.C = 3
+		cpu.H = 4
+		cpu.L = 5
 		cpu.Flags.C = 1
 		assert.NotNil(t, test.instruction.ParamFunc)
 		assert.NoError(t, test.instruction.ParamFunc(cpu))

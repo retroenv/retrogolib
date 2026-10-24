@@ -40,6 +40,7 @@ func New(memory *Memory) (*CPU, error) {
 	}
 	c := &CPU{memory: memory}
 	c.Reset()
+
 	return c, nil
 }
 

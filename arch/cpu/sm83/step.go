@@ -64,10 +64,12 @@ func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) e
 		if c.opts.preExecutionHook != nil {
 			c.opts.preExecutionHook(c, opcodeByte)
 		}
+
 		if err := ins.NoParamFunc(c); err != nil {
 			return fmt.Errorf("executing no param instruction %s: %w", ins.Name, err)
 		}
 		c.updatePC(ins, oldPC, int(opcode.Size))
+
 		return nil
 	}
 
@@ -78,6 +80,7 @@ func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) e
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, operands...)
 	}
+
 	if c.opts.preExecutionHook != nil {
 		c.opts.preExecutionHook(c, opcodeByte, params...)
 	}
@@ -86,6 +89,7 @@ func (c *CPU) executeInstruction(opcode Opcode, opcodeByte byte, oldPC uint16) e
 		return fmt.Errorf("executing param instruction %s: %w", ins.Name, err)
 	}
 	c.updatePC(ins, oldPC, int(opcode.Size))
+
 	return nil
 }
 
@@ -115,6 +119,7 @@ func (c *CPU) decodeNextInstruction() (Opcode, uint8, error) {
 			OpcodeOperands: []byte{opcodeByte},
 		}
 	}
+
 	return opcode, opcodeByte, nil
 }
 

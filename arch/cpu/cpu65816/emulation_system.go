@@ -46,6 +46,7 @@ func rep(c *CPU, params ...any) error {
 		return err
 	}
 	c.SetP(c.GetP() &^ uint8(mask))
+
 	return nil
 }
 
@@ -56,6 +57,7 @@ func sep(c *CPU, params ...any) error {
 		return err
 	}
 	c.SetP(c.GetP() | uint8(mask))
+
 	return nil
 }
 
@@ -80,6 +82,7 @@ func xce(c *CPU) error {
 		c.Y &= 0x00FF
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
+
 	return nil
 }
 
@@ -90,6 +93,7 @@ func xba(c *CPU) error {
 	c.C = uint16(lo)<<8 | uint16(hi)
 	// N and Z follow the new low byte (the new A).
 	c.setZN8(hi)
+
 	return nil
 }
 
@@ -120,7 +124,9 @@ func brk(c *CPU) error {
 		c.push8(c.GetP())
 		c.enterInterrupt(VectorNativeBRK)
 	}
+
 	c.markIRQRunning()
+
 	return nil
 }
 
@@ -137,7 +143,9 @@ func cop(c *CPU) error {
 		c.push8(c.GetP())
 		c.enterInterrupt(VectorNativeCOP)
 	}
+
 	c.markIRQRunning()
+
 	return nil
 }
 
@@ -150,12 +158,14 @@ func rti(c *CPU) error {
 		// Native mode also pulls PB.
 		c.PB = c.pop8()
 	}
+
 	c.pcChanged = true
 
 	c.mu.Lock()
 	c.irqRunning = false
 	c.nmiRunning = false
 	c.mu.Unlock()
+
 	return nil
 }
 
@@ -167,6 +177,7 @@ func rtl(c *CPU) error {
 	c.fixEmuSP()
 	c.PC = retAddr + 1
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -175,5 +186,6 @@ func rts(c *CPU) error {
 	retAddr := c.pop16()
 	c.PC = retAddr + 1
 	c.pcChanged = true
+
 	return nil
 }

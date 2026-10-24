@@ -77,6 +77,7 @@ func (cpu *CPU) processException(vector int) error {
 	if notExecuted {
 		pc = cpu.instructionPC
 	}
+
 	cpu.push32(pc)
 	cpu.push16(oldSR)
 
@@ -135,12 +136,15 @@ func (cpu *CPU) checkInterrupts() bool {
 	if busLevel == 7 && (cpu.sampledIRQLevel < 7 || cpu.sampledIRQMask == 7 && mask < 7) {
 		cpu.pendingIRQ = 7
 	}
-	cpu.sampledIRQLevel, cpu.sampledIRQMask = busLevel, mask
+
+	cpu.sampledIRQLevel = busLevel
+	cpu.sampledIRQMask = mask
 
 	level := cpu.pendingIRQ
 	if busLevel < 7 {
 		level = max(level, busLevel)
 	}
+
 	if level == 0 || level < 7 && level <= mask {
 		return false
 	}
@@ -148,7 +152,9 @@ func (cpu *CPU) checkInterrupts() bool {
 	if level == cpu.pendingIRQ {
 		cpu.pendingIRQ = 0
 	}
+
 	cpu.processInterruptException(level)
+
 	return true
 }
 
@@ -169,10 +175,13 @@ func (cpu *CPU) acceptAccessFault(fault *accessError) error {
 		if cpu.PC&1 != 0 {
 			cpu.raiseAccessFault(cpu.PC, false, programSpace, VectorAddressErr, ErrAddressError)
 		}
+
 		return nil
 	})
 	if err != nil {
-		cpu.halted, cpu.faultHalted = true, true
+		cpu.halted = true
+		cpu.faultHalted = true
 	}
+
 	return nil
 }

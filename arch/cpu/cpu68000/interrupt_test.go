@@ -14,7 +14,8 @@ func TestTriggerIRQServicesOneStep(t *testing.T) {
 		cpu.SetSR(MaskSupervisor)
 		writeLong(cpu.bus, VectorAutoVector3*4, 0x3000)
 		cpu.bus.WriteWord(0x3000, 0x4E71) // NOP.
-		pc, sp := cpu.PC, cpu.A7()
+		pc := cpu.PC
+		sp := cpu.A7()
 		if fromBus {
 			cpu.bus.(*BasicBus).irqLevel = 3
 		} else {

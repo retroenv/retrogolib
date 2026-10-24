@@ -55,6 +55,7 @@ func swiFn(c *CPU) error {
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorSWI)
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -66,6 +67,7 @@ func swi2Fn(c *CPU) error {
 	c.pushEntireState(c.nextPC)
 	c.PC = c.memory.ReadVector(VectorSWI2)
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -77,6 +79,7 @@ func swi3Fn(c *CPU) error {
 	c.pushEntireState(c.nextPC)
 	c.PC = c.memory.ReadVector(VectorSWI3)
 	c.pcChanged = true
+
 	return nil
 }
 

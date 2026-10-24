@@ -42,6 +42,7 @@ func (cpu *CPU) decodeEA(mode, reg uint8, size OperandSize) (EffectiveAddress, e
 		cpu.accessCycles += 2
 		cpu.setRegA(reg, cpu.getRegA(reg)-incrementSize(reg, size))
 		ea.Address = cpu.getRegA(reg)
+
 		return ea, nil
 
 	case 5: // Displacement: d16(An)
@@ -77,6 +78,7 @@ func (cpu *CPU) decodeEAMode7(ea EffectiveAddress) (EffectiveAddress, error) {
 		pcBefore := cpu.PC
 		disp := int16(cpu.readWord())
 		ea.Address = uint32(int32(pcBefore) + int32(disp))
+
 		return ea, nil
 
 	case 3: // PC indexed: d8(PC,Xn)
@@ -193,5 +195,6 @@ func (cpu *CPU) writeMemory(addr, value uint32, size OperandSize) error {
 	default:
 		return ErrInvalidOperandSize
 	}
+
 	return nil
 }

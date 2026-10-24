@@ -9,6 +9,7 @@ func (c *CPU) getALUOperand(params []any) uint8 {
 			return uint8(v)
 		}
 	}
+
 	return c.GetRegisterValue(c.currentOpcode & 0x07)
 }
 
@@ -44,6 +45,7 @@ func addA(c *CPU, params ...any) error {
 	c.setH((c.A&0x0F)+(operand&0x0F) > 0x0F)
 	c.setC(result16 > 0xFF)
 	c.A = result
+
 	return nil
 }
 
@@ -59,6 +61,7 @@ func adcA(c *CPU, params ...any) error {
 	c.setH((c.A&0x0F)+(operand&0x0F)+carry > 0x0F)
 	c.setC(result16 > 0xFF)
 	c.A = result
+
 	return nil
 }
 
@@ -72,6 +75,7 @@ func subA(c *CPU, params ...any) error {
 	c.setH((c.A & 0x0F) < (operand & 0x0F))
 	c.setC(c.A < operand)
 	c.A = result
+
 	return nil
 }
 
@@ -87,6 +91,7 @@ func sbcA(c *CPU, params ...any) error {
 	c.setH((c.A & 0x0F) < (operand&0x0F)+carry)
 	c.setC(result16 > 0xFF)
 	c.A = result
+
 	return nil
 }
 
@@ -99,6 +104,7 @@ func andA(c *CPU, params ...any) error {
 	c.setN(false)
 	c.setH(true)
 	c.setC(false)
+
 	return nil
 }
 
@@ -111,6 +117,7 @@ func orA(c *CPU, params ...any) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(false)
+
 	return nil
 }
 
@@ -123,6 +130,7 @@ func xorA(c *CPU, params ...any) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(false)
+
 	return nil
 }
 
@@ -135,6 +143,7 @@ func cpA(c *CPU, params ...any) error {
 	c.setN(true)
 	c.setH((c.A & 0x0F) < (operand & 0x0F))
 	c.setC(c.A < operand)
+
 	return nil
 }
 
@@ -149,6 +158,7 @@ func incReg8(c *CPU, _ ...any) error {
 	c.setN(false)
 	c.setH((value & 0x0F) == 0x0F)
 	c.SetRegisterValue(reg, result)
+
 	return nil
 }
 
@@ -163,6 +173,7 @@ func decReg8(c *CPU, _ ...any) error {
 	c.setN(true)
 	c.setH((value & 0x0F) == 0x00)
 	c.SetRegisterValue(reg, result)
+
 	return nil
 }
 
@@ -179,6 +190,7 @@ func incReg16(c *CPU, _ ...any) error {
 	case 3:
 		c.SP++
 	}
+
 	return nil
 }
 
@@ -195,6 +207,7 @@ func decReg16(c *CPU, _ ...any) error {
 	case 3:
 		c.SP--
 	}
+
 	return nil
 }
 
@@ -208,6 +221,7 @@ func incIndirect(c *CPU, _ ...any) error {
 	c.setN(false)
 	c.setH((value & 0x0F) == 0x0F)
 	c.memory.Write(addr, result)
+
 	return nil
 }
 
@@ -221,6 +235,7 @@ func decIndirect(c *CPU, _ ...any) error {
 	c.setN(true)
 	c.setH((value & 0x0F) == 0x00)
 	c.memory.Write(addr, result)
+
 	return nil
 }
 
@@ -249,6 +264,7 @@ func addHL(c *CPU, _ ...any) error {
 	c.setH((hl&0x0FFF)+(value&0x0FFF) > 0x0FFF)
 	c.setC(result32 > 0xFFFF)
 	c.setHL(result)
+
 	return nil
 }
 
@@ -262,6 +278,7 @@ func rlcaFunc(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(carry != 0)
+
 	return nil
 }
 
@@ -275,6 +292,7 @@ func rrcaFunc(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(carry != 0)
+
 	return nil
 }
 
@@ -288,6 +306,7 @@ func rlaFunc(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(newCarry != 0)
+
 	return nil
 }
 
@@ -301,6 +320,7 @@ func rraFunc(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(newCarry != 0)
+
 	return nil
 }
 
@@ -320,6 +340,7 @@ func daa(c *CPU) error {
 	c.setH(false)
 	c.setC(carry)
 	// N flag unchanged
+
 	return nil
 }
 
@@ -329,10 +350,13 @@ func daaAfterAdd(c *CPU, correction *uint8, carry bool) bool {
 		*correction |= 0x60
 		carry = true
 	}
+
 	if c.Flags.H != 0 || (c.A&0x0F) > 9 {
 		*correction |= 0x06
 	}
+
 	c.A += *correction
+
 	return carry
 }
 
@@ -341,9 +365,11 @@ func daaAfterSub(c *CPU, correction *uint8, carry bool) {
 	if carry {
 		*correction |= 0x60
 	}
+
 	if c.Flags.H != 0 {
 		*correction |= 0x06
 	}
+
 	c.A -= *correction
 }
 
@@ -352,6 +378,7 @@ func cpl(c *CPU) error {
 	c.A = ^c.A
 	c.setN(true)
 	c.setH(true)
+
 	return nil
 }
 
@@ -360,6 +387,7 @@ func scf(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(true)
+
 	return nil
 }
 
@@ -368,6 +396,7 @@ func ccf(c *CPU) error {
 	c.setN(false)
 	c.setH(false)
 	c.setC(c.Flags.C == 0)
+
 	return nil
 }
 
@@ -396,5 +425,6 @@ func addSPE(c *CPU, params ...any) error {
 
 	c.Flags.Z = 0
 	c.setN(false)
+
 	return nil
 }

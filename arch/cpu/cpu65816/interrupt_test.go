@@ -31,7 +31,8 @@ func TestStepServicesInterrupt(t *testing.T) {
 			cpu.Flags.D = 1
 			mem.WriteWord(tt.vector, 0x9000)
 			mem.Write(0x9000, 0x40) // RTI must execute on the next Step.
-			cycles, sp := cpu.Cycles(), cpu.SP
+			cycles := cpu.Cycles()
+			sp := cpu.SP
 
 			if tt.irq {
 				cpu.TriggerIRQ()

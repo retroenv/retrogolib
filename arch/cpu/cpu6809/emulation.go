@@ -65,6 +65,7 @@ func adca(c *CPU, param any) error {
 		return err
 	}
 	c.A = c.add8(c.A, val, c.Flags.C)
+
 	return nil
 }
 
@@ -74,6 +75,7 @@ func adcb(c *CPU, param any) error {
 		return err
 	}
 	c.B = c.add8(c.B, val, c.Flags.C)
+
 	return nil
 }
 
@@ -83,6 +85,7 @@ func adda(c *CPU, param any) error {
 		return err
 	}
 	c.A = c.add8(c.A, val, 0)
+
 	return nil
 }
 
@@ -92,6 +95,7 @@ func addb(c *CPU, param any) error {
 		return err
 	}
 	c.B = c.add8(c.B, val, 0)
+
 	return nil
 }
 
@@ -108,6 +112,7 @@ func addd(c *CPU, param any) error {
 	setFlag(&c.Flags.V, (d^val)&0x8000 == 0 && (d^result)&0x8000 != 0)
 	c.setZN16(result)
 	c.SetD(result)
+
 	return nil
 }
 
@@ -119,6 +124,7 @@ func anda(c *CPU, param any) error {
 	c.A &= val
 	c.setZN8(c.A)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -130,6 +136,7 @@ func andb(c *CPU, param any) error {
 	c.B &= val
 	c.setZN8(c.B)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -165,6 +172,7 @@ func bita(c *CPU, param any) error {
 	result := c.A & val
 	c.setZN8(result)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -176,6 +184,7 @@ func bitb(c *CPU, param any) error {
 	result := c.B & val
 	c.setZN8(result)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -185,6 +194,7 @@ func cmpa(c *CPU, param any) error {
 		return err
 	}
 	c.compare8(c.A, val)
+
 	return nil
 }
 
@@ -194,6 +204,7 @@ func cmpb(c *CPU, param any) error {
 		return err
 	}
 	c.compare8(c.B, val)
+
 	return nil
 }
 
@@ -203,6 +214,7 @@ func cmpd(c *CPU, param any) error {
 		return err
 	}
 	c.compare16(c.D(), val)
+
 	return nil
 }
 
@@ -212,6 +224,7 @@ func cmps(c *CPU, param any) error {
 		return err
 	}
 	c.compare16(c.S, val)
+
 	return nil
 }
 
@@ -221,6 +234,7 @@ func cmpu(c *CPU, param any) error {
 		return err
 	}
 	c.compare16(c.U, val)
+
 	return nil
 }
 
@@ -230,6 +244,7 @@ func cmpx(c *CPU, param any) error {
 		return err
 	}
 	c.compare16(c.X, val)
+
 	return nil
 }
 
@@ -239,6 +254,7 @@ func cmpy(c *CPU, param any) error {
 		return err
 	}
 	c.compare16(c.Y, val)
+
 	return nil
 }
 
@@ -250,6 +266,7 @@ func eora(c *CPU, param any) error {
 	c.A ^= val
 	c.setZN8(c.A)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -261,6 +278,7 @@ func eorb(c *CPU, param any) error {
 	c.B ^= val
 	c.setZN8(c.B)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -272,6 +290,7 @@ func ora(c *CPU, param any) error {
 	c.A |= val
 	c.setZN8(c.A)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -283,6 +302,7 @@ func orb(c *CPU, param any) error {
 	c.B |= val
 	c.setZN8(c.B)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -292,6 +312,7 @@ func suba(c *CPU, param any) error {
 		return err
 	}
 	c.A = c.sub8(c.A, val, 0)
+
 	return nil
 }
 
@@ -301,6 +322,7 @@ func subb(c *CPU, param any) error {
 		return err
 	}
 	c.B = c.sub8(c.B, val, 0)
+
 	return nil
 }
 
@@ -317,6 +339,7 @@ func subd(c *CPU, param any) error {
 	setFlag(&c.Flags.V, (d^val)&0x8000 != 0 && (d^result)&0x8000 != 0)
 	c.setZN16(result)
 	c.SetD(result)
+
 	return nil
 }
 
@@ -326,6 +349,7 @@ func sbca(c *CPU, param any) error {
 		return err
 	}
 	c.A = c.sub8(c.A, val, c.Flags.C)
+
 	return nil
 }
 
@@ -335,6 +359,7 @@ func sbcb(c *CPU, param any) error {
 		return err
 	}
 	c.B = c.sub8(c.B, val, c.Flags.C)
+
 	return nil
 }
 
@@ -348,6 +373,7 @@ func lda(c *CPU, param any) error {
 	c.A = val
 	c.setZN8(c.A)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -359,6 +385,7 @@ func ldb(c *CPU, param any) error {
 	c.B = val
 	c.setZN8(c.B)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -370,6 +397,7 @@ func ldd(c *CPU, param any) error {
 	c.SetD(val)
 	c.setZN16(val)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -381,6 +409,7 @@ func lds(c *CPU, param any) error {
 	c.loadS(val)
 	c.setZN16(c.S)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -392,6 +421,7 @@ func ldu(c *CPU, param any) error {
 	c.U = val
 	c.setZN16(c.U)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -403,6 +433,7 @@ func ldx(c *CPU, param any) error {
 	c.X = val
 	c.setZN16(c.X)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -414,6 +445,7 @@ func ldy(c *CPU, param any) error {
 	c.Y = val
 	c.setZN16(c.Y)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -425,6 +457,7 @@ func sta(c *CPU, param any) error {
 	c.memory.Write(addr, c.A)
 	c.setZN8(c.A)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -436,6 +469,7 @@ func stb(c *CPU, param any) error {
 	c.memory.Write(addr, c.B)
 	c.setZN8(c.B)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -448,6 +482,7 @@ func std(c *CPU, param any) error {
 	c.memory.WriteWord(addr, d)
 	c.setZN16(d)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -459,6 +494,7 @@ func sts(c *CPU, param any) error {
 	c.memory.WriteWord(addr, c.S)
 	c.setZN16(c.S)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -470,6 +506,7 @@ func stu(c *CPU, param any) error {
 	c.memory.WriteWord(addr, c.U)
 	c.setZN16(c.U)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -481,6 +518,7 @@ func stx(c *CPU, param any) error {
 	c.memory.WriteWord(addr, c.X)
 	c.setZN16(c.X)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -492,6 +530,7 @@ func sty(c *CPU, param any) error {
 	c.memory.WriteWord(addr, c.Y)
 	c.setZN16(c.Y)
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -556,6 +595,7 @@ func neg8(c *CPU, val uint8) uint8 {
 	setFlag(&c.Flags.C, val != 0)
 	setFlag(&c.Flags.V, val == 0x80)
 	c.setZN8(result)
+
 	return result
 }
 
@@ -566,6 +606,7 @@ func negMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, neg8(c, val))
+
 	return nil
 }
 
@@ -584,6 +625,7 @@ func com8(c *CPU, val uint8) uint8 {
 	c.setZN8(result)
 	c.Flags.V = 0
 	c.Flags.C = 1
+
 	return result
 }
 
@@ -594,6 +636,7 @@ func comMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, com8(c, val))
+
 	return nil
 }
 
@@ -611,6 +654,7 @@ func lsr8(c *CPU, val uint8) uint8 {
 	setFlag(&c.Flags.C, val&0x01 != 0)
 	result := val >> 1
 	c.setZN8(result)
+
 	return result
 }
 
@@ -621,6 +665,7 @@ func lsrMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, lsr8(c, val))
+
 	return nil
 }
 
@@ -641,7 +686,9 @@ func ror8(c *CPU, val uint8) uint8 {
 	if oldC != 0 {
 		result |= 0x80
 	}
+
 	c.setZN8(result)
+
 	return result
 }
 
@@ -652,6 +699,7 @@ func rorMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, ror8(c, val))
+
 	return nil
 }
 
@@ -669,6 +717,7 @@ func asr8(c *CPU, val uint8) uint8 {
 	setFlag(&c.Flags.C, val&0x01 != 0)
 	result := (val >> 1) | (val & 0x80) // preserve sign bit
 	c.setZN8(result)
+
 	return result
 }
 
@@ -679,6 +728,7 @@ func asrMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, asr8(c, val))
+
 	return nil
 }
 
@@ -697,6 +747,7 @@ func asl8(c *CPU, val uint8) uint8 {
 	result := val << 1
 	setFlag(&c.Flags.V, (val^result)&0x80 != 0)
 	c.setZN8(result)
+
 	return result
 }
 
@@ -707,6 +758,7 @@ func aslMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, asl8(c, val))
+
 	return nil
 }
 
@@ -727,8 +779,10 @@ func rol8(c *CPU, val uint8) uint8 {
 	if oldC != 0 {
 		result |= 0x01
 	}
+
 	setFlag(&c.Flags.V, (val^result)&0x80 != 0)
 	c.setZN8(result)
+
 	return result
 }
 
@@ -739,6 +793,7 @@ func rolMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, rol8(c, val))
+
 	return nil
 }
 
@@ -756,6 +811,7 @@ func dec8(c *CPU, val uint8) uint8 {
 	result := val - 1
 	setFlag(&c.Flags.V, val == 0x80)
 	c.setZN8(result)
+
 	return result
 }
 
@@ -766,6 +822,7 @@ func decMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, dec8(c, val))
+
 	return nil
 }
 
@@ -783,6 +840,7 @@ func inc8(c *CPU, val uint8) uint8 {
 	result := val + 1
 	setFlag(&c.Flags.V, val == 0x7F)
 	c.setZN8(result)
+
 	return result
 }
 
@@ -793,6 +851,7 @@ func incMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	c.memory.Write(addr, inc8(c, val))
+
 	return nil
 }
 
@@ -818,6 +877,7 @@ func tstMem(c *CPU, param any) error {
 	}
 	val := c.memory.Read(addr)
 	tst8(c, val)
+
 	return nil
 }
 
@@ -845,6 +905,7 @@ func clrMem(c *CPU, param any) error {
 	}
 	c.memory.Write(addr, 0)
 	clr8(c)
+
 	return nil
 }
 
@@ -878,8 +939,10 @@ func sexFn(c *CPU) error {
 	} else {
 		c.A = 0x00
 	}
+
 	c.setZN16(c.D())
 	c.Flags.V = 0
+
 	return nil
 }
 
@@ -889,6 +952,7 @@ func mulFn(c *CPU) error {
 	c.SetD(result)
 	setFlag(&c.Flags.Z, result == 0)
 	setFlag(&c.Flags.C, c.B&0x80 != 0) // bit 7 of result low byte
+
 	return nil
 }
 
@@ -900,6 +964,7 @@ func daaFn(c *CPU) error {
 	if c.Flags.H != 0 || (a&0x0F) > 9 {
 		cf |= 0x06
 	}
+
 	if c.Flags.C != 0 || a > 0x99 {
 		cf |= 0x60
 	}
@@ -910,5 +975,6 @@ func daaFn(c *CPU) error {
 	if a > 0xFF {
 		c.Flags.C = 1
 	}
+
 	return nil
 }

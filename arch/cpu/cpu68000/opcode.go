@@ -93,6 +93,7 @@ func eaClasses(mode, reg uint8) eaClass {
 			return eaData | eaMemory
 		}
 	}
+
 	return 0
 }
 
@@ -289,6 +290,7 @@ func decodeMOVE(opcode uint16, size OperandSize) DecodedOpcode {
 	if size == SizeByte {
 		source = eaData
 	}
+
 	if !validEA(srcMode, srcReg, source) {
 		return illegalOpcode()
 	}
@@ -302,6 +304,7 @@ func decodeMOVE(opcode uint16, size OperandSize) DecodedOpcode {
 		DstReg:      dstReg,
 		Timing:      4,
 	}
+
 	return requireEA(d, dstMode, dstReg, eaDataAlterable)
 }
 
@@ -320,6 +323,7 @@ func decodeMOVEA(opcode uint16, size OperandSize) DecodedOpcode {
 		DstReg:      uint8(dstReg),
 		Timing:      4,
 	}
+
 	return requireEA(d, srcMode, srcReg, eaAny)
 }
 
@@ -477,6 +481,7 @@ func decodeLine4Unary(opcode uint16, mode, reg uint8) (DecodedOpcode, bool) {
 	} else {
 		d, ok = decodeLine4UnaryHigh(op, mode, reg)
 	}
+
 	if !ok {
 		return d, false
 	}
@@ -485,6 +490,7 @@ func decodeLine4Unary(opcode uint16, mode, reg uint8) (DecodedOpcode, bool) {
 	if d.Extra == 4 || d.Extra == 5 {
 		required = eaData
 	}
+
 	return requireEA(d, mode, reg, required), true
 }
 
@@ -533,7 +539,9 @@ func decodeLine4UnaryLow(op uint16, mode, reg uint8) (DecodedOpcode, bool) {
 	if !ok {
 		return DecodedOpcode{}, false
 	}
-	d.DstMode, d.DstReg = mode, reg
+	d.DstMode = mode
+	d.DstReg = reg
+
 	return d, true
 }
 
@@ -812,6 +820,7 @@ func decodeLine5(opcode uint16) DecodedOpcode {
 	if data == 0 {
 		data = 8
 	}
+
 	size := sizeFromBits(sizeBits)
 	if size == SizeByte && mode == 1 {
 		return illegalOpcode()
@@ -821,6 +830,7 @@ func decodeLine5(opcode uint16) DecodedOpcode {
 	if opcode&0x0100 != 0 {
 		ins = insSUBQ
 	}
+
 	return requireEA(DecodedOpcode{
 		Instruction: ins,
 		Size:        size,
@@ -918,6 +928,7 @@ func decodeLineB(opcode uint16) DecodedOpcode {
 		if opMode == 7 {
 			sz = SizeLong
 		}
+
 		return requireEA(DecodedOpcode{
 			Instruction: insCMPA,
 			Size:        sz,
@@ -1012,6 +1023,7 @@ func decodeLineCExg(opcode, opMode uint16) (DecodedOpcode, bool) {
 	default:
 		return DecodedOpcode{}, false
 	}
+
 	return d, true
 }
 
@@ -1033,6 +1045,7 @@ func decodeAddSub(opcode uint16, insBase, insAddr, insExtended *Instruction) Dec
 		if opMode == 7 {
 			sz = SizeLong
 		}
+
 		return requireEA(DecodedOpcode{
 			Instruction: insAddr,
 			Size:        sz,
@@ -1056,6 +1069,7 @@ func decodeAddSub(opcode uint16, insBase, insAddr, insExtended *Instruction) Dec
 	}
 
 	size := sizeFromBits(opMode & 3)
+
 	return decodeDyadic(opcode, insBase, opMode, byteSourceClass(size))
 }
 
@@ -1076,6 +1090,7 @@ func decodeDyadic(opcode uint16, ins *Instruction, opMode uint16, source eaClass
 		d.SrcReg = reg
 		d.DstMode = 0
 		d.DstReg = dn
+
 		return requireEA(d, mode, reg, source)
 	}
 
@@ -1083,6 +1098,7 @@ func decodeDyadic(opcode uint16, ins *Instruction, opMode uint16, source eaClass
 	d.SrcReg = dn
 	d.DstMode = mode
 	d.DstReg = reg
+
 	return requireEA(d, mode, reg, eaMemoryAlterable)
 }
 

@@ -79,7 +79,8 @@ func TestDivisionTiming(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu := newTestCPU(t)
-			cpu.D[0], cpu.D[1] = tt.dividend, tt.divisor
+			cpu.D[0] = tt.dividend
+			cpu.D[1] = tt.divisor
 			cpu.bus.WriteWord(cpu.PC, tt.opcode)
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, tt.cycles, cpu.Cycles())

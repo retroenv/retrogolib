@@ -29,6 +29,7 @@ func (op Opcode) ReadsMemory(memReadInstructions set.Set[string]) bool {
 	case ImmediateAddressing, Immediate16Addressing, ImpliedAddressing, RelativeAddressing, RelativeLongAddressing:
 		return false
 	}
+
 	return memReadInstructions.Contains(op.Instruction.Name)
 }
 
@@ -41,6 +42,7 @@ func (op Opcode) WritesMemory(memWriteInstructions set.Set[string]) bool {
 	case ImmediateAddressing, Immediate16Addressing, ImpliedAddressing, RelativeAddressing, RelativeLongAddressing:
 		return false
 	}
+
 	return memWriteInstructions.Contains(op.Instruction.Name)
 }
 

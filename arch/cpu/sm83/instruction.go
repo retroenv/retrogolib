@@ -33,6 +33,7 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 			return ok
 		}
 	}
+
 	return false
 }
 
@@ -43,6 +44,7 @@ func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, 
 		for _, info := range ins.Addressing {
 			return info, true
 		}
+
 		return OpcodeInfo{}, false
 	}
 
@@ -59,6 +61,7 @@ func (ins Instruction) GetOpcodeByBit(bit Bit, register RegisterParam) (OpcodeIn
 	}
 
 	info, exists := registers[register]
+
 	return info, exists
 }
 

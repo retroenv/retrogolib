@@ -50,6 +50,7 @@ func (c *CPU) pop8() uint8 {
 	if c.E {
 		c.SP = 0x0100 | (c.SP & 0x00FF)
 	}
+
 	return c.memory.Read(bank24(0, c.SP))
 }
 

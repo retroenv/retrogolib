@@ -15,6 +15,7 @@ func (cpu *CPU) checkAccess(address uint32, size OperandSize, write bool, space 
 	if size != SizeByte && address&1 != 0 {
 		cpu.raiseAccessFault(address, write, space, VectorAddressErr, ErrAddressError)
 	}
+
 	if handler, ok := cpu.bus.(BusErrorHandler); ok {
 		if err := handler.OnBusAccess(address&addressMask, size, write); err != nil {
 			cpu.raiseAccessFault(address, write, space, VectorBusError, fmt.Errorf("%w: %w", ErrBusError, err))
@@ -29,20 +30,25 @@ func (cpu *CPU) raiseAccessFault(address uint32, write bool, space accessSpace, 
 	if space == programSpace {
 		status = status&^7 | 2
 	}
+
 	if cpu.IsSupervisor() {
 		status |= 4
 	}
+
 	if !write {
 		status |= 0x10
 	}
+
 	if cpu.exceptionAccess {
 		status |= 8
 	}
+
 	pc := cpu.PC
 	if space == dataSpace && !cpu.exceptionAccess {
 		// Operand faults expose the instruction pipeline's current word address.
 		pc = uint32(int32(pc) + cpu.operandPCOffset)
 	}
+
 	panic(&accessError{
 		cause:   cause,
 		address: address,
@@ -99,6 +105,7 @@ func (cpu *CPU) readPredecrement(reg uint8, size OperandSize) (uint32, error) {
 	low := uint32(cpu.readBusWord(cpu.getRegA(reg), dataSpace))
 	cpu.setRegA(reg, cpu.getRegA(reg)-2)
 	high := uint32(cpu.readBusWord(cpu.getRegA(reg), dataSpace))
+
 	return high<<16 | low, nil
 }
 

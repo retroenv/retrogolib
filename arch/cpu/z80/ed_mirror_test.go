@@ -108,7 +108,10 @@ func TestFullBusPortAddresses(t *testing.T) {
 			}
 			cpu, err := NewWithBus(bus)
 			assert.NoError(t, err)
-			cpu.A, cpu.B, cpu.C, cpu.H = 0x56, 0x12, 0x34, 0x80
+			cpu.A = 0x56
+			cpu.B = 0x12
+			cpu.C = 0x34
+			cpu.H = 0x80
 			for i, value := range tt.code {
 				bus.Write(uint16(i), value)
 			}

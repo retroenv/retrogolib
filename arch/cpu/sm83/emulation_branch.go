@@ -14,6 +14,7 @@ func (c *CPU) checkCondition() bool {
 	case 3: // C
 		return c.Flags.C == 1
 	}
+
 	return false
 }
 
@@ -34,6 +35,7 @@ func jpCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 3
 	}
+
 	return nil
 }
 
@@ -62,6 +64,7 @@ func jrCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -71,6 +74,7 @@ func call(c *CPU, params ...any) error {
 	addr := uint16(params[0].(Extended))
 	c.push16(c.PC + 3)
 	c.PC = addr
+
 	return nil
 }
 
@@ -86,6 +90,7 @@ func callCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 3
 	}
+
 	return nil
 }
 
@@ -105,6 +110,7 @@ func retCond(c *CPU) error {
 	} else {
 		c.PC++
 	}
+
 	return nil
 }
 
@@ -121,5 +127,6 @@ func rst(c *CPU, _ ...any) error {
 	c.push16(c.PC + 1)
 	vector := uint16(c.currentOpcode & 0x38)
 	c.PC = vector
+
 	return nil
 }

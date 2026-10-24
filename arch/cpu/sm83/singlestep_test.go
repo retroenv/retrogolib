@@ -122,7 +122,10 @@ func runSingleStepCase(tc *singleStepTest) error {
 	// fetch. The emulator charges one cycle for the instruction itself and
 	// accounts for idle time in each later Step, so these two are not compared.
 	if opcode != 0x10 && opcode != 0x76 {
-		if got, want := cpu.Cycles(), uint64(len(tc.Cycles)); got != want {
+		got := cpu.Cycles()
+		want := uint64(len(tc.Cycles))
+
+		if got != want {
 			return fmt.Errorf("cycles: got %d, want %d", got, want)
 		}
 	}

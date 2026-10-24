@@ -29,7 +29,8 @@ func TestReleaseNMOS(t *testing.T) {
 	assert.False(t, testing.Short(), "release qualification cannot use short mode")
 	root := os.Getenv("CPU6502_TESTDATA")
 	verifyReleaseCorpus(t, root, releaseSingleStepRevision)
-	files, cases := 0, 0
+	files := 0
+	cases := 0
 	for opcode, info := range Opcodes {
 		if info.Instruction.Unofficial {
 			continue
@@ -162,8 +163,11 @@ func runReleaseVector(t *testing.T, vector ss6502TestCase) {
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	cpu := newTestCPU(t, memory, WithVariant(VariantNMOS6502))
-	cpu.PC, cpu.SP = vector.Initial.PC, vector.Initial.S
-	cpu.A, cpu.X, cpu.Y = vector.Initial.A, vector.Initial.X, vector.Initial.Y
+	cpu.PC = vector.Initial.PC
+	cpu.SP = vector.Initial.S
+	cpu.A = vector.Initial.A
+	cpu.X = vector.Initial.X
+	cpu.Y = vector.Initial.Y
 	cpu.setFlags(vector.Initial.P)
 	before := cpu.Cycles()
 	assert.NoError(t, cpu.Step(), vector.Name)

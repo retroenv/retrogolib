@@ -21,8 +21,10 @@ func (c *CPU) branch(taken bool, params []any) error {
 	if c.E && uint16(target)&0xFF00 != nextPC&0xFF00 {
 		c.cycles++
 	}
+
 	c.PC = uint16(target)
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -62,6 +64,7 @@ func brl(c *CPU, params ...any) error {
 	}
 	c.PC = uint16(target)
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -88,7 +91,9 @@ func jmp(c *CPU, params ...any) error {
 	default:
 		return fmt.Errorf("%w: jump target type %T", ErrInvalidParameterType, params[0])
 	}
+
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -101,6 +106,7 @@ func jml(c *CPU, params ...any) error {
 	c.PB = uint8(uint32(target) >> 16)
 	c.PC = uint16(target)
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -123,6 +129,7 @@ func jsr(c *CPU, params ...any) error {
 	c.push16(c.PC + 2)
 	c.PC = target
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -141,5 +148,6 @@ func jsl(c *CPU, params ...any) error {
 	c.PB = uint8(uint32(target) >> 16)
 	c.PC = uint16(target)
 	c.pcChanged = true
+
 	return nil
 }

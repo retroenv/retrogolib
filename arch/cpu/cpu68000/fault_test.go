@@ -43,7 +43,8 @@ func TestAddressErrorFrame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu := newTestCPU(t)
-			cpu.A[0], cpu.D[0] = 0x3001, 0x1234
+			cpu.A[0] = 0x3001
+			cpu.D[0] = 0x1234
 			cpu.bus.WriteWord(cpu.PC, tt.opcode)
 			writeLong(cpu.bus, VectorAddressErr*4, 0x2000)
 			cpu.USP = 0x8000
@@ -120,7 +121,8 @@ func TestBusErrorAbortsTransfer(t *testing.T) {
 				cause:    errors.New("unmapped device"),
 			}
 			cpu.bus = bus
-			cpu.A[0], cpu.D[0] = 0x3000, 0x12345678
+			cpu.A[0] = 0x3000
+			cpu.D[0] = 0x12345678
 			bus.WriteWord(cpu.PC, tt.opcode)
 			writeLong(bus, VectorBusError*4, 0x2000)
 			assert.NoError(t, cpu.Step())

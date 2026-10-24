@@ -26,6 +26,7 @@ func (ins *Instruction) HasAddressing(modes ...AddressingMode) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

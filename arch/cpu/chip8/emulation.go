@@ -14,6 +14,7 @@ func (c *CPU) ldVxK(reg uint16) error {
 		}
 	}
 	// A restored snapshot can carry invalid indices.
+
 	if c.keyWait.Register >= uint8(len(c.V)) || c.keyWait.Key >= uint8(len(c.Key)) {
 		return fmt.Errorf("%w: key wait register 0x%X, key 0x%X", ErrRegisterOutOfBounds, c.keyWait.Register, c.keyWait.Key)
 	}
@@ -77,9 +78,11 @@ func (c *CPU) ldIVx(reg uint16) error {
 	for i := range reg + 1 {
 		c.Memory[c.I+i] = c.V[i]
 	}
+
 	if !c.quirks.LoadStoreLeavesI {
 		c.I += reg + 1
 	}
+
 	c.PC += 2
 
 	return nil
@@ -93,9 +96,11 @@ func (c *CPU) ldVxI(reg uint16) error {
 	for i := range reg + 1 {
 		c.V[i] = c.Memory[c.I+i]
 	}
+
 	if !c.quirks.LoadStoreLeavesI {
 		c.I += reg + 1
 	}
+
 	c.PC += 2
 
 	return nil
@@ -131,6 +136,7 @@ func (c *CPU) drawSpriteRow(x, y uint16, sprite byte) {
 			}
 			drawX %= displayWidth
 		}
+
 		if (sprite & (0x80 >> xLine)) == 0 {
 			continue
 		}
@@ -139,6 +145,7 @@ func (c *CPU) drawSpriteRow(x, y uint16, sprite byte) {
 		if c.Display[index] == 1 {
 			c.V[0xf] = 1
 		}
+
 		c.Display[index] ^= 1
 	}
 }
@@ -180,6 +187,7 @@ func jp(c *CPU, param uint16) error {
 		if c.quirks.JumpUsesVX {
 			register = (addr & 0x0F00) >> 8
 		}
+
 		c.PC = addr + uint16(c.V[register])
 
 	default:
@@ -266,6 +274,7 @@ func or(c *CPU, param uint16) error {
 	if !c.quirks.LogicPreservesVF {
 		c.V[0xf] = 0
 	}
+
 	c.PC += 2
 
 	return nil
@@ -282,6 +291,7 @@ func xor(c *CPU, param uint16) error {
 	if !c.quirks.LogicPreservesVF {
 		c.V[0xf] = 0
 	}
+
 	c.PC += 2
 
 	return nil
@@ -336,6 +346,7 @@ func sub(c *CPU, param uint16) error {
 	if left >= right {
 		flag = 1
 	}
+
 	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2
@@ -422,6 +433,7 @@ func and(c *CPU, param uint16) error {
 	if !c.quirks.LogicPreservesVF {
 		c.V[0xf] = 0
 	}
+
 	c.PC += 2
 
 	return nil
@@ -480,6 +492,7 @@ func shl(c *CPU, param uint16) error {
 	if c.quirks.ShiftUsesVX {
 		reg2 = reg1
 	}
+
 	value := c.V[reg2]
 	c.writeArithmeticResult(reg1, value<<1, value>>7)
 	c.PC += 2
@@ -497,6 +510,7 @@ func shr(c *CPU, param uint16) error {
 	if c.quirks.ShiftUsesVX {
 		reg2 = reg1
 	}
+
 	value := c.V[reg2]
 	c.writeArithmeticResult(reg1, value>>1, value&0x1)
 	c.PC += 2
@@ -557,6 +571,7 @@ func subn(c *CPU, param uint16) error {
 	if right >= left {
 		flag = 1
 	}
+
 	c.writeArithmeticResult(reg1, result, flag)
 
 	c.PC += 2

@@ -22,6 +22,7 @@ func (c *CPU) readMem16(addr uint32) uint16 {
 	lo := uint16(c.memory.Read(addr))
 	bank := addr & 0xFF0000
 	hi := uint16(c.memory.Read(bank | uint32(uint16(addr)+1)))
+
 	return hi<<8 | lo
 }
 
@@ -30,6 +31,7 @@ func (c *CPU) readData16(addr uint32) uint16 {
 	addr &= 0xFFFFFF
 	lo := uint16(c.memory.Read(addr))
 	hi := uint16(c.memory.Read((addr + 1) & 0xFFFFFF))
+
 	return hi<<8 | lo
 }
 
@@ -40,6 +42,7 @@ func (c *CPU) readDPWord(dpOffset uint8) uint16 {
 		dpPage := uint32(c.DP)
 		lo := uint16(c.memory.Read(dpPage | uint32(dpOffset)))
 		hi := uint16(c.memory.Read(dpPage | uint32(dpOffset+1)))
+
 		return hi<<8 | lo
 	}
 	return c.readMem16(bank24(0, c.DP+uint16(dpOffset)))
@@ -86,6 +89,7 @@ func (c *CPU) readMem24(addr uint32) uint32 {
 	lo := uint32(c.memory.Read(addr))
 	mid := uint32(c.memory.Read(bank | uint32(uint16(addr)+1)))
 	hi := uint32(c.memory.Read(bank | uint32(uint16(addr)+2)))
+
 	return hi<<16 | mid<<8 | lo
 }
 

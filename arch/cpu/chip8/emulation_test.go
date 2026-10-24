@@ -675,11 +675,14 @@ func TestCompatibilityQuirks(t *testing.T) {
 	c := New(nil, WithQuirks(quirks))
 	assert.Equal(t, quirks, c.quirks)
 
-	c.V[0], c.V[1] = 4, 1
+	c.V[0] = 4
+	c.V[1] = 1
 	assert.NoError(t, shr(c, 0x8016))
 	assert.Equal(t, uint8(2), c.V[0])
 
-	c.V[0], c.V[1], c.V[0xf] = 0x12, 0x34, 0x7f
+	c.V[0] = 0x12
+	c.V[1] = 0x34
+	c.V[0xf] = 0x7f
 	assert.NoError(t, or(c, 0x8011))
 	assert.Equal(t, uint8(0x7f), c.V[0xf])
 
@@ -687,13 +690,16 @@ func TestCompatibilityQuirks(t *testing.T) {
 	assert.NoError(t, c.ldIVx(1))
 	assert.Equal(t, uint16(0x300), c.I)
 
-	c.V[0], c.V[1] = 1, 2
+	c.V[0] = 1
+	c.V[1] = 2
 	assert.NoError(t, jp(c, 0xB123))
 	assert.Equal(t, uint16(0x125), c.PC)
 
-	c.V[0], c.V[1] = 62, 31
+	c.V[0] = 62
+	c.V[1] = 31
 	c.I = 0x300
-	c.Memory[0x300], c.Memory[0x301] = 0xff, 0x80
+	c.Memory[0x300] = 0xff
+	c.Memory[0x301] = 0x80
 	assert.NoError(t, drw(c, 0xD012))
 	assert.Equal(t, uint8(1), c.Display[62])
 	assert.Equal(t, uint8(1), c.Display[31*displayWidth+62])

@@ -145,7 +145,8 @@ func runSS65816File(t *testing.T, path string) {
 	err = json.Unmarshal(data, &cases)
 	assert.NoError(t, err)
 
-	pass, fail := 0, 0
+	pass := 0
+	fail := 0
 	for i := range cases {
 		if runSS65816Case(t, &cases[i]) {
 			pass++
@@ -247,6 +248,7 @@ func runSS65816BlockMove(t *testing.T, tc *ss65816TestCase, cpu *CPU) ssExpectat
 // writes against the expected final state, returning true if everything matches.
 func verifySS65816Case(t *testing.T, tc *ss65816TestCase, cpu *CPU, mem *ss65816Memory, want ssExpectation,
 	cycles int) bool {
+
 	t.Helper()
 
 	var diffs []string
@@ -282,7 +284,8 @@ func verifySS65816Case(t *testing.T, tc *ss65816TestCase, cpu *CPU, mem *ss65816
 	if cpu.E != wantE {
 		diffs = append(diffs, fmt.Sprintf("E: got %v, want %v", cpu.E, wantE))
 	}
-	gotP, wantP := cpu.Flags.Get(), tc.Final.P
+	gotP := cpu.Flags.Get()
+	wantP := tc.Final.P
 	if gotP != wantP {
 		diffs = append(diffs, fmt.Sprintf("P: got %08b (%02X), want %08b (%02X)", gotP, gotP, wantP, wantP))
 	}

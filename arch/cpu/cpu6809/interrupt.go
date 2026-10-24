@@ -39,6 +39,7 @@ func (c *CPU) requestInterrupt(pending *bool) {
 	if c.waitMode == waitSync {
 		c.waitMode = waitNone
 	}
+
 	c.interruptMu.Unlock()
 }
 
@@ -84,6 +85,7 @@ func (c *CPU) handleNMI(stackState bool) {
 		c.pushEntireState(c.PC)
 		c.cycles += 19
 	}
+
 	c.Flags.I = 1
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorNMI)
@@ -96,6 +98,7 @@ func (c *CPU) handleFIRQ(stackState bool) {
 		c.pushS8(c.GetCC())
 		c.cycles += 10
 	}
+
 	c.Flags.I = 1
 	c.Flags.F = 1
 	c.PC = c.memory.ReadVector(VectorFIRQ)
@@ -107,6 +110,7 @@ func (c *CPU) handleIRQ(stackState bool) {
 		c.pushEntireState(c.PC)
 		c.cycles += 19
 	}
+
 	c.Flags.I = 1
 	c.PC = c.memory.ReadVector(VectorIRQ)
 }

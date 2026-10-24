@@ -75,7 +75,8 @@ func TestExtendedArithmeticCarry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu := newTestCPU(t)
-			cpu.D[0], cpu.D[1] = tt.dst, tt.src
+			cpu.D[0] = tt.dst
+			cpu.D[1] = tt.src
 			cpu.Flags.X = 1
 			cpu.bus.WriteWord(cpu.PC, tt.opcode)
 			assert.NoError(t, cpu.Step())
@@ -102,8 +103,10 @@ func TestDecimalCorrection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cpu := newTestCPU(t)
-			cpu.D[0], cpu.D[1] = 0x12340000|uint32(tt.dst), uint32(tt.src)
-			cpu.Flags.X, cpu.Flags.Z = tt.extend, 1
+			cpu.D[0] = 0x12340000 | uint32(tt.dst)
+			cpu.D[1] = uint32(tt.src)
+			cpu.Flags.X = tt.extend
+			cpu.Flags.Z = 1
 			cpu.bus.WriteWord(cpu.PC, tt.opcode)
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, 0x12340000|uint32(tt.result), cpu.D[0])
@@ -115,7 +118,8 @@ func TestDecimalCorrection(t *testing.T) {
 func TestMOVEPTransfersSpacedBytes(t *testing.T) {
 	// MOVEP was shadowed by bit-op decoding, with its direction reversed.
 	cpu := newTestCPU(t)
-	cpu.A[0], cpu.D[0] = 0x3000, 0x12345678
+	cpu.A[0] = 0x3000
+	cpu.D[0] = 0x12345678
 	cpu.bus.WriteWord(cpu.PC, 0x01C8) // MOVEP.L D0,0(A0).
 	cpu.bus.WriteWord(cpu.PC+2, 0)
 	cpu.bus.WriteWord(cpu.PC+4, 0x0348) // MOVEP.L 0(A0),D1.
@@ -131,7 +135,9 @@ func TestMOVEPTransfersSpacedBytes(t *testing.T) {
 func TestMOVEMPredecrementRegisterOrder(t *testing.T) {
 	// Predecrement masks reverse the register numbering, not the mask iteration.
 	cpu := newTestCPU(t)
-	cpu.A[0], cpu.D[0], cpu.D[1] = 0x3000, 0x12345678, 0xABCDEF01
+	cpu.A[0] = 0x3000
+	cpu.D[0] = 0x12345678
+	cpu.D[1] = 0xABCDEF01
 	cpu.bus.WriteWord(cpu.PC, 0x48E0)
 	cpu.bus.WriteWord(cpu.PC+2, 0xC000) // D1 then D0.
 	assert.NoError(t, cpu.Step())
@@ -172,7 +178,8 @@ func TestASRSignExtensionBeyondOperandWidth(t *testing.T) {
 		{opcode: 0xE2A0, value: 0x80000000, count: 33, want: 0xFFFFFFFF},
 	} {
 		cpu := newTestCPU(t)
-		cpu.D[0], cpu.D[1] = tt.value, tt.count
+		cpu.D[0] = tt.value
+		cpu.D[1] = tt.count
 		cpu.bus.WriteWord(cpu.PC, tt.opcode)
 		assert.NoError(t, cpu.Step())
 		assert.Equal(t, tt.want, cpu.D[0])

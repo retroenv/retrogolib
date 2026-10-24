@@ -153,6 +153,7 @@ func eaCycles(mode, reg uint8, size OperandSize) uint64 {
 			return cycles + 6
 		}
 	}
+
 	return cycles
 }
 
@@ -177,10 +178,12 @@ func moveCycles(op DecodedOpcode) uint64 {
 	case 4, 5:
 		return 12 + eaCycles(op.SrcMode, op.SrcReg, SizeWord)
 	}
+
 	dst := eaCycles(op.DstMode, op.DstReg, op.Size)
 	if op.DstMode == 4 {
 		dst -= 2
 	}
+
 	return 4 + eaCycles(op.SrcMode, op.SrcReg, op.Size) + dst
 }
 
@@ -199,12 +202,14 @@ func aluCycles(op DecodedOpcode) uint64 {
 	if op.DstMode == 1 {
 		base = 8
 	}
+
 	if op.Size == SizeLong {
 		base = 6
 		if op.SrcMode < 2 || op.SrcMode == 7 && op.SrcReg == 4 {
 			base = 8
 		}
 	}
+
 	return base + src
 }
 
@@ -222,18 +227,23 @@ func immediateCycles(op DecodedOpcode) uint64 {
 	if op.Instruction == insCMPI {
 		base = sizeCycles(op.Size, 8, 12)
 	}
+
 	return base + eaCycles(op.DstMode, op.DstReg, op.Size)
 }
 
 func controlCycles(op DecodedOpcode) uint64 {
-	mode, reg := op.DstMode, op.DstReg
+	mode := op.DstMode
+	reg := op.DstReg
 	if op.Instruction == insLEA || op.Instruction == insMOVEM && op.Extra != 0 {
-		mode, reg = op.SrcMode, op.SrcReg
+		mode = op.SrcMode
+		reg = op.SrcReg
 	}
+
 	extra := uint64(0)
 	if mode >= 5 {
 		extra = eaCycles(mode, reg, SizeWord) - 4
 	}
+
 	switch op.Instruction {
 	case insMOVEP:
 		return sizeCycles(op.Size, 16, 24)
@@ -253,6 +263,7 @@ func controlCycles(op DecodedOpcode) uint64 {
 			extra = 4
 		}
 	}
+
 	return uint64(op.Timing) + extra
 }
 
@@ -261,6 +272,7 @@ func bitCycles(op DecodedOpcode) uint64 {
 	if op.Instruction == insBTST {
 		base = 4
 	}
+
 	if op.DstMode == 0 {
 		if op.Instruction == insBTST || op.Instruction == insBCLR {
 			base += 2
@@ -268,9 +280,11 @@ func bitCycles(op DecodedOpcode) uint64 {
 	} else {
 		base += eaCycles(op.DstMode, op.DstReg, SizeByte)
 	}
+
 	if op.SrcMode == 7 {
 		base += 4
 	}
+
 	return base
 }
 
@@ -294,19 +308,23 @@ func divideUnsignedCycles(dividend uint32, divisor uint16) uint64 {
 			}
 		}
 	}
+
 	return cycles
 }
 
 func divideSignedCycles(dividend int32, divisor int16) uint64 {
 	cycles := uint64(12)
-	numerator, denominator := int64(dividend), int64(divisor)
+	numerator := int64(dividend)
+	denominator := int64(divisor)
 	if numerator < 0 {
 		numerator = -numerator
 		cycles += 2
 	}
+
 	if denominator < 0 {
 		denominator = -denominator
 	}
+
 	if numerator>>16 >= denominator {
 		return cycles + 4
 	}
@@ -319,11 +337,14 @@ func divideSignedCycles(dividend int32, divisor int16) uint64 {
 			cycles += 2
 		}
 	}
+
 	for range 15 {
 		if quotient&0x8000 == 0 {
 			cycles += 2
 		}
+
 		quotient <<= 1
 	}
+
 	return cycles
 }

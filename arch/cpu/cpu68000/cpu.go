@@ -144,8 +144,11 @@ func (cpu *CPU) Reset() error {
 	cpu.sr = MaskSupervisor | MaskIPM
 	cpu.Flags = Flags{}
 	cpu.pendingIRQ = 0
-	cpu.sampledIRQLevel, cpu.sampledIRQMask = 0, 7
-	cpu.halted, cpu.stopped, cpu.faultHalted = false, false, false
+	cpu.sampledIRQLevel = 0
+	cpu.sampledIRQMask = 7
+	cpu.halted = false
+	cpu.stopped = false
+	cpu.faultHalted = false
 	cpu.exceptionAccess = true
 	cpu.traceSuppressed = false
 	cpu.instructionWord = 0
@@ -155,12 +158,15 @@ func (cpu *CPU) Reset() error {
 		cpu.sp = cpu.readBusLong(VectorResetSSP * 4)
 		cpu.SSP = cpu.sp
 		cpu.PC = cpu.readBusLong(VectorResetPC * 4)
+
 		return nil
 	})
 	cpu.exceptionAccess = false
 	if err != nil {
-		cpu.halted, cpu.faultHalted = true, true
+		cpu.halted = true
+		cpu.faultHalted = true
 	}
+
 	return err
 }
 

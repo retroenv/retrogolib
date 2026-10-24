@@ -9,6 +9,7 @@ func pha(c *CPU) error {
 	} else {
 		c.push16(c.C)
 	}
+
 	return nil
 }
 
@@ -45,6 +46,7 @@ func phx(c *CPU) error {
 	} else {
 		c.push16(c.X)
 	}
+
 	return nil
 }
 
@@ -55,6 +57,7 @@ func phy(c *CPU) error {
 	} else {
 		c.push16(c.Y)
 	}
+
 	return nil
 }
 
@@ -68,6 +71,7 @@ func pla(c *CPU) error {
 		c.C = c.pop16()
 		c.setZN16(c.C)
 	}
+
 	return nil
 }
 
@@ -77,6 +81,7 @@ func plb(c *CPU) error {
 	c.DB = c.pop8raw()
 	c.fixEmuSP()
 	c.setZN8(c.DB)
+
 	return nil
 }
 
@@ -86,6 +91,7 @@ func pld(c *CPU) error {
 	c.DP = c.pop16raw()
 	c.fixEmuSP()
 	c.setZN16(c.DP)
+
 	return nil
 }
 
@@ -106,6 +112,7 @@ func plx(c *CPU) error {
 		c.X = c.pop16()
 		c.setZN16(c.X)
 	}
+
 	return nil
 }
 
@@ -119,6 +126,7 @@ func ply(c *CPU) error {
 		c.Y = c.pop16()
 		c.setZN16(c.Y)
 	}
+
 	return nil
 }
 
@@ -131,6 +139,7 @@ func pea(c *CPU) error {
 	addr := uint16(b2)<<8 | uint16(b1)
 	c.push16raw(addr)
 	c.fixEmuSP()
+
 	return nil
 }
 
@@ -143,6 +152,7 @@ func pei(c *CPU) error {
 	val := c.readMem16(ptr)
 	c.push16raw(val)
 	c.fixEmuSP()
+
 	return nil
 }
 
@@ -156,5 +166,6 @@ func per(c *CPU) error {
 	eff := uint16(int32(c.PC) + 3 + int32(offset))
 	c.push16raw(eff)
 	c.fixEmuSP()
+
 	return nil
 }

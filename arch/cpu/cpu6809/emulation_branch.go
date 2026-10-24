@@ -167,6 +167,7 @@ func jmpFn(c *CPU, param any) error {
 	}
 	c.PC = addr
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -179,6 +180,7 @@ func jsrFn(c *CPU, param any) error {
 	c.pushS16(c.nextPC)
 	c.PC = addr
 	c.pcChanged = true
+
 	return nil
 }
 
@@ -210,5 +212,6 @@ func exgFn(c *CPU, param any) error {
 	dst := c.getRegisterValue(dstReg)
 	c.setRegisterValue(srcReg, dst)
 	c.setRegisterValue(dstReg, src)
+
 	return nil
 }

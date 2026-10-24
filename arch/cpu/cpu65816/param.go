@@ -66,6 +66,7 @@ func readOpParams(c *CPU, mode AddressingMode, op Opcode) ([]any, []byte, bool, 
 		return paramReaderImmediateWidth(c, op)
 	}
 	params, opcodes, pageCrossed := fn(c)
+
 	return params, opcodes, pageCrossed, nil
 }
 
@@ -92,6 +93,7 @@ func paramReaderImmediateWidth(c *CPU, op Opcode) ([]any, []byte, bool, error) {
 			return []any{Immediate16(w)}, []byte{uint8(w), uint8(w >> 8)}, false, nil
 		}
 	}
+
 	b := c.fetchByte(1)
 	return []any{Immediate8(b)}, []byte{b}, false, nil
 }
@@ -121,6 +123,7 @@ func paramReaderDPIndirect(c *CPU) ([]any, []byte, bool) {
 	// Pointer read uses DP page wrap in emulation mode (DP_lo=0)
 	addr := uint32(c.readDPWord(dp))
 	eff := c.dataAddr(uint16(addr))
+
 	return []any{DPIndirect(eff)}, []byte{dp}, false
 }
 
@@ -130,6 +133,7 @@ func paramReaderDPXIndirect(c *CPU) ([]any, []byte, bool) {
 	if c.IdxWidth() == 2 {
 		idx = uint16(dp) + c.X
 	}
+
 	var addr uint32
 	if c.E && c.DP&0xFF == 0 {
 		// Emulation mode, DP page-aligned: (dp+X) and pointer bytes wrap within DP 256-byte page
@@ -142,7 +146,9 @@ func paramReaderDPXIndirect(c *CPU) ([]any, []byte, bool) {
 		ptr := bank24(0, c.DP+idx)
 		addr = uint32(c.readMem16(ptr))
 	}
+
 	eff := bank24(c.DB, uint16(addr))
+
 	return []any{DPIndirectX(eff)}, []byte{dp}, false
 }
 
@@ -156,9 +162,11 @@ func paramReaderDPIndirectY(c *CPU) ([]any, []byte, bool) {
 	} else {
 		yVal = uint32(c.Y & 0xFF)
 	}
+
 	eff := c.dataAddr(uint16(base)) + yVal
 	basePage := c.dataAddr(uint16(base)) & 0xFF00
 	pageCrossed := eff&0xFF00 != basePage
+
 	return []any{DPIndirectY(eff)}, []byte{dp}, pageCrossed
 }
 
@@ -166,6 +174,7 @@ func paramReaderDPIndirectLong(c *CPU) ([]any, []byte, bool) {
 	dp := c.fetchByte(1)
 	ptr := c.dpAddr(dp)
 	addr := c.readMem24(ptr) & 0xFFFFFF
+
 	return []any{DPIndirectLong(addr)}, []byte{dp}, false
 }
 
@@ -179,7 +188,9 @@ func paramReaderDPIndirectLongY(c *CPU) ([]any, []byte, bool) {
 	} else {
 		yVal = uint32(c.Y & 0xFF)
 	}
+
 	eff := base + yVal
+
 	return []any{DPIndLongY(eff)}, []byte{dp}, false
 }
 
@@ -187,6 +198,7 @@ func paramReaderAbsolute(c *CPU) ([]any, []byte, bool) {
 	b1 := c.fetchByte(1)
 	b2 := c.fetchByte(2)
 	addr := uint16(b2)<<8 | uint16(b1)
+
 	return []any{Absolute16(addr)}, []byte{b1, b2}, false
 }
 
@@ -200,9 +212,11 @@ func paramReaderAbsoluteX(c *CPU) ([]any, []byte, bool) {
 	} else {
 		xVal = c.X & 0xFF
 	}
+
 	baseAddr := c.dataAddr(base)
 	eff := baseAddr + uint32(xVal)
 	pageCrossed := eff&0xFF00 != baseAddr&0xFF00
+
 	return []any{AbsoluteX16(eff)}, []byte{b1, b2}, pageCrossed
 }
 
@@ -216,9 +230,11 @@ func paramReaderAbsoluteY(c *CPU) ([]any, []byte, bool) {
 	} else {
 		yVal = c.Y & 0xFF
 	}
+
 	baseAddr := c.dataAddr(base)
 	eff := baseAddr + uint32(yVal)
 	pageCrossed := eff&0xFF00 != baseAddr&0xFF00
+
 	return []any{AbsoluteY16(eff)}, []byte{b1, b2}, pageCrossed
 }
 
@@ -229,6 +245,7 @@ func paramReaderAbsoluteIndirect(c *CPU) ([]any, []byte, bool) {
 	addr := uint32(c.readMem16(ptr))
 	// JMP (abs) reads the pointer in bank 0 and stays in the program bank.
 	eff := bank24(c.PB, uint16(addr))
+
 	return []any{AbsIndirect(eff)}, []byte{b1, b2}, false
 }
 
@@ -239,6 +256,7 @@ func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
 	ptr := bank24(c.PB, base+c.X)
 	addr := uint32(c.readMem16(ptr))
 	eff := bank24(c.PB, uint16(addr))
+
 	return []any{AbsIndirectX(eff)}, []byte{b1, b2}, false
 }
 
@@ -247,6 +265,7 @@ func paramReaderAbsoluteLong(c *CPU) ([]any, []byte, bool) {
 	b2 := c.fetchByte(2)
 	b3 := c.fetchByte(3)
 	addr := uint32(b3)<<16 | uint32(b2)<<8 | uint32(b1)
+
 	return []any{AbsLong(addr)}, []byte{b1, b2, b3}, false
 }
 
@@ -261,7 +280,9 @@ func paramReaderAbsoluteLongX(c *CPU) ([]any, []byte, bool) {
 	} else {
 		xVal = uint32(c.X & 0xFF)
 	}
+
 	eff := (base + xVal) & 0xFFFFFF
+
 	return []any{AbsLongX(eff)}, []byte{b1, b2, b3}, false
 }
 
@@ -270,6 +291,7 @@ func paramReaderAbsoluteIndirectLong(c *CPU) ([]any, []byte, bool) {
 	b2 := c.fetchByte(2)
 	ptr := uint32(uint16(b2)<<8 | uint16(b1))
 	addr := c.readMem24(ptr) & 0xFFFFFF
+
 	return []any{AbsLong(addr)}, []byte{b1, b2}, false
 }
 
@@ -288,7 +310,9 @@ func paramReaderSRIndirectY(c *CPU) ([]any, []byte, bool) {
 	} else {
 		yVal = uint32(c.Y & 0xFF)
 	}
+
 	eff := c.dataAddr(uint16(base)) + yVal
+
 	return []any{SRIndY(eff)}, []byte{sr}, false
 }
 
@@ -301,6 +325,7 @@ func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
 	nextPC := c.PC + 2
 	target := uint16(int32(nextPC) + int32(offset))
 	pageCrossed := (target & 0xFF00) != (nextPC & 0xFF00)
+
 	return []any{BranchTarget(target)}, []byte{uint8(offset)}, pageCrossed
 }
 
@@ -309,6 +334,7 @@ func paramReaderRelativeLong(c *CPU) ([]any, []byte, bool) {
 	b2 := c.fetchByte(2)
 	offset := int16(uint16(b2)<<8 | uint16(b1))
 	target := uint16(int32(c.PC) + 3 + int32(offset))
+
 	return []any{BranchTarget(target)}, []byte{b1, b2}, false
 }
 

@@ -143,7 +143,8 @@ func (io *legacyTestIO) ReadPort(port uint8) uint8 {
 }
 
 func (io *legacyTestIO) WritePort(port, value uint8) {
-	io.port, io.value = port, value
+	io.port = port
+	io.value = value
 }
 
 // testBus implements the Bus interface for testing.

@@ -20,7 +20,8 @@ func (cpu *CPU) Step() error {
 
 	cpu.stepCycles = cpu.cycles
 	cpu.instructionPC = cpu.PC
-	cpu.exceptionAccess, cpu.traceSuppressed = false, false
+	cpu.exceptionAccess = false
+	cpu.traceSuppressed = false
 	cpu.operandPCOffset = -2
 	cpu.accessCycles = 0
 	err := catchAccessFault(cpu.executeStep)
@@ -80,6 +81,7 @@ func (cpu *CPU) executeStep() error {
 			return fmt.Errorf("executing %s at PC=%06X: %w", ins.Name, pcBefore, err)
 		}
 	}
+
 	cpu.checkInstructionAddress()
 
 	// A trace exception follows an executed instruction, including one that

@@ -29,6 +29,7 @@ func cbRlc(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(carry != 0)
+
 		return result
 	})
 	return nil
@@ -45,6 +46,7 @@ func cbRrc(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(carry != 0)
+
 		return result
 	})
 	return nil
@@ -61,6 +63,7 @@ func cbRl(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(newCarry != 0)
+
 		return result
 	})
 	return nil
@@ -77,6 +80,7 @@ func cbRr(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(newCarry != 0)
+
 		return result
 	})
 	return nil
@@ -93,6 +97,7 @@ func cbSla(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(carry != 0)
+
 		return result
 	})
 	return nil
@@ -109,6 +114,7 @@ func cbSra(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(carry != 0)
+
 		return result
 	})
 	return nil
@@ -124,6 +130,7 @@ func cbSwap(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(false)
+
 		return result
 	})
 	return nil
@@ -140,6 +147,7 @@ func cbSrl(c *CPU, _ ...any) error {
 		c.setN(false)
 		c.setH(false)
 		c.setC(carry != 0)
+
 		return result
 	})
 	return nil
@@ -163,6 +171,7 @@ func cbBit(c *CPU, _ ...any) error {
 	setFlag(&c.Flags.Z, bit == 0)
 	c.setN(false)
 	c.setH(true)
+
 	return nil
 }
 
@@ -175,6 +184,7 @@ func cbRes(c *CPU, _ ...any) error {
 	c.applyCBOperation(func(value uint8) uint8 {
 		return value & ^(1 << bitNum)
 	})
+
 	return nil
 }
 
@@ -187,5 +197,6 @@ func cbSet(c *CPU, _ ...any) error {
 	c.applyCBOperation(func(value uint8) uint8 {
 		return value | (1 << bitNum)
 	})
+
 	return nil
 }

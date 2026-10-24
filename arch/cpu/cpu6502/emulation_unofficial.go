@@ -9,6 +9,7 @@ func dcp(c *CPU, params ...any) error {
 		return err
 	}
 	c.compare(c.A, val)
+
 	return nil
 }
 
@@ -30,6 +31,7 @@ func las(c *CPU, params ...any) error {
 	c.X = result
 	c.SP = result
 	c.setZN(result)
+
 	return nil
 }
 
@@ -41,6 +43,7 @@ func lax(c *CPU, params ...any) error {
 	c.A = val
 	c.X = c.A
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -56,6 +59,7 @@ func lxa(c *CPU, params ...any) error {
 	c.A = (c.A | magicConstant) & val
 	c.X = c.A
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -102,6 +106,7 @@ func shBaseAddr(c *CPU, params []any) (uint16, uint8) {
 	}
 	zp := c.memory.Read(c.PC + 1)
 	baseAddr := c.memory.ReadWordBug(uint16(zp))
+
 	return baseAddr, c.Y
 }
 
@@ -119,6 +124,7 @@ func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
 	} else {
 		writeAddr = effectiveAddr
 	}
+
 	if c.cycleActive {
 		c.writeCycle(writeAddr, andValue)
 		return
@@ -131,6 +137,7 @@ func shx(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // Y
 	shWrite(c, c.X, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -139,6 +146,7 @@ func shy(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // X
 	shWrite(c, c.Y, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -162,6 +170,7 @@ func tas(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // Y
 	shWrite(c, c.SP, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -173,6 +182,7 @@ func alr(c *CPU, params ...any) error {
 	c.Flags.C = c.A & 1
 	c.A >>= 1
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -196,6 +206,7 @@ func ane(c *CPU, params ...any) error {
 	const magicConstant = 0xEE
 	c.A = (c.A | magicConstant) & c.X & val
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -216,16 +227,19 @@ func arr(c *CPU, params ...any) error {
 		if (andResult & 0x0F) >= 5 {
 			r = (r & 0xF0) | ((r&0x0F + 6) & 0x0F)
 		}
+
 		if (andResult & 0xF0) >= 0x50 {
 			r += 0x60
 			c.Flags.C = 1
 		} else {
 			c.Flags.C = 0
 		}
+
 		c.A = r
 	} else {
 		c.Flags.C = (c.A >> 6) & 1
 	}
+
 	return nil
 }
 
@@ -241,5 +255,6 @@ func axs(c *CPU, params ...any) error {
 	setFlag(&c.Flags.C, result >= 0)
 	c.X = uint8(result)
 	c.setZN(c.X)
+
 	return nil
 }

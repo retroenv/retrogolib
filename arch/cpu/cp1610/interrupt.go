@@ -25,5 +25,6 @@ func (c *CPU) serviceIRQ() bool {
 	c.R[ProgramCounter] = InterruptVector
 	c.cycles += 12
 	c.lastInterruptible = false
+
 	return true
 }

@@ -151,7 +151,13 @@ func (c *CPU) SetState(s State) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.A, c.B, c.C, c.D, c.E, c.H, c.L = s.A, s.B, s.C, s.D, s.E, s.H, s.L
+	c.A = s.A
+	c.B = s.B
+	c.C = s.C
+	c.D = s.D
+	c.E = s.E
+	c.H = s.H
+	c.L = s.L
 	c.SP = s.SP
 	c.PC = s.PC
 	c.cycles = s.Cycles
@@ -221,6 +227,7 @@ func (c *CPU) GetRegisterValue(reg uint8) uint8 {
 	case 7:
 		return c.A
 	}
+
 	return 0
 }
 

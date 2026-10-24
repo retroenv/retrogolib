@@ -354,6 +354,7 @@ func di(c *CPU) error {
 	c.eiPending = false
 	c.iff1 = false
 	c.iff2 = false
+
 	return nil
 }
 
@@ -362,6 +363,7 @@ func ei(c *CPU) error {
 	c.eiPending = true
 	c.iff1 = true
 	c.iff2 = true
+
 	return nil
 }
 

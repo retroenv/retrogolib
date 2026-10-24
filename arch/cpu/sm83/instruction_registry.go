@@ -16,5 +16,6 @@ func buildInstructionRegistry(tables ...*[256]Opcode) map[string]*Instruction {
 			}
 		}
 	}
+
 	return instructions
 }

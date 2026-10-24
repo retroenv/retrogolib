@@ -55,6 +55,7 @@ func GetEncoding(name string, key OperandKey) (OpcodeInfo, bool) {
 		return OpcodeInfo{}, false
 	}
 	info, ok := ins.Encodings[key]
+
 	return info, ok
 }
 
@@ -74,6 +75,7 @@ func buildOpcodes() ([1024]Opcode, map[string]*Instruction) {
 			}
 			instructions[name] = ins
 		}
+
 		op.Instruction = ins
 		table[word] = op
 		ins.Encodings[op.OperandKey] = OpcodeInfo{
@@ -82,6 +84,7 @@ func buildOpcodes() ([1024]Opcode, map[string]*Instruction) {
 			Cycles: op.Cycles,
 		}
 	}
+
 	return table, instructions
 }
 
@@ -151,6 +154,7 @@ func decodeControl(word uint16) (string, Opcode, bool) {
 		op.Cycles = 12
 		op.Interruptible = true
 	}
+
 	return names[word], op, true
 }
 
@@ -201,6 +205,7 @@ func decodeShift(word uint16) (string, Opcode, bool) {
 	if op.Variant != 0 {
 		op.Cycles = 8
 	}
+
 	return names[(word-0x40)>>3], op, true
 }
 
@@ -219,6 +224,7 @@ func decodeRegisterPair(word uint16) (string, Opcode, bool) {
 	if op.Destination >= 6 {
 		op.Cycles++
 	}
+
 	return names[(word-0x80)>>6], op, true
 }
 
@@ -249,11 +255,13 @@ func decodeMemory(word uint16) (string, Opcode, bool) {
 		op.Addressing = ImmediateAddressing
 		op.Size = 2
 	}
+
 	if family == 0 {
 		op.Cycles = 9
 		if modeRegister == 0 {
 			op.Cycles = 11
 		}
 	}
+
 	return names[family], op, true
 }
