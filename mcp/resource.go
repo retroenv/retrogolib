@@ -82,6 +82,7 @@ func (s *Server) resourceListResult() *resourceListResult {
 	for _, entry := range s.resources {
 		resources = append(resources, entry.resource)
 	}
+
 	s.mu.RUnlock()
 
 	return &resourceListResult{
@@ -100,6 +101,7 @@ func (s *Server) templateListResult() *templateListResult {
 	for _, entry := range s.templates {
 		templates = append(templates, entry.template)
 	}
+
 	s.mu.RUnlock()
 
 	return &templateListResult{
@@ -214,5 +216,6 @@ func matchURITemplate(template, uri string) bool {
 			return false
 		}
 	}
+
 	return true
 }

@@ -87,6 +87,7 @@ func LoadBuffer(reader io.Reader) (*Cartridge, error) {
 	if len(b)%16384 != 0 {
 		size++
 	}
+
 	size *= 16384
 
 	prg := make([]byte, size)

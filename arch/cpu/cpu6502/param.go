@@ -34,6 +34,7 @@ func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, bool, error
 	}
 
 	params, opcodes, pageCrossed := fun(c)
+
 	return params, opcodes, pageCrossed, nil
 }
 
@@ -45,6 +46,7 @@ func paramReaderImmediate(c *CPU) ([]any, []byte, bool) {
 	b := c.memory.Read(c.PC + 1)
 	params := []any{int(b)}
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -59,6 +61,7 @@ func paramReaderAbsolute(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Absolute(b2<<8 | b1)}
 	opcodes := []byte{byte(b1), byte(b2)}
+
 	return params, opcodes, false
 }
 
@@ -70,6 +73,7 @@ func paramReaderAbsoluteX(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Absolute(w), &c.X}
 	opcodes := []byte{byte(b1), byte(b2)}
+
 	return params, opcodes, pageCrossed
 }
 
@@ -81,6 +85,7 @@ func paramReaderAbsoluteY(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Absolute(w), &c.Y}
 	opcodes := []byte{byte(b1), byte(b2)}
+
 	return params, opcodes, pageCrossed
 }
 
@@ -89,6 +94,7 @@ func paramReaderZeroPage(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Absolute(b)}
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -97,6 +103,7 @@ func paramReaderZeroPageX(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{ZeroPage(b), &c.X}
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -105,6 +112,7 @@ func paramReaderZeroPageY(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{ZeroPage(b), &c.Y}
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -120,6 +128,7 @@ func paramReaderRelative(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Absolute(address)}
 	opcodes := []byte{byte(offset)}
+
 	return params, opcodes, false
 }
 
@@ -133,6 +142,7 @@ func paramReaderIndirect(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{Indirect(address)}
 	opcodes := []byte{b1, b2}
+
 	return params, opcodes, false
 }
 
@@ -144,6 +154,7 @@ func paramReaderIndirectX(c *CPU) ([]any, []byte, bool) {
 	params := []any{IndirectResolved(address), &c.X}
 
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -157,6 +168,7 @@ func paramReaderIndirectY(c *CPU) ([]any, []byte, bool) {
 	params := []any{IndirectResolved(address), &c.Y}
 
 	opcodes := []byte{b}
+
 	return params, opcodes, pageCrossed
 }
 
@@ -168,6 +180,7 @@ func paramReaderZeroPageIndirect(c *CPU) ([]any, []byte, bool) {
 	address := c.memory.ReadWordBug(uint16(b))
 	params := []any{ZeroPageIndirect(b), IndirectResolved(address)}
 	opcodes := []byte{b}
+
 	return params, opcodes, false
 }
 
@@ -180,6 +193,7 @@ func paramReaderAbsoluteXIndirect(c *CPU) ([]any, []byte, bool) {
 	address := c.memory.ReadWord(base + uint16(c.X))
 	params := []any{AbsoluteXIndirect(base), Absolute(address)}
 	opcodes := []byte{byte(b1), byte(b2)}
+
 	return params, opcodes, false
 }
 
@@ -199,6 +213,7 @@ func paramReaderZeroPageRelative(c *CPU) ([]any, []byte, bool) {
 
 	params := []any{ZeroPage(zp), Absolute(target)}
 	opcodes := []byte{zp, rel}
+
 	return params, opcodes, false
 }
 
@@ -217,5 +232,6 @@ func hasAccumulatorParam(params ...any) bool {
 	}
 	param := params[0]
 	_, ok := param.(Accumulator)
+
 	return ok
 }

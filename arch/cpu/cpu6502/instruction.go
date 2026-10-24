@@ -23,6 +23,7 @@ func (ins Instruction) HasAddressing(flags ...AddressingMode) bool {
 			return ok
 		}
 	}
+
 	return false
 }
 

@@ -96,6 +96,7 @@ func (fs *FlagSet) AddSection(name string, opts any) {
 	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
+
 	t := v.Type()
 
 	for i := range t.NumField() {
@@ -139,6 +140,7 @@ func (fs *FlagSet) AddPositional(opts any) {
 	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
+
 	t := v.Type()
 
 	for i := range t.NumField() {
@@ -246,6 +248,7 @@ func (fs *FlagSet) registerFlag(info *FlagInfo, ptr any) bool {
 	if info.Short != "" {
 		capacity = 2
 	}
+
 	names := make([]string, 0, capacity)
 	names = append(names, info.Name)
 	if info.Short != "" {
@@ -270,6 +273,7 @@ func (fs *FlagSet) registerFlag(info *FlagInfo, ptr any) bool {
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -280,6 +284,7 @@ func (fs *FlagSet) registerString(info *FlagInfo, p *string, names []string) {
 		defaultVal = *p
 		info.Default = defaultVal
 	}
+
 	for _, name := range names {
 		fs.flags.StringVar(p, name, defaultVal, info.Usage)
 	}
@@ -340,6 +345,7 @@ func (fs *FlagSet) validateRequired() error {
 			missing = append(missing, req.name)
 		}
 	}
+
 	if len(missing) > 0 {
 		return &MissingFlagsError{Flags: missing}
 	}
@@ -356,6 +362,7 @@ func (fs *FlagSet) assignPositional(args []string) ([]string, error) {
 				*p = args
 				args = nil
 			}
+
 			break
 		}
 
@@ -364,6 +371,7 @@ func (fs *FlagSet) assignPositional(args []string) ([]string, error) {
 			if pos.info.Required {
 				missing = append(missing, pos.info.Name)
 			}
+
 			continue
 		}
 
@@ -398,6 +406,7 @@ func (fs *FlagSet) showUsage() {
 		for _, fl := range section.Flags {
 			fs.printFlag(fl)
 		}
+
 		fmt.Println()
 	}
 
@@ -406,6 +415,7 @@ func (fs *FlagSet) showUsage() {
 		for _, pos := range fs.positional {
 			fs.printPositional(pos.info)
 		}
+
 		fmt.Println()
 	}
 }
@@ -418,10 +428,12 @@ func (fs *FlagSet) buildUsageLine() string {
 	if len(fs.sections) > 0 {
 		sb.WriteString(" [options]")
 	}
+
 	for _, pos := range fs.positional {
 		sb.WriteByte(' ')
 		sb.WriteString(formatPositionalUsage(pos.info))
 	}
+
 	return sb.String()
 }
 
@@ -430,12 +442,14 @@ func (fs *FlagSet) printPositional(pos PositionalInfo) {
 	if pos.Variadic {
 		name += "..."
 	}
+
 	fmt.Printf("  %s\n", name)
 
 	usage := pos.Usage
 	if pos.Required {
 		usage += " (required)"
 	}
+
 	fmt.Printf("    \t%s\n", usage)
 }
 
@@ -459,12 +473,15 @@ func (fs *FlagSet) printFlag(fl FlagInfo) {
 	if fl.Required {
 		usage += " (required)"
 	}
+
 	if fl.Env != "" {
 		usage += " [env: " + fl.Env + "]"
 	}
+
 	if fl.Default != "" && fl.Type != typeBool && !strings.Contains(fl.Usage, "(default:") {
 		usage += " (default: " + fl.Default + ")"
 	}
+
 	fmt.Printf("    \t%s\n", usage)
 }
 
@@ -473,6 +490,7 @@ func formatPositionalUsage(pos PositionalInfo) string {
 	if pos.Variadic {
 		name += "..."
 	}
+
 	if pos.Required {
 		return name
 	}
@@ -496,5 +514,6 @@ func isZeroValue(ptr any) bool {
 	case *float64:
 		return *p == 0
 	}
+
 	return false
 }

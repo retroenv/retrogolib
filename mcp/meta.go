@@ -123,9 +123,11 @@ func parseMetaFields(raw json.RawMessage) (Meta, *Error) {
 			meta.ClientInfo = &info
 		}
 	}
+
 	if raw, ok := fields[metaKeyLogLevel]; ok {
 		_ = json.Unmarshal(raw, &meta.LogLevel)
 	}
+
 	meta.ProgressToken = fields[metaKeyProgressToken]
 
 	return meta, nil

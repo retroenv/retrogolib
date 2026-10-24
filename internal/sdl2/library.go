@@ -24,6 +24,7 @@ func LoadFunctions(imports map[string]any) error {
 	default:
 		return fmt.Errorf("SDL2 is not supported on GOOS=%s", runtime.GOOS)
 	}
+
 	var lastErr error
 	for _, name := range names {
 		if _, err := dynlib.LoadFunctions(name, imports); err != nil {
@@ -32,6 +33,7 @@ func LoadFunctions(imports map[string]any) error {
 		}
 		return nil
 	}
+
 	return fmt.Errorf("loading SDL2: %w", lastErr)
 }
 

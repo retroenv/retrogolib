@@ -20,6 +20,7 @@ func adc(c *CPU, params ...any) error {
 		} else {
 			adcDecimalNMOS(c, a, value)
 		}
+
 		return nil
 	}
 
@@ -32,7 +33,9 @@ func adc(c *CPU, params ...any) error {
 	} else {
 		c.Flags.C = 0
 	}
+
 	c.setV((a^value)&0x80 == 0 && (a^c.A)&0x80 != 0)
+
 	return nil
 }
 
@@ -58,6 +61,7 @@ func adcDecimalNMOS(c *CPU, a, value uint8) {
 		lo = (lo + 6) & 0x0F
 		loCarry = 1
 	}
+
 	hi := int(a>>4) + int(value>>4) + loCarry
 	hiCarry := 0
 	if hi >= 10 {
@@ -92,6 +96,7 @@ func adcDecimal65C02(c *CPU, a, value uint8) {
 		lo = (lo + 6) & 0x0F
 		loCarry = 1
 	}
+
 	hi := int(a>>4) + int(value>>4) + loCarry
 
 	// V is from the lo-corrected partial result (before hi-nibble correction).
@@ -120,6 +125,7 @@ func and(c *CPU, params ...any) error {
 	}
 	c.A &= value
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -129,6 +135,7 @@ func asl(c *CPU, params ...any) error {
 		c.Flags.C = (c.A >> 7) & 1
 		c.A <<= 1
 		c.setZN(c.A)
+
 		return nil
 	}
 
@@ -139,6 +146,7 @@ func asl(c *CPU, params ...any) error {
 	c.Flags.C = (val >> 7) & 1
 	val <<= 1
 	c.setZN(val)
+
 	return c.memory.WriteAddressModes(val, params...)
 }
 
@@ -166,6 +174,7 @@ func bit(c *CPU, params ...any) error {
 	c.setV((value>>6)&1 == 1)
 	c.setZ(value & c.A)
 	c.setN(value)
+
 	return nil
 }
 
@@ -203,6 +212,7 @@ func brk(c *CPU) error {
 	c.mu.Lock()
 	c.irqRunning = true
 	c.mu.Unlock()
+
 	return nil
 }
 
@@ -247,6 +257,7 @@ func cmp(c *CPU, params ...any) error {
 		return err
 	}
 	c.compare(c.A, val)
+
 	return nil
 }
 
@@ -257,6 +268,7 @@ func cpx(c *CPU, params ...any) error {
 		return err
 	}
 	c.compare(c.X, val)
+
 	return nil
 }
 
@@ -267,6 +279,7 @@ func cpy(c *CPU, params ...any) error {
 		return err
 	}
 	c.compare(c.Y, val)
+
 	return nil
 }
 
@@ -281,6 +294,7 @@ func dec(c *CPU, params ...any) error {
 		return err
 	}
 	c.setZN(val)
+
 	return nil
 }
 
@@ -306,6 +320,7 @@ func eor(c *CPU, params ...any) error {
 	}
 	c.A ^= value
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -320,6 +335,7 @@ func inc(c *CPU, params ...any) error {
 		return err
 	}
 	c.setZN(val)
+
 	return nil
 }
 
@@ -348,6 +364,7 @@ func jmp(c *CPU, params ...any) error {
 	default:
 		return fmt.Errorf("%w: jmp mode type %T", ErrUnsupportedAddressingMode, param)
 	}
+
 	return nil
 }
 
@@ -364,7 +381,9 @@ func jsr(c *CPU) error {
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, bal, bah)
 	}
+
 	c.PC = uint16(bah)<<8 | uint16(bal)
+
 	return nil
 }
 
@@ -376,6 +395,7 @@ func lda(c *CPU, params ...any) error {
 	}
 	c.A = val
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -387,6 +407,7 @@ func ldx(c *CPU, params ...any) error {
 	}
 	c.X = val
 	c.setZN(c.X)
+
 	return nil
 }
 
@@ -398,6 +419,7 @@ func ldy(c *CPU, params ...any) error {
 	}
 	c.Y = val
 	c.setZN(c.Y)
+
 	return nil
 }
 
@@ -407,6 +429,7 @@ func lsr(c *CPU, params ...any) error {
 		c.Flags.C = c.A & 1
 		c.A >>= 1
 		c.setZN(c.A)
+
 		return nil
 	}
 
@@ -417,6 +440,7 @@ func lsr(c *CPU, params ...any) error {
 	c.Flags.C = val & 1
 	val >>= 1
 	c.setZN(val)
+
 	return c.memory.WriteAddressModes(val, params...)
 }
 
@@ -439,6 +463,7 @@ func ora(c *CPU, params ...any) error {
 	}
 	c.A |= value
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -453,6 +478,7 @@ func php(c *CPU) error {
 	f := c.GetFlags()
 	f |= 0b0001_0000 // break is set to 1
 	c.push(f)
+
 	return nil
 }
 
@@ -469,6 +495,7 @@ func plp(c *CPU) error {
 	f &= 0b1110_1111 // break flag is ignored
 	f |= 0b0010_0000 // unused flag is set
 	c.setFlags(f)
+
 	return nil
 }
 
@@ -479,6 +506,7 @@ func rol(c *CPU, params ...any) error {
 		c.Flags.C = (c.A >> 7) & 1
 		c.A = (c.A << 1) | cFlag
 		c.setZN(c.A)
+
 		return nil
 	}
 
@@ -489,6 +517,7 @@ func rol(c *CPU, params ...any) error {
 	c.Flags.C = (val >> 7) & 1
 	val = (val << 1) | cFlag
 	c.setZN(val)
+
 	return c.memory.WriteAddressModes(val, params...)
 }
 
@@ -499,6 +528,7 @@ func ror(c *CPU, params ...any) error {
 		c.Flags.C = c.A & 1
 		c.A = (c.A >> 1) | (cFlag << 7)
 		c.setZN(c.A)
+
 		return nil
 	}
 
@@ -509,6 +539,7 @@ func ror(c *CPU, params ...any) error {
 	c.Flags.C = val & 1
 	val = (val >> 1) | (cFlag << 7)
 	c.setZN(val)
+
 	return c.memory.WriteAddressModes(val, params...)
 }
 
@@ -524,6 +555,7 @@ func rti(c *CPU) error {
 	c.irqRunning = false
 	c.nmiRunning = false
 	c.mu.Unlock()
+
 	return nil
 }
 
@@ -548,6 +580,7 @@ func sbc(c *CPU, params ...any) error {
 		} else {
 			sbcDecimalNMOS(c, a, value)
 		}
+
 		return nil
 	}
 
@@ -560,7 +593,9 @@ func sbc(c *CPU, params ...any) error {
 	} else {
 		c.Flags.C = 0
 	}
+
 	c.setV((a^value)&0x80 != 0 && (a^c.A)&0x80 != 0)
+
 	return nil
 }
 
@@ -623,6 +658,7 @@ func sbcDecimal65C02(c *CPU, a, value uint8) {
 	if int(a&0x0F) < int(value&0x0F)+borrow {
 		temp -= 6
 	}
+
 	// Hi nibble borrows when the binary result was negative.
 	if binaryDiff < 0 {
 		temp -= 0x60
@@ -718,6 +754,7 @@ func dcp(c *CPU, params ...any) error {
 		return err
 	}
 	c.compare(c.A, val)
+
 	return nil
 }
 
@@ -739,6 +776,7 @@ func las(c *CPU, params ...any) error {
 	c.X = result
 	c.SP = result
 	c.setZN(result)
+
 	return nil
 }
 
@@ -750,6 +788,7 @@ func lax(c *CPU, params ...any) error {
 	c.A = val
 	c.X = c.A
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -766,6 +805,7 @@ func lxa(c *CPU, params ...any) error {
 	c.A = (c.A | magicConstant) & val
 	c.X = c.A
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -815,6 +855,7 @@ func shBaseAddr(c *CPU, params []any) (uint16, uint8) {
 	// IndirectY: params[0] is IndirectResolved (already has Y added), re-read base.
 	zp := c.memory.Read(c.PC + 1)
 	baseAddr := c.memory.ReadWordBug(uint16(zp))
+
 	return baseAddr, c.Y
 }
 
@@ -832,6 +873,7 @@ func shWrite(c *CPU, value uint8, baseAddr uint16, indexReg uint8) {
 	} else {
 		writeAddr = effectiveAddr
 	}
+
 	if c.cycleActive {
 		c.writeCycle(writeAddr, andValue)
 	} else {
@@ -844,6 +886,7 @@ func shx(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // Y
 	shWrite(c, c.X, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -852,6 +895,7 @@ func shy(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // X
 	shWrite(c, c.Y, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -875,6 +919,7 @@ func tas(c *CPU, params ...any) error {
 	baseAddr := uint16(params[0].(Absolute))
 	indexReg := *params[1].(*uint8) // Y
 	shWrite(c, c.SP, baseAddr, indexReg)
+
 	return nil
 }
 
@@ -887,6 +932,7 @@ func alr(c *CPU, params ...any) error {
 	c.Flags.C = c.A & 1
 	c.A >>= 1
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -912,6 +958,7 @@ func ane(c *CPU, params ...any) error {
 	const magicConstant = 0xEE
 	c.A = (c.A | magicConstant) & c.X & val
 	c.setZN(c.A)
+
 	return nil
 }
 
@@ -941,17 +988,20 @@ func arr(c *CPU, params ...any) error {
 		if (andResult & 0x0F) >= 5 {
 			r = (r & 0xF0) | ((r&0x0F + 6) & 0x0F)
 		}
+
 		if (andResult & 0xF0) >= 0x50 {
 			r += 0x60
 			c.Flags.C = 1
 		} else {
 			c.Flags.C = 0
 		}
+
 		c.A = r
 	} else {
 		// Binary mode (or NES which disables decimal): C = bit6 of ROR result.
 		c.Flags.C = (c.A >> 6) & 1
 	}
+
 	return nil
 }
 
@@ -976,5 +1026,6 @@ func axs(c *CPU, params ...any) error {
 	// Store result in X
 	c.X = uint8(result)
 	c.setZN(c.X)
+
 	return nil
 }

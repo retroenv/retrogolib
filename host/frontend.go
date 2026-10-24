@@ -76,6 +76,7 @@ func New(backend Backend, options Options) (*Frontend, error) {
 	}
 
 	front.last = time.Now()
+
 	return front, nil
 }
 
@@ -106,9 +107,11 @@ func (fr *Frontend) Step(ctx context.Context, frame uint64) (bool, error) {
 	if err == nil {
 		err = fr.audioError()
 	}
+
 	if fr.options.FrameLimit > 0 && frame >= fr.options.FrameLimit {
 		open = false
 	}
+
 	return fr.finish(open, err)
 }
 
@@ -122,6 +125,7 @@ func (fr *Frontend) Close() {
 	if fr.playback != nil {
 		fr.playback.Stop()
 	}
+
 	if fr.cleanup != nil {
 		fr.cleanup()
 	}
@@ -165,6 +169,7 @@ func (fr *Frontend) audioError() error {
 
 	default:
 	}
+
 	return nil
 }
 

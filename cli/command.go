@@ -67,6 +67,7 @@ func (cmd *Command) Execute(args []string) int {
 		} else {
 			fmt.Println("version not set")
 		}
+
 		return 0
 
 	case "--help", "-h", "help":
@@ -101,6 +102,7 @@ func (cmd *Command) ShowUsage() {
 		for name := range cmd.subcommands {
 			names = append(names, name)
 		}
+
 		sort.Strings(names)
 
 		// Find max width for alignment.
@@ -114,6 +116,7 @@ func (cmd *Command) ShowUsage() {
 			subcmd := cmd.subcommands[name]
 			fmt.Printf("  %-*s  %s\n", maxWidth, name, subcmd.description)
 		}
+
 		fmt.Println()
 	}
 

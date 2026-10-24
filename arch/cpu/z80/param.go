@@ -77,6 +77,7 @@ func readOpParams(c *CPU, addressing AddressingMode) ([]any, []byte, error) {
 	}
 
 	params, opcodes := fun(c)
+
 	return params, opcodes, nil
 }
 
@@ -95,6 +96,7 @@ func paramReaderRegister(c *CPU) ([]any, []byte) {
 	dstReg := (opcode >> 3) & 0x07
 
 	params := []any{Register(srcReg), Register(dstReg)}
+
 	return params, nil
 }
 
@@ -108,6 +110,7 @@ func paramReaderImmediate(c *CPU) ([]any, []byte) {
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
 		opcodes := [2]uint8{b1, b2}
+
 		return params, opcodes[:]
 	}
 
@@ -121,12 +124,14 @@ func paramReaderImmediate(c *CPU) ([]any, []byte) {
 		value := uint16(b2)<<8 | uint16(b1)
 		params := []any{Immediate16(value)}
 		opcodes := [2]uint8{b1, b2}
+
 		return params, opcodes[:]
 	} else {
 		// 8-bit immediate (2-byte instruction: opcode + immediate)
 		b := c.bus.Read(c.PC + 1)
 		params := []any{Immediate8(b)}
 		opcodes := [1]uint8{b}
+
 		return params, opcodes[:]
 	}
 }
@@ -138,6 +143,7 @@ func paramReaderExtended(c *CPU) ([]any, []byte) {
 	address := uint16(b2)<<8 | uint16(b1)
 	params := []any{Extended(address)}
 	opcodes := [2]uint8{b1, b2}
+
 	return params, opcodes[:]
 }
 
@@ -159,6 +165,7 @@ func paramReaderRegisterIndirect(c *CPU) ([]any, []byte) {
 	}
 
 	params := []any{RegisterIndirect(regPair)}
+
 	return params, nil
 }
 
@@ -167,6 +174,7 @@ func paramReaderRelative(c *CPU) ([]any, []byte) {
 
 	params := []any{Relative(offset)}
 	opcodes := [1]uint8{uint8(offset)}
+
 	return params, opcodes[:]
 }
 
@@ -178,6 +186,7 @@ func paramReaderBit(c *CPU) ([]any, []byte) {
 	targetReg := opcode & 0x07     // Bits 0-2 contain target register
 
 	params := []any{Bit(bitNum), Register(targetReg)}
+
 	return params, nil
 }
 
@@ -189,10 +198,12 @@ func paramReaderPort(c *CPU) ([]any, []byte) {
 		portAddr := c.bus.Read(c.PC + 1)
 		params := []any{Port(portAddr)}
 		opcodes := [1]uint8{portAddr}
+
 		return params, opcodes[:]
 	}
 
 	// Port (C) - use C register as port address
 	params := []any{Port(c.C)}
+
 	return params, nil
 }

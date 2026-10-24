@@ -44,6 +44,7 @@ func (s *Server) promptListResult() *promptListResult {
 	for _, entry := range s.prompts {
 		prompts = append(prompts, entry.prompt)
 	}
+
 	s.mu.RUnlock()
 
 	return &promptListResult{
@@ -102,6 +103,7 @@ func (s *Server) getPromptResult(ctx context.Context, params json.RawMessage) (a
 	if result == nil {
 		result = &PromptResult{}
 	}
+
 	if result.Messages == nil {
 		result.Messages = []PromptMessage{}
 	}

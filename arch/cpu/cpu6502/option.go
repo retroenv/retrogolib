@@ -71,5 +71,6 @@ func newOptions(optionList ...Option) options {
 			option(&opts)
 		}
 	}
+
 	return opts
 }

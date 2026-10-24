@@ -15,11 +15,13 @@ func (c *CPU) ldVxK(reg uint16) error {
 			break
 		}
 	}
+
 	if keyPressed == -1 {
 		return nil // do not update program counter and wait for a key press
 	}
 	c.V[reg] = byte(keyPressed)
 	c.PC += 2
+
 	return nil
 }
 
@@ -31,6 +33,7 @@ func (c *CPU) ldFVx(reg uint16) error {
 	}
 	c.I = uint16(fontIndex) * 0x5
 	c.PC += 2
+
 	return nil
 }
 
@@ -44,7 +47,9 @@ func (c *CPU) ldBVx(reg uint16) error {
 		c.Memory[c.I+uint16(i)] = bcd % 10
 		bcd /= 10
 	}
+
 	c.PC += 2
+
 	return nil
 }
 
@@ -56,7 +61,9 @@ func (c *CPU) ldIVx(reg uint16) error {
 	for i := range reg + 1 {
 		c.Memory[c.I+i] = c.V[i]
 	}
+
 	c.PC += 2
+
 	return nil
 }
 
@@ -68,7 +75,9 @@ func (c *CPU) ldVxI(reg uint16) error {
 	for i := range reg + 1 {
 		c.V[i] = c.Memory[c.I+i]
 	}
+
 	c.PC += 2
+
 	return nil
 }
 
@@ -77,8 +86,10 @@ func cls(c *CPU, _ uint16) error {
 	for i := range c.Display {
 		c.Display[i] = 0
 	}
+
 	c.RedrawScreen = true
 	c.PC += 2
+
 	return nil
 }
 
@@ -89,6 +100,7 @@ func ret(c *CPU, _ uint16) error {
 	}
 	c.SP--
 	c.PC = c.Stack[c.SP] // PC already contains return address (next instruction)
+
 	return nil
 }
 
@@ -117,6 +129,7 @@ func call(c *CPU, param uint16) error {
 	c.Stack[c.SP] = c.PC + 2 // Save return address (next instruction)
 	c.SP++
 	c.PC = param & 0x0FFF
+
 	return nil
 }
 
@@ -143,6 +156,7 @@ func se(c *CPU, param uint16) error {
 	default:
 		return fmt.Errorf("invalid mode for se: %04X", mode)
 	}
+
 	return nil
 }
 
@@ -169,6 +183,7 @@ func sne(c *CPU, param uint16) error {
 	default:
 		return fmt.Errorf("invalid mode for sne: %04X", mode)
 	}
+
 	return nil
 }
 
@@ -181,6 +196,7 @@ func or(c *CPU, param uint16) error {
 	}
 	c.V[reg1] |= c.V[reg2]
 	c.PC += 2
+
 	return nil
 }
 
@@ -193,6 +209,7 @@ func xor(c *CPU, param uint16) error {
 	}
 	c.V[reg1] ^= c.V[reg2]
 	c.PC += 2
+
 	return nil
 }
 
@@ -231,6 +248,7 @@ func add(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -251,6 +269,7 @@ func sub(c *CPU, param uint16) error {
 	c.V[reg1] -= c.V[reg2]
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -285,6 +304,7 @@ func ld(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -317,6 +337,7 @@ func ldF(c *CPU, param uint16) error {
 	}
 
 	c.PC += 2
+
 	return nil
 }
 
@@ -329,6 +350,7 @@ func and(c *CPU, param uint16) error {
 	}
 	c.V[reg1] &= c.V[reg2]
 	c.PC += 2
+
 	return nil
 }
 
@@ -368,6 +390,7 @@ func drw(c *CPU, param uint16) error {
 				if c.Display[index] == 1 {
 					c.V[0xf] = 1
 				}
+
 				c.Display[index] ^= 1
 			}
 		}
@@ -375,6 +398,7 @@ func drw(c *CPU, param uint16) error {
 
 	c.RedrawScreen = true
 	c.PC += 2
+
 	return nil
 }
 
@@ -387,6 +411,7 @@ func rnd(c *CPU, param uint16) error {
 	value := byte(param & 0x00FF)
 	c.V[reg] = byte(rand.IntN(256)) & value
 	c.PC += 2
+
 	return nil
 }
 
@@ -399,6 +424,7 @@ func shl(c *CPU, param uint16) error {
 	c.V[0xf] = c.V[reg] >> 7
 	c.V[reg] <<= 1
 	c.PC += 2
+
 	return nil
 }
 
@@ -411,6 +437,7 @@ func shr(c *CPU, param uint16) error {
 	c.V[0xf] = c.V[reg] & 0x1
 	c.V[reg] >>= 1
 	c.PC += 2
+
 	return nil
 }
 
@@ -429,6 +456,7 @@ func skp(c *CPU, param uint16) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -447,6 +475,7 @@ func sknp(c *CPU, param uint16) error {
 	} else {
 		c.PC += 2
 	}
+
 	return nil
 }
 
@@ -467,5 +496,6 @@ func subn(c *CPU, param uint16) error {
 	c.V[reg1] = c.V[reg2] - c.V[reg1]
 
 	c.PC += 2
+
 	return nil
 }

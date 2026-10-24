@@ -97,6 +97,7 @@ func prepareToolSchemas(t *Tool) ([]paramHeader, error) {
 		}
 		seen.Add(key)
 	}
+
 	return headers, nil
 }
 
@@ -130,6 +131,7 @@ func collectParamHeaders(node any, path []string, static bool, headers *[]paramH
 	case map[string]any:
 		return collectObjectHeaders(n, path, static, headers)
 	}
+
 	return nil
 }
 
@@ -160,6 +162,7 @@ func collectObjectHeaders(node map[string]any, path []string, static bool, heade
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -177,6 +180,7 @@ func validToken(s string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -213,6 +217,7 @@ func validateParamHeaders(h http.Header, headers []paramHeader, arguments json.R
 			return headerMismatchError(headerName + " header does not match the request body")
 		}
 	}
+
 	return nil
 }
 
@@ -228,6 +233,7 @@ func lookupArgument(args map[string]any, path []string) (any, bool) {
 			return nil, false
 		}
 	}
+
 	return value, true
 }
 
@@ -247,6 +253,7 @@ func headerValueMatches(header string, value any) bool {
 			return false
 		}
 		headerNumber, err := strconv.ParseFloat(header, 64)
+
 		return err == nil && headerNumber == bodyNumber
 
 	default:

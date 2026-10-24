@@ -49,6 +49,7 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 		release()
 		runtime.UnlockOSThread()
 	})
+
 	return render, cleanup, nil
 }
 
@@ -135,9 +136,11 @@ func cleanupSDL(window, renderer, tex uintptr) {
 	if tex != 0 {
 		DestroyTexture(tex)
 	}
+
 	if renderer != 0 {
 		DestroyRenderer(renderer)
 	}
+
 	if window != 0 {
 		DestroyWindow(window)
 	}

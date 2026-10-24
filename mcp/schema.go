@@ -25,6 +25,7 @@ func SchemaFor(t reflect.Type) (json.RawMessage, error) {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+
 	if t.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("%w: input must be a struct type", ErrInvalidSchema)
 	}
@@ -180,6 +181,7 @@ func structSchema(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, e
 	if len(required) > 0 {
 		result["required"] = required
 	}
+
 	return result, nil
 }
 
@@ -207,6 +209,7 @@ func appendStructFields(t reflect.Type, seen set.Set[reflect.Type], properties m
 			for embedded.Kind() == reflect.Pointer {
 				embedded = embedded.Elem()
 			}
+
 			if embedded.Kind() == reflect.Struct {
 				if err := appendStructFields(embedded, seen, properties, required); err != nil {
 					return err
@@ -214,6 +217,7 @@ func appendStructFields(t reflect.Type, seen set.Set[reflect.Type], properties m
 				continue
 			}
 		}
+
 		if !field.IsExported() {
 			continue
 		}
@@ -231,6 +235,7 @@ func appendStructFields(t reflect.Type, seen set.Set[reflect.Type], properties m
 			*required = append(*required, name)
 		}
 	}
+
 	return nil
 }
 
@@ -252,9 +257,11 @@ func applyKeywords(schema map[string]any, field reflect.StructField) error {
 	if desc := field.Tag.Get("description"); desc != "" {
 		schema["description"] = desc
 	}
+
 	if header := field.Tag.Get("header"); header != "" {
 		schema[schemaKeyMCPHeader] = header
 	}
+
 	if enum := field.Tag.Get("enum"); enum != "" {
 		values, err := parseEnum(field.Type, enum)
 		if err != nil {
@@ -274,6 +281,7 @@ func applyKeywords(schema map[string]any, field reflect.StructField) error {
 		}
 		schema[keyword] = value
 	}
+
 	return nil
 }
 
@@ -286,6 +294,7 @@ func parseEnum(t reflect.Type, tag string) ([]any, error) {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
+
 	numeric := t.Kind() >= reflect.Int && t.Kind() <= reflect.Float64
 
 	for _, value := range values {
@@ -300,6 +309,7 @@ func parseEnum(t reflect.Type, tag string) ([]any, error) {
 		}
 		result = append(result, number)
 	}
+
 	return result, nil
 }
 
@@ -329,5 +339,6 @@ func parseJSONTag(tag string) (name string, omitEmpty, skip bool) {
 			omitEmpty = true
 		}
 	}
+
 	return parts[0], omitEmpty, false
 }

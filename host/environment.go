@@ -29,5 +29,6 @@ func FromEnvironment(options Options) (Options, error) {
 		}
 		options.FrameLimit = limit
 	}
+
 	return options, nil
 }

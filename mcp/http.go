@@ -67,6 +67,7 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			Code:    CodeInvalidRequest,
 			Message: "Invalid Request: reading the body failed",
 		})
+
 		return
 	}
 
@@ -289,6 +290,7 @@ func validHeaderValue(v string) bool {
 		}
 		return false
 	}
+
 	return true
 }
 

@@ -38,6 +38,7 @@ func Open(filename string, options Options) (*Config, error) {
 	}
 
 	config.filename = filename
+
 	return config, nil
 }
 
@@ -63,6 +64,7 @@ func parseConfig(data []byte, options Options) (*Config, error) {
 	if options.CommentPrefixes == "" {
 		options.CommentPrefixes = "#"
 	}
+
 	config := &Config{
 		options:  options,
 		sections: make(map[string]Section),
