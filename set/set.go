@@ -19,6 +19,7 @@ func NewFromSlice[T comparable](elements []T) Set[T] {
 	for _, element := range elements {
 		s[element] = struct{}{}
 	}
+
 	return s
 }
 
@@ -61,6 +62,7 @@ func (s Set[T]) ToSlice() []T {
 	for element := range s {
 		result = append(result, element)
 	}
+
 	return result
 }
 
@@ -70,6 +72,7 @@ func (s Set[T]) Copy() Set[T] {
 	for element := range s {
 		result[element] = struct{}{}
 	}
+
 	return result
 }
 
@@ -105,9 +108,11 @@ func (s Set[T]) Union(other Set[T]) Set[T] {
 
 // Intersection returns a new set containing elements that exist in both sets.
 func (s Set[T]) Intersection(other Set[T]) Set[T] {
-	smaller, larger := s, other
+	smaller := s
+	larger := other
 	if len(other) < len(s) {
-		smaller, larger = other, s
+		smaller = other
+		larger = s
 	}
 
 	result := make(Set[T], len(smaller))
@@ -175,9 +180,11 @@ func (s Set[T]) IsSuperset(other Set[T]) bool {
 
 // IsDisjoint checks if this set has no elements in common with the other set.
 func (s Set[T]) IsDisjoint(other Set[T]) bool {
-	smaller, larger := s, other
+	smaller := s
+	larger := other
 	if len(other) < len(s) {
-		smaller, larger = other, s
+		smaller = other
+		larger = s
 	}
 
 	for element := range smaller {

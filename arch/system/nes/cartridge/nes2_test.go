@@ -11,7 +11,9 @@ import (
 func TestNES2MetadataRoundtrip(t *testing.T) {
 	rom := make([]byte, 16+512+0x8000+0x2000+3)
 	copy(rom, []byte{'N', 'E', 'S', 0x1A, 2, 1, 0xAE, 0xA9, 0x52, 0, 0x97, 0x68, 3, 0x42, 1, 0x21})
-	rom[16], rom[528], rom[528+0x8000] = 0xAA, 0xBB, 0xCC
+	rom[16] = 0xAA
+	rom[528] = 0xBB
+	rom[528+0x8000] = 0xCC
 	copy(rom[len(rom)-3:], []byte{1, 2, 3})
 
 	cart, err := LoadFile(bytes.NewReader(rom))

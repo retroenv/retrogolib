@@ -87,6 +87,7 @@ func (c Content) MarshalJSON() ([]byte, error) {
 		if data == nil {
 			data = []byte{}
 		}
+
 		v = struct {
 			Type     string `json:"type"`
 			Data     []byte `json:"data"`

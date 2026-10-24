@@ -48,6 +48,7 @@ func NewWithConfig(cfg Config) *Logger {
 		if cfg.TimeFormat == "" {
 			consoleOpts.TimeFormat = DefaultTimeFormat
 		}
+
 		handler = NewConsoleHandler(output, consoleOpts)
 	}
 

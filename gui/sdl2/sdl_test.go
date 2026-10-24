@@ -50,12 +50,18 @@ func TestCleanupSDL(t *testing.T) {
 }
 
 func TestSetupFailureCleanup(t *testing.T) {
-	originalWindow, originalRenderer, originalTexture := CreateWindow, CreateRenderer, CreateTexture
-	originalDestroyWindow, originalDestroyRenderer := DestroyWindow, DestroyRenderer
+	originalWindow := CreateWindow
+	originalRenderer := CreateRenderer
+	originalTexture := CreateTexture
+	originalDestroyWindow := DestroyWindow
+	originalDestroyRenderer := DestroyRenderer
 	originalError := GetError
 	t.Cleanup(func() {
-		CreateWindow, CreateRenderer, CreateTexture = originalWindow, originalRenderer, originalTexture
-		DestroyWindow, DestroyRenderer = originalDestroyWindow, originalDestroyRenderer
+		CreateWindow = originalWindow
+		CreateRenderer = originalRenderer
+		CreateTexture = originalTexture
+		DestroyWindow = originalDestroyWindow
+		DestroyRenderer = originalDestroyRenderer
 		GetError = originalError
 	})
 	for _, stage := range []string{"window", "renderer", "texture"} {

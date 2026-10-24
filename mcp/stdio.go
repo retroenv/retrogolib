@@ -41,6 +41,7 @@ func (s *Server) Serve(ctx context.Context, r io.Reader, w io.Writer) error {
 				if len(line) > 0 {
 					s.handleMessage(ctx, conn, &wg, line)
 				}
+
 				return nil
 			}
 			if errors.Is(err, ErrMessageTooLarge) {
@@ -83,6 +84,7 @@ func (s *Server) handleMessage(ctx context.Context, conn *connection, wg *sync.W
 				Message: "Invalid Request: id missing",
 			})
 		}
+
 		return
 	}
 
@@ -125,6 +127,7 @@ func (c *connection) track(id string, cancel context.CancelFunc) bool {
 		return false
 	}
 	c.inflight[id] = cancel
+
 	return true
 }
 
@@ -180,6 +183,7 @@ func (c *connection) writeProgress(ctx context.Context, token json.RawMessage, c
 	if total >= 0 {
 		params["total"] = total
 	}
+
 	if message != "" {
 		params["message"] = message
 	}
@@ -247,10 +251,12 @@ func readLine(reader *bufio.Reader, maxSize int) ([]byte, error) {
 		if len(part) > 0 && part[len(part)-1] == '\n' {
 			length--
 		}
+
 		if length > maxSize {
 			if errors.Is(err, bufio.ErrBufferFull) {
 				discardLine(reader)
 			}
+
 			return nil, ErrMessageTooLarge
 		}
 

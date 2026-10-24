@@ -45,7 +45,9 @@ func TestBusCycleAccesses(t *testing.T) {
 				accesses = append(accesses, cycle)
 				return false
 			}))
-			cpu.PC, cpu.A, cpu.X = 0x8000, 0x42, 1
+			cpu.PC = 0x8000
+			cpu.A = 0x42
+			cpu.X = 1
 
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, test.want, accesses)
@@ -63,7 +65,8 @@ func TestBusCycleHookCanHoldReads(t *testing.T) {
 		attempts = append(attempts, cycle)
 		return len(attempts) <= 2 || cycle.Write
 	}))
-	cpu.PC, cpu.A = 0x8000, 0x42
+	cpu.PC = 0x8000
+	cpu.A = 0x42
 
 	assert.NoError(t, cpu.Step())
 	assert.Len(t, attempts, 6)
@@ -82,8 +85,12 @@ func TestBusCycleResetPreservesRegisters(t *testing.T) {
 		accesses = append(accesses, cycle)
 		return false
 	}))
-	cpu.A, cpu.X, cpu.Y, cpu.SP = 1, 2, 3, 0
-	cpu.Flags.C, cpu.Flags.I = 1, 0
+	cpu.A = 1
+	cpu.X = 2
+	cpu.Y = 3
+	cpu.SP = 0
+	cpu.Flags.C = 1
+	cpu.Flags.I = 0
 	cpu.Reset()
 
 	assert.Equal(t, byte(1), cpu.A)
@@ -137,7 +144,8 @@ func TestBusCycleInterruptPolling(t *testing.T) {
 				}
 				return false
 			}))
-			cpu.PC, cpu.Flags.I = test.pc, test.mask
+			cpu.PC = test.pc
+			cpu.Flags.I = test.mask
 			assert.NoError(t, cpu.Step())
 			assert.Equal(t, test.want, cpu.CheckInterrupts())
 		})

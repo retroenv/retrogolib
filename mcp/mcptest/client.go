@@ -144,6 +144,7 @@ func (c *Client) CallToolInto(ctx context.Context, name string, args, out any) e
 		if len(result.Content) > 0 {
 			text = result.Content[0].Text
 		}
+
 		return fmt.Errorf("tool execution failed: %s", text)
 	}
 	if result.StructuredContent == nil {
@@ -309,8 +310,10 @@ func withMeta(params json.RawMessage) json.RawMessage {
 	if len(params) > 0 && string(params) != "null" {
 		_ = json.Unmarshal(params, &merged)
 	}
+
 	merged["_meta"] = meta
 
 	data, _ := json.Marshal(merged)
+
 	return data
 }

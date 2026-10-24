@@ -32,6 +32,7 @@ func NewTestLogger(t TestingT) *Logger {
 		Level:      TraceLevel,
 		Handler:    handler,
 	}
+
 	return NewWithConfig(cfg)
 }
 
@@ -66,6 +67,7 @@ func (t testHandler) Handle(ctx context.Context, r slog.Record) error {
 	if r.Level >= ErrorLevel {
 		t.t.FailNow()
 	}
+
 	if err != nil {
 		return fmt.Errorf("handling record: %w", err)
 	}
@@ -100,5 +102,6 @@ func (w testingWriter) Write(p []byte) (int, error) {
 	p = bytes.TrimSuffix(p, []byte{'\n'})
 
 	w.t.Logf("%s", p)
+
 	return n, nil
 }

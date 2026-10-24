@@ -41,6 +41,7 @@ func registerFunctions(lib uintptr, imports map[string]any) error {
 	for name := range imports {
 		names = append(names, name)
 	}
+
 	sort.Strings(names)
 
 	for _, name := range names {
@@ -48,5 +49,6 @@ func registerFunctions(lib uintptr, imports map[string]any) error {
 			return err
 		}
 	}
+
 	return nil
 }

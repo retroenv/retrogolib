@@ -26,6 +26,7 @@ func Fail(t Testing, message string, msgAndArgs ...any) {
 		fmt.Fprintf(&builder, msgAndArgs[0].(string), msgAndArgs[1:]...)
 		message = builder.String()
 	}
+
 	t.Error(message)
 	t.FailNow()
 }
@@ -523,6 +524,7 @@ func tryFastPathLess(first, second any) (result, ok bool) {
 			return f < s, true
 		}
 	}
+
 	return false, false
 }
 
@@ -574,6 +576,7 @@ func compareFloat64(f, s float64) int {
 	} else if f > s {
 		return 1
 	}
+
 	return 0
 }
 
@@ -584,6 +587,7 @@ func compareInt64(f, s int64) int {
 	} else if f > s {
 		return 1
 	}
+
 	return 0
 }
 
@@ -594,6 +598,7 @@ func compareUint64(f, s uint64) int {
 	} else if f > s {
 		return 1
 	}
+
 	return 0
 }
 
@@ -630,7 +635,8 @@ func toFloat64(v reflect.Value, isFloat, isSigned bool) float64 {
 // compareNumeric compares two numeric values, returning -1, 0, or 1.
 // Handles cross-type comparisons between signed, unsigned, and float types.
 func compareNumeric(fv, sv reflect.Value) int {
-	fk, sk := fv.Kind(), sv.Kind()
+	fk := fv.Kind()
+	sk := sv.Kind()
 	fSigned := isSignedKind(fk)
 	sSigned := isSignedKind(sk)
 	fFloat := isFloatKind(fk)

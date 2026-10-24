@@ -38,6 +38,7 @@ func (mem *GameBoyMemory) Write(address uint16, value uint8) {
 		if bank == 0 {
 			bank = 1 // Bank 0 is not directly accessible (hardware constraint)
 		}
+
 		mem.romBank = bank
 
 	case address >= 0x4000 && address < 0x6000:

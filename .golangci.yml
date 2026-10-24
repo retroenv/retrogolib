@@ -52,7 +52,6 @@ linters:
     - unused # Checks Go code for unused constants, variables, functions and types
     - usestdlibvars # detect the possibility to use variables/constants from the Go standard library
     - wastedassign # finds wasted assignment statements
-    - whitespace # detects leading and trailing whitespace
     - wrapcheck # Checks that errors returned from external packages are wrapped
 
   settings:
@@ -76,9 +75,6 @@ linters:
         - "all"
         - "-SA1012" # do not pass a nil Context
         - "-ST1003" # should not use ALL_CAPS in Go names
-    whitespace:
-      multi-if: true # Enforces newlines (or comments) after every multi-line if statement
-      multi-func: true # Enforces newlines (or comments) after every multi-line function signature
 
   exclusions:
     rules:

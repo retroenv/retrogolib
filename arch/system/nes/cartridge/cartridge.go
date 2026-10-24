@@ -50,6 +50,7 @@ func (c *Cartridge) HeaderBytes() ([16]byte, error) {
 	data[8] = header.NumRAM
 	data[9] = header.VideoFormat
 	copy(data[10:], header.Reserved[:])
+
 	return data, nil
 }
 

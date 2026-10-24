@@ -64,6 +64,7 @@ func (d *audioDevice) playback() *audio.Playback {
 	d.done = make(chan struct{})
 	d.errors = make(chan error, 1)
 	go d.run()
+
 	return &audio.Playback{
 		Start:  d.start,
 		Stop:   d.stop,
@@ -78,6 +79,7 @@ func (d *audioDevice) start() error {
 		return d.startError()
 	case d.startRequests <- reply:
 	}
+
 	select {
 	case err := <-reply:
 		return err
@@ -114,6 +116,7 @@ func (d *audioDevice) run() {
 	if d.terminalError != nil {
 		d.errors <- d.terminalError
 	}
+
 	close(d.errors)
 	close(d.done)
 }
@@ -167,6 +170,7 @@ func (d *audioDevice) processAudioFrame() error {
 			PauseAudioDevice(d.deviceID, 1)
 			d.paused = true
 		}
+
 		return nil
 	}
 	if err := d.refill(); err != nil {
@@ -176,6 +180,7 @@ func (d *audioDevice) processAudioFrame() error {
 		PauseAudioDevice(d.deviceID, 0)
 		d.paused = false
 	}
+
 	return nil
 }
 
@@ -196,6 +201,7 @@ func (d *audioDevice) refill() error {
 		}
 		queued += bufferSize
 	}
+
 	return nil
 }
 
@@ -224,6 +230,7 @@ func openDevice(backend audio.Backend, format audio.Format, release func()) (*au
 	// Cover at least 20ms and two hardware/callback buffers, including small blocks.
 	frames := max(int64(format.SampleRate)/50, 2*int64(max(format.Samples, int(obtained.Samples))))
 	interval := time.Second * time.Duration(format.Samples) / time.Duration(format.SampleRate) / 2
+
 	return &audioDevice{
 		deviceID:    id,
 		backend:     backend,

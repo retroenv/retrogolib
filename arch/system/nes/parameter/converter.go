@@ -69,6 +69,7 @@ func (c Converter) AbsoluteX(param any) (string, error) {
 	}
 
 	builder.WriteString(",X")
+
 	return builder.String(), nil
 }
 
@@ -87,6 +88,7 @@ func (c Converter) AbsoluteY(param any) (string, error) {
 	}
 
 	builder.WriteString(",Y")
+
 	return builder.String(), nil
 }
 
@@ -122,6 +124,7 @@ func (c Converter) ZeroPageX(param any) (string, error) {
 	}
 
 	builder.WriteString(",X")
+
 	return builder.String(), nil
 }
 
@@ -140,6 +143,7 @@ func (c Converter) ZeroPageY(param any) (string, error) {
 	}
 
 	builder.WriteString(",Y")
+
 	return builder.String(), nil
 }
 
@@ -168,6 +172,7 @@ func (c Converter) Indirect(param any) (string, error) {
 	}
 
 	builder.WriteString(c.cfg.IndirectSuffix)
+
 	return builder.String(), nil
 }
 
@@ -187,6 +192,7 @@ func (c Converter) IndirectX(param any) (string, error) {
 
 	builder.WriteString(",X")
 	builder.WriteString(c.cfg.IndirectSuffix)
+
 	return builder.String(), nil
 }
 
@@ -206,5 +212,6 @@ func (c Converter) IndirectY(param any) (string, error) {
 
 	builder.WriteString(c.cfg.IndirectSuffix)
 	builder.WriteString(",Y")
+
 	return builder.String(), nil
 }

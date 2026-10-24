@@ -47,6 +47,7 @@ func jpAbs(c *CPU, params ...any) error {
 
 	c.PC = uint16(addr)
 	c.MEMPTR = uint16(addr)
+
 	return nil
 }
 
@@ -64,6 +65,7 @@ func jrRel(c *CPU, params ...any) error {
 	// Calculate target address: PC after this 2-byte instruction + offset
 	c.PC = uint16(int32(c.PC) + 2 + int32(offset))
 	c.MEMPTR = c.PC
+
 	return nil
 }
 
@@ -86,6 +88,7 @@ func djnz(c *CPU, params ...any) error {
 	} else {
 		c.PC += 2 // Advance past the 2-byte instruction
 	}
+
 	return nil
 }
 
@@ -123,6 +126,7 @@ func jrCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 2 // Advance past the 2-byte instruction
 	}
+
 	return nil
 }
 
@@ -142,6 +146,7 @@ func jpCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 3 // Advance past the 3-byte instruction
 	}
+
 	return nil
 }
 
@@ -164,6 +169,7 @@ func callCond(c *CPU, params ...any) error {
 	} else {
 		c.PC += 3 // Advance past the 3-byte instruction
 	}
+
 	return nil
 }
 
@@ -184,6 +190,7 @@ func retCond(c *CPU) error {
 	} else {
 		c.PC++ // Advance past the 1-byte instruction
 	}
+
 	return nil
 }
 
@@ -206,6 +213,7 @@ func call(c *CPU, params ...any) error {
 	// Jump to the called address
 	c.PC = uint16(addr)
 	c.MEMPTR = uint16(addr)
+
 	return nil
 }
 
@@ -225,5 +233,6 @@ func rst(c *CPU, _ ...any) error {
 	vector := uint16(c.currentOpcode & 0x38)
 	c.PC = vector
 	c.MEMPTR = vector
+
 	return nil
 }

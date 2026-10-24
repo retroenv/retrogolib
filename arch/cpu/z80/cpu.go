@@ -133,6 +133,7 @@ func New(memory Memory, options ...Option) (*CPU, error) {
 		Memory:    memory,
 		ioHandler: opts.ioHandler,
 	}
+
 	return newCPU(bus, opts)
 }
 
@@ -385,6 +386,7 @@ func (c *CPU) calculateIndexedAddress(indexReg uint16, _ ...any) uint16 {
 	displacement := int8(c.bus.Read(c.PC + 2))
 	addr := uint16(int32(indexReg) + int32(displacement))
 	c.MEMPTR = addr
+
 	return addr
 }
 

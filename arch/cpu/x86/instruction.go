@@ -134,6 +134,7 @@ func (ins Instruction) HasAddressing(modes ...AddressingMode) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -143,6 +144,7 @@ func (ins Instruction) GetOpcodeByRegister(register RegisterParam) (OpcodeInfo, 
 		for _, info := range ins.Addressing {
 			return info, true
 		}
+
 		return OpcodeInfo{}, false
 	}
 
@@ -160,6 +162,7 @@ func (ins Instruction) GetAllRegisterVariants() map[RegisterParam]OpcodeInfo {
 	for reg, info := range ins.RegisterOpcodes {
 		variants[reg] = info
 	}
+
 	return variants
 }
 
@@ -184,6 +187,7 @@ func (ins Instruction) GetSupportedAddressingModes() []AddressingMode {
 	for mode := range ins.Addressing {
 		modes = append(modes, mode)
 	}
+
 	return modes
 }
 
@@ -193,6 +197,7 @@ func (ins Instruction) GetSupportedRegisters() []RegisterParam {
 	for register := range ins.RegisterOpcodes {
 		registers = append(registers, register)
 	}
+
 	return registers
 }
 

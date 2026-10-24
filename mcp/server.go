@@ -64,6 +64,7 @@ func New(logger *log.Logger, opts Options) *Server {
 	if opts.MaxMessageSize <= 0 {
 		opts.MaxMessageSize = defaultMaxMessageSize
 	}
+
 	if opts.ListTTL <= 0 {
 		opts.ListTTL = defaultListTTL
 	}
@@ -142,11 +143,13 @@ func (s *Server) AddTool(t Tool, h ToolHandler) error {
 			return ErrDuplicateTool
 		}
 	}
+
 	s.tools = append(s.tools, toolEntry{
 		tool:    t,
 		handler: h,
 		headers: headers,
 	})
+
 	return nil
 }
 
@@ -164,10 +167,12 @@ func (s *Server) AddResource(r Resource, h ResourceHandler) error {
 			return ErrDuplicateResource
 		}
 	}
+
 	s.resources = append(s.resources, resourceEntry{
 		resource: r,
 		handler:  h,
 	})
+
 	return nil
 }
 
@@ -186,10 +191,12 @@ func (s *Server) AddResourceTemplate(t ResourceTemplate, h ResourceHandler) erro
 			return ErrDuplicateResource
 		}
 	}
+
 	s.templates = append(s.templates, templateEntry{
 		template: t,
 		handler:  h,
 	})
+
 	return nil
 }
 
@@ -207,10 +214,12 @@ func (s *Server) AddPrompt(p Prompt, h PromptHandler) error {
 			return ErrDuplicatePrompt
 		}
 	}
+
 	s.prompts = append(s.prompts, promptEntry{
 		prompt:  p,
 		handler: h,
 	})
+
 	return nil
 }
 
@@ -333,6 +342,7 @@ func (s *Server) toolListResult() *toolListResult {
 	for _, entry := range s.tools {
 		tools = append(tools, entry.tool)
 	}
+
 	s.mu.RUnlock()
 
 	return &toolListResult{
@@ -428,6 +438,7 @@ func (s *Server) findTool(name string) (toolEntry, bool) {
 			return entry, true
 		}
 	}
+
 	return toolEntry{}, false
 }
 
@@ -442,11 +453,13 @@ func (s *Server) findResource(uri string) (ResourceHandler, bool) {
 			return entry.handler, true
 		}
 	}
+
 	for _, entry := range s.templates {
 		if matchURITemplate(entry.template.URITemplate, uri) {
 			return entry.handler, true
 		}
 	}
+
 	return nil, false
 }
 
@@ -460,6 +473,7 @@ func (s *Server) findPrompt(name string) (promptEntry, bool) {
 			return entry, true
 		}
 	}
+
 	return promptEntry{}, false
 }
 

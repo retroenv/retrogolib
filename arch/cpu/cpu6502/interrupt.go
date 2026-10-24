@@ -112,6 +112,7 @@ func (c *CPU) executeInterruptFrom(vectorAddress uint16, source InterruptSource)
 		c.opcode = 0
 		c.interrupt = source
 	}
+
 	c.push16(c.PC)
 	// Hardware interrupts put a zero in the stacked B-bit position.
 	flags := c.GetFlags()&^0b0001_0000 | 0b0010_0000
@@ -122,6 +123,7 @@ func (c *CPU) executeInterruptFrom(vectorAddress uint16, source InterruptSource)
 	if c.opts.variant >= Variant65C02 {
 		c.Flags.D = 0
 	}
+
 	c.cycles += 7
 	// Read the vector now because mapped memory can change between interrupts.
 	c.PC = c.memory.ReadWord(vectorAddress)

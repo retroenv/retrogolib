@@ -34,6 +34,7 @@ func ldImm8(c *CPU, params ...any) error {
 		// Default to A register for unknown opcodes
 		c.A = uint8(imm)
 	}
+
 	return nil
 }
 
@@ -53,6 +54,7 @@ func ldReg8(c *CPU, params ...any) error {
 
 	value := c.GetRegisterValue(uint8(src))
 	c.SetRegisterValue(uint8(dst), value)
+
 	return nil
 }
 
@@ -78,6 +80,7 @@ func ldReg16(c *CPU, params ...any) error {
 	case 3:
 		c.SP = value
 	}
+
 	return nil
 }
 
@@ -110,6 +113,7 @@ func ldIndirect(c *CPU, _ ...any) error {
 	default:
 		return fmt.Errorf("unsupported indirect load opcode: 0x%02X", opcode)
 	}
+
 	return nil
 }
 
@@ -146,6 +150,7 @@ func ldExtended(c *CPU, params ...any) error {
 	default:
 		return fmt.Errorf("unsupported ldExtended opcode: 0x%02X", opcode)
 	}
+
 	return nil
 }
 
@@ -155,6 +160,7 @@ func ldIndirectImm(c *CPU, _ ...any) error {
 	immediate := c.bus.Read(c.PC + 1)
 	address := c.hl()
 	c.bus.Write(address, immediate)
+
 	return nil
 }
 
@@ -180,7 +186,9 @@ func pushReg16(c *CPU, _ ...any) error {
 	default:
 		return fmt.Errorf("unsupported pushReg16 opcode: 0x%02X", opcode)
 	}
+
 	c.push16(value)
+
 	return nil
 }
 
@@ -200,6 +208,7 @@ func popReg16(c *CPU, _ ...any) error {
 	default:
 		return fmt.Errorf("unsupported popReg16 opcode: 0x%02X", opcode)
 	}
+
 	return nil
 }
 
@@ -218,6 +227,7 @@ func exx(c *CPU) error {
 	c.E, c.AltE = c.AltE, c.E
 	c.H, c.AltH = c.AltH, c.H
 	c.L, c.AltL = c.AltL, c.L
+
 	return nil
 }
 
