@@ -86,6 +86,7 @@ func (tt *transfer) flag(position knownbits.Width) knownbits.Bit {
 	}
 	tt.result.Reads = append(tt.result.Reads, view)
 	value, _ := knownbits.TestBit(8, tt.input.Before[P], position)
+
 	return value
 }
 
@@ -103,6 +104,7 @@ func (tt *transfer) writeFlag(position knownbits.Width, value knownbits.Bit) {
 	case knownbits.BitSet:
 		part.KnownOne = 1
 	}
+
 	tt.after[P], _ = knownbits.Insert(8, tt.after[P], position, 1, part)
 	tt.changed[P] |= 1 << position
 }
@@ -131,11 +133,13 @@ func (tt *transfer) finish() {
 		tt.result.Reason = analysis.UnsupportedOpcode
 		tt.result.Flow = analysis.FlowUnknown
 	}
+
 	if tt.invalid {
 		tt.result.Reason = analysis.InvalidInput
 		tt.result.EffectsComplete = false
 		tt.result.Flow = analysis.FlowUnknown
 		tt.result.Copies = tt.result.Copies[:0]
+
 		return
 	}
 	for resource, mask := range tt.changed {
@@ -191,6 +195,7 @@ func decode(input Input) (cpu6502.Opcode, analysis.Reason) {
 	case cpu6502.VariantSynertek65C02:
 		opcode = cpu6502.OpcodesSynertek65C02[input.Opcode.Opcode]
 	}
+
 	if opcode.Instruction == nil {
 		return opcode, analysis.UnsupportedOpcode
 	}
@@ -202,6 +207,7 @@ func decode(input Input) (cpu6502.Opcode, analysis.Reason) {
 	if size == 3 {
 		width = 16
 	}
+
 	if !input.Operand.Valid(width) || !input.PC.Valid(16) {
 		return opcode, analysis.InvalidInput
 	}
@@ -210,6 +216,7 @@ func decode(input Input) (cpu6502.Opcode, analysis.Reason) {
 			return opcode, analysis.InvalidInput
 		}
 	}
+
 	return opcode, analysis.Supported
 }
 

@@ -33,6 +33,7 @@ func (tt *transfer) execute() bool {
 	default:
 		return tt.otherLoad(code)
 	}
+
 	return true
 }
 
@@ -48,6 +49,7 @@ func (tt *transfer) pair(code byte) analysis.View[Resource] {
 	if tt.indexed && resource == HL {
 		resource = tt.indexResource()
 	}
+
 	return view(resource, 0, 16)
 }
 
@@ -57,6 +59,7 @@ func (tt *transfer) byteRegister(code byte, memoryForm bool) analysis.View[Resou
 	if tt.indexed && !memoryForm && (code == 4 || code == 5) {
 		part.Storage = tt.indexResource()
 	}
+
 	return part
 }
 
@@ -83,6 +86,7 @@ func decodeOpcode(info z80.OpcodeInfo) (z80.Opcode, bool, analysis.Reason) {
 		if prefix == z80.PrefixFD {
 			table = &z80.FDOpcodes
 		}
+
 		candidate := table[info.Opcode]
 		if candidate.Instruction != nil {
 			opcode = candidate
@@ -94,6 +98,7 @@ func decodeOpcode(info z80.OpcodeInfo) (z80.Opcode, bool, analysis.Reason) {
 	default:
 		return z80.Opcode{}, false, analysis.UnsupportedOpcode
 	}
+
 	if opcode.Instruction == nil || opcode.Size == 0 || info.Opcode == z80.PrefixDD ||
 		info.Opcode == z80.PrefixFD || info.Opcode == z80.PrefixCB || info.Opcode == z80.PrefixED {
 
@@ -110,10 +115,12 @@ func validateInput(input Input, opcode z80.Opcode) analysis.Reason {
 	if input.Opcode.Prefix != 0 {
 		operandBytes--
 	}
+
 	width := knownbits.Width(8)
 	if operandBytes == 2 {
 		width = 16
 	}
+
 	if operandBytes > 2 || !input.Operand.Valid(width) {
 		return analysis.InvalidInput
 	}
@@ -122,5 +129,6 @@ func validateInput(input Input, opcode z80.Opcode) analysis.Reason {
 			return analysis.InvalidInput
 		}
 	}
+
 	return analysis.Supported
 }

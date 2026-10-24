@@ -160,6 +160,7 @@ func (rr *Result[R, W, A]) Valid(width func(R) knownbits.Width) bool {
 			return false
 		}
 	}
+
 	if !rr.validWrites(width) {
 		return false
 	}
@@ -168,11 +169,13 @@ func (rr *Result[R, W, A]) Valid(width func(R) knownbits.Width) bool {
 			return false
 		}
 	}
+
 	for _, event := range rr.Memory {
 		if !validEvent(event) {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -189,6 +192,7 @@ func (rr *Result[R, W, A]) validWrites(width func(R) knownbits.Width) bool {
 			}
 		}
 	}
+
 	return true
 }
 
@@ -207,6 +211,7 @@ func (rr *Result[R, W, A]) validCopy(proof Copy[R], width func(R) knownbits.Widt
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -239,6 +244,7 @@ func Apply[R comparable, W knownbits.Word](width knownbits.Width, before knownbi
 			return knownbits.SignExtend(view.Bits, width, write.Value)
 		}
 	}
+
 	return knownbits.Value[W]{}, false
 }
 

@@ -25,6 +25,7 @@ func Insert[W Word](width Width, parent Value[W], offset, size Width, part Value
 		return Value[W]{}, false
 	}
 	slice := W(mask) << offset
+
 	return Value[W]{
 		KnownZero: parent.KnownZero&^slice | part.KnownZero<<offset,
 		KnownOne:  parent.KnownOne&^slice | part.KnownOne<<offset,
@@ -47,6 +48,7 @@ func ZeroExtend[W Word](from, to Width, value Value[W]) (Value[W], bool) {
 		return Value[W]{}, false
 	}
 	oldMask, _ := widthMask[W](from)
+
 	return Value[W]{
 		KnownZero: value.KnownZero | W(mask&^oldMask),
 		KnownOne:  value.KnownOne,
@@ -64,8 +66,10 @@ func SignExtend[W Word](from, to Width, value Value[W]) (Value[W], bool) {
 	if value.KnownZero>>(from-1)&1 != 0 {
 		value.KnownZero |= high
 	}
+
 	if value.KnownOne>>(from-1)&1 != 0 {
 		value.KnownOne |= high
 	}
+
 	return value, true
 }

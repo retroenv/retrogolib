@@ -17,6 +17,7 @@ func (tt *transfer) writeFlag(position knownbits.Width, value knownbits.Bit) {
 	case knownbits.BitSet:
 		part.KnownOne = 1
 	}
+
 	tt.write(view(AF, position, 1), part)
 }
 
@@ -48,6 +49,7 @@ func (tt *transfer) byteALU(code byte) {
 		self = source == view(AF, 8, 8)
 		right = tt.read(source)
 	}
+
 	if operation == 3 {
 		tt.compare(left, right, self)
 		return
@@ -56,6 +58,7 @@ func (tt *transfer) byteALU(code byte) {
 	if self && operation == 1 {
 		value, _ = knownbits.NewConstant[uint16](8, 0)
 	}
+
 	tt.write(view(AF, 8, 8), value)
 	tt.szxy(value)
 	parity, _ := knownbits.EvenParity(8, value)
@@ -66,6 +69,7 @@ func (tt *transfer) byteALU(code byte) {
 	if operation == 0 {
 		half = knownbits.BitSet
 	}
+
 	tt.writeFlag(4, half)
 	tt.logicalCopy(operation, right, self)
 }
@@ -79,11 +83,13 @@ func (tt *transfer) compare(left, right knownbits.Value[uint16], self bool) {
 		difference.SignedOverflow = knownbits.BitClear
 		half = knownbits.BitClear
 	}
+
 	tt.szxy(difference.Value)
 	for _, position := range []knownbits.Width{3, 5} {
 		bit, _ := knownbits.TestBit(8, right, position)
 		tt.writeFlag(position, bit)
 	}
+
 	tt.writeFlag(0, difference.BorrowOut)
 	tt.writeFlag(1, knownbits.BitSet)
 	tt.writeFlag(2, difference.SignedOverflow)
@@ -98,6 +104,7 @@ func (tt *transfer) carryControl(complement bool) {
 		oldXY.KnownZero |= bit.KnownZero << position
 		oldXY.KnownOne |= bit.KnownOne << position
 	}
+
 	q := tt.read(view(Q, 0, 8))
 	notLatch, _ := knownbits.Not(8, q)
 	retained, _ := knownbits.And(8, oldXY, notLatch)
@@ -106,12 +113,14 @@ func (tt *transfer) carryControl(complement bool) {
 		bit, _ := knownbits.TestBit(8, xy, position)
 		tt.writeFlag(position, bit)
 	}
+
 	carry := knownbits.BitSet
 	half := knownbits.BitClear
 	if complement {
 		half = tt.flag(0)
 		carry = invert(half)
 	}
+
 	tt.writeFlag(0, carry)
 	tt.writeFlag(1, knownbits.BitClear)
 	tt.writeFlag(4, half)

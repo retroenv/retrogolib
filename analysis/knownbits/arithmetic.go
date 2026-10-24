@@ -39,6 +39,7 @@ func Sub[W Word](width Width, left, right Value[W], borrowIn Bit) (SubResult[W],
 	}
 	complement, _ := Not(width, right)
 	addition, _ := Add(width, left, complement, invertBit(borrowIn))
+
 	return SubResult[W]{
 		Value:          addition.Value,
 		BorrowOut:      invertBit(addition.CarryOut),
@@ -55,6 +56,7 @@ func CarryAt[W Word](width Width, left, right Value[W], carryIn Bit, boundary Wi
 	lowLeft, _ := Truncate(width, boundary, left)
 	lowRight, _ := Truncate(width, boundary, right)
 	result, valid := Add(boundary, lowLeft, lowRight, carryIn)
+
 	return result.CarryOut, valid
 }
 
@@ -67,6 +69,7 @@ func BorrowAt[W Word](width Width, left, right Value[W], borrowIn Bit, boundary 
 	lowLeft, _ := Truncate(width, boundary, left)
 	lowRight, _ := Truncate(width, boundary, right)
 	result, valid := Sub(boundary, lowLeft, lowRight, borrowIn)
+
 	return result.BorrowOut, valid
 }
 
@@ -76,12 +79,14 @@ func addConstants[W Word](width Width, left, right W, carryIn Bit) AddResult[W] 
 	if width < 64 {
 		carryOut = sum >> width
 	}
+
 	value, _ := NewConstant(width, W(sum))
 	sign := W(1) << (width - 1)
 	overflow := BitClear
 	if ^(left^right)&(left^value.KnownOne)&sign != 0 {
 		overflow = BitSet
 	}
+
 	return AddResult[W]{
 		Value:          value,
 		CarryOut:       bitFromBounds(carryOut, carryOut),
@@ -100,6 +105,7 @@ func addPartial[W Word](width Width, left, right Value[W], carryIn Bit) AddResul
 		if position == width-1 {
 			result.SignedOverflow = additionOverflow(leftMin, leftMax, rightMin, rightMax, carryMin, carryMax)
 		}
+
 		low := leftMin + rightMin + carryMin
 		high := leftMax + rightMax + carryMax
 		if low == high {
@@ -109,10 +115,13 @@ func addPartial[W Word](width Width, left, right Value[W], carryIn Bit) AddResul
 				result.Value.KnownOne |= W(1) << position
 			}
 		}
+
 		carryMin = low >> 1
 		carryMax = high >> 1
 	}
+
 	result.CarryOut = bitFromBounds(carryMin, carryMax)
+
 	return result
 }
 
@@ -128,5 +137,6 @@ func additionOverflow(leftMin, leftMax, rightMin, rightMax, carryMin, carryMax u
 			}
 		}
 	}
+
 	return bitFromBounds(low, high)
 }

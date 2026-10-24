@@ -29,6 +29,7 @@ func (tt *transfer) stack(name string) bool {
 		case cpu6502.PlyName:
 			resource = Y
 		}
+
 		value := tt.pull()
 		tt.write(resource, value)
 		tt.zn(value)
@@ -57,6 +58,7 @@ func (tt *transfer) stack(name string) bool {
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -71,6 +73,7 @@ func (tt *transfer) pull() knownbits.Value[uint8] {
 	tt.read(SP)
 	tt.write(SP, changeByte(tt.after[SP], false))
 	address := stackAddress(tt.after[SP])
+
 	return tt.readMemory(address)
 }
 
@@ -110,6 +113,7 @@ func (tt *transfer) trap() {
 	if tt.input.Variant >= cpu6502.Variant65C02 {
 		tt.writeFlag(3, knownbits.BitClear)
 	}
+
 	vector, _ := knownbits.NewConstant[uint16](16, cpu6502.IrqAddress)
 	tt.pointer(vector, false)
 }

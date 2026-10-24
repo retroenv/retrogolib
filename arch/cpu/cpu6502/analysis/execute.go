@@ -22,6 +22,7 @@ func (tt *transfer) loadStore(name string) bool {
 		case cpu6502.LdyName:
 			resource = Y
 		}
+
 		value := tt.operand()
 		tt.write(resource, value)
 		tt.zn(value)
@@ -44,11 +45,13 @@ func (tt *transfer) loadStore(name string) bool {
 		case cpu6502.SaxName:
 			value, _ = knownbits.And(8, tt.read(A), tt.read(X))
 		}
+
 		tt.writeOperand(value)
 
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -81,6 +84,7 @@ func (tt *transfer) transfers(name string) bool {
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -97,6 +101,7 @@ func (tt *transfer) system(name string) bool {
 		if name == cpu6502.SecName {
 			value = knownbits.BitSet
 		}
+
 		tt.writeFlag(0, value)
 
 	case cpu6502.CldName, cpu6502.SedName:
@@ -104,6 +109,7 @@ func (tt *transfer) system(name string) bool {
 		if name == cpu6502.SedName {
 			value = knownbits.BitSet
 		}
+
 		tt.writeFlag(3, value)
 
 	case cpu6502.CliName, cpu6502.SeiName:
@@ -111,6 +117,7 @@ func (tt *transfer) system(name string) bool {
 		if name == cpu6502.SeiName {
 			value = knownbits.BitSet
 		}
+
 		tt.writeFlag(2, value)
 
 	case cpu6502.ClvName:
@@ -133,6 +140,7 @@ func (tt *transfer) system(name string) bool {
 	default:
 		return tt.branch(name)
 	}
+
 	return true
 }
 
@@ -163,11 +171,14 @@ func (tt *transfer) branch(name string) bool {
 	default:
 		return false
 	}
+
 	tt.result.Flow = analysis.FlowBranch
 	condition := tt.flag(position)
 	if !set {
 		condition = invert(condition)
 	}
+
 	tt.result.Condition = condition
+
 	return true
 }

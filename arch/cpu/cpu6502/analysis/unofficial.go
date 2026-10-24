@@ -28,6 +28,7 @@ func (tt *transfer) unofficialALU(name string) bool {
 			tt.writeFlag(0, carry)
 			tt.zn(value)
 		}
+
 		tt.write(A, value)
 
 	case cpu6502.AxsName:
@@ -47,6 +48,7 @@ func (tt *transfer) unofficialALU(name string) bool {
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -65,6 +67,7 @@ func (tt *transfer) combinedShift(name string) {
 	case cpu6502.RraName:
 		shift = cpu6502.RorName
 	}
+
 	value := tt.shift(shift, tt.operand())
 	tt.writeOperand(value)
 	left := tt.read(A)

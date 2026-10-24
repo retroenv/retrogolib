@@ -38,6 +38,7 @@ func (tt *transfer) address() Address {
 	if encodedSize(tt.opcode.Addressing) == 2 {
 		base, _ = knownbits.ZeroExtend(8, 16, base)
 	}
+
 	switch tt.opcode.Addressing {
 	case cpu6502.ZeroPageXAddressing:
 		base = tt.index(base, X, true)
@@ -66,10 +67,12 @@ func (tt *transfer) address() Address {
 	case cpu6502.AbsoluteXIndirectAddressing:
 		base = tt.pointer(tt.index(base, X, false), false)
 	}
+
 	tt.operandAddress = Address{
 		Value: base,
 	}
 	tt.addressReady = true
+
 	return tt.operandAddress
 }
 
@@ -83,10 +86,12 @@ func (tt *transfer) index(base knownbits.Value[uint16], resource Resource, zeroP
 		low, _ := knownbits.Truncate(16, 8, base)
 		sum, _ := knownbits.Add(8, low, part, knownbits.BitClear)
 		result, _ := knownbits.ZeroExtend(8, 16, sum.Value)
+
 		return result
 	}
 	wide, _ := knownbits.ZeroExtend(8, 16, part)
 	sum, _ := knownbits.Add(16, base, wide, knownbits.BitClear)
+
 	return sum.Value
 }
 
@@ -98,6 +103,7 @@ func (tt *transfer) pointer(base knownbits.Value[uint16], wrapPage bool) knownbi
 	high := tt.readMemory(Address{
 		Value: next,
 	})
+
 	return knownbits.Value[uint16]{
 		KnownZero: uint16(high.KnownZero)<<8 | uint16(low.KnownZero),
 		KnownOne:  uint16(high.KnownOne)<<8 | uint16(low.KnownOne),
@@ -113,10 +119,12 @@ func (tt *transfer) readMemory(address Address) knownbits.Value[uint8] {
 		if !value.Valid(8) {
 			tt.invalid = true
 		}
+
 		if !stable || tt.invalid {
 			value = knownbits.Value[uint8]{}
 		}
 	}
+
 	tt.result.Memory = append(tt.result.Memory, analysis.MemoryEvent[uint8, Address]{
 		Address: address,
 		Bytes:   1,
@@ -124,6 +132,7 @@ func (tt *transfer) readMemory(address Address) knownbits.Value[uint8] {
 		Value:   value,
 		Stable:  stable && !tt.invalid,
 	})
+
 	return value
 }
 
@@ -146,5 +155,6 @@ func incrementAddress(base knownbits.Value[uint16], wrapPage bool) knownbits.Val
 	one, _ = knownbits.NewConstant[uint16](8, 1)
 	sum, _ := knownbits.Add(8, low, one, knownbits.BitClear)
 	result, _ := knownbits.Insert(16, base, 0, 8, sum.Value)
+
 	return result
 }

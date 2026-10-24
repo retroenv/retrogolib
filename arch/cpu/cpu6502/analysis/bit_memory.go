@@ -24,6 +24,7 @@ func (tt *transfer) bitMemory() bool {
 		if !set {
 			condition = invert(condition)
 		}
+
 		tt.result.Flow = analysis.FlowBranch
 		tt.result.Condition = condition
 
@@ -36,10 +37,12 @@ func (tt *transfer) bitMemory() bool {
 			complement, _ := knownbits.Not(8, mask)
 			value, _ = knownbits.And(8, value, complement)
 		}
+
 		tt.writeOperand(value)
 
 	default:
 		return false
 	}
+
 	return true
 }

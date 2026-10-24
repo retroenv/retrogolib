@@ -134,10 +134,16 @@ func checkArithmetic(t *testing.T, width Width, left, right Value[uint8], carry 
 	var valid bool
 	if subtract {
 		result, ok := Sub(width, left, right, carry)
-		fact, event, overflow, valid = result.Value, result.BorrowOut, result.SignedOverflow, ok
+		fact = result.Value
+		event = result.BorrowOut
+		overflow = result.SignedOverflow
+		valid = ok
 	} else {
 		result, ok := Add(width, left, right, carry)
-		fact, event, overflow, valid = result.Value, result.CarryOut, result.SignedOverflow, ok
+		fact = result.Value
+		event = result.CarryOut
+		overflow = result.SignedOverflow
+		valid = ok
 	}
 	assert.True(t, valid)
 	assert.Equal(t, oracle.zero, fact.KnownZero)

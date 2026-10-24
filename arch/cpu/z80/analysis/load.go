@@ -29,6 +29,7 @@ func (tt *transfer) immediateByteLoad(code byte) {
 	if tt.indexed && destination == 6 {
 		value, _ = knownbits.Extract(16, value, 8, 8)
 	}
+
 	if destination == 6 {
 		tt.store(tt.indirectAddress(), value)
 	} else {
@@ -68,6 +69,7 @@ func (tt *transfer) otherLoad(code byte) bool {
 	default:
 		return false
 	}
+
 	return true
 }
 
@@ -84,6 +86,7 @@ func (tt *transfer) extendedLoad() bool {
 	if code&8 != 0 {
 		resource = R
 	}
+
 	accumulator := view(AF, 8, 8)
 	if code&0x10 == 0 {
 		tt.copy(view(resource, 0, 8), accumulator)
@@ -98,6 +101,7 @@ func (tt *transfer) extendedLoad() bool {
 	iff := tt.read(view(IFF2, 0, 1))
 	flag, _ := knownbits.TestBit(1, iff, 0)
 	tt.writeFlag(2, flag)
+
 	return true
 }
 

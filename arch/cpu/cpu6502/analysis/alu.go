@@ -29,6 +29,7 @@ func (tt *transfer) alu(name string) bool {
 		case cpu6502.CpyName:
 			resource = Y
 		}
+
 		tt.compare(tt.read(resource), tt.operand())
 
 	case cpu6502.AslName, cpu6502.LsrName, cpu6502.RolName, cpu6502.RorName:
@@ -45,6 +46,7 @@ func (tt *transfer) alu(name string) bool {
 	default:
 		return tt.unofficialALU(name)
 	}
+
 	return true
 }
 
@@ -58,12 +60,15 @@ func (tt *transfer) arithmetic(left, right knownbits.Value[uint8], carry knownbi
 			if decimal == knownbits.BitUnknown {
 				tt.result.Reason = analysis.UnknownMode
 			}
+
 			for _, position := range []knownbits.Width{0, 1, 6, 7} {
 				tt.writeFlag(position, knownbits.BitUnknown)
 			}
+
 			return knownbits.Value[uint8]{}
 		}
 	}
+
 	var value knownbits.Value[uint8]
 	var outgoing, overflow knownbits.Bit
 	if subtract {
@@ -77,9 +82,11 @@ func (tt *transfer) arithmetic(left, right knownbits.Value[uint8], carry knownbi
 		outgoing = addition.CarryOut
 		overflow = addition.SignedOverflow
 	}
+
 	tt.writeFlag(0, outgoing)
 	tt.writeFlag(6, overflow)
 	tt.zn(value)
+
 	return value
 }
 
@@ -107,8 +114,10 @@ func (tt *transfer) shift(name string, value knownbits.Value[uint8]) knownbits.V
 	case cpu6502.RorName:
 		result, carry, _ = knownbits.RotateRightCarry(8, value, tt.flag(0))
 	}
+
 	tt.writeFlag(0, carry)
 	tt.zn(result)
+
 	return result
 }
 
@@ -173,5 +182,6 @@ func changeByte(value knownbits.Value[uint8], subtract bool) knownbits.Value[uin
 		return result.Value
 	}
 	result, _ := knownbits.Add(8, value, one, knownbits.BitClear)
+
 	return result.Value
 }

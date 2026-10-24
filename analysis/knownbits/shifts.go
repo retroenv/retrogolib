@@ -8,6 +8,7 @@ func ShiftLeft[W Word](width Width, value Value[W], count uint) (Value[W], bool)
 	}
 	count = min(count, uint(width))
 	fill := mask & ^(mask << count)
+
 	return New(width, value.KnownZero<<count|W(fill), value.KnownOne<<count)
 }
 
@@ -19,6 +20,7 @@ func ShiftRight[W Word](width Width, value Value[W], count uint) (Value[W], bool
 	}
 	count = min(count, uint(width))
 	fill := mask & ^(mask >> count)
+
 	return Value[W]{
 		KnownZero: value.KnownZero>>count | W(fill),
 		KnownOne:  value.KnownOne >> count,
@@ -41,9 +43,11 @@ func ShiftRightSigned[W Word](width Width, value Value[W], count uint) (Value[W]
 	if value.KnownZero>>(width-1)&1 != 0 {
 		result.KnownZero |= fill
 	}
+
 	if value.KnownOne>>(width-1)&1 != 0 {
 		result.KnownOne |= fill
 	}
+
 	return result, true
 }
 
@@ -54,6 +58,7 @@ func RotateLeft[W Word](width Width, value Value[W], count uint) (Value[W], bool
 	}
 	count %= uint(width)
 	other := uint(width) - count
+
 	return New(width, value.KnownZero<<count|value.KnownZero>>other, value.KnownOne<<count|value.KnownOne>>other)
 }
 
@@ -64,6 +69,7 @@ func RotateRight[W Word](width Width, value Value[W], count uint) (Value[W], boo
 	}
 	count %= uint(width)
 	other := uint(width) - count
+
 	return New(width, value.KnownZero>>count|value.KnownZero<<other, value.KnownOne>>count|value.KnownOne<<other)
 }
 
@@ -75,6 +81,7 @@ func RotateLeftCarry[W Word](width Width, value Value[W], carry Bit) (Value[W], 
 	}
 	outgoing, _ := TestBit(width, value, width-1)
 	result, _ := New(width, value.KnownZero<<1, value.KnownOne<<1)
+
 	return fillCarry(result, 0, carry), outgoing, true
 }
 
@@ -89,6 +96,7 @@ func RotateRightCarry[W Word](width Width, value Value[W], carry Bit) (Value[W],
 		KnownZero: value.KnownZero >> 1,
 		KnownOne:  value.KnownOne >> 1,
 	}
+
 	return fillCarry(result, width-1, carry), outgoing, true
 }
 
@@ -99,5 +107,6 @@ func fillCarry[W Word](value Value[W], position Width, carry Bit) Value[W] {
 	case BitSet:
 		value.KnownOne |= W(1) << position
 	}
+
 	return value
 }

@@ -149,7 +149,9 @@ func (tt *transfer) read(part analysis.View[Resource]) knownbits.Value[uint16] {
 	if part.Storage == R {
 		before = tt.after[R]
 	}
+
 	value, _ := knownbits.Extract(StorageWidth(part.Storage), before, part.Offset, part.Bits)
+
 	return value
 }
 
@@ -179,6 +181,7 @@ func (tt *transfer) refresh() {
 	if tt.input.Opcode.Prefix != 0 {
 		count = 2
 	}
+
 	constant, _ := knownbits.NewConstant[uint16](7, count)
 	incremented, _ := knownbits.Add(7, low, constant, knownbits.BitClear)
 	value, _ := knownbits.Insert(8, tt.input.Before[R], 0, 7, incremented.Value)
@@ -191,9 +194,11 @@ func (tt *transfer) finish() {
 		if tt.invalid {
 			tt.result.Reason = analysis.InvalidInput
 		}
+
 		tt.result.EffectsComplete = false
 		tt.result.Flow = analysis.FlowUnknown
 		tt.result.Copies = tt.result.Copies[:0]
+
 		return
 	}
 	tt.write(view(Q, 0, 8), knownbits.Value[uint16]{})
@@ -213,12 +218,14 @@ func (tt *transfer) finishStorage(resource Resource, mask uint16) {
 		for end < width && mask&(1<<end) != 0 {
 			end++
 		}
+
 		part := view(resource, position, end-position)
 		value, _ := knownbits.Extract(width, tt.after[resource], part.Offset, part.Bits)
 		rule := analysis.Preserve
 		if part.Bits == width {
 			rule = analysis.Replace
 		}
+
 		tt.result.Writes = append(tt.result.Writes, analysis.Write[Resource, uint16]{
 			View:  part,
 			Value: value,
