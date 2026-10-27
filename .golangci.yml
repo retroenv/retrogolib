@@ -59,6 +59,13 @@ linters:
       max-complexity: 15
     godot:
       period: false
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - generic
     revive:
       rules:
         - name: var-naming
