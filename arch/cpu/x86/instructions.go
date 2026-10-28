@@ -1275,3 +1275,21 @@ var (
 		Name: "undefined",
 	}
 )
+
+// Neg changes the sign of a byte or word register or memory operand.
+var Neg = &Instruction{
+	Name: NegName,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ModRMRegisterAddressing: {Opcode: 0xf6, Size: 2, HasModRM: true},
+		ModRMMemoryAddressing:   {Opcode: 0xf6, Size: 2, HasModRM: true},
+	},
+}
+
+// Not inverts each bit of a byte or word register or memory operand.
+var Not = &Instruction{
+	Name: NotName,
+	Addressing: map[AddressingMode]OpcodeInfo{
+		ModRMRegisterAddressing: {Opcode: 0xf6, Size: 2, HasModRM: true},
+		ModRMMemoryAddressing:   {Opcode: 0xf6, Size: 2, HasModRM: true},
+	},
+}
