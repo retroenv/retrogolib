@@ -393,11 +393,11 @@ var EDOpcodes = [256]Opcode{
 	0xA9: {Instruction: EdCpd, Addressing: ImpliedAddressing, Timing: 16, Size: 2},  // CPD
 	0xAA: {Instruction: EdInd, Addressing: ImpliedAddressing, Timing: 16, Size: 2},  // IND
 	0xAB: {Instruction: EdOutd, Addressing: ImpliedAddressing, Timing: 16, Size: 2}, // OUTD
-	0xB0: {Instruction: EdLdir, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // LDIR
+	0xB0: {Instruction: EdLdir, Addressing: ImpliedAddressing, Timing: 16, Size: 2}, // LDIR
 	0xB1: {Instruction: EdCpir, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // CPIR
 	0xB2: {Instruction: EdInir, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // INIR
 	0xB3: {Instruction: EdOtir, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // OTIR
-	0xB8: {Instruction: EdLddr, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // LDDR
+	0xB8: {Instruction: EdLddr, Addressing: ImpliedAddressing, Timing: 16, Size: 2}, // LDDR
 	0xB9: {Instruction: EdCpdr, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // CPDR
 	0xBA: {Instruction: EdIndr, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // INDR
 	0xBB: {Instruction: EdOtdr, Addressing: ImpliedAddressing, Timing: 21, Size: 2}, // OTDR
