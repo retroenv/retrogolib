@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"math"
+
+	"github.com/retroenv/retrogolib/internal/backends"
+	"github.com/retroenv/retrogolib/renderer"
 )
 
 // SampleFormat represents different audio sample formats.
@@ -118,6 +121,50 @@ func (f Format) Validate() error {
 // ErrClosed is returned when starting a playback that has been stopped.
 var ErrClosed = errors.New("audio playback is closed")
 
-// Setup will be set by the chosen and imported audio renderer.
-// This function is the entrypoint for code importing this package to start audio.
-var Setup Initializer
+// ErrNoRenderer is returned by Setup when no audio renderer is registered.
+var ErrNoRenderer = errors.New("no audio renderer registered")
+
+var renderers backends.Registry[renderer.Renderer[Initializer]]
+
+// Register adds an audio renderer for Setup and returns a function that removes it.
+// Renderer packages call Register in their init function.
+// Setup tries renderers with a higher priority first. Renderers with an equal
+// priority run in registration order. Register panics when the name is empty,
+// the name is already registered, or the renderer has no Setup function.
+func Register(name string, priority int, r renderer.Renderer[Initializer]) (unregister func()) {
+	if r.Setup == nil {
+		panic("audio: renderer setup function is nil")
+	}
+	return renderers.Register(name, priority, r)
+}
+
+// Available reports whether at least one audio renderer is registered.
+func Available() bool {
+	return renderers.Len() > 0
+}
+
+// Setup opens the first registered audio renderer that initializes without error.
+// It is SetupWithInfo without the renderer information.
+func Setup(backend Backend) (*Playback, error) {
+	playback, _, err := SetupWithInfo(backend)
+	return playback, err
+}
+
+// SetupWithInfo opens the first registered audio renderer that initializes
+// without error and returns information about it. It tries the renderers in
+// priority order, for example a renderer for a newer library version before a
+// renderer for an older one. This is the entrypoint for code importing this
+// package to start audio.
+//
+// When all renderers fail, the returned error contains the error of every
+// renderer. It returns ErrNoRenderer when no renderer is registered.
+func SetupWithInfo(backend Backend) (*Playback, renderer.Info, error) {
+	playback, info, err := backends.First(&renderers, ErrNoRenderer, func(r renderer.Renderer[Initializer]) (*Playback, error) {
+		return r.Setup(backend)
+	})
+	if err != nil {
+		return nil, renderer.Info{}, fmt.Errorf("opening audio renderer: %w", err)
+	}
+
+	return playback, info, nil
+}

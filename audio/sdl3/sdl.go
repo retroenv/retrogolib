@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/retroenv/retrogolib/audio"
+	"github.com/retroenv/retrogolib/internal/backends"
 	sdllibrary "github.com/retroenv/retrogolib/internal/sdl3"
+	"github.com/retroenv/retrogolib/renderer"
 )
 
 // Setup opens the default output device without starting playback.
@@ -56,7 +58,9 @@ type audioDevice struct {
 }
 
 func init() {
-	audio.Setup = Setup
+	audio.Register("sdl3", backends.PrioritySDL3, renderer.Renderer[audio.Initializer]{
+		Setup: Setup,
+	})
 }
 
 func (d *audioDevice) playback() *audio.Playback {

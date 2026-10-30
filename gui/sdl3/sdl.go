@@ -8,7 +8,9 @@ import (
 
 	"github.com/retroenv/retrogolib/gui"
 	"github.com/retroenv/retrogolib/gui/internal/framebuffer"
+	"github.com/retroenv/retrogolib/internal/backends"
 	sdllibrary "github.com/retroenv/retrogolib/internal/sdl3"
+	"github.com/retroenv/retrogolib/renderer"
 )
 
 // Setup initializes the SDL library and returns a render and cleanup function.
@@ -53,7 +55,9 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 }
 
 func init() {
-	gui.Setup = Setup
+	gui.Register("sdl3", backends.PrioritySDL3, renderer.Renderer[gui.Initializer]{
+		Setup: Setup,
+	})
 }
 
 // setupSDL initializes the SDL library and creates the window, renderer, and texture.
