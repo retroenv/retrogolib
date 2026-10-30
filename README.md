@@ -15,8 +15,8 @@ debuggers, disassemblers, and system-specific utilities.
 * **CPU emulation** - Chip-8, CP1610, 6502-family, 65C816, 6809, 68000, SM83, and Z80 emulators with tested instruction implementations
 * **Instruction definitions** - x86 definitions from the 8086 through the 80486 for static analysis tools
 * **System helpers** - NES cartridge, mapper, register, and parameter support; Atari 2600, CoCo, Intellivision, and Vectrex memory-map and register definitions
-* **CGO-free GUI support** - Cross-platform rendering through SDL2 on Linux, Windows, macOS, and FreeBSD
-* **CGO-free audio support** - Backend-neutral PCM playback with SDL2 output, concurrency-safe controls, and asynchronous error reporting
+* **CGO-free GUI support** - Cross-platform rendering through SDL3 with SDL2 fallback on Linux, Windows, macOS, and FreeBSD
+* **CGO-free audio support** - PCM playback through SDL3 with SDL2 fallback, concurrency-safe controls, and asynchronous error reporting
 * **MCP server toolkit** - Model Context Protocol server that exposes tools, resources, and prompts through stdio or streamable HTTP
 * **Tooling utilities** - Packages for CLI applications, configuration, structured logging, input, assertions, and sets
 * **Small dependency footprint** - Go 1.25+ with only `ebitengine/purego` as an external dependency
@@ -65,18 +65,21 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     │        └─ register           VIA register and PSG button constants
     ├─ assert                      test assertion helpers
     ├─ audio                       PCM formats and playback controls
-    │  └─ sdl2                     SDL2 audio backend
+    │  ├─ sdl2                     SDL2 audio backend
+    │  └─ sdl3                     SDL3 audio backend
     ├─ buildinfo                   embedded build-version metadata formatting
     ├─ cli                         command-line application helpers
     ├─ config                      configuration loading, parsing, and persistence
     ├─ gui                         CGO-free GUI rendering abstractions
     │  ├─ internal/framebuffer     frame-buffer helpers for GUI backends
-    │  └─ sdl2                     SDL2 GUI backend
+    │  ├─ sdl2                     SDL2 GUI backend
+    │  └─ sdl3                     SDL3 GUI backend
     ├─ host                        frame presentation, audio playback, and headless operation
     ├─ input                       keyboard and controller input helpers
-    ├─ internal                    shared dynamic-library and SDL2 subsystem helpers
+    ├─ internal                    shared dynamic-library, SDL subsystem, and renderer registry helpers
     ├─ log                         nil-safe structured logging built on log/slog
     ├─ mcp                         Model Context Protocol server for tools, resources, and prompts
+    ├─ renderer                    shared types to register and select audio and GUI renderers
     └─ set                         generic set data structures and operations
 
 For package-level APIs and examples, see the [Go package documentation](https://pkg.go.dev/github.com/retroenv/retrogolib).

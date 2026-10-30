@@ -1,9 +1,11 @@
 package audio
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
+	"github.com/retroenv/retrogolib/renderer"
 )
 
 func TestFormat_BytesPerSample(t *testing.T) {
@@ -159,4 +161,48 @@ func TestMockBackend(t *testing.T) {
 	buffer := make([]byte, len(testData))
 	backend.AudioCallback(buffer)
 	assert.Equal(t, testData, buffer)
+}
+
+func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
+	var calls []string
+	failing := func(name string) Initializer {
+		return func(Backend) (*Playback, error) {
+			calls = append(calls, name)
+			return nil, errors.New(name + " failed")
+		}
+	}
+	want := &Playback{}
+	working := func(name string) Initializer {
+		return func(Backend) (*Playback, error) {
+			calls = append(calls, name)
+			return want, nil
+		}
+	}
+
+	defer Register("old", 10, renderer.Renderer[Initializer]{
+		Setup:   working("old"),
+		Version: func() string { return "2.0.1" },
+	})()
+	defer Register("unused", 1, renderer.Renderer[Initializer]{Setup: working("unused")})()
+	defer Register("new", 20, renderer.Renderer[Initializer]{Setup: failing("new")})()
+	assert.True(t, Available(), "renderer should be available")
+
+	playback, info, err := SetupWithInfo(NewMockBackend(Format{}))
+	assert.NoError(t, err, "Setup should fall back to the next renderer")
+	assert.True(t, playback == want, "playback should come from the working renderer")
+	assert.Equal(t, []string{"new", "old"}, calls)
+	assert.Equal(t, "old", info.Name)
+	assert.Equal(t, "2.0.1", info.Version)
+	assert.Error(t, info.Skipped)
+	assert.Contains(t, info.Skipped.Error(), "new: new failed")
+}
+
+func TestSetup_NoRenderer(t *testing.T) {
+	_, err := Setup(NewMockBackend(Format{}))
+	assert.True(t, errors.Is(err, ErrNoRenderer), "error should be ErrNoRenderer")
+	assert.False(t, Available(), "no renderer should be available")
+}
+
+func TestRegister_NilSetup(t *testing.T) {
+	assert.Panics(t, func() { Register("nil", 1, renderer.Renderer[Initializer]{}) })
 }

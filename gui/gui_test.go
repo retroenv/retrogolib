@@ -1,12 +1,14 @@
 package gui_test
 
 import (
+	"errors"
 	"image"
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
 	"github.com/retroenv/retrogolib/gui"
 	"github.com/retroenv/retrogolib/input"
+	"github.com/retroenv/retrogolib/renderer"
 )
 
 // MockBackend implements the gui.Backend interface for testing
@@ -154,31 +156,66 @@ func TestInitializer_Type(t *testing.T) {
 	assert.True(t, running, "Render function should return true")
 }
 
-func TestSetup_GlobalVariable(t *testing.T) {
-	// Test that Setup variable can be assigned
-	originalSetup := gui.Setup
-	defer func() {
-		gui.Setup = originalSetup
-	}()
+func TestSetup_Registered(t *testing.T) {
+	unregister := gui.Register("test", 1, renderer.Renderer[gui.Initializer]{
+		Setup: func(gui.Backend) (func() (bool, error), func(), error) {
+			return func() (bool, error) { return false, nil }, func() {}, nil
+		},
+	})
+	defer unregister()
 
-	gui.Setup = func(backend gui.Backend) (func() (bool, error), func(), error) {
-		return func() (bool, error) { return false, nil }, func() {}, nil
-	}
+	assert.True(t, gui.Available(), "renderer should be available")
 
-	assert.NotNil(t, gui.Setup, "Setup should be assignable")
-
-	// Test that assigned Setup can be used
-	backend := NewMockBackend()
-	render, cleanup, err := gui.Setup(backend)
-
+	render, cleanup, err := gui.Setup(NewMockBackend())
 	assert.NoError(t, err, "Setup should not return error")
 	assert.NotNil(t, render, "Render function should not be nil")
 	assert.NotNil(t, cleanup, "Cleanup function should not be nil")
 
-	// Test render function behavior
 	running, err := render()
 	assert.NoError(t, err, "Render function should not return error")
 	assert.False(t, running, "Render function should return false")
+}
+
+func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
+	var calls []string
+	failing := func(name string) gui.Initializer {
+		return func(gui.Backend) (func() (bool, error), func(), error) {
+			calls = append(calls, name)
+			return nil, nil, errors.New(name + " failed")
+		}
+	}
+	working := func(name string) gui.Initializer {
+		return func(gui.Backend) (func() (bool, error), func(), error) {
+			calls = append(calls, name)
+			return func() (bool, error) { return true, nil }, func() {}, nil
+		}
+	}
+
+	defer gui.Register("old", 10, renderer.Renderer[gui.Initializer]{
+		Setup:   working("old"),
+		Version: func() string { return "2.0.1" },
+	})()
+	defer gui.Register("unused", 1, renderer.Renderer[gui.Initializer]{Setup: working("unused")})()
+	defer gui.Register("new", 20, renderer.Renderer[gui.Initializer]{Setup: failing("new")})()
+
+	render, _, info, err := gui.SetupWithInfo(NewMockBackend())
+	assert.NoError(t, err, "Setup should fall back to the next renderer")
+	assert.NotNil(t, render, "Render function should not be nil")
+	assert.Equal(t, []string{"new", "old"}, calls)
+	assert.Equal(t, "old", info.Name)
+	assert.Equal(t, "2.0.1", info.Version)
+	assert.Error(t, info.Skipped)
+	assert.Contains(t, info.Skipped.Error(), "new: new failed")
+}
+
+func TestSetup_NoRenderer(t *testing.T) {
+	_, _, err := gui.Setup(NewMockBackend())
+	assert.True(t, errors.Is(err, gui.ErrNoRenderer), "error should be ErrNoRenderer")
+	assert.False(t, gui.Available(), "no renderer should be available")
+}
+
+func TestRegister_NilSetup(t *testing.T) {
+	assert.Panics(t, func() { gui.Register("nil", 1, renderer.Renderer[gui.Initializer]{}) })
 }
 
 func TestDimensions_Equality(t *testing.T) {

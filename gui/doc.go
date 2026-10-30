@@ -9,6 +9,8 @@
 // The GUI package uses a backend interface pattern:
 //   - Backend interface: Defines what the GUI system needs from the application
 //   - Initializer function: Sets up the GUI renderer and returns control functions
+//   - Registry: Renderer packages register an Initializer with Register. Setup tries
+//     the registered renderers in priority order until one starts
 //   - Dimensions type: Manages window sizing and scaling
 //
 // # Backend Interface
@@ -44,7 +46,10 @@
 //
 //	// ... implement other Backend methods
 //
-//	// Start GUI
+//	// Start GUI. Import renderer packages for side effects to register them,
+//	// for example _ "github.com/retroenv/retrogolib/gui/sdl3" and
+//	// _ "github.com/retroenv/retrogolib/gui/sdl2". If SDL3 does not start,
+//	// for example when it is not installed, Setup uses SDL2.
 //	render, cleanup, err := gui.Setup(emulator)
 //	if err != nil {
 //		log.Fatal(err)

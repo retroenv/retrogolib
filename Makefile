@@ -31,6 +31,9 @@ test-integration: ## run long-running CPU integration tests
 	go test -v -run TestSingleStep -timeout 0 -race ./arch/cpu/sm83/
 	go test -v -run 'TestSingleStep|TestZexdoc|TestZexall' -timeout 0 -race ./arch/cpu/z80/
 
+test-sdl: ## run SDL2 and SDL3 backend tests against the installed shared libraries with dummy drivers
+	go test -race -tags sdlintegration -timeout $(TEST_TIMEOUT) ./audio/sdl2 ./audio/sdl3 ./gui/sdl2 ./gui/sdl3
+
 test-coverage: ## run unit tests and create test coverage
 	go test -short -timeout $(TEST_TIMEOUT) ./... -coverprofile coverage.txt
 

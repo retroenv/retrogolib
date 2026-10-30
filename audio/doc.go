@@ -1,13 +1,19 @@
 // Package audio provides CGO-free PCM playback for retro console emulators.
 //
-// Import a renderer to register audio.Setup. Renderers are separate packages and
-// may impose additional runtime dependencies and audio format constraints.
+// Import a renderer to register it with audio.Register. Renderers are separate
+// packages and may impose additional runtime dependencies and audio format
+// constraints. audio.Setup tries the registered renderers in priority order and
+// returns the first one that starts.
 //
-// # Usage with SDL2
+// # Usage with SDL3 and SDL2
+//
+// Import both renderers to use SDL3 and fall back to SDL2, for example when the
+// SDL3 library is not installed.
 //
 //	import (
 //	    "github.com/retroenv/retrogolib/audio"
 //	    _ "github.com/retroenv/retrogolib/audio/sdl2"
+//	    _ "github.com/retroenv/retrogolib/audio/sdl3"
 //	)
 //
 //	playback, err := audio.Setup(emulator)
