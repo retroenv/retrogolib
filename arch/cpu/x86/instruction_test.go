@@ -90,3 +90,20 @@ func TestModRM(t *testing.T) {
 	m2 := NewModRM(2, 5, 3)
 	assert.Equal(t, uint8(0xAB), m2.ToByte()) // 10_101_011
 }
+
+func TestUnaryIntegerMetadata(t *testing.T) {
+	for _, name := range []string{NegName, NotName} {
+		instruction := Instructions[name]
+		assert.NotNil(t, instruction)
+		assert.Equal(t, name, instruction.Name)
+		for _, mode := range []AddressingMode{ModRMRegisterAddressing, ModRMMemoryAddressing} {
+			info, known := instruction.GetOpcodeInfo(mode)
+			assert.True(t, known)
+			assert.True(t, info.HasModRM)
+			assert.True(t, CPU8086.Supports(info))
+		}
+		assert.True(t, MemoryReadInstructions.Contains(name))
+		assert.True(t, MemoryWriteInstructions.Contains(name))
+		assert.True(t, MemoryReadWriteInstructions.Contains(name))
+	}
+}
