@@ -161,7 +161,7 @@ func Setup(backend Backend) (*Playback, error) {
 func SetupWithInfo(backend Backend) (*Playback, renderer.Info, error) {
 	playback, info, err := backends.First(&renderers, ErrNoRenderer, func(r renderer.Renderer[Initializer]) (*Playback, error) {
 		return r.Setup(backend)
-	})
+	}, backends.LibraryVersion[Initializer])
 	if err != nil {
 		return nil, renderer.Info{}, fmt.Errorf("opening audio renderer: %w", err)
 	}

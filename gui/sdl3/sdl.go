@@ -56,7 +56,8 @@ func Setup(backend gui.Backend) (guiRender func() (bool, error), guiCleanup func
 
 func init() {
 	gui.Register("sdl3", backends.PrioritySDL3, renderer.Renderer[gui.Initializer]{
-		Setup: Setup,
+		Setup:   Setup,
+		Version: sdllibrary.Version,
 	})
 }
 

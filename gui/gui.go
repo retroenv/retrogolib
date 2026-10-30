@@ -71,7 +71,7 @@ func Setup(backend Backend) (guiRender func() (bool, error), guiCleanup func(), 
 func SetupWithInfo(backend Backend) (guiRender func() (bool, error), guiCleanup func(), info renderer.Info, err error) {
 	result, info, err := backends.First(&renderers, ErrNoRenderer, func(r renderer.Renderer[Initializer]) (started, error) {
 		return newStarted(r.Setup(backend))
-	})
+	}, backends.LibraryVersion[Initializer])
 	if err != nil {
 		return nil, nil, renderer.Info{}, fmt.Errorf("starting GUI renderer: %w", err)
 	}

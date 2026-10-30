@@ -179,7 +179,10 @@ func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
 		}
 	}
 
-	defer Register("old", 10, renderer.Renderer[Initializer]{Setup: working("old")})()
+	defer Register("old", 10, renderer.Renderer[Initializer]{
+		Setup:   working("old"),
+		Version: func() string { return "2.0.1" },
+	})()
 	defer Register("unused", 1, renderer.Renderer[Initializer]{Setup: working("unused")})()
 	defer Register("new", 20, renderer.Renderer[Initializer]{Setup: failing("new")})()
 	assert.True(t, Available(), "renderer should be available")
@@ -189,6 +192,7 @@ func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
 	assert.True(t, playback == want, "playback should come from the working renderer")
 	assert.Equal(t, []string{"new", "old"}, calls)
 	assert.Equal(t, "old", info.Name)
+	assert.Equal(t, "2.0.1", info.Version)
 	assert.Error(t, info.Skipped)
 	assert.Contains(t, info.Skipped.Error(), "new: new failed")
 }

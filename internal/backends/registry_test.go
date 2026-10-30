@@ -74,7 +74,7 @@ func TestFirst_FallsBackInPriorityOrder(t *testing.T) {
 		return "result", err
 	}
 
-	result, info, err := First(&r, errEmpty, try)
+	result, info, err := First(&r, errEmpty, try, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, "result", result)
 	assert.Equal(t, []string{"new failed", "<nil>"}, calls)
@@ -87,10 +87,13 @@ func TestFirst_FirstSucceeds(t *testing.T) {
 	var r Registry[int]
 	r.Register("only", 1, 1)
 
-	result, info, err := First(&r, errEmpty, func(v int) (int, error) { return v, nil })
+	try := func(v int) (int, error) { return v, nil }
+	libraryVersion := func(int) string { return "3.4.2" }
+	result, info, err := First(&r, errEmpty, try, libraryVersion)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, result)
 	assert.Equal(t, "only", info.Name)
+	assert.Equal(t, "3.4.2", info.Version)
 	assert.NoError(t, info.Skipped)
 }
 
@@ -101,7 +104,7 @@ func TestFirst_AllFail(t *testing.T) {
 
 	result, info, err := First(&r, errEmpty, func(err error) (*int, error) {
 		return new(int), err
-	})
+	}, nil)
 	assert.Error(t, err)
 	assert.True(t, result == nil, "result should be the zero value on error")
 	assert.Equal(t, "", info.Name)
@@ -111,6 +114,6 @@ func TestFirst_AllFail(t *testing.T) {
 
 func TestFirst_Empty(t *testing.T) {
 	var r Registry[int]
-	_, _, err := First(&r, errEmpty, func(int) (int, error) { return 0, nil })
+	_, _, err := First(&r, errEmpty, func(int) (int, error) { return 0, nil }, nil)
 	assert.True(t, errors.Is(err, errEmpty), "error should be errEmpty")
 }

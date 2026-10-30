@@ -58,7 +58,8 @@ type audioDevice struct {
 
 func init() {
 	audio.Register("sdl2", backends.PrioritySDL2, renderer.Renderer[audio.Initializer]{
-		Setup: Setup,
+		Setup:   Setup,
+		Version: sdllibrary.Version,
 	})
 }
 

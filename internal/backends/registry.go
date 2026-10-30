@@ -109,11 +109,24 @@ func (r *Registry[T]) Entries() []Entry[T] {
 	return result
 }
 
+// LibraryVersion returns the library version of a renderer. It returns an
+// empty string when the renderer has no version function.
+func LibraryVersion[S any](r renderer.Renderer[S]) string {
+	if r.Version == nil {
+		return ""
+	}
+
+	return r.Version()
+}
+
 // First calls try for each registered value in run order and returns the
 // result of the first call that succeeds. When all calls fail, the returned
 // error contains the error of every call, prefixed with the entry name.
-// It returns errEmpty when no value is registered.
-func First[T, R any](r *Registry[T], errEmpty error, try func(T) (R, error)) (R, renderer.Info, error) {
+// It returns errEmpty when no value is registered. libraryVersion returns the
+// library version of a value and may be nil.
+func First[T, R any](r *Registry[T], errEmpty error, try func(T) (R, error),
+	libraryVersion func(T) string) (R, renderer.Info, error) {
+
 	var zero R
 
 	entries := r.Entries()
@@ -132,6 +145,9 @@ func First[T, R any](r *Registry[T], errEmpty error, try func(T) (R, error)) (R,
 		info := renderer.Info{
 			Name:    e.Name,
 			Skipped: errors.Join(errs...),
+		}
+		if libraryVersion != nil {
+			info.Version = libraryVersion(e.Value)
 		}
 
 		return result, info, nil

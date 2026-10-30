@@ -57,3 +57,9 @@ func TestConcurrentSubsystemOwnership(t *testing.T) {
 	workers.Wait()
 	assert.Equal(t, 0, count)
 }
+
+func TestFormatVersion(t *testing.T) {
+	assert.Equal(t, "3.4.2", formatVersion(3004002))
+	assert.Equal(t, "3.0.0", formatVersion(3000000))
+	assert.Equal(t, "3.12.105", formatVersion(3012105))
+}

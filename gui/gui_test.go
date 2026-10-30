@@ -191,7 +191,10 @@ func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
 		}
 	}
 
-	defer gui.Register("old", 10, renderer.Renderer[gui.Initializer]{Setup: working("old")})()
+	defer gui.Register("old", 10, renderer.Renderer[gui.Initializer]{
+		Setup:   working("old"),
+		Version: func() string { return "2.0.1" },
+	})()
 	defer gui.Register("unused", 1, renderer.Renderer[gui.Initializer]{Setup: working("unused")})()
 	defer gui.Register("new", 20, renderer.Renderer[gui.Initializer]{Setup: failing("new")})()
 
@@ -200,6 +203,7 @@ func TestSetup_FallsBackInPriorityOrder(t *testing.T) {
 	assert.NotNil(t, render, "Render function should not be nil")
 	assert.Equal(t, []string{"new", "old"}, calls)
 	assert.Equal(t, "old", info.Name)
+	assert.Equal(t, "2.0.1", info.Version)
 	assert.Error(t, info.Skipped)
 	assert.Contains(t, info.Skipped.Error(), "new: new failed")
 }

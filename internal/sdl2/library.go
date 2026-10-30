@@ -9,7 +9,8 @@ import (
 	"github.com/retroenv/retrogolib/internal/dynlib"
 )
 
-// LoadFunctions registers a backend's bindings. Each backend must call it once.
+// LoadFunctions registers the bindings in imports from the SDL2 library.
+// Call it one time for each set of bindings, for example in a sync.Once function.
 func LoadFunctions(imports map[string]any) error {
 	var names []string
 	switch runtime.GOOS {
@@ -45,6 +46,36 @@ func Acquire(flags uint32) (func(), error) {
 	}
 	return lifecycle.acquire(flags)
 }
+
+// Version returns the version of the loaded SDL2 library, for example "2.32.10".
+// It returns an empty string when the library or the version function is not available.
+func Version() string {
+	version, err := loadVersion()
+	if err != nil {
+		return ""
+	}
+	return version
+}
+
+// sdlVersion is the SDL_version structure of SDL2.
+type sdlVersion struct {
+	major uint8
+	minor uint8
+	patch uint8
+}
+
+var loadVersion = sync.OnceValues(func() (string, error) {
+	var getVersion func(version *sdlVersion)
+	err := LoadFunctions(map[string]any{"SDL_GetVersion": &getVersion})
+	if err != nil {
+		return "", err
+	}
+
+	var v sdlVersion
+	getVersion(&v)
+
+	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.patch), nil
+})
 
 type subsystems struct {
 	mutex    sync.Mutex

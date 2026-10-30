@@ -3,5 +3,5 @@
 //
 // Renderer packages register a Renderer with audio.Register or gui.Register.
 // audio.SetupWithInfo and gui.SetupWithInfo return an Info that names the
-// renderer that started.
+// renderer that started and its library version.
 package renderer
