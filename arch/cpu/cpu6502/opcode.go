@@ -283,6 +283,15 @@ var Opcodes = [256]Opcode{
 	{Instruction: IscInst, Addressing: AbsoluteXAddressing, Timing: 7},                                 // 0xff
 }
 
+// Size returns the encoded size of the instruction in bytes. The size includes
+// the opcode byte and the operand bytes. The value comes from the addressing
+// mode, so it is also correct for unofficial opcodes. An unofficial opcode can
+// have no size in OpcodeInfo. The size of BRK is 1, because BRK has no encoded
+// operand. OpcodeInfo gives 2 for BRK, which includes the byte that the CPU skips.
+func (opcode Opcode) Size() int {
+	return addressingModeSize(opcode.Addressing)
+}
+
 // ReadsMemory returns whether the instruction accesses memory reading.
 func (opcode Opcode) ReadsMemory(memoryReadInstructions set.Set[string]) bool {
 	switch opcode.Addressing {

@@ -29,16 +29,20 @@ var NotExecutingFollowingOpcodeInstructions = set.NewFromSlice([]string{
 // MemoryReadInstructions contains all instructions that can read from an
 // absolute memory address.
 var MemoryReadInstructions = set.NewFromSlice([]string{
+	AdcInst.Name,
 	AndInst.Name,
 	BitInst.Name,
 	CmpInst.Name,
 	CpxInst.Name,
 	CpyInst.Name,
+	EorInst.Name,
 	JmpInst.Name,
+	LaxInst.Name,
 	LdaInst.Name,
 	LdxInst.Name,
 	LdyInst.Name,
-	LaxInst.Name,
+	OraInst.Name,
+	SbcInst.Name,
 })
 
 // MemoryWriteInstructions contains all instructions that can write to an
@@ -54,20 +58,16 @@ var MemoryWriteInstructions = set.NewFromSlice([]string{
 // MemoryReadWriteInstructions contains all instructions that can read and write
 // during instruction execution an absolute memory address.
 var MemoryReadWriteInstructions = set.NewFromSlice([]string{
-	AdcInst.Name,
 	AslInst.Name,
 	DcpInst.Name,
 	DecInst.Name,
-	EorInst.Name,
 	IncInst.Name,
 	IscInst.Name,
 	LsrInst.Name,
-	OraInst.Name,
 	RlaInst.Name,
 	RolInst.Name,
 	RorInst.Name,
 	RraInst.Name,
-	SbcInst.Name,
 	SloInst.Name,
 	SreInst.Name,
 	TrbInst.Name,

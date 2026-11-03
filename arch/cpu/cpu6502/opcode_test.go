@@ -6,6 +6,81 @@ import (
 	"github.com/retroenv/retrogolib/assert"
 )
 
+func TestOpcodeSize(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		opcode byte
+		size   int
+	}{
+		{
+			name:   "official implied",
+			opcode: 0xea,
+			size:   1,
+		},
+		{
+			name:   "official immediate",
+			opcode: 0xa9,
+			size:   2,
+		},
+		{
+			name:   "brk has no encoded operand",
+			opcode: 0x00,
+			size:   1,
+		},
+		{
+			name:   "official absolute",
+			opcode: 0x4c,
+			size:   3,
+		},
+		{
+			name:   "unofficial implied kil",
+			opcode: 0x02,
+			size:   1,
+		},
+		{
+			name:   "unofficial zero page dcp",
+			opcode: 0xc7,
+			size:   2,
+		},
+		{
+			name:   "unofficial absolute lax",
+			opcode: 0xaf,
+			size:   3,
+		},
+		{
+			name:   "unofficial absolute x isc",
+			opcode: 0xff,
+			size:   3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, tt.size, Opcodes[tt.opcode].Size())
+		})
+	}
+}
+
+func TestOpcodeSizeMatchesOpcodeInfo(t *testing.T) {
+	t.Parallel()
+
+	for b, op := range Opcodes {
+		size := op.Size()
+		assert.True(t, size >= 1 && size <= MaxOpcodeSize, "opcode $%02X", b)
+
+		// An unofficial opcode can have no size in OpcodeInfo. The size of BRK
+		// in OpcodeInfo includes the byte that the CPU skips.
+		info := op.Instruction.Addressing[op.Addressing]
+		if info.Size != 0 && op.Instruction.Name != BrkName {
+			assert.Equal(t, int(info.Size), size, "opcode $%02X", b)
+		}
+	}
+}
+
 // TestVerifyOpcodes ensures bidirectional opcode mapping consistency.
 // Every opcode in the lookup table (Opcodes[X] -> Instruction) must have
 // a reverse mapping in the instruction's Addressing map (Instruction -> X).
