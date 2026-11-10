@@ -46,7 +46,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     │  │  └─ z80                   Zilog Z80 emulator, including prefixed and undocumented opcodes
     │  └─ system/nes               Nintendo Entertainment System support
     │     ├─ cartridge             .nes ROM loading and saving
-    │     ├─ codedatalog           FCEUX/Mesen-compatible code/data logging
+    │     ├─ codedatalog           Raw FCEUX NES code/data logs
     │     ├─ parameter             assembler-compatible instruction parameter formatting
     │     └─ register              NES memory-register constants
     ├─ assert                      test assertion helpers
