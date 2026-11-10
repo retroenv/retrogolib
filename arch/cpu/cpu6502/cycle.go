@@ -2,10 +2,23 @@ package cpu6502
 
 import "fmt"
 
+// BusCycleKind identifies the purpose of a CPU bus access.
+type BusCycleKind uint8
+
+const (
+	BusCycleData BusCycleKind = iota
+	BusCycleOpcode
+	BusCycleOperand
+	BusCycleDummy
+	BusCycleVector
+)
+
 // BusCycle describes the bus access that the CPU will attempt next.
 type BusCycle struct {
 	// Address is the address on the CPU bus.
 	Address uint16
+	// Kind separates instruction bytes, data, dummy reads, and vectors.
+	Kind BusCycleKind
 	// Value is the byte to write. It is zero for a read.
 	Value byte
 	// Write selects a write cycle. A false value selects a read cycle.
@@ -30,12 +43,12 @@ func (c *CPU) stepCycles() error {
 		}
 
 		c.jamCycle = min(c.jamCycle+1, 3)
-		c.readCycle(address)
+		c.readCycleKind(address, BusCycleDummy)
 
 		return nil
 	}
 	if c.consumeStallCycle() {
-		c.readCycle(c.PC)
+		c.readCycleKind(c.PC, BusCycleDummy)
 		return nil
 	}
 
@@ -45,7 +58,7 @@ func (c *CPU) stepCycles() error {
 	c.executionCycle = c.cycles
 	c.interrupt = InterruptNone
 	c.branchTaken = false
-	c.opcode = c.readCycle(c.PC)
+	c.opcode = c.readCycleKind(c.PC, BusCycleOpcode)
 	opcode := Opcodes[c.opcode]
 	if opcode.Instruction == nil {
 		return fmt.Errorf("%w: 0x%02x at PC=0x%04x", ErrUnknownOpcode, c.opcode, c.PC)
@@ -68,7 +81,7 @@ func (c *CPU) executeCycles(opcode Opcode) error {
 	}
 	switch opcode.Addressing {
 	case ImpliedAddressing, AccumulatorAddressing:
-		c.readCycle(c.PC + 1)
+		c.readCycleKind(c.PC+1, BusCycleDummy)
 		return c.impliedCycles(opcode)
 
 	case ImmediateAddressing:
@@ -96,7 +109,7 @@ func (c *CPU) impliedCycles(opcode Opcode) error {
 	}
 
 	if ins == PlaInst || ins == PlpInst {
-		c.readCycle(StackBase + uint16(c.SP))
+		c.readCycleKind(StackBase+uint16(c.SP), BusCycleDummy)
 	}
 
 	c.observeCycles(ins)
@@ -129,9 +142,9 @@ func (c *CPU) branchCycles(ins *Instruction) error {
 		c.PC = next
 		return nil
 	}
-	c.readCycle(next)
+	c.readCycleKind(next, BusCycleDummy)
 	if next&0xff00 != target&0xff00 {
-		c.readCycle(next&0xff00 | target&0xff)
+		c.readCycleKind(next&0xff00|target&0xff, BusCycleDummy)
 		irq = irq || c.irqPolled
 		nmi = nmi || c.nmiPolled
 	}
@@ -206,7 +219,7 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 		return base, base, nil
 
 	case ZeroPageXAddressing, ZeroPageYAddressing:
-		c.readCycle(uint16(low))
+		c.readCycleKind(uint16(low), BusCycleDummy)
 		index := c.X
 		if mode == ZeroPageYAddressing {
 			index = c.Y
@@ -215,7 +228,7 @@ func (c *CPU) operandAddressCycles(mode AddressingMode, access memoryAccess) (ba
 		return uint16(low), uint16(low + index), nil
 
 	case IndirectXAddressing:
-		c.readCycle(uint16(low))
+		c.readCycleKind(uint16(low), BusCycleDummy)
 		base = c.readWordCycles(uint16(low+c.X), true)
 		return base, base, nil
 
@@ -246,7 +259,7 @@ func (c *CPU) indexedAddressCycles(base uint16, index byte, access memoryAccess)
 	}
 
 	if crossed || access != readAccess {
-		c.readCycle(base&0xff00 | address&0xff)
+		c.readCycleKind(base&0xff00|address&0xff, BusCycleDummy)
 	}
 
 	return address
@@ -256,14 +269,14 @@ func (c *CPU) controlCycles(ins *Instruction) error {
 	c.observeCycles(ins)
 	if ins == JsrInst {
 		low := c.readOperand(1)
-		c.readCycle(StackBase + uint16(c.SP))
+		c.readCycleKind(StackBase+uint16(c.SP), BusCycleDummy)
 		c.push16(c.PC + 2)
 		high := c.readOperand(2)
 		c.PC = uint16(low) | uint16(high)<<8
 
 		return nil
 	}
-	c.readCycle(c.PC + 1)
+	c.readCycleKind(c.PC+1, BusCycleDummy)
 	if ins == BrkInst {
 		c.interrupt = InterruptBRK
 		c.irqRunning = true
@@ -271,18 +284,18 @@ func (c *CPU) controlCycles(ins *Instruction) error {
 		vector := c.selectInterruptVector(IrqAddress)
 		c.push(c.GetFlags() | 0x30)
 		c.Flags.I = 1
-		c.PC = c.readWordCycles(vector, false)
+		c.PC = c.readVectorCycles(vector)
 		c.irqPolled = false
 		c.nmiPolled = false
 
 		return nil
 	}
-	c.readCycle(StackBase + uint16(c.SP))
+	c.readCycleKind(StackBase+uint16(c.SP), BusCycleDummy)
 	if err := ins.NoParamFunc(c); err != nil {
 		return err
 	}
 	if ins == RtsInst {
-		c.readCycle(c.PC - 1)
+		c.readCycleKind(c.PC-1, BusCycleDummy)
 	}
 
 	return nil
@@ -295,13 +308,13 @@ func (c *CPU) interruptCycles(vector uint16, source InterruptSource) {
 	c.executionCycle = c.cycles
 	c.opcode = 0
 	c.interrupt = source
-	c.readCycle(c.PC)
-	c.readCycle(c.PC)
+	c.readCycleKind(c.PC, BusCycleDummy)
+	c.readCycleKind(c.PC, BusCycleDummy)
 	c.push16(c.PC)
 	vector = c.selectInterruptVector(vector)
 	c.push(c.GetFlags()&^0x10 | 0x20)
 	c.Flags.I = 1
-	c.PC = c.readWordCycles(vector, false)
+	c.PC = c.readVectorCycles(vector)
 	c.irqPolled = false
 	c.nmiPolled = false
 }
@@ -331,20 +344,20 @@ func (c *CPU) resetCycles() {
 	c.Flags.I = 1
 	c.mu.Unlock()
 
-	c.readCycle(c.PC)
-	c.readCycle(c.PC)
+	c.readCycleKind(c.PC, BusCycleDummy)
+	c.readCycleKind(c.PC, BusCycleDummy)
 	for range 3 {
-		c.readCycle(StackBase + uint16(c.SP))
+		c.readCycleKind(StackBase+uint16(c.SP), BusCycleDummy)
 		c.SP--
 	}
 
-	c.PC = c.readWordCycles(ResetAddress, false)
+	c.PC = c.readVectorCycles(ResetAddress)
 	c.irqPolled = false
 	c.nmiPolled = false
 }
 
 func (c *CPU) readOperand(offset uint16) byte {
-	value := c.readCycle(c.PC + offset)
+	value := c.readCycleKind(c.PC+offset, BusCycleOperand)
 	if c.opts.tracing {
 		c.TraceStep.OpcodeOperands = append(c.TraceStep.OpcodeOperands, value)
 	}
@@ -353,10 +366,17 @@ func (c *CPU) readOperand(offset uint16) byte {
 }
 
 func (c *CPU) readCycle(address uint16) byte {
+	return c.readCycleKind(address, BusCycleData)
+}
+
+func (c *CPU) readCycleKind(address uint16, kind BusCycleKind) byte {
 	for {
 		c.irqPolled = c.irqSample
 		c.nmiPolled = c.nmiSample
-		held := c.opts.cycleHook(BusCycle{Address: address})
+		held := c.opts.cycleHook(BusCycle{
+			Address: address,
+			Kind:    kind,
+		})
 		c.cycles++
 		if !held {
 			value := c.memory.Read(address)
@@ -389,6 +409,12 @@ func (c *CPU) sampleInterrupts() {
 	defer c.mu.RUnlock()
 	c.irqSample = (c.triggerIrq || c.irqLine) && c.Flags.I == 0
 	c.nmiSample = c.triggerNmi
+}
+
+func (c *CPU) readVectorCycles(address uint16) uint16 {
+	low := c.readCycleKind(address, BusCycleVector)
+	high := c.readCycleKind(address+1, BusCycleVector)
+	return uint16(low) | uint16(high)<<8
 }
 
 func (c *CPU) readWordCycles(address uint16, wrap bool) uint16 {

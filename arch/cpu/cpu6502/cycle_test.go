@@ -42,6 +42,7 @@ func TestBusCycleAccesses(t *testing.T) {
 			assert.NoError(t, err)
 			var accesses []BusCycle
 			cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
+				cycle.Kind = BusCycleData
 				accesses = append(accesses, cycle)
 				return false
 			}))
@@ -194,4 +195,43 @@ func TestBusCycleNMIReplacesBRKVector(t *testing.T) {
 		assert.Equal(t, byte(0x10), mem.Read(0x1fb)&0x10, "BRK still pushes the B bit")
 		assert.False(t, cpu.CheckInterrupts(), "interrupt entry must not poll for a second interrupt")
 	}
+}
+
+func TestBusCycleKinds(t *testing.T) {
+	mem := &ssSparseMemory{
+		data: map[uint16]byte{0x8000: 0xbd, 0x8001: 0xff, 0x8002: 0x80, 0x8100: 0x42},
+	}
+	memory, err := NewMemory(mem)
+	assert.NoError(t, err)
+	var kinds []BusCycleKind
+	cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
+		kinds = append(kinds, cycle.Kind)
+		return false
+	}))
+	cpu.PC = 0x8000
+	cpu.X = 1
+
+	assert.NoError(t, cpu.Step())
+	assert.Equal(t, []BusCycleKind{
+		BusCycleOpcode, BusCycleOperand, BusCycleOperand, BusCycleDummy, BusCycleData,
+	}, kinds)
+	assert.Equal(t, byte(0x42), cpu.A)
+}
+
+func TestBusCycleResetKinds(t *testing.T) {
+	mem := &ssSparseMemory{
+		data: map[uint16]byte{ResetAddress + 1: 0x80},
+	}
+	memory, err := NewMemory(mem)
+	assert.NoError(t, err)
+	var kinds []BusCycleKind
+	cpu := newTestCPU(t, memory, WithCycleHook(func(cycle BusCycle) bool {
+		kinds = append(kinds, cycle.Kind)
+		return false
+	}))
+	cpu.Reset()
+	assert.Equal(t, []BusCycleKind{
+		BusCycleDummy, BusCycleDummy, BusCycleDummy, BusCycleDummy, BusCycleDummy,
+		BusCycleVector, BusCycleVector,
+	}, kinds)
 }
