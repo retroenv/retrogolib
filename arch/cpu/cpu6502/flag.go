@@ -14,16 +14,21 @@ type Flags struct {
 	N uint8 // negative flag
 }
 
+// Byte returns the status flags as one byte.
+func (f Flags) Byte() byte {
+	return f.C |
+		f.Z<<1 |
+		f.I<<2 |
+		f.D<<3 |
+		f.B<<4 |
+		f.U<<5 |
+		f.V<<6 |
+		f.N<<7
+}
+
 // GetFlags returns the current state of flags as byte.
 func (c *CPU) GetFlags() uint8 {
-	return c.Flags.C |
-		(c.Flags.Z << 1) |
-		(c.Flags.I << 2) |
-		(c.Flags.D << 3) |
-		(c.Flags.B << 4) |
-		(c.Flags.U << 5) |
-		(c.Flags.V << 6) |
-		(c.Flags.N << 7)
+	return c.Flags.Byte()
 }
 
 // setFlags sets the flags from the given byte.
