@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/retroenv/retrogolib/assert"
+	"github.com/retroenv/retrogolib/mcp/jsonschema"
 )
 
 // schemaFor generates the schema for a type and decodes it into a map.
@@ -46,9 +47,10 @@ func TestSchemaKinds(t *testing.T) {
 	assert.Equal(t, map[string]any{"type": "array", "items": map[string]any{"type": "string"}}, properties["list"])
 	assert.Equal(t, map[string]any{"type": "object", "additionalProperties": map[string]any{"type": "integer"}}, properties["pairs"])
 	assert.Equal(t, map[string]any{
-		"type":       "object",
-		"properties": map[string]any{"X": map[string]any{"type": "integer"}},
-		"required":   []any{"X"},
+		"additionalProperties": false,
+		"properties":           map[string]any{"X": map[string]any{"type": "integer"}},
+		"required":             []any{"X"},
+		"type":                 "object",
 	}, properties["nested"])
 	assert.Equal(t, map[string]any{"type": "integer"}, properties["ptr"])
 	assert.Equal(t, map[string]any{}, properties["raw"])
@@ -126,12 +128,12 @@ func TestSchemaRecursiveType(t *testing.T) {
 	}
 
 	_, err := SchemaFor(reflect.TypeOf(node{}))
-	assert.ErrorIs(t, err, ErrInvalidSchema)
+	assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
 }
 
 func TestSchemaNonStructInput(t *testing.T) {
 	_, err := SchemaFor(reflect.TypeOf(42))
-	assert.ErrorIs(t, err, ErrInvalidSchema)
+	assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
 }
 
 func TestSchemaMapWithNonStringKey(t *testing.T) {
@@ -140,7 +142,7 @@ func TestSchemaMapWithNonStringKey(t *testing.T) {
 	}
 
 	_, err := SchemaFor(reflect.TypeOf(withMap{}))
-	assert.ErrorIs(t, err, ErrInvalidSchema)
+	assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
 }
 
 func TestSchemaEmbeddedField(t *testing.T) {
@@ -239,7 +241,7 @@ func TestSchemaInvalidTags(t *testing.T) {
 
 	for _, typ := range []reflect.Type{reflect.TypeFor[badEnum](), reflect.TypeFor[badMinimum]()} {
 		_, err := SchemaFor(typ)
-		assert.ErrorIs(t, err, ErrInvalidSchema)
+		assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
 	}
 }
 
@@ -249,5 +251,91 @@ func TestSchemaRecursiveSlice(t *testing.T) {
 	}
 
 	_, err := SchemaFor(reflect.TypeFor[node]())
-	assert.ErrorIs(t, err, ErrInvalidSchema)
+	assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
+}
+
+func TestSchemaEmbeddedFieldSelection(t *testing.T) {
+	type Base struct {
+		Value string `json:"value"`
+	}
+	type Shadow struct {
+		Base
+		Value int `json:"value"`
+	}
+	type ReverseShadow struct {
+		Value int `json:"value"`
+		Base
+	}
+	type Other struct {
+		Value int `json:"value"`
+	}
+	type Untagged struct{ Value int }
+	type AnotherUntagged struct{ Value int }
+	type Conflict struct {
+		Untagged
+		AnotherUntagged
+	}
+	type Tagged struct {
+		Different string `json:"Value"`
+	}
+	type TaggedWins struct {
+		Untagged
+		Tagged
+	}
+	type Deep struct{ Other }
+	type ShallowWins struct {
+		Deep
+		Base
+	}
+	for _, test := range []struct {
+		name       string
+		value      any
+		properties map[string]any
+		required   []any
+	}{
+		{"outer field", Shadow{}, map[string]any{"value": map[string]any{"type": "integer"}}, []any{"value"}},
+		{"outer field before embedding", ReverseShadow{}, map[string]any{"value": map[string]any{"type": "integer"}}, []any{"value"}},
+		{"ambiguous fields", Conflict{}, map[string]any{}, nil},
+		{"tag wins", TaggedWins{}, map[string]any{"Value": map[string]any{"type": "string"}}, []any{"Value"}},
+		{"shallow wins", ShallowWins{}, map[string]any{"value": map[string]any{"type": "string"}}, []any{"value"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			schema := schemaFor(t, test.value)
+			assert.Equal(t, test.properties, schema["properties"])
+			if test.required == nil {
+				assert.Nil(t, schema["required"])
+			} else {
+				assert.Equal(t, test.required, schema["required"])
+			}
+			raw, err := json.Marshal(schema)
+			assert.NoError(t, err)
+			_, err = CompileSchema(raw)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestSchemaQuotedFieldTypes(t *testing.T) {
+	type fields struct {
+		Count   int    `json:"count,string" enum:"42,43"`
+		Enabled bool   `json:"enabled,string" enum:"true,false"`
+		Text    string `json:"text,string" enum:"hello"`
+	}
+	properties := schemaFor(t, fields{})["properties"].(map[string]any)
+	assert.Equal(t, map[string]any{"enum": []any{"42", "43"}, "type": "string"}, properties["count"])
+	assert.Equal(t, map[string]any{"enum": []any{"true", "false"}, "type": "string"}, properties["enabled"])
+	assert.Equal(t, map[string]any{"enum": []any{`"hello"`}, "type": "string"}, properties["text"])
+}
+
+func TestSchemaRejectsQuotedNumericBounds(t *testing.T) {
+	type minimum struct {
+		Count int `json:"count,string" minimum:"1"`
+	}
+	type maximum struct {
+		Count int `json:"count,string" maximum:"1"`
+	}
+	for _, typ := range []reflect.Type{reflect.TypeFor[minimum](), reflect.TypeFor[maximum]()} {
+		_, err := SchemaFor(typ)
+		assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
+	}
 }

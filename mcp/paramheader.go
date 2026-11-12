@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/retroenv/retrogolib/mcp/jsonschema"
 	"github.com/retroenv/retrogolib/set"
 )
 
@@ -42,19 +43,19 @@ type paramHeader struct {
 func newParamHeader(schema map[string]any, value any, path []string, static bool) (paramHeader, error) {
 	name, ok := value.(string)
 	if !ok || !validToken(name) {
-		return paramHeader{}, fmt.Errorf("%w: %s value %v is not a valid header name", ErrInvalidSchema,
+		return paramHeader{}, fmt.Errorf("%w: %s value %v is not a valid header name", jsonschema.ErrInvalidSchema,
 			schemaKeyMCPHeader, value)
 	}
 	if !static || len(path) == 0 {
 		return paramHeader{}, fmt.Errorf("%w: %s %q is not on a property that is statically reachable from the root",
-			ErrInvalidSchema, schemaKeyMCPHeader, name)
+			jsonschema.ErrInvalidSchema, schemaKeyMCPHeader, name)
 	}
 
 	switch schema[schemaKeyType] {
 	case "string", "integer", "boolean":
 	default:
 		return paramHeader{}, fmt.Errorf("%w: %s %q must be on a string, integer, or boolean property",
-			ErrInvalidSchema, schemaKeyMCPHeader, name)
+			jsonschema.ErrInvalidSchema, schemaKeyMCPHeader, name)
 	}
 
 	return paramHeader{
@@ -72,15 +73,15 @@ func prepareToolSchemas(t *Tool) ([]paramHeader, error) {
 
 	root, err := decodeSchemaObject(t.InputSchema)
 	if err != nil {
-		return nil, fmt.Errorf("%w: input schema: %w", ErrInvalidSchema, err)
+		return nil, fmt.Errorf("%w: input schema: %w", jsonschema.ErrInvalidSchema, err)
 	}
 	if root[schemaKeyType] != "object" {
-		return nil, fmt.Errorf(`%w: input schema root must have "type": "object"`, ErrInvalidSchema)
+		return nil, fmt.Errorf(`%w: input schema root must have "type": "object"`, jsonschema.ErrInvalidSchema)
 	}
 
 	if len(t.OutputSchema) > 0 {
 		if _, err := decodeSchemaObject(t.OutputSchema); err != nil {
-			return nil, fmt.Errorf("%w: output schema: %w", ErrInvalidSchema, err)
+			return nil, fmt.Errorf("%w: output schema: %w", jsonschema.ErrInvalidSchema, err)
 		}
 	}
 
@@ -93,7 +94,7 @@ func prepareToolSchemas(t *Tool) ([]paramHeader, error) {
 	for _, header := range headers {
 		key := strings.ToLower(header.name)
 		if seen.Contains(key) {
-			return nil, fmt.Errorf("%w: duplicate %s value %q", ErrInvalidSchema, schemaKeyMCPHeader, header.name)
+			return nil, fmt.Errorf("%w: duplicate %s value %q", jsonschema.ErrInvalidSchema, schemaKeyMCPHeader, header.name)
 		}
 		seen.Add(key)
 	}

@@ -25,20 +25,20 @@
 //	}
 //	return srv.Serve(ctx, os.Stdin, os.Stdout)
 //
-// The generic AddTool generates the input schema from the argument type. The
-// Server.AddTool method registers a tool with a raw JSON handler.
+// AddTool generates an input schema when none is supplied and checks arguments
+// against that schema. Server.AddTool registers handlers that receive raw JSON.
+// Use CompileSchema to check manually supplied schemas and their values.
+// See package jsonschema for supported keywords and limits.
 //
 // The streamable HTTP transport runs with Handler. Both transports share the
 // same Server, so one registration serves both.
 //
-// Every handler must be safe for concurrent use. The server dispatches each
-// request on its own goroutine and serializes the writes.
+// Handlers must be safe for concurrent use. MaxConcurrentRequests limits
+// active requests across both transports.
 //
 // The package does not implement the legacy initialize handshake, protocol
 // sessions, ping, logging/setLevel, the HTTP+SSE transport, multi round-trip
 // requests, subscriptions, tasks, SSE responses, or authentication. Clients
-// that open with initialize cannot use the server. The server answers
-// initialize with an UnsupportedProtocolVersion error that names the
-// supported version. Servers log to stderr, because stdout carries MCP
-// messages only.
+// that send initialize receive an UnsupportedProtocolVersion error.
+// Send logs to stderr; stdout carries MCP messages only.
 package mcp

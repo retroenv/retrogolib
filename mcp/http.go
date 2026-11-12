@@ -103,6 +103,14 @@ func (s *Server) serveHTTPRequest(ctx context.Context, w http.ResponseWriter, he
 		s.writeHTTPError(ctx, w, http.StatusBadRequest, msg.ID, rpcErr)
 		return
 	}
+	if !s.tryAcquireRequest() {
+		s.writeHTTPError(ctx, w, http.StatusTooManyRequests, msg.ID, &Error{
+			Code:    CodeInternal,
+			Message: "server busy: maximum concurrent requests reached",
+		})
+		return
+	}
+	defer s.releaseRequest()
 
 	result, rpcErr := s.call(ctx, msg.Method, msg.Params, meta, nil)
 	if rpcErr != nil {

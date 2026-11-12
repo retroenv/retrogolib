@@ -28,9 +28,10 @@ const (
 
 // Wire and default values.
 const (
-	cacheScopePublic      = "public"
-	defaultMaxMessageSize = 16 << 20 // 16 MiB
-	resultTypeComplete    = "complete"
+	cacheScopePublic             = "public"
+	defaultMaxMessageSize        = 16 << 20 // 16 MiB
+	defaultMaxConcurrentRequests = 64
+	resultTypeComplete           = "complete"
 )
 
 // defaultListTTL is the ttlMs value for list and read results when the
@@ -51,6 +52,10 @@ type Options struct {
 	// MaxMessageSize limits one JSON-RPC message in bytes. Zero means 16 MiB.
 	MaxMessageSize int
 
+	// MaxConcurrentRequests limits active requests across both transports.
+	// Values less than 1 use 64.
+	MaxConcurrentRequests int
+
 	// ListTTL is the ttlMs value attached to list and read results. Zero means one hour.
 	ListTTL time.Duration
 
@@ -63,6 +68,10 @@ type Options struct {
 func New(logger *log.Logger, opts Options) *Server {
 	if opts.MaxMessageSize <= 0 {
 		opts.MaxMessageSize = defaultMaxMessageSize
+	}
+
+	if opts.MaxConcurrentRequests <= 0 {
+		opts.MaxConcurrentRequests = defaultMaxConcurrentRequests
 	}
 
 	if opts.ListTTL <= 0 {
@@ -83,6 +92,7 @@ func New(logger *log.Logger, opts Options) *Server {
 		logger:     logger,
 		opts:       opts,
 		serverInfo: serverInfo,
+		requests:   make(chan struct{}, opts.MaxConcurrentRequests),
 	}
 }
 
@@ -112,6 +122,7 @@ type Server struct {
 	logger     *log.Logger
 	opts       Options
 	serverInfo json.RawMessage
+	requests   chan struct{}
 
 	mu        sync.RWMutex
 	tools     []toolEntry
@@ -122,7 +133,7 @@ type Server struct {
 
 // AddTool registers a tool with its call handler. When the tool has no input
 // schema, AddTool sets a schema that accepts any object. It returns
-// ErrInvalidSchema when a schema is not a JSON object, when the input schema
+// jsonschema.ErrInvalidSchema when a schema is not a JSON object, when the input schema
 // root does not have "type": "object", or when an x-mcp-header annotation is
 // not valid.
 func (s *Server) AddTool(t Tool, h ToolHandler) error {
@@ -221,6 +232,19 @@ func (s *Server) AddPrompt(p Prompt, h PromptHandler) error {
 	})
 
 	return nil
+}
+
+func (s *Server) tryAcquireRequest() bool {
+	select {
+	case s.requests <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Server) releaseRequest() {
+	<-s.requests
 }
 
 // dispatch validates _meta and routes one request to its handler.
@@ -382,7 +406,6 @@ func (s *Server) callToolResult(ctx context.Context, params json.RawMessage, met
 			Message: "Unknown tool: " + body.Name,
 		}
 	}
-
 	req := ToolRequest{
 		Arguments: body.Arguments,
 		Meta:      meta,

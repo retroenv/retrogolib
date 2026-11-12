@@ -12,6 +12,7 @@ import (
 
 	"github.com/retroenv/retrogolib/assert"
 	"github.com/retroenv/retrogolib/log"
+	"github.com/retroenv/retrogolib/mcp/jsonschema"
 )
 
 const (
@@ -95,6 +96,24 @@ func TestDiscoverMissingMeta(t *testing.T) {
 
 	want := `{"jsonrpc":"2.0","id":1,"error":{"code":-32602,"message":"Invalid params: _meta missing"}}`
 	assert.Equal(t, []string{want}, lines)
+}
+
+func TestDiscoverMalformedClientCapabilities(t *testing.T) {
+	s := newTestServer(t)
+	params := `"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28",` +
+		`"io.modelcontextprotocol/clientCapabilities":null}`
+	lines := runServe(t, s, request(`1`, methodDiscover, params)+"\n")
+	assert.Len(t, lines, 1)
+	assert.Contains(t, lines[0], "clientCapabilities malformed")
+}
+
+func TestConcurrentRequestLimit(t *testing.T) {
+	s := New(nil, Options{MaxConcurrentRequests: 1})
+	assert.True(t, s.tryAcquireRequest())
+	assert.False(t, s.tryAcquireRequest())
+	s.releaseRequest()
+	assert.True(t, s.tryAcquireRequest())
+	s.releaseRequest()
 }
 
 func TestUnsupportedVersion(t *testing.T) {
@@ -355,7 +374,7 @@ func TestAddToolInvalidSchema(t *testing.T) {
 				InputSchema:  []byte(tt.input),
 				OutputSchema: []byte(tt.output),
 			}, echoHandler)
-			assert.ErrorIs(t, err, ErrInvalidSchema)
+			assert.ErrorIs(t, err, jsonschema.ErrInvalidSchema)
 		})
 	}
 }

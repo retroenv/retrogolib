@@ -87,20 +87,30 @@ func (s *Server) handleMessage(ctx context.Context, conn *connection, wg *sync.W
 
 		return
 	}
+	if !conn.server.tryAcquireRequest() {
+		conn.writeError(ctx, msg.ID, &Error{
+			Code:    CodeInternal,
+			Message: "server busy: maximum concurrent requests reached",
+		})
+		return
+	}
 
 	reqCtx, cancelReq := context.WithCancel(ctx)
 	if !conn.track(string(msg.ID), cancelReq) {
 		cancelReq()
+		conn.server.releaseRequest()
 		conn.writeError(ctx, nil, &Error{
 			Code:    CodeInvalidRequest,
 			Message: "Invalid Request: id is in use by a request in progress",
 		})
+
 		return
 	}
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer conn.server.releaseRequest()
 		defer cancelReq()
 		defer conn.untrack(string(msg.ID))
 		s.dispatch(reqCtx, conn, msg)

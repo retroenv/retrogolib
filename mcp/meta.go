@@ -81,56 +81,135 @@ func parseMeta(params json.RawMessage) (Meta, *Error) {
 
 // parseMetaFields extracts and validates the required _meta fields.
 func parseMetaFields(raw json.RawMessage) (Meta, *Error) {
-	var meta Meta
-
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &fields); err != nil {
-		return meta, &Error{
+		return Meta{}, &Error{
 			Code:    CodeInvalidParams,
 			Message: "Invalid params: _meta malformed",
 		}
 	}
 
-	versionRaw, ok := fields[metaKeyProtocolVersion]
+	version, rpcErr := parseProtocolVersion(fields)
+	if rpcErr != nil {
+		return Meta{}, rpcErr
+	}
+	capabilities, rpcErr := parseClientCapabilities(fields)
+	if rpcErr != nil {
+		return Meta{}, rpcErr
+	}
+	clientInfo, rpcErr := parseClientInfo(fields)
+	if rpcErr != nil {
+		return Meta{}, rpcErr
+	}
+	logLevel, rpcErr := parseLogLevel(fields)
+	if rpcErr != nil {
+		return Meta{}, rpcErr
+	}
+
+	return Meta{
+		ProtocolVersion:    version,
+		ClientInfo:         clientInfo,
+		ClientCapabilities: capabilities,
+		LogLevel:           logLevel,
+		ProgressToken:      fields[metaKeyProgressToken],
+	}, nil
+}
+
+func parseProtocolVersion(fields map[string]json.RawMessage) (string, *Error) {
+	raw, ok := fields[metaKeyProtocolVersion]
 	if !ok {
-		return meta, &Error{
+		return "", &Error{
 			Code:    CodeInvalidParams,
 			Message: "Invalid params: protocolVersion missing",
 		}
 	}
-	if err := json.Unmarshal(versionRaw, &meta.ProtocolVersion); err != nil || meta.ProtocolVersion == "" {
-		return meta, &Error{
+	var version string
+	if err := json.Unmarshal(raw, &version); err != nil || version == "" {
+		return "", &Error{
 			Code:    CodeInvalidParams,
 			Message: "Invalid params: protocolVersion malformed",
 		}
 	}
-	if meta.ProtocolVersion != ProtocolVersion {
-		return meta, unsupportedVersionError(meta.ProtocolVersion)
+	if version != ProtocolVersion {
+		return "", unsupportedVersionError(version)
 	}
+	return version, nil
+}
 
-	capabilitiesRaw, ok := fields[metaKeyClientCapabilities]
+func parseClientCapabilities(fields map[string]json.RawMessage) (json.RawMessage, *Error) {
+	raw, ok := fields[metaKeyClientCapabilities]
 	if !ok {
-		return meta, &Error{
+		return nil, &Error{
 			Code:    CodeInvalidParams,
 			Message: "Invalid params: clientCapabilities missing",
 		}
 	}
-	meta.ClientCapabilities = capabilitiesRaw
-
-	if raw, ok := fields[metaKeyClientInfo]; ok {
-		var info Implementation
-		if err := json.Unmarshal(raw, &info); err == nil {
-			meta.ClientInfo = &info
+	var capabilities map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &capabilities); err != nil || capabilities == nil {
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params: clientCapabilities malformed",
 		}
 	}
+	return raw, nil
+}
 
-	if raw, ok := fields[metaKeyLogLevel]; ok {
-		_ = json.Unmarshal(raw, &meta.LogLevel)
+func parseClientInfo(fields map[string]json.RawMessage) (*Implementation, *Error) {
+	raw, ok := fields[metaKeyClientInfo]
+	if !ok {
+		return nil, nil
 	}
+	var infoFields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &infoFields); err != nil || infoFields == nil ||
+		!jsonStringField(infoFields, "name") || !jsonStringField(infoFields, "version") {
 
-	meta.ProgressToken = fields[metaKeyProgressToken]
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params: clientInfo malformed",
+		}
+	}
+	var info Implementation
+	if err := json.Unmarshal(raw, &info); err != nil {
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params: clientInfo malformed",
+		}
+	}
+	return &info, nil
+}
 
-	return meta, nil
+func parseLogLevel(fields map[string]json.RawMessage) (string, *Error) {
+	raw, ok := fields[metaKeyLogLevel]
+	if !ok {
+		return "", nil
+	}
+	var level string
+	if err := json.Unmarshal(raw, &level); err != nil || !validLogLevel(level) {
+		return "", &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params: logLevel malformed",
+		}
+	}
+	return level, nil
+}
+
+func jsonStringField(fields map[string]json.RawMessage, name string) bool {
+	raw, ok := fields[name]
+	if !ok {
+		return false
+	}
+	var value string
+
+	return json.Unmarshal(raw, &value) == nil
+}
+
+func validLogLevel(level string) bool {
+	switch level {
+	case "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency":
+		return true
+	default:
+		return false
+	}
 }
 
 // unsupportedVersionError builds the protocol version negotiation error.

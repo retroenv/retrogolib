@@ -5,29 +5,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
+	"slices"
 	"strings"
 
+	"github.com/retroenv/retrogolib/mcp/jsonschema"
 	"github.com/retroenv/retrogolib/set"
 )
 
 // SchemaFor generates a JSON Schema 2020-12 object for a struct type.
 // Field names come from the json tag and then from the Go name. The
 // description, enum, minimum, and maximum tags add matching schema keywords,
-// and the header tag adds an x-mcp-header annotation. Fields are required
-// unless they are pointers, carry omitempty, or set required:"false". The tag
+// and the header tag adds an x-mcp-header annotation. The JSON string option
+// produces a string schema for scalar fields. Numeric bound tags are not
+// supported with this option. Fields are required unless they are pointers,
+// use omitempty or omitzero, or set required:"false". The tag
 // required:"true" makes any field required. A type can supply its own schema
 // with a JSONSchema() json.RawMessage method. Byte slices are base64 strings,
 // types with a MarshalText method are strings, and types with a MarshalJSON
 // method accept any value. Recursive types and tag values that are not valid
-// return ErrInvalidSchema.
+// return jsonschema.ErrInvalidSchema.
 func SchemaFor(t reflect.Type) (json.RawMessage, error) {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
 	if t.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("%w: input must be a struct type", ErrInvalidSchema)
+		return nil, fmt.Errorf("%w: input must be a struct type", jsonschema.ErrInvalidSchema)
 	}
 
 	schema, err := schemaForType(t, set.New[reflect.Type]())
@@ -91,7 +94,7 @@ func schemaForType(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, 
 		return structSchema(t, seen)
 
 	default:
-		return nil, fmt.Errorf("%w: unsupported type %s", ErrInvalidSchema, t)
+		return nil, fmt.Errorf("%w: unsupported type %s", jsonschema.ErrInvalidSchema, t)
 	}
 }
 
@@ -131,7 +134,7 @@ func listSchema(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, err
 // mapSchema builds the schema for a map type with string keys.
 func mapSchema(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, error) {
 	if t.Key().Kind() != reflect.String {
-		return nil, fmt.Errorf("%w: map key must be a string", ErrInvalidSchema)
+		return nil, fmt.Errorf("%w: map key must be a string", jsonschema.ErrInvalidSchema)
 	}
 
 	values, err := schemaForType(t.Elem(), seen)
@@ -159,9 +162,10 @@ func customSchema(t reflect.Type) (map[string]any, error) {
 // decodeCustomSchema decodes a type-supplied schema into a map, so that the
 // field tags can add keywords to it.
 func decodeCustomSchema(t reflect.Type, raw json.RawMessage) (map[string]any, error) {
-	var schema map[string]any
-	if err := json.Unmarshal(raw, &schema); err != nil || schema == nil {
-		return nil, fmt.Errorf("%w: JSONSchema of %s does not return a JSON object", ErrInvalidSchema, t)
+	value, err := jsonschema.DecodeValue(raw)
+	schema, ok := value.(map[string]any)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("%w: JSONSchema of %s does not return a JSON object", jsonschema.ErrInvalidSchema, t)
 	}
 	return schema, nil
 }
@@ -175,8 +179,9 @@ func structSchema(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, e
 	}
 
 	result := map[string]any{
-		"type":       "object",
-		"properties": properties,
+		"additionalProperties": false,
+		"properties":           properties,
+		"type":                 "object",
 	}
 	if len(required) > 0 {
 		result["required"] = required
@@ -185,54 +190,31 @@ func structSchema(t reflect.Type, seen set.Set[reflect.Type]) (map[string]any, e
 	return result, nil
 }
 
-// appendStructFields adds the schemas of the struct fields to properties. The
-// fields of embedded structs without a json name are promoted, as
-// encoding/json does.
 func appendStructFields(t reflect.Type, seen set.Set[reflect.Type], properties map[string]any,
 	required *[]string) error {
 
 	if seen.Contains(t) {
-		return fmt.Errorf("%w: recursive type %s", ErrInvalidSchema, t)
+		return fmt.Errorf("%w: recursive type %s", jsonschema.ErrInvalidSchema, t)
 	}
 	seen.Add(t)
 	defer seen.Remove(t)
 
-	for i := range t.NumField() {
-		field := t.Field(i)
-		name, omitEmpty, skip := parseJSONTag(field.Tag.Get("json"))
-		if skip {
+	fields, err := schemaFields(t, set.New[reflect.Type](), 0)
+	if err != nil {
+		return err
+	}
+	selected := selectSchemaFields(fields)
+	for index, field := range fields {
+		if selected[field.name] != index {
 			continue
 		}
-
-		if field.Anonymous && name == "" {
-			embedded := field.Type
-			for embedded.Kind() == reflect.Pointer {
-				embedded = embedded.Elem()
-			}
-
-			if embedded.Kind() == reflect.Struct {
-				if err := appendStructFields(embedded, seen, properties, required); err != nil {
-					return err
-				}
-				continue
-			}
-		}
-
-		if !field.IsExported() {
-			continue
-		}
-		if name == "" {
-			name = field.Name
-		}
-
-		schema, err := fieldSchema(field, seen)
+		schema, err := fieldSchema(field.field, seen)
 		if err != nil {
 			return err
 		}
-
-		properties[name] = schema
-		if fieldRequired(field, omitEmpty) {
-			*required = append(*required, name)
+		properties[field.name] = schema
+		if fieldRequired(field.field, field.omitEmpty) {
+			*required = append(*required, field.name)
 		}
 	}
 
@@ -247,7 +229,14 @@ func fieldSchema(field reflect.StructField, seen set.Set[reflect.Type]) (map[str
 		return nil, err
 	}
 	if err := applyKeywords(schema, field); err != nil {
-		return nil, fmt.Errorf("%w: field %s: %w", ErrInvalidSchema, field.Name, err)
+		return nil, fmt.Errorf("%w: field %s: %w", jsonschema.ErrInvalidSchema, field.Name, err)
+	}
+	if slices.Contains(strings.Split(field.Tag.Get("json"), ",")[1:], "string") {
+		quoted, err := quotedFieldSchema(schema, field.Type)
+		if err != nil {
+			return nil, fmt.Errorf("%w: field %s: %w", jsonschema.ErrInvalidSchema, field.Name, err)
+		}
+		return quoted, nil
 	}
 	return schema, nil
 }
@@ -275,9 +264,9 @@ func applyKeywords(schema map[string]any, field reflect.StructField) error {
 		if tag == "" {
 			continue
 		}
-		value, err := strconv.ParseFloat(tag, 64)
+		value, err := schemaTagNumber(tag)
 		if err != nil {
-			return fmt.Errorf("%s tag %q is not a number", keyword, tag)
+			return fmt.Errorf("%s tag %q is not a number: %w", keyword, tag, err)
 		}
 		schema[keyword] = value
 	}
@@ -303,14 +292,29 @@ func parseEnum(t reflect.Type, tag string) ([]any, error) {
 			continue
 		}
 
-		number, err := strconv.ParseFloat(value, 64)
+		number, err := schemaTagNumber(value)
 		if err != nil {
-			return nil, fmt.Errorf("enum value %q is not a number", value)
+			return nil, fmt.Errorf("enum value %q is not a number: %w", value, err)
 		}
 		result = append(result, number)
 	}
 
 	return result, nil
+}
+
+// schemaTagNumber keeps the exact decimal text from a numeric field tag.
+func schemaTagNumber(text string) (json.Number, error) {
+	value, err := jsonschema.DecodeValue(json.RawMessage(text))
+	if err != nil {
+		return "", fmt.Errorf("reading numeric tag: %w", err)
+	}
+
+	number, ok := value.(json.Number)
+	if !ok {
+		return "", fmt.Errorf("%w: expected a JSON number", jsonschema.ErrInvalidSchema)
+	}
+
+	return number, nil
 }
 
 // fieldRequired reports whether a struct field belongs in the required list.

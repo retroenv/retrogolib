@@ -8,7 +8,6 @@ var (
 	ErrDuplicateResource  = errors.New("duplicate resource")
 	ErrDuplicatePrompt    = errors.New("duplicate prompt")
 	ErrEmptyName          = errors.New("empty name")
-	ErrInvalidSchema      = errors.New("invalid schema")
 	ErrMessageTooLarge    = errors.New("message too large")
 	ErrUnsupportedVersion = errors.New("unsupported protocol version")
 )
