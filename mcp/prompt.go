@@ -37,6 +37,29 @@ type PromptMessage struct {
 	Content Content `json:"content"`
 }
 
+// AddPrompt registers a prompt with its render handler.
+func (s *Server) AddPrompt(p Prompt, h PromptHandler) error {
+	if p.Name == "" {
+		return ErrEmptyName
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, entry := range s.prompts {
+		if entry.prompt.Name == p.Name {
+			return ErrDuplicatePrompt
+		}
+	}
+
+	s.prompts = append(s.prompts, promptEntry{
+		handler: h,
+		prompt:  p,
+	})
+
+	return nil
+}
+
 // promptListResult builds the prompts/list result in registration order.
 func (s *Server) promptListResult() *promptListResult {
 	s.mu.RLock()
@@ -114,6 +137,25 @@ func (s *Server) getPromptResult(ctx context.Context, params json.RawMessage) (a
 		Messages:    result.Messages,
 		Meta:        s.serverInfo,
 	}, nil
+}
+
+// findPrompt locates a registered prompt.
+func (s *Server) findPrompt(name string) (promptEntry, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, entry := range s.prompts {
+		if entry.prompt.Name == name {
+			return entry, true
+		}
+	}
+
+	return promptEntry{}, false
+}
+
+type promptEntry struct {
+	handler PromptHandler
+	prompt  Prompt
 }
 
 // promptListResult is the wire form of a prompts/list result.

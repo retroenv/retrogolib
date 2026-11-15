@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
+
+	"github.com/retroenv/retrogolib/log"
 )
 
 // Tool describes a tool the server exposes to agents. InputSchema must be a
@@ -49,112 +52,143 @@ type ToolResult struct {
 	IsError           bool      `json:"isError"`
 }
 
-// Content types.
-const (
-	contentTypeAudio    = "audio"
-	contentTypeImage    = "image"
-	contentTypeResource = "resource"
-	contentTypeText     = "text"
-)
-
-// Content is one content item in a tool result or prompt message.
-type Content struct {
-	Type     string            `json:"type"`
-	Text     string            `json:"text,omitempty"`
-	Data     []byte            `json:"data,omitempty"`
-	MimeType string            `json:"mimeType,omitempty"`
-	Resource *ResourceContents `json:"resource,omitempty"`
-}
-
-// MarshalJSON encodes the content item with the fields that its type
-// requires. An empty text or empty data stays in the output, because the
-// protocol schema requires these fields.
-func (c Content) MarshalJSON() ([]byte, error) {
-	var v any
-
-	switch c.Type {
-	case contentTypeText:
-		v = struct {
-			Type string `json:"type"`
-			Text string `json:"text"`
-		}{
-			Type: c.Type,
-			Text: c.Text,
-		}
-
-	case contentTypeImage, contentTypeAudio:
-		data := c.Data
-		if data == nil {
-			data = []byte{}
-		}
-
-		v = struct {
-			Type     string `json:"type"`
-			Data     []byte `json:"data"`
-			MimeType string `json:"mimeType"`
-		}{
-			Type:     c.Type,
-			Data:     data,
-			MimeType: c.MimeType,
-		}
-
-	case contentTypeResource:
-		v = struct {
-			Type     string            `json:"type"`
-			Resource *ResourceContents `json:"resource"`
-		}{
-			Type:     c.Type,
-			Resource: c.Resource,
-		}
-
-	default:
-		type plain Content
-		v = plain(c)
+// AddTool registers a tool with its call handler. When the tool has no input
+// schema, AddTool sets a schema that accepts any object. It returns
+// jsonschema.ErrInvalidSchema when a schema is not a JSON object, when the input schema
+// root does not have "type": "object", or when an x-mcp-header annotation is
+// not valid.
+func (s *Server) AddTool(t Tool, h ToolHandler) error {
+	if t.Name == "" {
+		return ErrEmptyName
 	}
 
-	data, err := json.Marshal(v)
+	headers, err := prepareToolSchemas(&t)
 	if err != nil {
-		return nil, fmt.Errorf("encoding content: %w", err)
+		return err
 	}
-	return data, nil
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, entry := range s.tools {
+		if entry.tool.Name == t.Name {
+			return ErrDuplicateTool
+		}
+	}
+
+	s.tools = append(s.tools, toolEntry{
+		handler: h,
+		headers: headers,
+		tool:    t,
+	})
+
+	return nil
 }
 
-// Text builds a text content item.
-func Text(s string) Content {
-	return Content{
-		Type: contentTypeText,
-		Text: s,
+// toolListResult builds the tools/list result in registration order.
+func (s *Server) toolListResult() *toolListResult {
+	s.mu.RLock()
+	tools := make([]Tool, 0, len(s.tools))
+	for _, entry := range s.tools {
+		tools = append(tools, entry.tool)
+	}
+
+	s.mu.RUnlock()
+
+	return &toolListResult{
+		ResultType: resultTypeComplete,
+		Tools:      tools,
+		TTLMs:      s.opts.ListTTL.Milliseconds(),
+		CacheScope: cacheScopePublic,
+		Meta:       s.serverInfo,
 	}
 }
 
-// Image builds an image content item from raw image bytes.
-func Image(data []byte, mimeType string) Content {
-	return Content{
-		Type:     contentTypeImage,
-		Data:     data,
-		MimeType: mimeType,
+// callToolResult executes the named tool and builds its wire result.
+func (s *Server) callToolResult(ctx context.Context, params json.RawMessage, meta Meta,
+	conn *connection) (any, *Error) {
+
+	var body struct {
+		Name      string          `json:"name"`
+		Arguments json.RawMessage `json:"arguments"`
 	}
+	if err := json.Unmarshal(params, &body); err != nil {
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params",
+		}
+	}
+	if body.Name == "" {
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Invalid params: name missing",
+		}
+	}
+
+	entry, ok := s.findTool(body.Name)
+	if !ok {
+		return nil, &Error{
+			Code:    CodeInvalidParams,
+			Message: "Unknown tool: " + body.Name,
+		}
+	}
+	req := ToolRequest{
+		Arguments: body.Arguments,
+		Meta:      meta,
+		Progress:  conn.progressFn(ctx, meta.ProgressToken),
+	}
+	result := s.executeTool(ctx, entry, req)
+
+	content := result.Content
+	if content == nil {
+		content = []Content{}
+	}
+
+	return &toolCallResult{
+		ResultType:        resultTypeComplete,
+		Content:           content,
+		StructuredContent: result.StructuredContent,
+		IsError:           result.IsError,
+		Meta:              s.serverInfo,
+	}, nil
 }
 
-// Audio builds an audio content item from raw audio bytes.
-func Audio(data []byte, mimeType string) Content {
-	return Content{
-		Type:     contentTypeAudio,
-		Data:     data,
-		MimeType: mimeType,
+// executeTool runs a tool handler and converts errors and panics into
+// isError tool results.
+func (s *Server) executeTool(ctx context.Context, entry toolEntry, req ToolRequest) (result *ToolResult) {
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.WarnContext(ctx, "Tool handler panicked",
+				log.String("tool", entry.tool.Name),
+				log.Object("panic", r),
+				log.String("stack", string(debug.Stack())),
+			)
+			result = Errorf("internal error: %v", r)
+		}
+	}()
+
+	res, err := entry.handler(ctx, req)
+	if err != nil {
+		return Errorf("%v", err)
 	}
+	if res == nil {
+		return &ToolResult{}
+	}
+	return res
 }
 
-// EmbeddedText builds an embedded text resource content item.
-func EmbeddedText(uri, mimeType, text string) Content {
-	return Content{
-		Type: contentTypeResource,
-		Resource: &ResourceContents{
-			URI:      uri,
-			MimeType: mimeType,
-			Text:     text,
-		},
+// findTool locates a registered tool.
+func (s *Server) findTool(name string) (toolEntry, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, entry := range s.tools {
+		if entry.tool.Name == name {
+			return entry, true
+		}
 	}
+
+	return toolEntry{}, false
 }
 
 // Errorf builds a tool result that reports a tool execution error.
@@ -163,6 +197,21 @@ func Errorf(format string, args ...any) *ToolResult {
 		Content: []Content{Text(fmt.Sprintf(format, args...))},
 		IsError: true,
 	}
+}
+
+type toolEntry struct {
+	handler ToolHandler
+	headers []paramHeader
+	tool    Tool
+}
+
+// toolListResult is the wire form of a tools/list result.
+type toolListResult struct {
+	ResultType string          `json:"resultType"`
+	Tools      []Tool          `json:"tools"`
+	TTLMs      int64           `json:"ttlMs"`
+	CacheScope string          `json:"cacheScope"`
+	Meta       json.RawMessage `json:"_meta,omitempty"`
 }
 
 // toolCallResult is the wire form of a tools/call result.

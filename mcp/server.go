@@ -64,6 +64,21 @@ type Options struct {
 	AllowedOrigins []string
 }
 
+// Server holds the registered features and answers MCP requests.
+type Server struct {
+	logger     *log.Logger
+	opts       Options
+	serverInfo json.RawMessage
+
+	requests chan struct{}
+
+	mu        sync.RWMutex
+	prompts   []promptEntry
+	resources []resourceEntry
+	templates []templateEntry
+	tools     []toolEntry
+}
+
 // New creates a server with the given options. The logger is nil-safe.
 func New(logger *log.Logger, opts Options) *Server {
 	if opts.MaxMessageSize <= 0 {
@@ -92,146 +107,9 @@ func New(logger *log.Logger, opts Options) *Server {
 		logger:     logger,
 		opts:       opts,
 		serverInfo: serverInfo,
-		requests:   make(chan struct{}, opts.MaxConcurrentRequests),
+
+		requests: make(chan struct{}, opts.MaxConcurrentRequests),
 	}
-}
-
-type toolEntry struct {
-	tool    Tool
-	handler ToolHandler
-	headers []paramHeader
-}
-
-type resourceEntry struct {
-	resource Resource
-	handler  ResourceHandler
-}
-
-type templateEntry struct {
-	template ResourceTemplate
-	handler  ResourceHandler
-}
-
-type promptEntry struct {
-	prompt  Prompt
-	handler PromptHandler
-}
-
-// Server holds the registered features and answers MCP requests.
-type Server struct {
-	logger     *log.Logger
-	opts       Options
-	serverInfo json.RawMessage
-	requests   chan struct{}
-
-	mu        sync.RWMutex
-	tools     []toolEntry
-	resources []resourceEntry
-	templates []templateEntry
-	prompts   []promptEntry
-}
-
-// AddTool registers a tool with its call handler. When the tool has no input
-// schema, AddTool sets a schema that accepts any object. It returns
-// jsonschema.ErrInvalidSchema when a schema is not a JSON object, when the input schema
-// root does not have "type": "object", or when an x-mcp-header annotation is
-// not valid.
-func (s *Server) AddTool(t Tool, h ToolHandler) error {
-	if t.Name == "" {
-		return ErrEmptyName
-	}
-
-	headers, err := prepareToolSchemas(&t)
-	if err != nil {
-		return err
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, entry := range s.tools {
-		if entry.tool.Name == t.Name {
-			return ErrDuplicateTool
-		}
-	}
-
-	s.tools = append(s.tools, toolEntry{
-		tool:    t,
-		handler: h,
-		headers: headers,
-	})
-
-	return nil
-}
-
-// AddResource registers a resource with its read handler.
-func (s *Server) AddResource(r Resource, h ResourceHandler) error {
-	if r.URI == "" {
-		return ErrEmptyName
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, entry := range s.resources {
-		if entry.resource.URI == r.URI {
-			return ErrDuplicateResource
-		}
-	}
-
-	s.resources = append(s.resources, resourceEntry{
-		resource: r,
-		handler:  h,
-	})
-
-	return nil
-}
-
-// AddResourceTemplate registers a URI template with its read handler.
-// Templates support {name} segments only (RFC 6570 level 1).
-func (s *Server) AddResourceTemplate(t ResourceTemplate, h ResourceHandler) error {
-	if t.URITemplate == "" {
-		return ErrEmptyName
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, entry := range s.templates {
-		if entry.template.URITemplate == t.URITemplate {
-			return ErrDuplicateResource
-		}
-	}
-
-	s.templates = append(s.templates, templateEntry{
-		template: t,
-		handler:  h,
-	})
-
-	return nil
-}
-
-// AddPrompt registers a prompt with its render handler.
-func (s *Server) AddPrompt(p Prompt, h PromptHandler) error {
-	if p.Name == "" {
-		return ErrEmptyName
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, entry := range s.prompts {
-		if entry.prompt.Name == p.Name {
-			return ErrDuplicatePrompt
-		}
-	}
-
-	s.prompts = append(s.prompts, promptEntry{
-		prompt:  p,
-		handler: h,
-	})
-
-	return nil
 }
 
 func (s *Server) tryAcquireRequest() bool {
@@ -359,147 +237,6 @@ func (s *Server) discoverResult() *discoverResult {
 	}
 }
 
-// toolListResult builds the tools/list result in registration order.
-func (s *Server) toolListResult() *toolListResult {
-	s.mu.RLock()
-	tools := make([]Tool, 0, len(s.tools))
-	for _, entry := range s.tools {
-		tools = append(tools, entry.tool)
-	}
-
-	s.mu.RUnlock()
-
-	return &toolListResult{
-		ResultType: resultTypeComplete,
-		Tools:      tools,
-		TTLMs:      s.opts.ListTTL.Milliseconds(),
-		CacheScope: cacheScopePublic,
-		Meta:       s.serverInfo,
-	}
-}
-
-// callToolResult executes the named tool and builds its wire result.
-func (s *Server) callToolResult(ctx context.Context, params json.RawMessage, meta Meta,
-	conn *connection) (any, *Error) {
-
-	var body struct {
-		Name      string          `json:"name"`
-		Arguments json.RawMessage `json:"arguments"`
-	}
-	if err := json.Unmarshal(params, &body); err != nil {
-		return nil, &Error{
-			Code:    CodeInvalidParams,
-			Message: "Invalid params",
-		}
-	}
-	if body.Name == "" {
-		return nil, &Error{
-			Code:    CodeInvalidParams,
-			Message: "Invalid params: name missing",
-		}
-	}
-
-	entry, ok := s.findTool(body.Name)
-	if !ok {
-		return nil, &Error{
-			Code:    CodeInvalidParams,
-			Message: "Unknown tool: " + body.Name,
-		}
-	}
-	req := ToolRequest{
-		Arguments: body.Arguments,
-		Meta:      meta,
-		Progress:  conn.progressFn(ctx, meta.ProgressToken),
-	}
-	result := s.executeTool(ctx, entry, req)
-
-	content := result.Content
-	if content == nil {
-		content = []Content{}
-	}
-
-	return &toolCallResult{
-		ResultType:        resultTypeComplete,
-		Content:           content,
-		StructuredContent: result.StructuredContent,
-		IsError:           result.IsError,
-		Meta:              s.serverInfo,
-	}, nil
-}
-
-// executeTool runs a tool handler and converts errors and panics into
-// isError tool results.
-func (s *Server) executeTool(ctx context.Context, entry toolEntry, req ToolRequest) (result *ToolResult) {
-	defer func() {
-		if r := recover(); r != nil {
-			s.logger.WarnContext(ctx, "Tool handler panicked",
-				log.String("tool", entry.tool.Name),
-				log.Object("panic", r),
-				log.String("stack", string(debug.Stack())),
-			)
-			result = Errorf("internal error: %v", r)
-		}
-	}()
-
-	res, err := entry.handler(ctx, req)
-	if err != nil {
-		return Errorf("%v", err)
-	}
-	if res == nil {
-		return &ToolResult{}
-	}
-	return res
-}
-
-// findTool locates a registered tool.
-func (s *Server) findTool(name string) (toolEntry, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	for _, entry := range s.tools {
-		if entry.tool.Name == name {
-			return entry, true
-		}
-	}
-
-	return toolEntry{}, false
-}
-
-// findResource locates the handler for a resource URI, checking static
-// resources first and then templates in registration order.
-func (s *Server) findResource(uri string) (ResourceHandler, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	for _, entry := range s.resources {
-		if entry.resource.URI == uri {
-			return entry.handler, true
-		}
-	}
-
-	for _, entry := range s.templates {
-		if matchURITemplate(entry.template.URITemplate, uri) {
-			return entry.handler, true
-		}
-	}
-
-	return nil, false
-}
-
-// findPrompt locates a registered prompt.
-func (s *Server) findPrompt(name string) (promptEntry, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	for _, entry := range s.prompts {
-		if entry.prompt.Name == name {
-			return entry, true
-		}
-	}
-
-	return promptEntry{}, false
-}
-
 // capabilities lists the registered feature groups.
 type capabilities struct {
 	Tools     *struct{} `json:"tools,omitempty"`
@@ -516,15 +253,6 @@ type discoverResult struct {
 	TTLMs             int64           `json:"ttlMs"`
 	CacheScope        string          `json:"cacheScope"`
 	Meta              json.RawMessage `json:"_meta,omitempty"`
-}
-
-// toolListResult is the wire form of a tools/list result.
-type toolListResult struct {
-	ResultType string          `json:"resultType"`
-	Tools      []Tool          `json:"tools"`
-	TTLMs      int64           `json:"ttlMs"`
-	CacheScope string          `json:"cacheScope"`
-	Meta       json.RawMessage `json:"_meta,omitempty"`
 }
 
 // present returns an empty object when the feature group is registered.

@@ -41,6 +41,53 @@ type ResourceContents struct {
 	Blob     []byte `json:"blob,omitempty"`
 }
 
+// AddResource registers a resource with its read handler.
+func (s *Server) AddResource(r Resource, h ResourceHandler) error {
+	if r.URI == "" {
+		return ErrEmptyName
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, entry := range s.resources {
+		if entry.resource.URI == r.URI {
+			return ErrDuplicateResource
+		}
+	}
+
+	s.resources = append(s.resources, resourceEntry{
+		handler:  h,
+		resource: r,
+	})
+
+	return nil
+}
+
+// AddResourceTemplate registers a URI template with its read handler.
+// Templates support {name} segments only (RFC 6570 level 1).
+func (s *Server) AddResourceTemplate(t ResourceTemplate, h ResourceHandler) error {
+	if t.URITemplate == "" {
+		return ErrEmptyName
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, entry := range s.templates {
+		if entry.template.URITemplate == t.URITemplate {
+			return ErrDuplicateResource
+		}
+	}
+
+	s.templates = append(s.templates, templateEntry{
+		handler:  h,
+		template: t,
+	})
+
+	return nil
+}
+
 // MarshalJSON encodes the contents as text contents or as blob contents. The
 // text field stays in the output when it is empty, because the protocol
 // schema requires it.
@@ -158,6 +205,37 @@ func (s *Server) readResourceResult(ctx context.Context, params json.RawMessage)
 		CacheScope: cacheScopePublic,
 		Meta:       s.serverInfo,
 	}, nil
+}
+
+// findResource locates the handler for a resource URI, checking static
+// resources first and then templates in registration order.
+func (s *Server) findResource(uri string) (ResourceHandler, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, entry := range s.resources {
+		if entry.resource.URI == uri {
+			return entry.handler, true
+		}
+	}
+
+	for _, entry := range s.templates {
+		if matchURITemplate(entry.template.URITemplate, uri) {
+			return entry.handler, true
+		}
+	}
+
+	return nil, false
+}
+
+type resourceEntry struct {
+	handler  ResourceHandler
+	resource Resource
+}
+
+type templateEntry struct {
+	handler  ResourceHandler
+	template ResourceTemplate
 }
 
 // resourceListResult is the wire form of a resources/list result.

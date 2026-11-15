@@ -25,16 +25,27 @@
 //	}
 //	return srv.Serve(ctx, os.Stdin, os.Stdout)
 //
-// AddTool generates an input schema when none is supplied and checks arguments
-// against that schema. Server.AddTool registers handlers that receive raw JSON.
-// Use CompileSchema to check manually supplied schemas and their values.
-// See package jsonschema for supported keywords and limits.
+// AddTool checks arguments against a supplied or generated input schema.
+// A supplied output schema is checked on each successful result. Set
+// TypedToolOptions.GenerateOutputSchema to generate an object result schema
+// with OutputSchemaFor. Output schemas allow null for nil fields, slices,
+// maps, and byte slices. Input schemas keep their existing null rules.
+//
+// TypedToolOptions.Content adds image or other content after the JSON text.
+// Typed results keep the encoded JSON and copy content buffers before cleanup.
+// TypedToolOptions.Middleware wraps each validated call through result
+// encoding and content creation. It can set a context and release resources
+// after the complete result is built. Handlers and callbacks must be safe
+// for concurrent use.
+//
+// Server.AddTool registers handlers that receive raw JSON. Use CompileSchema
+// to validate raw calls and results. See package jsonschema for supported
+// keywords and limits.
 //
 // The streamable HTTP transport runs with Handler. Both transports share the
 // same Server, so one registration serves both.
 //
-// Handlers must be safe for concurrent use. MaxConcurrentRequests limits
-// active requests across both transports.
+// MaxConcurrentRequests limits active requests across both transports.
 //
 // The package does not implement the legacy initialize handshake, protocol
 // sessions, ping, logging/setLevel, the HTTP+SSE transport, multi round-trip
