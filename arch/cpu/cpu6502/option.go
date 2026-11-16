@@ -26,6 +26,44 @@ type options struct {
 // Option configures a CPU constructor option.
 type Option func(*options)
 
+// PreExecutionHook returns the current hook. A nil value means disabled.
+func (c *CPU) PreExecutionHook() PreExecutionHook {
+	if hook := c.preHook.Load(); hook != nil {
+		return *hook
+	}
+	return nil
+}
+
+// SetPreExecutionHook replaces the hook. A nil hook disables it.
+// A callback already in progress can finish after this method returns.
+func (c *CPU) SetPreExecutionHook(hook PreExecutionHook) {
+	var next *PreExecutionHook
+	if hook != nil {
+		next = &hook
+	}
+
+	c.preHook.Store(next)
+}
+
+// SetStackEventHook replaces the stack hook. A nil hook disables it.
+// A callback already in progress can finish after this method returns.
+func (c *CPU) SetStackEventHook(hook StackEventHook) {
+	var next *StackEventHook
+	if hook != nil {
+		next = &hook
+	}
+
+	c.stackHook.Store(next)
+}
+
+// StackEventHook returns the current hook. A nil value means disabled.
+func (c *CPU) StackEventHook() StackEventHook {
+	if hook := c.stackHook.Load(); hook != nil {
+		return *hook
+	}
+	return nil
+}
+
 // WithCycleHook enables bus-cycle execution for NMOS CPU variants. The hook
 // clocks external devices before each bus access. See CycleHook for DMA use.
 func WithCycleHook(hook CycleHook) Option {

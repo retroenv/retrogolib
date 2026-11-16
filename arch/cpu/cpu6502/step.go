@@ -64,8 +64,8 @@ func (c *CPU) stepInstruction() error {
 		c.TraceStep.PageCrossed = pageCrossed
 	}
 
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, ins, params...)
+	if hook := c.PreExecutionHook(); hook != nil {
+		hook(c, ins, params...)
 	}
 
 	if pageCrossed && opcode.PageCrossCycle {
@@ -89,8 +89,8 @@ func (c *CPU) stepNoParamInstruction(opcode Opcode, oldPC uint16) error {
 		c.TraceStep.PageCrossed = false
 	}
 
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, ins)
+	if hook := c.PreExecutionHook(); hook != nil {
+		hook(c, ins)
 	}
 
 	if err := ins.NoParamFunc(c); err != nil {

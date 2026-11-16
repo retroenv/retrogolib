@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 	InitialStack = 0xFD
 )
 
-// State represents complete 6502 CPU state for save/load and debugging.
+// State contains CPU registers and an interrupt summary for inspection.
 type State struct {
 	// Primary registers
 	A  uint8  // Accumulator (arithmetic and logic operations)
@@ -71,6 +72,9 @@ type CPU struct {
 	irqRunning bool // IRQ/BRK handler active until RTI; not the source of the current stack operation
 	nmiRunning bool // NMI handler active until RTI; not the source of the current stack operation
 
+	preHook   atomic.Pointer[PreExecutionHook]
+	stackHook atomic.Pointer[StackEventHook]
+
 	opts      options
 	TraceStep TraceStep // Trace step info (set if tracing enabled)
 
@@ -98,6 +102,10 @@ func New(memory *Memory, options ...Option) (*CPU, error) {
 		memory: memory,
 	}
 
+	c.SetPreExecutionHook(opts.preExecutionHook)
+	c.SetStackEventHook(opts.stackEventHook)
+	c.opts.preExecutionHook = nil
+	c.opts.stackEventHook = nil
 	c.PC = memory.ReadWordBug(ResetAddress)
 
 	c.setFlags(initialFlags)
@@ -125,21 +133,7 @@ func (c *CPU) State() State {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return State{
-		A:      c.A,
-		X:      c.X,
-		Y:      c.Y,
-		PC:     c.PC,
-		SP:     c.SP,
-		Cycles: c.cycles,
-		Flags:  c.Flags,
-		Interrupts: Interrupts{
-			NMITriggered: c.triggerNmi,
-			NMIRunning:   c.nmiRunning,
-			IrqTriggered: c.triggerIrq || c.irqLine,
-			IrqRunning:   c.irqRunning,
-		},
-	}
+	return c.stateLocked()
 }
 
 // Memory returns the CPU memory.
@@ -216,6 +210,24 @@ func (c *CPU) GetInstructionCount() uint64 {
 	return c.cycles / averageCyclesPerInstruction
 }
 
+func (c *CPU) stateLocked() State {
+	return State{
+		A:      c.A,
+		X:      c.X,
+		Y:      c.Y,
+		PC:     c.PC,
+		SP:     c.SP,
+		Cycles: c.cycles,
+		Flags:  c.Flags,
+		Interrupts: Interrupts{
+			NMITriggered: c.triggerNmi,
+			NMIRunning:   c.nmiRunning,
+			IrqTriggered: c.triggerIrq || c.irqLine,
+			IrqRunning:   c.irqRunning,
+		},
+	}
+}
+
 // execute branch jump if the branching op result is true.
 func (c *CPU) branch(branchTo bool, params ...any) error {
 	if len(params) == 0 {
@@ -273,11 +285,12 @@ func (c *CPU) push(value byte) {
 }
 
 func (c *CPU) emitStackEvent(operation StackOperation, before byte) {
-	if c.opts.stackEventHook == nil {
+	hook := c.StackEventHook()
+	if hook == nil {
 		return
 	}
 
-	c.opts.stackEventHook(StackEvent{
+	hook(StackEvent{
 		After:     c.SP,
 		Before:    before,
 		Cycle:     c.executionCycle,

@@ -104,14 +104,12 @@ func (c *CPU) executeInterruptFrom(vectorAddress uint16, source InterruptSource)
 		c.interruptCycles(vectorAddress, source)
 		return
 	}
-	if c.opts.stackEventHook != nil {
-		c.executionPC = c.PC
-		c.executionCycle = c.cycles
-		// Interrupt entry does not decode an instruction. Reading PC here would
-		// let an observation hook change mapped-memory state.
-		c.opcode = 0
-		c.interrupt = source
-	}
+	// Capture the context even when a stack hook is installed during entry.
+	c.executionPC = c.PC
+	c.executionCycle = c.cycles
+	// Interrupt entry does not decode an instruction. Do not read memory at PC.
+	c.opcode = 0
+	c.interrupt = source
 
 	c.push16(c.PC)
 	// Hardware interrupts put a zero in the stacked B-bit position.

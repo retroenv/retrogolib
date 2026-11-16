@@ -428,13 +428,13 @@ func (c *CPU) readWordCycles(address uint16, wrap bool) uint16 {
 }
 
 func (c *CPU) observeCycles(ins *Instruction, params ...any) {
-	if c.opts.preExecutionHook != nil {
-		c.opts.preExecutionHook(c, ins, params...)
+	if hook := c.PreExecutionHook(); hook != nil {
+		hook(c, ins, params...)
 	}
 }
 
 func (c *CPU) observeAddressCycles(opcode Opcode, base, address uint16) {
-	if c.opts.preExecutionHook == nil {
+	if c.PreExecutionHook() == nil {
 		return
 	}
 	switch opcode.Addressing {

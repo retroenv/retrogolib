@@ -17,6 +17,13 @@ type stackEventMemory struct {
 	testMemory
 }
 
+type interruptHookMemory struct {
+	entered chan struct{}
+	resume  chan struct{}
+
+	testMemory
+}
+
 func (m *stackEventMemory) Read(address uint16) byte {
 	value := m.b[address]
 	m.accesses = append(m.accesses, stackEventAccess{
@@ -212,6 +219,71 @@ func TestStackEventExcludesTXSAndReset(t *testing.T) {
 	assert.Equal(t, byte(0x40), cpu.SP)
 	cpu.Reset()
 	assert.Len(t, events, 0)
+}
+
+func TestStackHookInstalledDuringInterrupt(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		source InterruptSource
+	}{
+		{
+			name:   "NMI",
+			source: InterruptNMI,
+		},
+		{
+			name:   "IRQ",
+			source: InterruptIRQ,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			bus := &interruptHookMemory{
+				entered: make(chan struct{}),
+				resume:  make(chan struct{}),
+			}
+			bus.b[executionTestPC] = 0xea
+			memory, err := NewMemory(bus)
+			assert.NoError(t, err)
+			cpu := newTestCPU(t, memory)
+			cpu.PC = executionTestPC
+			assert.NoError(t, cpu.Step())
+			pc := cpu.PC
+			cycles := cpu.Cycles()
+			if test.source == InterruptNMI {
+				triggerNMI(cpu)
+			} else {
+				triggerIRQ(cpu)
+			}
+
+			// Install the hook after interrupt entry has started, before its first event.
+			done := make(chan bool, 1)
+			entered := bus.entered
+			go func() { done <- cpu.CheckInterrupts() }()
+			<-entered
+			var recorder executionRecorder
+			cpu.SetStackEventHook(recorder.recordStack)
+			close(bus.resume)
+			assert.True(t, <-done)
+			assert.Len(t, recorder.events, 3)
+			for _, event := range recorder.events {
+				assert.Equal(t, pc, event.PC)
+				assert.Equal(t, cycles, event.Cycle)
+				assert.Equal(t, test.source, event.Interrupt)
+				assert.Equal(t, byte(0), event.Opcode)
+			}
+		})
+	}
+}
+
+func (m *interruptHookMemory) Write(address uint16, value byte) {
+	m.testMemory.Write(address, value)
+	if m.entered == nil {
+		return
+	}
+
+	entered := m.entered
+	m.entered = nil
+	close(entered)
+	<-m.resume
 }
 
 func triggerNMI(cpu *CPU) {
