@@ -40,6 +40,10 @@ const defaultListTTL = time.Hour
 
 // Options configures the server.
 type Options struct {
+	// CancelOnEOF cancels in-flight requests when the stdio input closes.
+	// The default waits for those requests to finish.
+	CancelOnEOF bool
+
 	// Name is the server name reported in serverInfo and discover results.
 	Name string
 

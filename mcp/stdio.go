@@ -31,7 +31,13 @@ func (s *Server) Serve(ctx context.Context, r io.Reader, w io.Writer) error {
 	}
 
 	var wg sync.WaitGroup
-	defer wg.Wait()
+	defer func() {
+		if s.opts.CancelOnEOF {
+			cancel()
+		}
+
+		wg.Wait()
+	}()
 
 	reader := bufio.NewReaderSize(r, 64<<10)
 	for {
