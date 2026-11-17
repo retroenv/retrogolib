@@ -107,10 +107,14 @@ func TestCompiledSchemaValues(t *testing.T) {
 			schema, err := Compile(json.RawMessage(test.schema))
 			assert.NoError(t, err)
 			for _, raw := range test.valid {
-				t.Run("valid "+raw, func(t *testing.T) { assert.NoError(t, schema.Validate(json.RawMessage(raw))) })
+				t.Run("valid "+raw, func(t *testing.T) {
+					assert.NoError(t, schema.Validate(json.RawMessage(raw)))
+				})
 			}
 			for _, raw := range test.invalid {
-				t.Run("invalid "+raw, func(t *testing.T) { assert.Error(t, schema.Validate(json.RawMessage(raw))) })
+				t.Run("invalid "+raw, func(t *testing.T) {
+					assert.Error(t, schema.Validate(json.RawMessage(raw)))
+				})
 			}
 		})
 	}

@@ -33,7 +33,9 @@ func TestExtensionInvalidatesWholeStorage(t *testing.T) {
 			},
 		},
 	}
-	assert.False(t, result.Valid(func(int) knownbits.Width { return 16 }))
+	assert.False(t, result.Valid(func(int) knownbits.Width {
+		return 16
+	}))
 }
 
 func TestInvalidResultRecords(t *testing.T) {
@@ -54,7 +56,9 @@ func TestInvalidResultRecords(t *testing.T) {
 			EffectsComplete: true,
 		}
 		mutate(&result)
-		assert.False(t, result.Valid(func(int) knownbits.Width { return 8 }))
+		assert.False(t, result.Valid(func(int) knownbits.Width {
+			return 8
+		}))
 	}
 }
 

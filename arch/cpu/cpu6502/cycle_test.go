@@ -58,7 +58,11 @@ func TestBusCycleAccesses(t *testing.T) {
 }
 
 func TestBusCycleHookCanHoldReads(t *testing.T) {
-	mem := &ssSparseMemory{data: map[uint16]byte{0x8000: 0x8d, 0x8001: 0x11, 0x8002: 0x40}}
+	mem := &ssSparseMemory{data: map[uint16]byte{
+		0x8000: 0x8d,
+		0x8001: 0x11,
+		0x8002: 0x40,
+	}}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	var attempts []BusCycle
@@ -78,7 +82,10 @@ func TestBusCycleHookCanHoldReads(t *testing.T) {
 }
 
 func TestBusCycleResetPreservesRegisters(t *testing.T) {
-	mem := &ssSparseMemory{data: map[uint16]byte{ResetAddress: 0x34, ResetAddress + 1: 0x12}}
+	mem := &ssSparseMemory{data: map[uint16]byte{
+		ResetAddress:     0x34,
+		ResetAddress + 1: 0x12,
+	}}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
 	var accesses []BusCycle
@@ -154,10 +161,15 @@ func TestBusCycleInterruptPolling(t *testing.T) {
 }
 
 func TestBusCycleKILRequiresReset(t *testing.T) {
-	mem := &ssSparseMemory{data: map[uint16]byte{0x8000: 0x02, ResetAddress + 1: 0x90}}
+	mem := &ssSparseMemory{data: map[uint16]byte{
+		0x8000:           0x02,
+		ResetAddress + 1: 0x90,
+	}}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)
-	cpu := newTestCPU(t, memory, WithCycleHook(func(BusCycle) bool { return false }))
+	cpu := newTestCPU(t, memory, WithCycleHook(func(BusCycle) bool {
+		return false
+	}))
 	cpu.PC = 0x8000
 	assert.NoError(t, cpu.Step())
 	cpu.TriggerNMI()
@@ -171,7 +183,10 @@ func TestBusCycleKILRequiresReset(t *testing.T) {
 
 func TestBusCycleNMIReplacesBRKVector(t *testing.T) {
 	for _, at := range []int{4, 5} {
-		mem := &ssSparseMemory{data: map[uint16]byte{NMIAddress + 1: 0x90, IrqAddress + 1: 0xa0}}
+		mem := &ssSparseMemory{data: map[uint16]byte{
+			NMIAddress + 1: 0x90,
+			IrqAddress + 1: 0xa0,
+		}}
 		memory, err := NewMemory(mem)
 		assert.NoError(t, err)
 		var cpu *CPU
@@ -199,7 +214,12 @@ func TestBusCycleNMIReplacesBRKVector(t *testing.T) {
 
 func TestBusCycleKinds(t *testing.T) {
 	mem := &ssSparseMemory{
-		data: map[uint16]byte{0x8000: 0xbd, 0x8001: 0xff, 0x8002: 0x80, 0x8100: 0x42},
+		data: map[uint16]byte{
+			0x8000: 0xbd,
+			0x8001: 0xff,
+			0x8002: 0x80,
+			0x8100: 0x42,
+		},
 	}
 	memory, err := NewMemory(mem)
 	assert.NoError(t, err)

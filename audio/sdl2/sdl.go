@@ -101,7 +101,9 @@ func (d *audioDevice) startError() error {
 }
 
 func (d *audioDevice) stop() {
-	d.stopOnce.Do(func() { close(d.stopRequested) })
+	d.stopOnce.Do(func() {
+		close(d.stopRequested)
+	})
 	<-d.done
 }
 

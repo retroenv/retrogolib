@@ -101,7 +101,10 @@ func TestClientCallToolErrorResult(t *testing.T) {
 	client := New(t.Context(), newTestServer(t))
 	defer client.Close()
 
-	result, err := client.CallTool(t.Context(), "add", map[string]any{"a": 1, "b": "text"})
+	result, err := client.CallTool(t.Context(), "add", map[string]any{
+		"a": 1,
+		"b": "text",
+	})
 	assert.NoError(t, err)
 	assert.True(t, result.IsError)
 }

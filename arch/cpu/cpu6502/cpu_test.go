@@ -51,7 +51,9 @@ func TestConcurrentInterruptRequestsAndStalls(t *testing.T) {
 		opts []Option
 	}{
 		{name: "instruction mode"},
-		{name: "bus-cycle mode", opts: []Option{WithCycleHook(func(BusCycle) bool { return false })}},
+		{name: "bus-cycle mode", opts: []Option{WithCycleHook(func(BusCycle) bool {
+			return false
+		})}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

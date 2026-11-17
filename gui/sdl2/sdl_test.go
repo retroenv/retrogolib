@@ -50,27 +50,22 @@ func TestCleanupSDL(t *testing.T) {
 }
 
 func TestSetupFailureCleanup(t *testing.T) {
-	originalWindow := CreateWindow
-	originalRenderer := CreateRenderer
-	originalTexture := CreateTexture
-	originalDestroyWindow := DestroyWindow
-	originalDestroyRenderer := DestroyRenderer
-	originalError := GetError
-	t.Cleanup(func() {
-		CreateWindow = originalWindow
-		CreateRenderer = originalRenderer
-		CreateTexture = originalTexture
-		DestroyWindow = originalDestroyWindow
-		DestroyRenderer = originalDestroyRenderer
-		GetError = originalError
-	})
+	preserveSDL(t)
 	for _, stage := range []string{"window", "renderer", "texture"} {
 		t.Run(stage, func(t *testing.T) {
 			message := "original error"
 			var destroyed []string
-			GetError = func() string { return message }
-			DestroyWindow = func(uintptr) { destroyed = append(destroyed, "window"); message = "cleanup error" }
-			DestroyRenderer = func(uintptr) { destroyed = append(destroyed, "renderer"); message = "cleanup error" }
+			GetError = func() string {
+				return message
+			}
+			DestroyWindow = func(uintptr) {
+				destroyed = append(destroyed, "window")
+				message = "cleanup error"
+			}
+			DestroyRenderer = func(uintptr) {
+				destroyed = append(destroyed, "renderer")
+				message = "cleanup error"
+			}
 			CreateWindow = func(string, int32, int32, int32, int32, uint32) uintptr {
 				if stage == "window" {
 					return 0
@@ -83,7 +78,9 @@ func TestSetupFailureCleanup(t *testing.T) {
 				}
 				return 2
 			}
-			CreateTexture = func(uintptr, uint32, int, int32, int32) uintptr { return 0 }
+			CreateTexture = func(uintptr, uint32, int, int32, int32) uintptr {
+				return 0
+			}
 			_, _, _, err := setupSDL(gui.Dimensions{
 				Width:       16,
 				Height:      16,
@@ -101,6 +98,26 @@ func TestSetupFailureCleanup(t *testing.T) {
 			}
 		})
 	}
+}
+
+// preserveSDL restores the SDL function variables when the test ends.
+func preserveSDL(t *testing.T) {
+	t.Helper()
+
+	window := CreateWindow
+	renderer := CreateRenderer
+	texture := CreateTexture
+	destroyWindow := DestroyWindow
+	destroyRenderer := DestroyRenderer
+	getError := GetError
+	t.Cleanup(func() {
+		CreateWindow = window
+		CreateRenderer = renderer
+		CreateTexture = texture
+		DestroyWindow = destroyWindow
+		DestroyRenderer = destroyRenderer
+		GetError = getError
+	})
 }
 
 type setupBackend struct{ gui.Backend }

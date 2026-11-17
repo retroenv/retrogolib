@@ -51,8 +51,12 @@ func TestExecutionStateRoundTrip(t *testing.T) {
 func TestRuntimeHooksCanBeRemoved(t *testing.T) {
 	cpu := cpuTestSetup(t)
 	var pre, stack int
-	cpu.SetPreExecutionHook(func(*CPU, *Instruction, ...any) { pre++ })
-	cpu.SetStackEventHook(func(StackEvent) { stack++ })
+	cpu.SetPreExecutionHook(func(*CPU, *Instruction, ...any) {
+		pre++
+	})
+	cpu.SetStackEventHook(func(StackEvent) {
+		stack++
+	})
 	cpu.Memory().Write(0, 0x48)
 	cpu.PC = 0
 	assert.NoError(t, cpu.Step())

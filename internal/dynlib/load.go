@@ -10,7 +10,9 @@ import (
 
 // LoadFunctions opens a dynamic library and registers functions from it.
 func LoadFunctions(name string, imports map[string]any) (uintptr, error) {
-	entry, _ := libraries.LoadOrStore(name, sync.OnceValues(func() (uintptr, error) { return open(name) }))
+	entry, _ := libraries.LoadOrStore(name, sync.OnceValues(func() (uintptr, error) {
+		return open(name)
+	}))
 	lib, err := entry.(func() (uintptr, error))()
 	if err != nil {
 		return 0, err

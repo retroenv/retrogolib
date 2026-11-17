@@ -73,7 +73,9 @@ func TestCommand_Execute_SubcommandReturnsExitCode(t *testing.T) {
 
 func TestCommand_Execute_UnknownSubcommand(t *testing.T) {
 	cmd := NewCommand("test", "Test command")
-	cmd.AddSubcommand("valid", "Valid subcommand", func(args []string) int { return 0 })
+	cmd.AddSubcommand("valid", "Valid subcommand", func(args []string) int {
+		return 0
+	})
 
 	exitCode := cmd.Execute([]string{"unknown"})
 	assert.Equal(t, 1, exitCode)
@@ -88,8 +90,12 @@ func TestCommand_Execute_NoArgs(t *testing.T) {
 
 func TestCommand_ShowUsage(t *testing.T) {
 	cmd := NewCommand("myapp", "My awesome application")
-	cmd.AddSubcommand("start", "Start the server", func(args []string) int { return 0 })
-	cmd.AddSubcommand("stop", "Stop the server", func(args []string) int { return 0 })
+	cmd.AddSubcommand("start", "Start the server", func(args []string) int {
+		return 0
+	})
+	cmd.AddSubcommand("stop", "Stop the server", func(args []string) int {
+		return 0
+	})
 
 	output := captureStdout(func() {
 		cmd.ShowUsage()
@@ -110,9 +116,15 @@ func TestCommand_ShowUsage(t *testing.T) {
 
 func TestCommand_SubcommandOrder(t *testing.T) {
 	cmd := NewCommand("test", "Test command")
-	cmd.AddSubcommand("zebra", "Last alphabetically", func(args []string) int { return 0 })
-	cmd.AddSubcommand("alpha", "First alphabetically", func(args []string) int { return 0 })
-	cmd.AddSubcommand("middle", "Middle alphabetically", func(args []string) int { return 0 })
+	cmd.AddSubcommand("zebra", "Last alphabetically", func(args []string) int {
+		return 0
+	})
+	cmd.AddSubcommand("alpha", "First alphabetically", func(args []string) int {
+		return 0
+	})
+	cmd.AddSubcommand("middle", "Middle alphabetically", func(args []string) int {
+		return 0
+	})
 
 	output := captureStdout(func() {
 		cmd.ShowUsage()
@@ -238,8 +250,12 @@ func TestCommand_VersionAlternativeFlag(t *testing.T) {
 
 func TestCommand_EmptySubcommandName(t *testing.T) {
 	cmd := NewCommand("test", "Test command")
-	cmd.AddSubcommand("", "Empty name", func(args []string) int { return 0 })
-	cmd.AddSubcommand("valid", "Valid subcommand", func(args []string) int { return 0 })
+	cmd.AddSubcommand("", "Empty name", func(args []string) int {
+		return 0
+	})
+	cmd.AddSubcommand("valid", "Valid subcommand", func(args []string) int {
+		return 0
+	})
 
 	// Empty string subcommand name should still work (edge case)
 	exitCode := cmd.Execute([]string{""})
@@ -248,8 +264,12 @@ func TestCommand_EmptySubcommandName(t *testing.T) {
 
 func TestCommand_DuplicateSubcommandRegistration(t *testing.T) {
 	cmd := NewCommand("test", "Test command")
-	cmd.AddSubcommand("sub", "First registration", func(args []string) int { return 1 })
-	cmd.AddSubcommand("sub", "Second registration", func(args []string) int { return 2 })
+	cmd.AddSubcommand("sub", "First registration", func(args []string) int {
+		return 1
+	})
+	cmd.AddSubcommand("sub", "Second registration", func(args []string) int {
+		return 2
+	})
 
 	// Last registration should win
 	exitCode := cmd.Execute([]string{"sub"})

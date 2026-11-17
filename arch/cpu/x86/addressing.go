@@ -95,27 +95,51 @@ const (
 // RegisterParamNames provides string representations of register parameters.
 var RegisterParamNames = map[RegisterParam]string{
 	// 8-bit registers
-	RegAL: "al", RegCL: "cl", RegDL: "dl", RegBL: "bl",
-	RegAH: "ah", RegCH: "ch", RegDH: "dh", RegBH: "bh",
+	RegAL: "al",
+	RegCL: "cl",
+	RegDL: "dl",
+	RegBL: "bl",
+	RegAH: "ah",
+	RegCH: "ch",
+	RegDH: "dh",
+	RegBH: "bh",
 
 	// 16-bit registers
-	RegAX: "ax", RegCX: "cx", RegDX: "dx", RegBX: "bx",
-	RegSP: "sp", RegBP: "bp", RegSI: "si", RegDI: "di",
+	RegAX: "ax",
+	RegCX: "cx",
+	RegDX: "dx",
+	RegBX: "bx",
+	RegSP: "sp",
+	RegBP: "bp",
+	RegSI: "si",
+	RegDI: "di",
 
 	// Segment registers
-	RegES: "es", RegCS: "cs", RegSS: "ss", RegDS: "ds",
+	RegES: "es",
+	RegCS: "cs",
+	RegSS: "ss",
+	RegDS: "ds",
 
 	// Memory references
-	RegBXSIRef: "[bx+si]", RegBXDIRef: "[bx+di]",
-	RegBPSIRef: "[bp+si]", RegBPDIRef: "[bp+di]",
-	RegSIRef: "[si]", RegDIRef: "[di]",
-	RegBPRef: "[bp]", RegBXRef: "[bx]",
+	RegBXSIRef: "[bx+si]",
+	RegBXDIRef: "[bx+di]",
+	RegBPSIRef: "[bp+si]",
+	RegBPDIRef: "[bp+di]",
+	RegSIRef:   "[si]",
+	RegDIRef:   "[di]",
+	RegBPRef:   "[bp]",
+	RegBXRef:   "[bx]",
 
 	// Immediate and special
-	RegImm8: "imm8", RegImm16: "imm16",
-	RegRel8: "rel8", RegRel16: "rel16",
-	RegPtr1616: "ptr16:16", RegMem: "mem",
-	RegPort: "port", RegFlags: "flags", RegIP: "ip",
+	RegImm8:    "imm8",
+	RegImm16:   "imm16",
+	RegRel8:    "rel8",
+	RegRel16:   "rel16",
+	RegPtr1616: "ptr16:16",
+	RegMem:     "mem",
+	RegPort:    "port",
+	RegFlags:   "flags",
+	RegIP:      "ip",
 }
 
 // String returns the string representation of the addressing mode.

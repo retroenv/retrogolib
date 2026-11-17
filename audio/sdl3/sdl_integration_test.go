@@ -20,7 +20,9 @@ func TestSDLIntegrationConcurrentBindings(t *testing.T) {
 	var workers sync.WaitGroup
 	results := make(chan error, 20)
 	for range 20 {
-		workers.Go(func() { results <- setupLibrary() })
+		workers.Go(func() {
+			results <- setupLibrary()
+		})
 	}
 	workers.Wait()
 	close(results)
@@ -79,8 +81,12 @@ func TestSDLIntegrationOpenFailureCleanup(t *testing.T) {
 	useDummyDrivers(t)
 	assert.NoError(t, setupLibrary())
 	original := OpenAudioDeviceStream
-	t.Cleanup(func() { OpenAudioDeviceStream = original })
-	OpenAudioDeviceStream = func(uint32, *AudioSpec, uintptr, uintptr) uintptr { return 0 }
+	t.Cleanup(func() {
+		OpenAudioDeviceStream = original
+	})
+	OpenAudioDeviceStream = func(uint32, *AudioSpec, uintptr, uintptr) uintptr {
+		return 0
+	}
 	playback, err := Setup(newTestBackend())
 	assert.Error(t, err)
 	assert.Nil(t, playback)
@@ -142,8 +148,12 @@ func TestSDLIntegrationGUIFailureKeepsAudio(t *testing.T) {
 	assert.NoError(t, err)
 	cleanup()
 	original := guirenderer.CreateRenderer
-	t.Cleanup(func() { guirenderer.CreateRenderer = original })
-	guirenderer.CreateRenderer = func(uintptr, *byte) uintptr { return 0 }
+	t.Cleanup(func() {
+		guirenderer.CreateRenderer = original
+	})
+	guirenderer.CreateRenderer = func(uintptr, *byte) uintptr {
+		return 0
+	}
 	b := newTestBackend()
 	playback, err := Setup(b)
 	assert.NoError(t, err)
@@ -209,5 +219,7 @@ func setHint(t *testing.T, name, value string) {
 		"SDL_ResetHint":           &resetHint,
 	}))
 	assert.True(t, setHintWithPriority(name, value, hintOverride))
-	t.Cleanup(func() { resetHint(name) })
+	t.Cleanup(func() {
+		resetHint(name)
+	})
 }

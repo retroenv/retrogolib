@@ -150,5 +150,7 @@ func setHint(t *testing.T, name, value string) {
 		"SDL_ResetHint":           &resetHint,
 	}))
 	assert.True(t, setHintWithPriority(name, value, hintOverride))
-	t.Cleanup(func() { resetHint(name) })
+	t.Cleanup(func() {
+		resetHint(name)
+	})
 }

@@ -278,8 +278,12 @@ func TestHTTPParamHeaders(t *testing.T) {
 		status    int
 	}{
 		{name: "all headers match", arguments: `{"region":"us-west1","limit":42,"options":{"dry":true}}`,
-			headers: map[string]string{"Mcp-Param-Region": "us-west1", "Mcp-Param-Limit": "42.0", "Mcp-Param-Dry": "true"},
-			status:  http.StatusOK},
+			headers: map[string]string{
+				"Mcp-Param-Region": "us-west1",
+				"Mcp-Param-Limit":  "42.0",
+				"Mcp-Param-Dry":    "true",
+			},
+			status: http.StatusOK},
 		{name: "base64 value", arguments: `{"region":"Grüße"}`,
 			headers: map[string]string{"Mcp-Param-Region": "=?base64?R3LDvMOfZQ==?="},
 			status:  http.StatusOK},

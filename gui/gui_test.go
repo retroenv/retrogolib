@@ -215,7 +215,9 @@ func TestSetup_NoRenderer(t *testing.T) {
 }
 
 func TestRegister_NilSetup(t *testing.T) {
-	assert.Panics(t, func() { gui.Register("nil", 1, renderer.Renderer[gui.Initializer]{}) })
+	assert.Panics(t, func() {
+		gui.Register("nil", 1, renderer.Renderer[gui.Initializer]{})
+	})
 }
 
 func TestDimensions_Equality(t *testing.T) {

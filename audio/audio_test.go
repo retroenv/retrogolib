@@ -204,5 +204,7 @@ func TestSetup_NoRenderer(t *testing.T) {
 }
 
 func TestRegister_NilSetup(t *testing.T) {
-	assert.Panics(t, func() { Register("nil", 1, renderer.Renderer[Initializer]{}) })
+	assert.Panics(t, func() {
+		Register("nil", 1, renderer.Renderer[Initializer]{})
+	})
 }

@@ -51,8 +51,12 @@ func TestRegistry_Panics(t *testing.T) {
 	var r Registry[int]
 	r.Register("a", 1, 1)
 
-	assert.Panics(t, func() { r.Register("a", 2, 2) })
-	assert.Panics(t, func() { r.Register("", 2, 2) })
+	assert.Panics(t, func() {
+		r.Register("a", 2, 2)
+	})
+	assert.Panics(t, func() {
+		r.Register("", 2, 2)
+	})
 }
 
 func TestRegistry_Len(t *testing.T) {
@@ -87,8 +91,12 @@ func TestFirst_FirstSucceeds(t *testing.T) {
 	var r Registry[int]
 	r.Register("only", 1, 1)
 
-	try := func(v int) (int, error) { return v, nil }
-	libraryVersion := func(int) string { return "3.4.2" }
+	try := func(v int) (int, error) {
+		return v, nil
+	}
+	libraryVersion := func(int) string {
+		return "3.4.2"
+	}
 	result, info, err := First(&r, errEmpty, try, libraryVersion)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, result)
@@ -114,6 +122,8 @@ func TestFirst_AllFail(t *testing.T) {
 
 func TestFirst_Empty(t *testing.T) {
 	var r Registry[int]
-	_, _, err := First(&r, errEmpty, func(int) (int, error) { return 0, nil }, nil)
+	_, _, err := First(&r, errEmpty, func(int) (int, error) {
+		return 0, nil
+	}, nil)
 	assert.True(t, errors.Is(err, errEmpty), "error should be errEmpty")
 }

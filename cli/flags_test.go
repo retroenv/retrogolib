@@ -225,7 +225,9 @@ func TestFlagSet_UsageSections(t *testing.T) {
 	fs.AddSection("Parameters", &p)
 	fs.AddSection("Options", &o)
 
-	output := captureStdout(func() { fs.ShowUsage() })
+	output := captureStdout(func() {
+		fs.ShowUsage()
+	})
 	assert.Contains(t, output, "usage: test [options]")
 	assert.Contains(t, output, "Parameters:")
 	assert.Contains(t, output, "-i string")
@@ -245,7 +247,9 @@ func TestFlagSet_UsageTypesAndDefaults(t *testing.T) {
 	fs := NewFlagSet("test")
 	fs.AddSection("Options", &o)
 
-	output := captureStdout(func() { fs.ShowUsage() })
+	output := captureStdout(func() {
+		fs.ShowUsage()
+	})
 	assert.Contains(t, output, "-name string")
 	assert.Contains(t, output, "-count int")
 	assert.Contains(t, output, "-ratio float64")
@@ -265,7 +269,9 @@ func TestFlagSet_UsageEnvAndRequired(t *testing.T) {
 	fs := NewFlagSet("test")
 	fs.AddSection("Options", &o)
 
-	output := captureStdout(func() { fs.ShowUsage() })
+	output := captureStdout(func() {
+		fs.ShowUsage()
+	})
 	assert.Contains(t, output, "(required)")
 	assert.Contains(t, output, "[env: HOST]")
 }
@@ -280,7 +286,9 @@ func TestFlagSet_UsageShortLong(t *testing.T) {
 	fs := NewFlagSet("test")
 	fs.AddSection("Options", &o)
 
-	output := captureStdout(func() { fs.ShowUsage() })
+	output := captureStdout(func() {
+		fs.ShowUsage()
+	})
 	assert.Contains(t, output, "-v, -verbose")
 	assert.Contains(t, output, "-o, -output")
 }
@@ -382,7 +390,9 @@ func TestFlagSet_PositionalUsage(t *testing.T) {
 	fs := NewFlagSet("test")
 	fs.AddPositional(&p)
 
-	output := captureStdout(func() { fs.ShowUsage() })
+	output := captureStdout(func() {
+		fs.ShowUsage()
+	})
 	assert.Contains(t, output, "usage: test input [files...]")
 	assert.Contains(t, output, "Positional arguments:")
 	assert.Contains(t, output, "input file")

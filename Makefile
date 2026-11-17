@@ -1,5 +1,5 @@
 GOLANGCI_VERSION = v2.15.0
-RETROGOLINT_VERSION = v1.0.13
+RETROGOLINT_VERSION = v1.0.14
 TEST_TIMEOUT ?= 60s
 
 help: ## show help, shown by default if no target is specified

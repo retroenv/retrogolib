@@ -45,24 +45,7 @@ func TestCleanupSDL(t *testing.T) {
 }
 
 func TestSetupFailureCleanup(t *testing.T) {
-	originalWindow := CreateWindow
-	originalRenderer := CreateRenderer
-	originalTexture := CreateTexture
-	originalScaleMode := SetTextureScaleMode
-	originalDestroyWindow := DestroyWindow
-	originalDestroyRenderer := DestroyRenderer
-	originalDestroyTexture := DestroyTexture
-	originalError := GetError
-	t.Cleanup(func() {
-		CreateWindow = originalWindow
-		CreateRenderer = originalRenderer
-		CreateTexture = originalTexture
-		SetTextureScaleMode = originalScaleMode
-		DestroyWindow = originalDestroyWindow
-		DestroyRenderer = originalDestroyRenderer
-		DestroyTexture = originalDestroyTexture
-		GetError = originalError
-	})
+	preserveSDL(t)
 	for _, tc := range []struct {
 		stage     string
 		destroyed []string
@@ -84,13 +67,21 @@ func TestSetupFailureCleanup(t *testing.T) {
 				}
 				return handle
 			}
-			GetError = func() string { return message }
+			GetError = func() string {
+				return message
+			}
 			DestroyWindow = destroy("window")
 			DestroyRenderer = destroy("renderer")
 			DestroyTexture = destroy("texture")
-			CreateWindow = func(string, int32, int32, uint64) uintptr { return create("window", 1) }
-			CreateRenderer = func(uintptr, *byte) uintptr { return create("renderer", 2) }
-			CreateTexture = func(uintptr, uint32, int, int32, int32) uintptr { return create("texture", 3) }
+			CreateWindow = func(string, int32, int32, uint64) uintptr {
+				return create("window", 1)
+			}
+			CreateRenderer = func(uintptr, *byte) uintptr {
+				return create("renderer", 2)
+			}
+			CreateTexture = func(uintptr, uint32, int, int32, int32) uintptr {
+				return create("texture", 3)
+			}
 			SetTextureScaleMode = func(_ uintptr, scaleMode int32) bool {
 				assert.Equal(t, int32(SDL_SCALEMODE_NEAREST), scaleMode)
 				return false
@@ -105,6 +96,30 @@ func TestSetupFailureCleanup(t *testing.T) {
 			assert.Equal(t, tc.destroyed, destroyed)
 		})
 	}
+}
+
+// preserveSDL restores the SDL function variables when the test ends.
+func preserveSDL(t *testing.T) {
+	t.Helper()
+
+	window := CreateWindow
+	renderer := CreateRenderer
+	texture := CreateTexture
+	scaleMode := SetTextureScaleMode
+	destroyWindow := DestroyWindow
+	destroyRenderer := DestroyRenderer
+	destroyTexture := DestroyTexture
+	getError := GetError
+	t.Cleanup(func() {
+		CreateWindow = window
+		CreateRenderer = renderer
+		CreateTexture = texture
+		SetTextureScaleMode = scaleMode
+		DestroyWindow = destroyWindow
+		DestroyRenderer = destroyRenderer
+		DestroyTexture = destroyTexture
+		GetError = getError
+	})
 }
 
 type setupBackend struct{ gui.Backend }

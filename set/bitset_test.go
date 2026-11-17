@@ -177,10 +177,22 @@ func TestBitSetAllValues(t *testing.T) {
 func TestBitSetPanics(t *testing.T) {
 	b := NewBitSet()
 
-	assert.Panics(t, func() { b.Add(-1) })
-	assert.Panics(t, func() { b.Add(64) })
-	assert.Panics(t, func() { b.Remove(-1) })
-	assert.Panics(t, func() { b.Remove(64) })
-	assert.Panics(t, func() { b.Contains(-1) })
-	assert.Panics(t, func() { b.Contains(64) })
+	assert.Panics(t, func() {
+		b.Add(-1)
+	})
+	assert.Panics(t, func() {
+		b.Add(64)
+	})
+	assert.Panics(t, func() {
+		b.Remove(-1)
+	})
+	assert.Panics(t, func() {
+		b.Remove(64)
+	})
+	assert.Panics(t, func() {
+		b.Contains(-1)
+	})
+	assert.Panics(t, func() {
+		b.Contains(64)
+	})
 }

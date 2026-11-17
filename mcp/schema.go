@@ -112,14 +112,20 @@ func (b schemaBuilder) nonNullSchema(t reflect.Type) (map[string]any, error) {
 // base64 string, as encoding/json encodes it.
 func (b schemaBuilder) listSchema(t reflect.Type) (map[string]any, error) {
 	if t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8 {
-		return map[string]any{"type": "string", "contentEncoding": "base64"}, nil
+		return map[string]any{
+			"type":            "string",
+			"contentEncoding": "base64",
+		}, nil
 	}
 
 	items, err := b.schemaForType(t.Elem())
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"type": "array", "items": items}, nil
+	return map[string]any{
+		"type":  "array",
+		"items": items,
+	}, nil
 }
 
 // mapSchema builds the schema for a map type with string keys.
@@ -132,7 +138,10 @@ func (b schemaBuilder) mapSchema(t reflect.Type) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"type": "object", "additionalProperties": values}, nil
+	return map[string]any{
+		"type":                 "object",
+		"additionalProperties": values,
+	}, nil
 }
 
 // structSchema builds an inline object schema for a struct type.

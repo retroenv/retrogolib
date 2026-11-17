@@ -44,8 +44,14 @@ func TestSchemaKinds(t *testing.T) {
 	assert.Equal(t, map[string]any{"type": "integer"}, properties["count"])
 	assert.Equal(t, map[string]any{"type": "integer"}, properties["byte"])
 	assert.Equal(t, map[string]any{"type": "number"}, properties["ratio"])
-	assert.Equal(t, map[string]any{"type": "array", "items": map[string]any{"type": "string"}}, properties["list"])
-	assert.Equal(t, map[string]any{"type": "object", "additionalProperties": map[string]any{"type": "integer"}}, properties["pairs"])
+	assert.Equal(t, map[string]any{
+		"type":  "array",
+		"items": map[string]any{"type": "string"},
+	}, properties["list"])
+	assert.Equal(t, map[string]any{
+		"type":                 "object",
+		"additionalProperties": map[string]any{"type": "integer"},
+	}, properties["pairs"])
 	assert.Equal(t, map[string]any{
 		"additionalProperties": false,
 		"properties":           map[string]any{"X": map[string]any{"type": "integer"}},
@@ -209,10 +215,19 @@ func TestSchemaSpecialTypes(t *testing.T) {
 		"pattern": `^\$[0-9A-F]{1,4}$`,
 	}
 
-	assert.Equal(t, map[string]any{"type": "string", "contentEncoding": "base64"}, properties["bytes"])
+	assert.Equal(t, map[string]any{
+		"type":            "string",
+		"contentEncoding": "base64",
+	}, properties["bytes"])
 	assert.Equal(t, map[string]any{"type": "string"}, properties["text"])
-	assert.Equal(t, map[string]any{"type": "array", "items": addrSchema}, properties["addrs"])
-	assert.Equal(t, map[string]any{"type": "object", "additionalProperties": addrSchema}, properties["lookup"])
+	assert.Equal(t, map[string]any{
+		"type":  "array",
+		"items": addrSchema,
+	}, properties["addrs"])
+	assert.Equal(t, map[string]any{
+		"type":                 "object",
+		"additionalProperties": addrSchema,
+	}, properties["lookup"])
 	assert.Equal(t, map[string]any{
 		"type":         []any{"integer", "string"},
 		"pattern":      `^\$[0-9A-F]{1,4}$`,
@@ -322,9 +337,18 @@ func TestSchemaQuotedFieldTypes(t *testing.T) {
 		Text    string `json:"text,string" enum:"hello"`
 	}
 	properties := schemaFor(t, fields{})["properties"].(map[string]any)
-	assert.Equal(t, map[string]any{"enum": []any{"42", "43"}, "type": "string"}, properties["count"])
-	assert.Equal(t, map[string]any{"enum": []any{"true", "false"}, "type": "string"}, properties["enabled"])
-	assert.Equal(t, map[string]any{"enum": []any{`"hello"`}, "type": "string"}, properties["text"])
+	assert.Equal(t, map[string]any{
+		"enum": []any{"42", "43"},
+		"type": "string",
+	}, properties["count"])
+	assert.Equal(t, map[string]any{
+		"enum": []any{"true", "false"},
+		"type": "string",
+	}, properties["enabled"])
+	assert.Equal(t, map[string]any{
+		"enum": []any{`"hello"`},
+		"type": "string",
+	}, properties["text"])
 }
 
 func TestSchemaRejectsQuotedNumericBounds(t *testing.T) {

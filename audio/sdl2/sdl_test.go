@@ -59,9 +59,16 @@ func TestStopWaitsForCallback(t *testing.T) {
 	entered := make(chan struct{})
 	proceed := make(chan struct{})
 	var unblock sync.Once
-	b.callback = func([]byte) { close(entered); <-proceed }
+	b.callback = func([]byte) {
+		close(entered)
+		<-proceed
+	}
 	playback, device, native := newTestPlayback(t, b)
-	t.Cleanup(func() { unblock.Do(func() { close(proceed) }) })
+	t.Cleanup(func() {
+		unblock.Do(func() {
+			close(proceed)
+		})
+	})
 	started := make(chan error, 1)
 	go func() { started <- playback.Start() }()
 	awaitSignal(t, entered)
@@ -73,7 +80,9 @@ func TestStopWaitsForCallback(t *testing.T) {
 		t.Fatal("Stop returned while the callback was active")
 	default:
 	}
-	unblock.Do(func() { close(proceed) })
+	unblock.Do(func() {
+		close(proceed)
+	})
 	awaitSignal(t, stopped)
 	err := <-started
 	assert.True(t, err == nil || errors.Is(err, audio.ErrClosed))
@@ -336,7 +345,9 @@ func mockAudioQueue(s *mockSDL) {
 		defer s.mutex.Unlock()
 		return s.queued
 	}
-	GetError = func() string { return "queue failed" }
+	GetError = func() string {
+		return "queue failed"
+	}
 }
 
 func awaitSignal(t *testing.T, signal <-chan struct{}) {

@@ -116,7 +116,9 @@ func TestResultResetAndValidation(t *testing.T) {
 			},
 		},
 	}
-	width := func(int) knownbits.Width { return 8 }
+	width := func(int) knownbits.Width {
+		return 8
+	}
 	assert.True(t, result.Valid(width))
 	result.Writes = append(result.Writes, result.Writes[0])
 	assert.False(t, result.Valid(width))
