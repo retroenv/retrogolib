@@ -70,7 +70,11 @@ func TestResolveVersions(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.want, buildinfo.Resolve(test.version, test.commit, test.date, test.info))
+			assert.Equal(t, test.want, buildinfo.Resolve(buildinfo.Options{
+				Version:   test.version,
+				Commit:    test.commit,
+				BuildDate: test.date,
+			}, test.info))
 		})
 	}
 }
@@ -122,7 +126,11 @@ func TestResolveOverrides(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.want, buildinfo.Resolve(test.version, test.commit, test.date, test.info))
+			assert.Equal(t, test.want, buildinfo.Resolve(buildinfo.Options{
+				Version:   test.version,
+				Commit:    test.commit,
+				BuildDate: test.date,
+			}, test.info))
 		})
 	}
 	assert.Equal(t, testModuleVersion, info.Main.Version)
@@ -138,7 +146,11 @@ func TestResolveExplicitValues(t *testing.T) {
 		VCSTime:   testVCSTime,
 		Modified:  true,
 	}
-	assert.Equal(t, want, buildinfo.Resolve(testOverrideVersion, testOverrideCommit, testBuildDate, info))
+	assert.Equal(t, want, buildinfo.Resolve(buildinfo.Options{
+		Version:   testOverrideVersion,
+		Commit:    testOverrideCommit,
+		BuildDate: testBuildDate,
+	}, info))
 }
 
 func TestResolveVCS(t *testing.T) {
@@ -187,7 +199,11 @@ func TestResolveVCS(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.want, buildinfo.Resolve(test.version, test.commit, test.date, test.info))
+			assert.Equal(t, test.want, buildinfo.Resolve(buildinfo.Options{
+				Version:   test.version,
+				Commit:    test.commit,
+				BuildDate: test.date,
+			}, test.info))
 		})
 	}
 	assert.Equal(t, testModuleVersion, info.Main.Version)
@@ -196,9 +212,13 @@ func TestResolveVCS(t *testing.T) {
 
 func TestRead(t *testing.T) {
 	info, _ := debug.ReadBuildInfo()
-	want := buildinfo.Resolve(testDevelopmentVersion, "", "", info)
-	assert.Equal(t, want, buildinfo.Read(testDevelopmentVersion, "", ""))
-	metadata := buildinfo.Read(testOverrideVersion, testOverrideCommit, testBuildDate)
+	want := buildinfo.Resolve(buildinfo.Options{Version: testDevelopmentVersion}, info)
+	assert.Equal(t, want, buildinfo.Read(buildinfo.Options{Version: testDevelopmentVersion}))
+	metadata := buildinfo.Read(buildinfo.Options{
+		Version:   testOverrideVersion,
+		Commit:    testOverrideCommit,
+		BuildDate: testBuildDate,
+	})
 	assert.Equal(t, testOverrideVersion, metadata.Version)
 	assert.Equal(t, testOverrideCommit, metadata.Commit)
 	assert.Equal(t, testBuildDate, metadata.BuildDate)
@@ -231,4 +251,117 @@ func testBuildInfo() *debug.BuildInfo {
 			},
 		},
 	}
+}
+
+func TestResolveCommitMatching(t *testing.T) {
+	info := testBuildInfo()
+	tests := []struct {
+		name    string
+		options buildinfo.Options
+		info    *debug.BuildInfo
+		want    buildinfo.Info
+	}{
+		{
+			name: "embedded metadata",
+			info: info,
+			want: buildinfo.Info{
+				Version:  testModuleVersion,
+				Commit:   testRevision,
+				VCSTime:  testVCSTime,
+				Modified: true,
+			},
+		},
+		{
+			name:    "matching short commit",
+			options: buildinfo.Options{Commit: "abcdef0"},
+			info:    info,
+			want: buildinfo.Info{
+				Version:  testModuleVersion,
+				Commit:   "abcdef0",
+				VCSTime:  testVCSTime,
+				Modified: true,
+			},
+		},
+		{
+			name:    "different commit omits embedded time",
+			options: buildinfo.Options{Commit: "987"},
+			info:    info,
+			want: buildinfo.Info{
+				Version:  testModuleVersion,
+				Commit:   "987",
+				Modified: true,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, buildinfo.Resolve(test.options, test.info))
+		})
+	}
+}
+
+func TestResolveExplicitCommitTime(t *testing.T) {
+	info := testBuildInfo()
+	tests := []struct {
+		name    string
+		options buildinfo.Options
+		info    *debug.BuildInfo
+		want    buildinfo.Info
+	}{
+		{
+			name: "explicit commit time overrides embedded time",
+			options: buildinfo.Options{
+				Commit:     testOverrideCommit,
+				CommitTime: "commit-time",
+				BuildDate:  testBuildDate,
+			},
+			info: info,
+			want: buildinfo.Info{
+				Version:   testModuleVersion,
+				Commit:    testOverrideCommit,
+				VCSTime:   "commit-time",
+				BuildDate: testBuildDate,
+				Modified:  true,
+			},
+		},
+		{
+			name: "explicit values without embedded metadata",
+			options: buildinfo.Options{
+				Version:    testOverrideVersion,
+				Commit:     testOverrideCommit,
+				CommitTime: testVCSTime,
+			},
+			want: buildinfo.Info{
+				Version: testOverrideVersion,
+				Commit:  testOverrideCommit,
+				VCSTime: testVCSTime,
+			},
+		},
+		{
+			name:    "no embedded revision omits embedded time",
+			options: buildinfo.Options{Commit: testOverrideCommit},
+			info: &debug.BuildInfo{Settings: []debug.BuildSetting{{
+				Key:   "vcs.time",
+				Value: testVCSTime,
+			}}},
+			want: buildinfo.Info{
+				Version: testDevelopmentVersion,
+				Commit:  testOverrideCommit,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, buildinfo.Resolve(test.options, test.info))
+		})
+	}
+}
+
+func TestReadCommitTime(t *testing.T) {
+	info := buildinfo.Read(buildinfo.Options{
+		Commit:     testOverrideCommit,
+		CommitTime: testVCSTime,
+	})
+	assert.Equal(t, testOverrideCommit, info.Commit)
+	assert.Equal(t, testVCSTime, info.VCSTime)
 }
