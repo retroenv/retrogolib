@@ -53,7 +53,7 @@ import "github.com/retroenv/retrogolib/arch/cpu/cpu6502"
     ├─ audio                       PCM formats and playback controls
     │  ├─ sdl2                     SDL2 audio backend
     │  └─ sdl3                     SDL3 audio backend
-    ├─ buildinfo                   embedded build-version metadata formatting
+    ├─ buildinfo                   release metadata reading and version formatting
     ├─ cli                         command-line application helpers
     ├─ config                      configuration loading, parsing, and persistence
     ├─ gui                         CGO-free GUI rendering abstractions

@@ -1,4 +1,4 @@
-// Package buildinfo formats build information that is embedded into the binaries.
+// Package buildinfo reads release metadata and formats version information.
 package buildinfo
 
 import (
