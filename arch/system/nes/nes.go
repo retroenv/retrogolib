@@ -17,6 +17,22 @@ const (
 	// NameTableSize defines the size of a name table in bytes.
 	NameTableSize = 0x400
 
+	// NTSCCPUClockNumerator is the numerator of the nominal NTSC CPU clock rate in Hz.
+	// The Ricoh 2A03 divides the 236,250,000/11 Hz master clock by 12.
+	// https://www.manfreda.org/2a03-synthesizer/2a03-technical-reference
+	NTSCCPUClockNumerator = 19_687_500
+
+	// NTSCCPUClockDenominator is the denominator of the nominal NTSC CPU clock rate in Hz.
+	NTSCCPUClockDenominator = 11
+
+	// PALCPUClockNumerator is the numerator of the nominal PAL NES CPU clock rate in Hz.
+	// The Ricoh 2A07 divides the 26,601,712.5 Hz master clock by 16.
+	// https://www.nesdev.org/wiki/Cycle_reference_chart#Clock_rates
+	PALCPUClockNumerator = 53_203_425
+
+	// PALCPUClockDenominator is the denominator of the nominal PAL NES CPU clock rate in Hz.
+	PALCPUClockDenominator = 32
+
 	// PaletteSize defines the size of the NES palette in bytes.
 	PaletteSize = 32
 
